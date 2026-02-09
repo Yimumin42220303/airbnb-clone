@@ -1,0 +1,210 @@
+// Prisma 스키마 - 숙박 예약 플랫폼 DB 설계
+// Supabase(PostgreSQL) 또는 로컬 PostgreSQL 사용
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- 사용자 ----------
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  image     String?
+  role      String   @default("user") // "user" | "admin"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  listings Listing[]  // 호스트로 등록한 숙소
+  bookings Booking[]
+  reviews  Review[]
+  messagesSent Message[]
+  wishlists Wishlist[]
+  posts    Post[]   // 운영자 블로그 (admin 전용)
+}
+
+// ---------- 블로그 (SEO·운영자 전용) ----------
+model Post {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique  // URL용 (예: tokyo-minbak-guide)
+  excerpt     String?   // 메타 설명·목록 요약
+  body        String
+  coverImage  String?   // 대표 이미지 URL
+  publishedAt DateTime? // null = 비공개(초안)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([publishedAt])
+  @@index([slug])
+}
+
+// ---------- 숙소 ----------
+model Listing {
+  id          String   @id @default(cuid())
+  title       String
+  location    String   // 예: "신주쿠구, 도쿄" 또는 "다카다노바바역 도보 6분"
+  description String? @default("")
+  /// 구글 지도 등 외부 지도 서비스 링크 (선택)
+  mapUrl      String?
+  pricePerNight Int    // 1박 가격 (원)
+  imageUrl    String   // 대표 이미지 URL
+  maxGuests   Int      @default(2)
+  bedrooms    Int      @default(1)
+  beds        Int      @default(1)
+  baths       Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  categoryId String?
+  category   ListingCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  // OTA/PMS 캘린더 연동 (임시: iCal/ICS. 추후 Beds24 등 API 연동 시 동일 blocked-dates 파이프라인 사용)
+  icalImportUrls String? @default("[]") // JSON array of ICS URLs to import (Airbnb, Beds24 export, etc.)
+
+  bookings     Booking[]
+  reviews      Review[]
+  listingAmenities ListingAmenity[]
+  images       ListingImage[]
+  availability ListingAvailability[]
+  wishlists    Wishlist[]
+}
+
+// 위시리스트 (찜)
+model Wishlist {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, listingId])
+  @@index([userId])
+}
+
+// 날짜별 요금·예약 불가
+model ListingAvailability {
+  id             String   @id @default(cuid())
+  listingId      String
+  listing        Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  date           String   // YYYY-MM-DD
+  pricePerNight  Int?     // null이면 숙소 기본 요금 사용
+  available      Boolean  @default(true) // false면 예약 불가
+
+  @@unique([listingId, date])
+  @@index([listingId])
+}
+
+// 숙소 이미지 (다중)
+model ListingImage {
+  id        String   @id @default(cuid())
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  url       String
+  sortOrder Int      @default(0)
+
+  @@index([listingId])
+}
+
+// ---------- 숙소 카테고리 (도미토리, 개인실, 아파트 등, Framer CMS처럼 등록 시 새로 만들기 가능) ----------
+model ListingCategory {
+  id        String   @id @default(cuid())
+  name      String   @unique  // 예: "도미토리", "개인실", "콘도"
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  listings Listing[]
+}
+
+// ---------- 편의시설 (WiFi, 주방 등) ----------
+model Amenity {
+  id   String @id @default(cuid())
+  name String @unique // 예: "WiFi", "주방", "TV"
+  icon String?        // 이모지 또는 아이콘명
+
+  listings ListingAmenity[]
+}
+
+// 숙소 ↔ 편의시설 다대다
+model ListingAmenity {
+  listingId String
+  amenityId String
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  amenity Amenity @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@id([listingId, amenityId])
+}
+
+// ---------- 예약 ----------
+model Booking {
+  id              String   @id @default(cuid())
+  checkIn         DateTime
+  checkOut        DateTime
+  guests          Int      @default(1)
+  totalPrice      Int      // 총 결제 금액
+  status          String   @default("pending") // pending | confirmed | cancelled
+  paymentStatus   String   @default("pending") // pending | paid
+  rejectedByHost  Boolean? @default(false) // 취소 시 호스트 거절 여부 (기록용)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  conversation Conversation?
+
+  @@index([listingId, checkIn, checkOut]) // 예약 가능 여부 검색용
+}
+
+// ---------- 메시지 (예약 단위 대화) ----------
+model Conversation {
+  id        String   @id @default(cuid())
+  bookingId String   @unique
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  messages Message[]
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body           String
+  createdAt      DateTime @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+// ---------- 리뷰 ----------
+model Review {
+  id        String   @id @default(cuid())
+  rating   Int      // 1~5
+  body     String?
+  createdAt DateTime @default(now())
+
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // 과거에는 @@unique([listingId, userId]) 로 "숙소당 사용자 1인 1리뷰"를 강제했지만,
+  // 관리자(admin)가 동일 숙소에 여러 리뷰를 등록할 수 있도록 제거했습니다.
+  @@index([listingId, userId])
+}

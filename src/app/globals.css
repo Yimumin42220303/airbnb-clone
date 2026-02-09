@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Framer / 도쿄민박 디자인 토큰 */
+  --minbak-primary: #D74132;
+  --minbak-primary-hover: #c0392b;
+  --minbak-black: #1e1e1e;
+  --minbak-gray: #6b7280;
+  --minbak-light-gray: #e0e0e0;
+  --minbak-bg: #f7f7f7;
+  --minbak-dark-gray: #374151;
+  --minbak-pill-bg: #f4f4f5;
+  --airbnb-red: #D74132;
+  --airbnb-dark: #c0392b;
+  --airbnb-black: #1e1e1e;
+  --airbnb-gray: #6b7280;
+  --airbnb-light-gray: #e0e0e0;
+  --font-noto-sans-kr: var(--font-noto-sans-kr), "Noto Sans KR", system-ui, sans-serif;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  color: var(--minbak-black);
+  background: var(--minbak-bg);
+  font-family: var(--font-noto-sans-kr), "Noto Sans KR", system-ui, sans-serif;
+}
+
+/* 게스트 UX: 포커스 링으로 키보드/접근성 개선 */
+:focus-visible {
+  outline: 2px solid var(--minbak-primary);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--minbak-primary);
+  outline-offset: 2px;
+}
