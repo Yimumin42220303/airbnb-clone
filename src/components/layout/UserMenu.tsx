@@ -77,6 +77,15 @@ export default function UserMenu() {
               {user.email}
             </p>
           </div>
+          <Link
+            href="/mypage"
+            className="flex items-center gap-3 px-4 py-3 border-b border-minbak-light-gray text-airbnb-body text-minbak-black hover:bg-minbak-bg transition-colors"
+            onClick={() => setOpen(false)}
+          >
+            <User className="w-5 h-5 text-minbak-gray shrink-0" />
+            마이페이지
+            <ChevronRight className="w-4 h-4 text-minbak-gray ml-auto" />
+          </Link>
           {/* 게스트 모드 / 호스트 모드 전환 */}
           <div className="px-3 py-3 border-b border-minbak-light-gray">
             <p className="px-1 pb-2 text-airbnb-caption font-semibold text-minbak-gray uppercase tracking-wide">

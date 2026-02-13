@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 
@@ -8,6 +9,11 @@ const ERROR_MESSAGES: Record<string, string> = {
     "로그인 설정이 완료되지 않았습니다. NEXTAUTH_SECRET과 OAuth 클라이언트 정보를 확인해 주세요.",
   AccessDenied: "로그인이 거부되었습니다. 권한을 허용한 뒤 다시 시도해 주세요.",
   Verification: "인증 링크가 만료되었거나 이미 사용되었습니다.",
+  OAuthAccountNotLinked:
+    "이 이메일로 가입된 다른 로그인 방식이 있습니다. 원래 사용하신 방식으로 로그인해 주세요.",
+  OAuthCallback: "구글 로그인 처리 중 오류가 발생했습니다.",
+  OAuthCreateAccount: "계정 생성 중 오류가 발생했습니다.",
+  Callback: "로그인 처리 중 오류가 발생했습니다.",
   Default: "로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.",
 };
 
@@ -24,12 +30,17 @@ export default function SignInButtons({
   kakaoEnabled: boolean;
   emailEnabled: boolean;
 }) {
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [email, setEmail] = useState("");
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+
   const errorMessage = errorCode
-    ? (ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.Default)
+    ? (ERROR_MESSAGES[errorCode] ?? `${ERROR_MESSAGES.Default} (오류: ${errorCode})`)
     : null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-airbnb-bg px-4">
+    <div className="min-h-screen flex items-center justify-center bg-white px-4">
       <div className="w-full max-w-[420px] bg-white rounded-[32px] shadow-airbnb p-8 md:p-10">
         <h1 className="text-airbnb-h2 font-semibold text-airbnb-black text-center mb-2">
           도쿄민박 로그인
@@ -118,23 +129,87 @@ export default function SignInButtons({
             <span className="h-px flex-1 bg-airbnb-light-gray" />
           </div>
 
-          {/* 이메일 로그인 (UI) */}
-          <button
-            type="button"
-            onClick={() => {
-              if (emailEnabled) {
-                void signIn("email", { callbackUrl });
-              }
-            }}
-            disabled={!emailEnabled}
-            className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-[999px] border text-airbnb-body font-medium ${
-              emailEnabled
-                ? "border-airbnb-light-gray bg-white hover:bg-airbnb-bg"
-                : "border-airbnb-light-gray/60 bg-white cursor-not-allowed text-airbnb-gray"
-            }`}
-          >
-            이메일 주소로 로그인하기
-          </button>
+          {/* 이메일 로그인 */}
+          {showEmailForm ? (
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!email.trim() || !emailEnabled) return;
+                setEmailLoading(true);
+                setEmailError(null);
+                try {
+                  const result = await signIn("email", {
+                    email: email.trim(),
+                    callbackUrl,
+                    redirect: false,
+                  });
+                  if (result?.error) {
+                    setEmailError(ERROR_MESSAGES[result.error] ?? ERROR_MESSAGES.Default);
+                    setEmailLoading(false);
+                    return;
+                  }
+                  if (result?.url) {
+                    window.location.href = result.url;
+                  } else {
+                    setEmailLoading(false);
+                  }
+                } catch {
+                  setEmailError(ERROR_MESSAGES.Default);
+                  setEmailLoading(false);
+                }
+              }}
+              className="space-y-3"
+            >
+              {emailError && (
+                <p className="text-airbnb-caption text-red-600" role="alert">
+                  {emailError}
+                </p>
+              )}
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="이메일 주소"
+                required
+                autoFocus
+                disabled={emailLoading}
+                className="w-full px-4 py-3 border border-airbnb-light-gray rounded-[999px] text-airbnb-body placeholder:text-airbnb-gray focus:outline-none focus:ring-2 focus:ring-airbnb-black/20 disabled:opacity-50"
+              />
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={emailLoading || !email.trim()}
+                  className="flex-1 py-3 rounded-[999px] bg-airbnb-black text-white text-airbnb-body font-medium hover:bg-airbnb-black/90 disabled:opacity-50"
+                >
+                  {emailLoading ? "전송 중..." : "로그인 링크 받기"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEmailForm(false);
+                    setEmail("");
+                  }}
+                  disabled={emailLoading}
+                  className="px-4 py-3 rounded-[999px] border border-airbnb-light-gray text-airbnb-body font-medium hover:bg-airbnb-bg disabled:opacity-50"
+                >
+                  취소
+                </button>
+              </div>
+            </form>
+          ) : (
+            <button
+              type="button"
+              onClick={() => emailEnabled && setShowEmailForm(true)}
+              disabled={!emailEnabled}
+              className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-[999px] border text-airbnb-body font-medium ${
+                emailEnabled
+                  ? "border-airbnb-light-gray bg-white hover:bg-airbnb-bg"
+                  : "border-airbnb-light-gray/60 bg-white cursor-not-allowed text-airbnb-gray"
+              }`}
+            >
+              이메일 주소로 로그인하기
+            </button>
+          )}
         </div>
 
         <p className="text-airbnb-caption text-airbnb-gray text-center mt-6">

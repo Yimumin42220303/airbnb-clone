@@ -20,11 +20,11 @@ export default function ListingImageGallery({ images, title }: Props) {
   if (images.length === 1) {
     return (
       <div className="relative aspect-video w-full bg-minbak-light-gray overflow-hidden">
-        <Image
-          src={images[0].url}
-          alt={title}
-          fill
-          className="object-cover cursor-pointer"
+            <Image
+              src={images[0].url}
+              alt={title}
+              fill
+              className="object-contain cursor-pointer bg-black/5"
           sizes="(max-width: 1200px) 100vw, 800px"
           onClick={() => {
             setShowAll(false);
@@ -50,49 +50,56 @@ export default function ListingImageGallery({ images, title }: Props) {
 
   return (
     <>
-      <div className="relative">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 overflow-hidden">
-          <button
-            type="button"
-            className="relative md:col-span-2 md:row-span-2 aspect-[4/3] md:aspect-auto md:min-h-[280px] bg-airbnb-light-gray overflow-hidden focus:outline-none focus:ring-2 focus:ring-airbnb-black/20"
-            onClick={() => {
-              setShowAll(false);
-              setLightboxIndex(0);
-            }}
-          >
-            <Image
-              src={main.url}
-              alt={title}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 50vw"
-              priority
-            />
-          </button>
-          {rest.map((img, i) => (
+      <div className="relative w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-[6px] md:gap-[8px] overflow-hidden bg-white w-full">
+          {/* 메인 1장: 정사각형, 라운드 */}
+          <div className="aspect-square w-full max-md:max-w-full rounded-xl overflow-hidden">
             <button
-              key={img.id}
               type="button"
-              className="relative aspect-[4/3] bg-airbnb-light-gray overflow-hidden focus:outline-none focus:ring-2 focus:ring-airbnb-black/20"
+              className="relative w-full h-full bg-airbnb-light-gray overflow-hidden focus:outline-none focus:ring-2 focus:ring-airbnb-black/20 rounded-xl"
               onClick={() => {
                 setShowAll(false);
-                setLightboxIndex(i + 1);
+                setLightboxIndex(0);
               }}
             >
               <Image
-                src={img.url}
-                alt={`${title} ${i + 2}`}
+                src={main.url}
+                alt={title}
                 fill
                 className="object-cover"
-                sizes="(max-width: 768px) 100vw, 25vw"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                priority
               />
             </button>
-          ))}
+          </div>
+          {/* 서브 4장: 2x2 정사각형, 라운드 */}
+          <div className="hidden md:grid grid-cols-2 grid-rows-2 gap-[6px] md:gap-[8px] aspect-square w-full rounded-xl overflow-hidden">
+            {rest.map((img, i) => (
+              <div key={img.id} className="w-full h-full min-h-0 rounded-xl overflow-hidden">
+                <button
+                  type="button"
+                  className="relative w-full h-full bg-airbnb-light-gray overflow-hidden focus:outline-none focus:ring-2 focus:ring-airbnb-black/20 rounded-xl"
+                  onClick={() => {
+                    setShowAll(false);
+                    setLightboxIndex(i + 1);
+                  }}
+                >
+                  <Image
+                    src={img.url}
+                    alt={`${title} ${i + 2}`}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 1200px) 25vw, 360px"
+                  />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
         {images.length > 1 && (
           <button
             type="button"
-            className="absolute bottom-4 right-4 px-4 py-2 bg-white/95 border border-airbnb-light-gray rounded-airbnb text-[14px] font-medium shadow-airbnb hover:bg-white"
+            className="absolute bottom-4 right-4 min-h-[44px] px-4 py-2.5 flex items-center bg-white/95 border border-airbnb-light-gray rounded-airbnb text-[14px] font-medium shadow-airbnb hover:bg-white z-10"
             onClick={() => {
               setLightboxIndex(null);
               setShowAll(true);
@@ -158,7 +165,7 @@ function Lightbox({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+      className="fixed inset-0 z-[10001] bg-black/90 flex flex-col items-center justify-center pt-[72px] md:pt-[80px] pb-14"
       role="dialog"
       aria-modal="true"
       aria-label="사진 갤러리"
@@ -167,7 +174,7 @@ function Lightbox({
       <button
         type="button"
         onClick={onClose}
-        className="absolute top-4 right-4 p-2 text-white hover:bg-white/10 rounded-airbnb-full z-10"
+        className="absolute top-[72px] md:top-[80px] right-4 p-2 text-white hover:bg-white/10 rounded-airbnb-full z-10"
         aria-label="닫기"
       >
         <X className="w-8 h-8" />
@@ -199,7 +206,7 @@ function Lightbox({
         </>
       )}
       <div
-        className="relative w-full h-full max-w-5xl max-h-[90vh] mx-4"
+        className="relative w-full flex-1 min-h-0 max-w-5xl mx-4 max-h-[calc(100vh-72px-3.5rem)] md:max-h-[calc(100vh-80px-3.5rem)]"
         onClick={(e) => e.stopPropagation()} // 실제 이미지 영역 클릭 시에는 닫히지 않도록
       >
         <Image

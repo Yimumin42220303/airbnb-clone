@@ -18,7 +18,7 @@ export default async function SignInPage({
   const kakaoEnabled = !!(
     process.env.KAKAO_CLIENT_ID && process.env.KAKAO_CLIENT_SECRET
   );
-  const emailEnabled = false;
+  const emailEnabled = true;
 
   return (
     <SignInButtons

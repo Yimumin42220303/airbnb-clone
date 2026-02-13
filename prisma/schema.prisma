@@ -6,26 +6,66 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ---------- 사용자 ----------
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  image     String?
-  role      String   @default("user") // "user" | "admin"
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime? // NextAuth 이메일 로그인용
+  name          String?
+  image         String?
+  phone         String?   // 전화번호 (선택)
+  role          String    @default("user") // "user" | "admin"
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
+  accounts Account[]  // NextAuth OAuth·이메일 연동
+  sessions Session[]  // NextAuth 세션 (JWT 사용 시 미사용 가능)
   listings Listing[]  // 호스트로 등록한 숙소
   bookings Booking[]
   reviews  Review[]
   messagesSent Message[]
   wishlists Wishlist[]
   posts    Post[]   // 운영자 블로그 (admin 전용)
+}
+
+// NextAuth OAuth·이메일 연동
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// NextAuth 이메일 매직 링크
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@id([identifier, token])
 }
 
 // ---------- 블로그 (SEO·운영자 전용) ----------
@@ -56,8 +96,27 @@ model Listing {
   /// 구글 지도 등 외부 지도 서비스 링크 (선택)
   mapUrl      String?
   pricePerNight Int    // 1박 가격 (원)
+  cleaningFee   Int    @default(0) // 청소비 (원, 1회)
   imageUrl    String   // 대표 이미지 URL
+  /// 기본 요금에 포함되는 인원 수 (명)
+  baseGuests  Int      @default(2)
+  /// 최대 인원 수 (명)
   maxGuests   Int      @default(2)
+  /// 기본 인원 초과 1인당 1박 추가 요금 (원)
+  extraGuestFee Int    @default(0)
+  /// 월별 요금 배수 (기본 1.0). 예: 1월=1.1이면 1월은 기본 요금의 110%
+  januaryFactor   Float @default(1.0)
+  februaryFactor  Float @default(1.0)
+  marchFactor     Float @default(1.0)
+  aprilFactor     Float @default(1.0)
+  mayFactor       Float @default(1.0)
+  juneFactor      Float @default(1.0)
+  julyFactor      Float @default(1.0)
+  augustFactor    Float @default(1.0)
+  septemberFactor Float @default(1.0)
+  octoberFactor   Float @default(1.0)
+  novemberFactor  Float @default(1.0)
+  decemberFactor  Float @default(1.0)
   bedrooms    Int      @default(1)
   beds        Int      @default(1)
   baths       Int      @default(1)

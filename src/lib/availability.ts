@@ -1,13 +1,23 @@
 import { prisma } from "./prisma";
-import { getExternalBlockedDateKeys } from "./ical";
+import { getExternalBlockedDateKeys, getExternalCheckoutOnlyDateKeys } from "./ical";
 
 /**
- * 날짜 문자열 YYYY-MM-DD 생성
+ * 날짜 문자열 YYYY-MM-DD 생성 (로컬 타임존)
  */
 export function toDateKey(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/**
+ * 날짜 문자열 YYYY-MM-DD 생성 (UTC). DB에 UTC로 저장된 DateTime용.
+ */
+export function toDateKeyUTC(d: Date): string {
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
 
@@ -43,22 +53,47 @@ export async function getNightlyAvailability(
   checkOut: Date
 ): Promise<{
   listingPricePerNight: number;
+  baseGuests: number;
+  extraGuestFee: number;
   nights: NightlyPrice[];
   totalPrice: number;
   allAvailable: boolean;
  }> {
   const listing = await prisma.listing.findUnique({
     where: { id: listingId },
-    select: { pricePerNight: true },
+    select: {
+      pricePerNight: true,
+      cleaningFee: true,
+      baseGuests: true,
+      extraGuestFee: true,
+      januaryFactor: true,
+      februaryFactor: true,
+      marchFactor: true,
+      aprilFactor: true,
+      mayFactor: true,
+      juneFactor: true,
+      julyFactor: true,
+      augustFactor: true,
+      septemberFactor: true,
+      octoberFactor: true,
+      novemberFactor: true,
+      decemberFactor: true,
+    },
   });
   if (!listing) {
     throw new Error("숙소를 찾을 수 없습니다.");
   }
+  const cleaningFee = listing.cleaningFee ?? 0;
+  const baseGuests = listing.baseGuests ?? 2;
+  const extraGuestFee = listing.extraGuestFee ?? 0;
 
   const dateKeys = getDateKeysBetween(checkIn, checkOut);
   if (dateKeys.length === 0) {
     return {
       listingPricePerNight: listing.pricePerNight,
+      baseGuests,
+      extraGuestFee,
+      cleaningFee: listing.cleaningFee ?? 0,
       nights: [],
       totalPrice: 0,
       allAvailable: true,
@@ -75,19 +110,57 @@ export async function getNightlyAvailability(
 
   const externalBlocked = await getExternalBlockedDateKeys(listingId, checkIn, checkOut);
 
+  function getMonthFactor(dateKey: string): number {
+    const month = parseInt(dateKey.slice(5, 7), 10);
+    switch (month) {
+      case 1:
+        return listing.januaryFactor ?? 1.0;
+      case 2:
+        return listing.februaryFactor ?? 1.0;
+      case 3:
+        return listing.marchFactor ?? 1.0;
+      case 4:
+        return listing.aprilFactor ?? 1.0;
+      case 5:
+        return listing.mayFactor ?? 1.0;
+      case 6:
+        return listing.juneFactor ?? 1.0;
+      case 7:
+        return listing.julyFactor ?? 1.0;
+      case 8:
+        return listing.augustFactor ?? 1.0;
+      case 9:
+        return listing.septemberFactor ?? 1.0;
+      case 10:
+        return listing.octoberFactor ?? 1.0;
+      case 11:
+        return listing.novemberFactor ?? 1.0;
+      case 12:
+        return listing.decemberFactor ?? 1.0;
+      default:
+        return 1.0;
+    }
+  }
+
   const nights: NightlyPrice[] = dateKeys.map((date) => {
     const row = byDate.get(date);
     const available = (row ? row.available : true) && !externalBlocked.has(date);
+    const factor = getMonthFactor(date);
+    const basePrice = Math.round(listing.pricePerNight * factor);
     const pricePerNight =
-      row?.pricePerNight != null ? row.pricePerNight : listing.pricePerNight;
+      row?.pricePerNight != null ? row.pricePerNight : basePrice;
     return { date, pricePerNight, available };
   });
 
   const allAvailable = nights.every((n) => n.available);
-  const totalPrice = nights.reduce((sum, n) => sum + n.pricePerNight, 0);
+  const nightsTotal = nights.reduce((sum, n) => sum + n.pricePerNight, 0);
+  const totalPrice = nightsTotal + cleaningFee;
 
   return {
     listingPricePerNight: listing.pricePerNight,
+    baseGuests,
+    extraGuestFee,
+    cleaningFee,
     nights,
     totalPrice,
     allAvailable,
@@ -142,4 +215,47 @@ export async function getListingBlockedDateKeys(
   external.forEach((k) => blocked.add(k));
 
   return Array.from(blocked);
+}
+
+/**
+ * 캘린더 표시용: 체크아웃만 가능한 날짜(YYYY-MM-DD) 목록.
+ * 1) 예약 체크아웃일: 전날 게스트 퇴실 → 당일 체크인 불가, 체크아웃만 가능
+ * 2) 예약 체크인일: 당일 오후에 다음 게스트 체크인 → 당일 오전에는 체크아웃 가능 (체크인은 주로 15시 이후)
+ */
+export async function getListingCheckoutOnlyDateKeys(
+  listingId: string,
+  fromDate: Date,
+  toDate: Date
+): Promise<string[]> {
+  const checkoutOnly = new Set<string>();
+
+  const bookings = await prisma.booking.findMany({
+    where: {
+      listingId,
+      status: { not: "cancelled" },
+      checkIn: { lt: toDate },
+      checkOut: { gt: fromDate },
+    },
+    select: { checkIn: true, checkOut: true },
+  });
+  const fromKey = toDateKey(fromDate);
+  const toKey = toDateKey(toDate);
+  for (const b of bookings) {
+    const checkOutKey = toDateKeyUTC(b.checkOut);
+    if (checkOutKey >= fromKey && checkOutKey <= toKey) {
+      checkoutOnly.add(checkOutKey);
+    }
+    const checkInKey = toDateKeyUTC(b.checkIn);
+    if (checkInKey >= fromKey && checkInKey <= toKey) {
+      checkoutOnly.add(checkInKey);
+    }
+  }
+
+  const toDateExclusive = new Date(toDate);
+  toDateExclusive.setDate(toDateExclusive.getDate() + 1);
+  toDateExclusive.setHours(0, 0, 0, 0);
+  const external = await getExternalCheckoutOnlyDateKeys(listingId, fromDate, toDateExclusive);
+  external.forEach((k) => checkoutOnly.add(k));
+
+  return Array.from(checkoutOnly);
 }

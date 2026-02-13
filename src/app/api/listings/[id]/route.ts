@@ -41,6 +41,8 @@ export async function PATCH(
   try {
     const session = await getServerSession(authOptions);
     const userId = (session as { userId?: string } | null)?.userId;
+    const role = (session?.user as { role?: string } | undefined)?.role;
+    const isAdmin = role === "admin";
     if (!userId) {
       return NextResponse.json(
         { error: "로그인 후 수정할 수 있습니다." },
@@ -49,22 +51,49 @@ export async function PATCH(
     }
     const { id } = await params;
     const body = await request.json();
-    const result = await updateListing(id, userId, {
-      title: body.title,
-      location: body.location,
-      description: body.description,
-      mapUrl: body.mapUrl,
-      pricePerNight: body.pricePerNight,
-      imageUrl: body.imageUrl,
-      imageUrls: body.imageUrls,
-      maxGuests: body.maxGuests,
-      bedrooms: body.bedrooms,
-      beds: body.beds,
-      baths: body.baths,
-      categoryId: body.categoryId,
-      amenityIds: body.amenityIds,
-      icalImportUrls: body.icalImportUrls,
-    });
+    if (body.userId != null && !isAdmin) {
+      return NextResponse.json(
+        { error: "호스트 변경은 관리자만 가능합니다." },
+        { status: 403 }
+      );
+    }
+    const result = await updateListing(
+      id,
+      userId,
+      {
+        title: body.title,
+        location: body.location,
+        description: body.description,
+        mapUrl: body.mapUrl,
+        pricePerNight: body.pricePerNight,
+        cleaningFee: body.cleaningFee,
+        baseGuests: body.baseGuests,
+        maxGuests: body.maxGuests,
+        extraGuestFee: body.extraGuestFee,
+        januaryFactor: body.januaryFactor,
+        februaryFactor: body.februaryFactor,
+        marchFactor: body.marchFactor,
+        aprilFactor: body.aprilFactor,
+        mayFactor: body.mayFactor,
+        juneFactor: body.juneFactor,
+        julyFactor: body.julyFactor,
+        augustFactor: body.augustFactor,
+        septemberFactor: body.septemberFactor,
+        octoberFactor: body.octoberFactor,
+        novemberFactor: body.novemberFactor,
+        decemberFactor: body.decemberFactor,
+        imageUrl: body.imageUrl,
+        imageUrls: body.imageUrls,
+        bedrooms: body.bedrooms,
+        beds: body.beds,
+        baths: body.baths,
+        categoryId: body.categoryId,
+        amenityIds: body.amenityIds,
+        icalImportUrls: body.icalImportUrls,
+        userId: body.userId,
+      },
+      { isAdmin: isAdmin || undefined }
+    );
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }

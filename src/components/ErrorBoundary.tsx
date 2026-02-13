@@ -25,7 +25,7 @@ export default class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         this.props.fallback ?? (
-          <div className="min-h-screen flex items-center justify-center p-6 bg-minbak-bg">
+          <div className="min-h-screen flex items-center justify-center p-6 bg-white">
             <div className="text-center">
               <p className="text-airbnb-body text-minbak-gray mb-4">
                 일시적인 오류가 발생했어요.

@@ -46,7 +46,7 @@ export default function WishlistHeart({
       type="button"
       onClick={handleClick}
       disabled={loading}
-      className={`p-2 rounded-full bg-white/90 hover:bg-white shadow-airbnb transition-colors disabled:opacity-50 ${className}`}
+      className={`p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white/90 hover:bg-white shadow-airbnb transition-colors disabled:opacity-50 ${className}`}
       aria-label={saved ? "저장 취소" : "저장하기"}
     >
       <Heart

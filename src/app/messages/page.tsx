@@ -56,9 +56,9 @@ export default async function MessagesPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen pt-24 px-6">
-        <div className="max-w-[600px] mx-auto py-8">
-          <h1 className="text-airbnb-h2 font-semibold text-airbnb-black mb-6">
+      <main className="min-h-screen pt-4 md:pt-8 px-4 md:px-6">
+        <div className="max-w-[600px] mx-auto py-4 md:py-8">
+          <h1 className="text-[22px] sm:text-airbnb-h2 font-semibold text-airbnb-black mb-4 md:mb-6">
             메시지
           </h1>
           {!userId ? (
@@ -78,7 +78,7 @@ export default async function MessagesPage() {
                 <li key={conv.id}>
                   <Link
                     href={`/messages/${conv.id}`}
-                    className="flex gap-4 p-4 hover:bg-airbnb-bg border-b border-airbnb-light-gray last:border-b-0 transition-colors"
+                    className="flex gap-4 p-4 min-h-[72px] hover:bg-airbnb-bg border-b border-airbnb-light-gray last:border-b-0 transition-colors active:opacity-95"
                   >
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-airbnb-black truncate">

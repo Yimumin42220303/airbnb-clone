@@ -25,7 +25,10 @@ export default function NewListingForm({ amenities, categories: initialCategorie
     location: "",
     description: "",
     pricePerNight: "",
+    cleaningFee: "0",
+    baseGuests: "2",
     maxGuests: "2",
+    extraGuestFee: "0",
     bedrooms: "1",
     beds: "1",
     baths: "1",
@@ -34,6 +37,7 @@ export default function NewListingForm({ amenities, categories: initialCategorie
     amenityIds: [] as string[],
   });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   function toggleAmenity(id: string) {
     setForm((f) => ({
@@ -75,14 +79,18 @@ export default function NewListingForm({ amenities, categories: initialCategorie
     e.preventDefault();
     setError("");
     const price = parseInt(form.pricePerNight, 10);
-    if (
-      !form.title.trim() ||
-      !form.location.trim() ||
-      imageFiles.length === 0 ||
-      isNaN(price) ||
-      price < 0
-    ) {
+    const baseGuests = parseInt(form.baseGuests, 10) || 2;
+    const maxGuests = parseInt(form.maxGuests, 10) || 2;
+    if (!form.title.trim() || !form.location.trim() || imageFiles.length === 0 || isNaN(price) || price < 0) {
       setError("숙소명, 위치, 이미지 1장 이상, 1박 요금을 입력해 주세요.");
+      return;
+    }
+    if (baseGuests < 1) {
+      setError("기본 숙박 인원은 1명 이상이어야 합니다.");
+      return;
+    }
+    if (maxGuests < baseGuests) {
+      setError("최대 인원은 기본 숙박 인원보다 크거나 같아야 합니다.");
       return;
     }
     setLoading(true);
@@ -113,8 +121,11 @@ export default function NewListingForm({ amenities, categories: initialCategorie
           description: form.description.trim() || undefined,
           mapUrl: mapUrl || undefined,
           pricePerNight: price,
+          cleaningFee: Math.max(0, parseInt(form.cleaningFee, 10) || 0),
           imageUrls,
-          maxGuests: parseInt(form.maxGuests, 10) || 2,
+          baseGuests,
+          maxGuests,
+          extraGuestFee: Math.max(0, parseInt(form.extraGuestFee, 10) || 0),
           bedrooms: parseInt(form.bedrooms, 10) || 1,
           beds: parseInt(form.beds, 10) || 1,
           baths: parseInt(form.baths, 10) || 1,
@@ -144,6 +155,17 @@ export default function NewListingForm({ amenities, categories: initialCategorie
       const next = [...prev, ...toAdd].slice(0, 100);
       return next;
     });
+  }
+
+  function handleImageDrop(targetIndex: number) {
+    if (dragIndex === null || dragIndex === targetIndex) return;
+    setImageFiles((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(dragIndex, 1);
+      next.splice(targetIndex, 0, moved);
+      return next;
+    });
+    setDragIndex(null);
   }
 
   function removeImageFile(index: number) {
@@ -295,12 +317,19 @@ export default function NewListingForm({ amenities, categories: initialCategorie
             2. 이미지
           </h2>
           <p className="text-airbnb-caption text-airbnb-gray mb-4">
-            첫 번째 이미지가 대표 이미지로 사용됩니다. JPEG/PNG/WebP/GIF, 최대 5MB, 최대 10장.
+            첫 번째 이미지가 대표 이미지로 사용됩니다. JPEG/PNG/WebP/GIF, 최대 5MB, 최대 100장.
           </p>
           <div className="space-y-3">
             <div className="flex flex-wrap gap-3">
               {imageFiles.map((file, i) => (
-                <div key={i} className="relative group">
+                <div
+                  key={i}
+                  className="relative group cursor-move"
+                  draggable
+                  onDragStart={() => setDragIndex(i)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => handleImageDrop(i)}
+                >
                   <img
                     src={URL.createObjectURL(file)}
                     alt={`미리보기 ${i + 1}`}
@@ -321,7 +350,7 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                 </div>
               ))}
             </div>
-            {imageFiles.length < 10 && (
+            {imageFiles.length < 100 && (
               <label className="block">
                 <span className="sr-only">이미지 추가</span>
                 <input
@@ -360,10 +389,45 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                 required
               />
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <label className="block">
+              <span className="text-airbnb-body font-medium text-airbnb-black block mb-1">
+                청소비 (원)
+              </span>
+              <input
+                type="number"
+                min={0}
+                value={form.cleaningFee}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, cleaningFee: e.target.value }))
+                }
+                className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                placeholder="0"
+              />
+              <span className="text-airbnb-caption text-airbnb-gray block mt-0.5">
+                1회 예약당 1회 적용됩니다.
+              </span>
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <label>
                 <span className="text-airbnb-caption text-airbnb-gray block mb-1">
-                  최대 인원
+                  기본 숙박 인원 (명)
+                </span>
+                <input
+                  type="number"
+                  min={1}
+                  value={form.baseGuests}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, baseGuests: e.target.value }))
+                  }
+                  className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                />
+                <span className="text-airbnb-caption text-airbnb-gray block mt-0.5">
+                  이 인원까지는 1박 요금에 포함됩니다.
+                </span>
+              </label>
+              <label>
+                <span className="text-airbnb-caption text-airbnb-gray block mb-1">
+                  최대 인원 (명)
                 </span>
                 <input
                   type="number"
@@ -375,6 +439,26 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                   className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
                 />
               </label>
+              <label>
+                <span className="text-airbnb-caption text-airbnb-gray block mb-1">
+                  추가 인원 1인당 1박 요금 (원)
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  value={form.extraGuestFee}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, extraGuestFee: e.target.value }))
+                  }
+                  className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                  placeholder="0"
+                />
+                <span className="text-airbnb-caption text-airbnb-gray block mt-0.5">
+                  기본 인원 초과 1인당 1박 기준 추가 요금입니다.
+                </span>
+              </label>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <label>
                 <span className="text-airbnb-caption text-airbnb-gray block mb-1">
                   침실

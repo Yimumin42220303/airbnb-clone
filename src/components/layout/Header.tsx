@@ -4,9 +4,11 @@ import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Search, Calendar, DollarSign } from "lucide-react";
+import { Search } from "lucide-react";
 import HomeSearchBar from "@/components/home/HomeSearchBar";
 import UserMenu from "./UserMenu";
+import HostLocaleSwitcher from "@/components/host/HostLocaleSwitcher";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
 /** useSearchParams 미사용 폴백: SSR/정적 생성 시 검색 바 스켈레톤 */
 function HomeSearchBarFallback() {
@@ -32,6 +34,7 @@ const INSTAGRAM_LINK = "https://www.instagram.com/tokyominbak/";
 /** Framer Navigation: PC(1240) / 모바일(390~640) 스타일. 게스트/호스트 모드 전환(에어비 스타일) */
 export default function Header() {
   const pathname = usePathname();
+  const hostT = useHostTranslations();
   const isHostMode =
     pathname?.startsWith("/host") ||
     pathname === "/messages" ||
@@ -71,52 +74,55 @@ export default function Header() {
             </span>
           </Link>
 
-          {/* 에어비 스타일: 호스트일 때 중앙에 오늘|달력|리스팅|메시지 */}
+          {/* 에어비 스타일: 호스트일 때 중앙에 달력|리스팅|메시지|매상 */}
           {isHostMode ? (
-            <nav className="flex items-center gap-4 md:gap-6 flex-shrink-0" aria-label="호스트 메뉴">
-              <Link
-                href="/host"
-                className={`text-sm font-medium transition-colors ${
-                  pathname === "/host" ? "text-minbak-black border-b-2 border-minbak-black pb-2 -mb-0.5" : "text-minbak-black hover:underline"
-                }`}
-              >
-                오늘
-              </Link>
+            <nav className="flex items-center gap-1 sm:gap-2 md:gap-6 flex-shrink-0 min-h-[44px]" aria-label="호스트 메뉴">
               <Link
                 href="/host/calendar"
-                className={`text-sm font-medium transition-colors ${
+                className={`min-h-[44px] flex items-center px-1.5 sm:px-2 text-xs sm:text-sm font-medium transition-colors ${
                   pathname === "/host/calendar" ? "text-minbak-black border-b-2 border-minbak-black pb-2 -mb-0.5" : "text-minbak-black hover:underline"
                 }`}
               >
-                달력
+                {hostT.t("nav.calendar")}
               </Link>
               <Link
                 href="/host/listings"
-                className={`text-sm font-medium transition-colors ${
+                className={`min-h-[44px] flex items-center px-1.5 sm:px-2 text-xs sm:text-sm font-medium transition-colors ${
                   pathname?.startsWith("/host/listings") ? "text-minbak-black border-b-2 border-minbak-black pb-2 -mb-0.5" : "text-minbak-black hover:underline"
                 }`}
               >
-                리스팅
+                {hostT.t("nav.listings")}
               </Link>
               <Link
                 href="/messages"
-                className={`text-sm font-medium transition-colors ${
+                className={`min-h-[44px] flex items-center px-1.5 sm:px-2 text-xs sm:text-sm font-medium transition-colors ${
                   pathname?.startsWith("/messages") ? "text-minbak-black border-b-2 border-minbak-black pb-2 -mb-0.5" : "text-minbak-black hover:underline"
                 }`}
               >
-                메시지
+                {hostT.t("nav.messages")}
+              </Link>
+              <Link
+                href="/host/revenue"
+                className={`min-h-[44px] flex items-center px-1.5 sm:px-2 text-xs sm:text-sm font-medium transition-colors ${
+                  pathname?.startsWith("/host/revenue") ? "text-minbak-black border-b-2 border-minbak-black pb-2 -mb-0.5" : "text-minbak-black hover:underline"
+                }`}
+              >
+                {hostT.t("nav.revenue")}
               </Link>
             </nav>
           ) : null}
 
           <nav className="flex items-center gap-2 sm:gap-4 md:gap-5 flex-shrink-0">
             {isHostMode && (
-              <Link
-                href="/"
-                className="text-airbnb-caption md:text-airbnb-body text-minbak-black hover:text-minbak-primary transition-colors"
-              >
-                게스트 모드로 전환
-              </Link>
+              <>
+                {pathname?.startsWith("/host") && <HostLocaleSwitcher />}
+                <Link
+                  href="/"
+                  className="min-h-[44px] flex items-center text-xs sm:text-airbnb-caption md:text-airbnb-body text-minbak-black hover:text-minbak-primary transition-colors px-1"
+                >
+                  {hostT.t("nav.guestMode")}
+                </Link>
+              </>
             )}
             {!isHostMode && (
               <>
@@ -124,11 +130,20 @@ export default function Header() {
               href={INSTAGRAM_LINK}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 rounded-full text-minbak-black hover:text-minbak-primary hover:bg-white/80 transition-colors"
+              className="p-2 rounded-full hover:opacity-90 hover:bg-white/80 transition-colors"
               aria-label="인스타그램"
             >
-              <svg className="w-5 h-5 md:w-6 md:h-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+              <svg className="w-5 h-5 md:w-6 md:h-6" viewBox="0 0 24 24" aria-hidden>
+                <defs>
+                  <linearGradient id="instagram-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#f09433" />
+                    <stop offset="25%" stopColor="#e6683c" />
+                    <stop offset="50%" stopColor="#dc2743" />
+                    <stop offset="75%" stopColor="#cc2366" />
+                    <stop offset="100%" stopColor="#bc1888" />
+                  </linearGradient>
+                </defs>
+                <path fill="url(#instagram-gradient)" d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
               </svg>
             </a>
             <Link

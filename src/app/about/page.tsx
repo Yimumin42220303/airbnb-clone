@@ -13,7 +13,7 @@ export default function AboutPage() {
       <Header />
       <main className="min-h-screen pt-24">
         {/* Hero */}
-        <section className="bg-minbak-bg border-b border-minbak-light-gray">
+        <section className="bg-white border-b border-minbak-light-gray">
           <div className="max-w-[720px] mx-auto px-6 py-16 text-center">
             <p className="text-airbnb-caption text-minbak-primary font-medium tracking-widest uppercase mb-2">
               ABOUT US

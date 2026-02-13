@@ -42,7 +42,7 @@ export default function FaqSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
-    <section className="bg-minbak-bg border-y border-minbak-light-gray">
+    <section className="bg-white border-y border-minbak-light-gray">
       <div className="max-w-[800px] mx-auto px-4 md:px-6 py-8 md:py-12">
         <h2 className="text-airbnb-h2 font-semibold text-minbak-black mb-6 md:mb-8 text-center">
           자주 묻는 질문
@@ -56,7 +56,7 @@ export default function FaqSection() {
               <button
                 type="button"
                 onClick={() => setOpenIndex(openIndex === i ? null : i)}
-                className="w-full px-5 py-4 text-left flex items-center justify-between gap-4 text-airbnb-body font-medium text-minbak-black hover:bg-minbak-bg/50 transition-colors"
+                className="w-full min-h-[48px] px-4 sm:px-5 py-4 text-left flex items-center justify-between gap-4 text-airbnb-body font-medium text-minbak-black hover:bg-minbak-bg/50 transition-colors"
               >
                 {item.q}
                 <span

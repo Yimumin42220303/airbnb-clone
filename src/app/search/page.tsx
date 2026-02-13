@@ -70,7 +70,7 @@ export default async function SearchPage({
   return (
     <>
       <Header />
-      <main className="min-h-screen pt-[72px] md:pt-24 px-4 md:px-6">
+      <main className="min-h-screen pt-4 md:pt-8 px-4 md:px-6">
         <div className="max-w-[1760px] mx-auto py-4 md:py-8">
           <div className="flex flex-wrap items-center justify-between gap-3 md:gap-4 mb-4 md:mb-5">
             <p className="text-airbnb-body text-minbak-black font-medium">

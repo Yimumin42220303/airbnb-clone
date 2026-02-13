@@ -14,6 +14,12 @@ const notoSansKr = Noto_Sans_KR({
 const BASE_URL =
   process.env.NEXT_PUBLIC_APP_URL || "https://tokyominbak.example.com";
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   icons: {

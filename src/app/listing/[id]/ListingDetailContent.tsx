@@ -26,6 +26,7 @@ type ListingData = {
   imageUrl: string;
   images: { id: string; url: string; sortOrder: number }[];
   pricePerNight: number;
+  cleaningFee: number;
   maxGuests: number;
   bedrooms: number;
   beds: number;
@@ -71,6 +72,7 @@ export default function ListingDetailContent({
   isLoggedIn,
 }: Props) {
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const [priceSummary, setPriceSummary] = useState<{ nights: number; totalPrice: number } | null>(null);
   const description = listing.description?.trim() || "상세 설명이 없습니다.";
   const needsExpand = description.length > DESCRIPTION_PREVIEW_LENGTH;
   const displayDescription = needsExpand && !descriptionExpanded
@@ -83,13 +85,13 @@ export default function ListingDetailContent({
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-[#f7f7f7]">
+      <main className="min-h-screen bg-white">
         {/* 상단: 숙소명 · 위치 · 평점 · 찜 (minbak.tokyo 상단 영역) */}
-        <div className="bg-white border-b border-[#ebebeb]">
-          <div className="max-w-[1240px] mx-auto px-4 md:px-6 py-6">
+        <div className="bg-white border-b border-[#ebebeb] pt-6 md:pt-8">
+          <div className="max-w-[1240px] mx-auto px-4 md:px-6 pb-6">
             <div className="flex flex-col gap-3">
               <div className="flex items-start justify-between gap-4">
-                <h1 className="text-[22px] md:text-[26px] font-semibold text-[#222] leading-tight min-w-0 flex-1">
+                <h1 className="text-[18px] sm:text-[22px] md:text-[26px] font-semibold text-[#222] leading-tight min-w-0 flex-1">
                   {listing.title}
                 </h1>
                 <WishlistHeart
@@ -122,20 +124,20 @@ export default function ListingDetailContent({
           </div>
         </div>
 
-        <div className="max-w-[1240px] mx-auto px-4 md:px-6 py-6 md:py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* 왼쪽: 갤러리 + 상세 콘텐츠 (minbak 주요정보·상세정보 순) */}
-            <div className="lg:col-span-2 space-y-0">
-              {/* 갤러리 */}
-              <div className="rounded-2xl overflow-hidden bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)] mb-6">
-                <ListingImageGallery
-                  images={listing.images}
-                  title={listing.title}
-                />
-              </div>
+        <div className="max-w-[1240px] mx-auto px-4 md:px-6 pt-6 sm:pt-8 md:pt-10 pb-6 md:py-8">
+          {/* 상단: 갤러리만 — 헤더와 사진 사이 여백(빨간 화살표 길이) */}
+          <div className="rounded-2xl overflow-hidden bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)] mb-8 mt-7">
+            <ListingImageGallery
+              images={listing.images}
+              title={listing.title}
+            />
+          </div>
 
+          {/* 하단: 왼쪽 = 숙소 소개·부가시설 등, 오른쪽 = 예약 모듈(빨간 영역) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-0">
               {/* 상세 정보 카드: 한 덩어리로 (minbak 상세 정보 섹션) */}
-              <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] overflow-hidden">
+              <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] overflow-hidden px-4 md:px-6">
                 {/* 1. 숙소 소개 (더보기 접기) */}
                 <DetailSection title="숙소 소개">
                   <p className="text-[15px] text-[#222] leading-relaxed whitespace-pre-wrap">
@@ -145,7 +147,7 @@ export default function ListingDetailContent({
                     <button
                       type="button"
                       onClick={() => setDescriptionExpanded((b) => !b)}
-                      className="mt-2 text-[14px] font-medium text-[#222] underline hover:no-underline flex items-center gap-1"
+                      className="mt-2 min-h-[44px] flex items-center text-[14px] font-medium text-[#222] underline hover:no-underline gap-1 -ml-1 pl-1"
                     >
                       {descriptionExpanded ? (
                         <>
@@ -271,7 +273,7 @@ export default function ListingDetailContent({
 
               {/* 리뷰 섹션 (별도 카드) */}
               <div className="mt-6 bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] overflow-hidden">
-                <div className="p-6 border-b border-[#ebebeb]">
+                <div className="p-4 md:p-6 border-b border-[#ebebeb]">
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-[17px] font-semibold text-[#222]">
                       리뷰
@@ -286,46 +288,79 @@ export default function ListingDetailContent({
                 {listing.reviews.length > 0 ? (
                   <ul className="divide-y divide-[#ebebeb]">
                     {listing.reviews.map((r, i) => (
-                      <li key={i} className="p-6">
+                      <li key={i} className="p-4 md:p-6">
                         <ReviewCard review={r} />
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="p-6 text-[15px] text-[#717171]">
+                  <p className="p-4 md:p-6 text-[15px] text-[#717171]">
                     아직 리뷰가 없습니다.
                   </p>
                 )}
               </div>
 
-              {/* 모바일 전용 가격 */}
-              <p className="text-xl font-semibold text-[#222] mt-6 lg:hidden">
-                ₩{listing.pricePerNight.toLocaleString()}
-                <span className="text-[15px] font-normal text-[#717171]"> /박</span>
-              </p>
+              {/* 모바일 전용 가격: 날짜·인원 선택이 완료되어 총액이 계산된 경우에만 표시 */}
+              {priceSummary && priceSummary.nights > 0 && (
+                <p className="text-xl font-semibold text-[#222] mt-6 lg:hidden">
+                  {(() => {
+                    const perNight = Math.floor(
+                      priceSummary.totalPrice / priceSummary.nights
+                    );
+                    return (
+                      <>
+                        ₩{perNight.toLocaleString()}
+                        <span className="text-[15px] font-normal text-[#717171]">
+                          {" "}
+                          /박
+                        </span>
+                      </>
+                    );
+                  })()}
+                </p>
+              )}
             </div>
 
-            {/* 오른쪽: 예약 카드 (minbak 예약 정보 섹션) */}
-            <div className="lg:col-span-1">
-              <div className="lg:sticky lg:top-24">
-                <div className="bg-white rounded-2xl border border-[#ebebeb] shadow-[0_6px_20px_rgba(0,0,0,0.08)] overflow-hidden">
-                  <div className="p-6 border-b border-[#ebebeb]">
+            {/* 오른쪽: 예약 모듈(빨간 영역 - 숙소 소개 옆). 헤더와 여유 공간, 스크롤 시 top 192px 아래로 */}
+            <div className="lg:col-span-1 mt-6 lg:mt-0 lg:pt-2">
+              <div className="lg:sticky lg:top-[200px]">
+                {/* overflow-visible 로 변경하여 인원/캘린더 패널이 카드 밖으로 넘쳐도 보이도록 */}
+                <div className="bg-white rounded-2xl border border-[#ebebeb] shadow-[0_6px_20px_rgba(0,0,0,0.08)] overflow-visible">
+                  <div className="p-4 md:p-6 border-b border-[#ebebeb]">
                     <div className="flex items-baseline gap-1">
-                      <span className="text-[22px] font-semibold text-[#222]">
-                        ₩{listing.pricePerNight.toLocaleString()}
-                      </span>
-                      <span className="text-[15px] text-[#717171]">/박</span>
+                            {(() => {
+                          if (priceSummary && priceSummary.nights > 0) {
+                                const perNight = Math.floor(
+                                  priceSummary.totalPrice / priceSummary.nights
+                                );
+                                return (
+                                  <>
+                                    <span className="text-[22px] font-semibold text-[#222]">
+                                      ₩{perNight.toLocaleString()}
+                                    </span>
+                                    <span className="text-[15px] text-[#717171]">
+                                      /박
+                                    </span>
+                                  </>
+                                );
+                              }
+                              return (
+                                null
+                              );
+                            })()}
                     </div>
                     <p className="text-[13px] text-[#717171] mt-2">
                       체크인·체크아웃 선택 후 총 요금을 확인할 수 있어요.
                     </p>
                   </div>
-                  <div className="p-6">
+                  <div className="p-4 md:p-6">
                     <BookingForm
                       listingId={listing.id}
                       pricePerNight={listing.pricePerNight}
+                      cleaningFee={listing.cleaningFee ?? 0}
                       maxGuests={listing.maxGuests}
                       listingTitle={listing.title}
+                            onPriceChange={setPriceSummary}
                     />
                   </div>
                 </div>

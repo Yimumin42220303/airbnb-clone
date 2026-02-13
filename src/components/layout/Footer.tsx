@@ -7,8 +7,8 @@ const KAKAO_LINK = "https://pf.kakao.com/_nxhNjn/chat";
 
 export default function Footer() {
   return (
-    <footer className="mt-16 md:mt-24 bg-[#3F2826] text-[#D3D3D3]">
-      <div className="max-w-[1240px] mx-auto px-4 py-6 md:px-8 md:py-8">
+    <footer className="mt-12 md:mt-24 bg-[#3F2826] text-[#D3D3D3]">
+      <div className="max-w-[1240px] mx-auto px-4 py-8 md:px-8 md:py-8">
         {/* Framer 링크: 모바일에서 2줄 랩 */}
         <nav className="flex flex-wrap items-center justify-center gap-3 md:gap-6 pb-4 md:pb-6 border-b border-white/20">
           <Link href="/search" className="text-airbnb-body font-bold text-white/95 hover:text-white hover:underline">

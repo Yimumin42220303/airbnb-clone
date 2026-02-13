@@ -5,7 +5,7 @@ import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
-const MAX_FILES = 10;
+const MAX_FILES = 100;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 function getExt(name: string): string {

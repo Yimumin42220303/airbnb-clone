@@ -74,7 +74,7 @@ export default async function BookingConfirmPage({ searchParams }: Props) {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-[#f7f7f7] pt-24 md:pt-28 pb-16">
+      <main className="min-h-screen bg-white pt-24 md:pt-28 pb-16">
         <BookingConfirmContent
           listingId={listingId}
           listingTitle={listing.title}

@@ -1,6 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getAdminUser } from "@/lib/admin";
 import { isDevSkipAuth } from "@/lib/dev-auth";
 import { getListingById } from "@/lib/listings";
 import { prisma } from "@/lib/prisma";
@@ -13,6 +14,8 @@ interface Props {
 export default async function EditListingPage({ params }: Props) {
   const session = await getServerSession(authOptions);
   const userId = (session as { userId?: string } | null)?.userId;
+  const admin = await getAdminUser();
+  const isAdmin = !!admin;
   const { id } = await params;
   const listing = await getListingById(id);
   if (!listing) notFound();
@@ -21,9 +24,18 @@ export default async function EditListingPage({ params }: Props) {
     where: { id },
     select: { userId: true },
   });
-  if (!isDevSkipAuth() && (!userId || !owner || owner.userId !== userId)) {
+  const canEdit = owner && (owner.userId === userId || isAdmin);
+  if (!isDevSkipAuth() && (!userId || !canEdit)) {
     redirect("/host/listings");
   }
+
+  const hosts = isAdmin
+    ? await prisma.user.findMany({
+        where: { listings: { some: {} } },
+        orderBy: { name: "asc" },
+        select: { id: true, email: true, name: true },
+      })
+    : [];
 
   const imageUrls =
     listing.images.length > 0
@@ -52,13 +64,31 @@ export default async function EditListingPage({ params }: Props) {
       listingId={id}
       categories={categories}
       amenities={amenities}
+      isAdmin={isAdmin}
+      hosts={hosts.map((h) => ({ id: h.id, email: h.email, name: h.name ?? h.email }))}
+      currentHostId={owner.userId}
       initial={{
         title: listing.title,
         location: listing.location,
         description: listing.description ?? "",
         pricePerNight: listing.pricePerNight,
-        imageUrls,
+        cleaningFee: listing.cleaningFee ?? 0,
+        baseGuests: listing.baseGuests ?? 2,
         maxGuests: listing.maxGuests,
+        extraGuestFee: listing.extraGuestFee ?? 0,
+        januaryFactor: listing.januaryFactor ?? 1,
+        februaryFactor: listing.februaryFactor ?? 1,
+        marchFactor: listing.marchFactor ?? 1,
+        aprilFactor: listing.aprilFactor ?? 1,
+        mayFactor: listing.mayFactor ?? 1,
+        juneFactor: listing.juneFactor ?? 1,
+        julyFactor: listing.julyFactor ?? 1,
+        augustFactor: listing.augustFactor ?? 1,
+        septemberFactor: listing.septemberFactor ?? 1,
+        octoberFactor: listing.octoberFactor ?? 1,
+        novemberFactor: listing.novemberFactor ?? 1,
+        decemberFactor: listing.decemberFactor ?? 1,
+        imageUrls,
         bedrooms: listing.bedrooms,
         beds: listing.beds,
         baths: listing.baths,

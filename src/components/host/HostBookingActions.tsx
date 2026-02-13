@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useHostTranslations } from "./HostLocaleProvider";
 
 type Props = {
   bookingId: string;
@@ -17,6 +18,7 @@ export default function HostBookingActions({
   guestName,
 }: Props) {
   const router = useRouter();
+  const t = useHostTranslations().t;
   const [loading, setLoading] = useState<"accept" | "reject" | "cancel" | null>(
     null
   );
@@ -24,10 +26,10 @@ export default function HostBookingActions({
   async function handleAction(action: "accept" | "reject" | "cancel") {
     const msg =
       action === "accept"
-        ? `"${listingTitle}" 예약을 수락할까요?`
+        ? t("actions.acceptConfirm", { title: listingTitle })
         : action === "reject"
-          ? `"${guestName}"님의 예약을 거절할까요?`
-          : `"${listingTitle}" 예약을 취소할까요?`;
+          ? t("actions.rejectConfirm", { name: guestName })
+          : t("actions.cancelConfirm", { title: listingTitle });
     if (!confirm(msg)) return;
     setLoading(action);
     try {
@@ -38,7 +40,7 @@ export default function HostBookingActions({
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || "처리에 실패했습니다.");
+        alert(data.error || t("actions.processFailed"));
         return;
       }
       router.refresh();
@@ -59,7 +61,7 @@ export default function HostBookingActions({
             disabled={!!loading}
             className="px-3 py-1.5 text-airbnb-body font-medium text-white bg-airbnb-red rounded-airbnb hover:bg-airbnb-dark disabled:opacity-50"
           >
-            {loading === "accept" ? "처리 중..." : "수락"}
+            {loading === "accept" ? t("actions.processing") : t("actions.accept")}
           </button>
           <button
             type="button"
@@ -67,7 +69,7 @@ export default function HostBookingActions({
             disabled={!!loading}
             className="px-3 py-1.5 text-airbnb-body font-medium text-airbnb-gray border border-airbnb-light-gray rounded-airbnb hover:bg-airbnb-bg disabled:opacity-50"
           >
-            {loading === "reject" ? "처리 중..." : "거절"}
+            {loading === "reject" ? t("actions.processing") : t("actions.reject")}
           </button>
         </>
       )}
@@ -78,7 +80,7 @@ export default function HostBookingActions({
           disabled={!!loading}
           className="px-3 py-1.5 text-airbnb-body text-airbnb-red hover:underline disabled:opacity-50"
         >
-          {loading === "cancel" ? "처리 중..." : "취소"}
+          {loading === "cancel" ? t("actions.processing") : t("actions.cancel")}
         </button>
       )}
     </div>

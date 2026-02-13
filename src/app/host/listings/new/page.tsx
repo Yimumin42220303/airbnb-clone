@@ -28,7 +28,7 @@ export default async function NewListingPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen pt-32 md:pt-40 px-4 md:px-6 pb-16">
+      <main className="min-h-screen pt-4 md:pt-8 px-4 md:px-6 pb-16">
         <NewListingForm amenities={amenities} categories={categories} />
       </main>
       <Footer />

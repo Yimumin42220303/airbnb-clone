@@ -90,8 +90,14 @@ export async function createBooking(input: CreateBookingInput) {
     };
   }
 
-  const { totalPrice, allAvailable, nights: nightlyPrices } =
-    await getNightlyAvailability(input.listingId, checkIn, checkOut);
+  const {
+    totalPrice: baseTotalPrice,
+    allAvailable,
+    nights: nightlyPrices,
+    cleaningFee,
+    baseGuests,
+    extraGuestFee,
+  } = await getNightlyAvailability(input.listingId, checkIn, checkOut);
   if (!allAvailable) {
     return {
       ok: false as const,
@@ -111,6 +117,13 @@ export async function createBooking(input: CreateBookingInput) {
   }
 
   const nights = nightlyPrices.length;
+
+  // 추가 인원 요금 계산: (게스트 수 - 기본 포함 인원) × 1인당 1박 요금 × 박수
+  const extraGuests = Math.max(0, input.guests - (baseGuests ?? listing.baseGuests ?? 2));
+  const extraFeePerNight = extraGuestFee ?? listing.extraGuestFee ?? 0;
+  const extraTotal = extraGuests * extraFeePerNight * nights;
+
+  const totalPrice = baseTotalPrice + extraTotal;
 
   const booking = await prisma.booking.create({
     data: {

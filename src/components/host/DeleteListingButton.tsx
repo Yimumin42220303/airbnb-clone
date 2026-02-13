@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useHostTranslations } from "./HostLocaleProvider";
 
 export default function DeleteListingButton({
   listingId,
@@ -11,18 +12,20 @@ export default function DeleteListingButton({
   listingTitle: string;
 }) {
   const router = useRouter();
+  const t = useHostTranslations().t;
   const [loading, setLoading] = useState(false);
 
   async function handleDelete() {
-    if (!confirm(`"${listingTitle}" 숙소를 삭제할까요?`)) return;
+    if (!confirm(t("edit.deleteConfirm", { title: listingTitle }))) return;
     setLoading(true);
     try {
       const res = await fetch(`/api/listings/${listingId}`, { method: "DELETE" });
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || "삭제에 실패했습니다.");
+        alert(data.error || t("actions.deleteFailed"));
         return;
       }
+      router.push("/host/listings");
       router.refresh();
     } finally {
       setLoading(false);
@@ -34,9 +37,9 @@ export default function DeleteListingButton({
       type="button"
       onClick={handleDelete}
       disabled={loading}
-      className="self-center px-3 py-1.5 text-airbnb-body text-airbnb-red border border-airbnb-red rounded-airbnb hover:bg-red-50 disabled:opacity-50"
+      className="self-center min-h-[44px] flex items-center px-3 py-2 text-airbnb-body text-airbnb-red border border-airbnb-red rounded-airbnb hover:bg-red-50 disabled:opacity-50"
     >
-      {loading ? "삭제 중..." : "삭제"}
+      {loading ? t("edit.deleting") : t("edit.delete")}
     </button>
   );
 }

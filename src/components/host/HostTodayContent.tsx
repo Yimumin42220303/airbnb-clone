@@ -32,12 +32,12 @@ export default function HostTodayContent({
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4 md:mb-6">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setActiveTab("today")}
-            className={`px-4 py-2.5 rounded-[90px] text-sm font-medium transition-colors ${
+            className={`min-h-[44px] flex items-center px-4 py-2.5 rounded-[90px] text-sm font-medium transition-colors ${
               activeTab === "today"
                 ? "bg-minbak-black text-white"
                 : "bg-white text-minbak-black border border-minbak-light-gray hover:bg-minbak-bg"
@@ -48,7 +48,7 @@ export default function HostTodayContent({
           <button
             type="button"
             onClick={() => setActiveTab("upcoming")}
-            className={`px-4 py-2.5 rounded-[90px] text-sm font-medium transition-colors ${
+            className={`min-h-[44px] flex items-center px-4 py-2.5 rounded-[90px] text-sm font-medium transition-colors ${
               activeTab === "upcoming"
                 ? "bg-minbak-black text-white"
                 : "bg-white text-minbak-black border border-minbak-light-gray hover:bg-minbak-bg"
@@ -59,13 +59,13 @@ export default function HostTodayContent({
         </div>
         <button
           type="button"
-          className="px-4 py-2.5 rounded-airbnb border border-minbak-black text-minbak-black text-sm font-medium hover:bg-minbak-bg transition-colors"
+          className="min-h-[44px] flex items-center px-4 py-2.5 rounded-airbnb border border-minbak-black text-minbak-black text-sm font-medium hover:bg-minbak-bg transition-colors"
         >
           홈 필터
         </button>
       </div>
 
-      <h2 className="text-airbnb-h2 font-semibold text-minbak-black mb-4">
+      <h2 className="text-[20px] sm:text-airbnb-h2 font-semibold text-minbak-black mb-4">
         예약이 {count}건 있습니다
       </h2>
 

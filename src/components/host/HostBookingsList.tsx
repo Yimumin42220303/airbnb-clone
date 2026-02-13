@@ -3,6 +3,7 @@
 import Link from "next/link";
 import HostBookingActions from "@/components/host/HostBookingActions";
 import StartMessageLink from "@/components/messages/StartMessageLink";
+import { useHostTranslations } from "./HostLocaleProvider";
 
 type BookingItem = {
   id: string;
@@ -19,11 +20,11 @@ type BookingItem = {
 
 type Props = { bookings: BookingItem[] };
 
-function statusLabel(b: BookingItem): string {
-  if (b.status === "confirmed") return "확정";
-  if (b.status === "cancelled" && b.rejectedByHost) return "거절됨";
-  if (b.status === "cancelled") return "취소됨";
-  return "대기";
+function statusLabel(b: BookingItem, t: (k: string) => string): string {
+  if (b.status === "confirmed") return t("bookings.confirmed");
+  if (b.status === "cancelled" && b.rejectedByHost) return t("bookings.rejected");
+  if (b.status === "cancelled") return t("bookings.cancelled");
+  return t("bookings.pending");
 }
 
 function statusClass(b: BookingItem): string {
@@ -34,6 +35,7 @@ function statusClass(b: BookingItem): string {
 }
 
 export default function HostBookingsList({ bookings }: Props) {
+  const t = useHostTranslations().t;
   return (
     <ul className="space-y-4">
       {bookings.map((b) => (
@@ -50,7 +52,7 @@ export default function HostBookingsList({ bookings }: Props) {
                 {b.listing.title}
               </Link>
               <p className="text-airbnb-caption text-airbnb-gray mt-0.5">
-                {b.user.name || b.user.email || "게스트"} · {b.guests}명
+                {b.user.name || b.user.email || t("bookings.guest")} · {t("bookings.guestsCount", { count: b.guests })}
               </p>
               <p className="text-airbnb-body text-airbnb-black mt-1">
                 {b.checkIn.toISOString().slice(0, 10)} ~{" "}
@@ -62,11 +64,11 @@ export default function HostBookingsList({ bookings }: Props) {
               <span
                 className={`inline-block mt-1 text-airbnb-caption px-2 py-0.5 rounded ${statusClass(b)}`}
               >
-                {statusLabel(b)}
+                {statusLabel(b, t)}
               </span>
               {b.status === "confirmed" && b.paymentStatus === "pending" && (
                 <span className="ml-2 text-airbnb-caption text-airbnb-gray">
-                  · 결제 대기
+                  · {t("bookings.paymentPending")}
                 </span>
               )}
             </div>
@@ -75,13 +77,15 @@ export default function HostBookingsList({ bookings }: Props) {
                 bookingId={b.id}
                 status={b.status}
                 listingTitle={b.listing.title}
-                guestName={b.user.name || b.user.email || "게스트"}
+                guestName={b.user.name || b.user.email || t("bookings.guest")}
               />
               {b.status !== "cancelled" && (
                 <StartMessageLink
                   bookingId={b.id}
                   className="text-airbnb-body text-airbnb-gray hover:text-airbnb-black hover:underline"
-                />
+                >
+                  {t("bookings.message")}
+                </StartMessageLink>
               )}
             </div>
           </div>

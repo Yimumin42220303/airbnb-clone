@@ -1,14 +1,176 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Header } from "@/components/layout";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import HostCalendarBookingActions from "./HostCalendarBookingActions";
+import { useHostTranslations } from "./HostLocaleProvider";
 
-const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
+
+/** 모바일 전용: 두 번째 첨부 이미지 스타일의 월 그리드 (7열 × 주차, 날짜+가격/예약/막힘) */
+function MobileMonthGrid({
+  listing,
+  calendarDays,
+  month,
+  year,
+  todayKey,
+}: {
+  listing: ListingWithBookings | undefined;
+  calendarDays: Date[];
+  month: number;
+  year: number;
+  todayKey: string;
+}) {
+  const t = useHostTranslations().t;
+
+  if (!listing) {
+    return (
+      <div className="md:hidden bg-white rounded-airbnb border border-airbnb-light-gray p-6 text-center text-airbnb-body text-airbnb-gray">
+        {t("calendar.selectListing")}
+      </div>
+    );
+  }
+
+  const blockedSet = new Set(listing.blockedDateKeys ?? []);
+
+  /** 해당 날짜가 예약의 첫날일 때만 그 예약 정보 반환 (캘린더 그리드 내 span 포함) */
+  function getBookingAt(dateKey: string): { booking: Booking; startIndex: number; span: number } | null {
+    for (const b of listing!.bookings) {
+      const cin = b.checkIn.slice(0, 10);
+      const cout = b.checkOut.slice(0, 10);
+      if (dateKey < cin || dateKey >= cout) continue;
+      const startIndex = calendarDays.findIndex((d) => toDateKey(d) >= cin);
+      if (startIndex < 0) return null;
+      const firstKey = toDateKey(calendarDays[startIndex]);
+      if (dateKey !== firstKey) return null;
+      const endIndex = calendarDays.findIndex((d) => toDateKey(d) >= cout);
+      const span = endIndex === -1 ? calendarDays.length - startIndex : endIndex - startIndex;
+      return { booking: b, startIndex, span };
+    }
+    return null;
+  }
+
+  /** 해당 날짜가 예약의 2일차 이후인지 (첫날이면 false) */
+  function isContinuationOfBooking(dayIndex: number): boolean {
+    const dateKey = toDateKey(calendarDays[dayIndex]);
+    for (const b of listing.bookings) {
+      const cin = b.checkIn.slice(0, 10);
+      const cout = b.checkOut.slice(0, 10);
+      if (dateKey <= cin || dateKey >= cout) continue;
+      const firstIndex = calendarDays.findIndex((d) => toDateKey(d) >= cin);
+      if (dayIndex > firstIndex) return true;
+    }
+    return false;
+  }
+
+  const cells: { index: number; row: number; col: number }[] = [];
+  for (let i = 0; i < calendarDays.length; i++) {
+    cells.push({ index: i, row: Math.floor(i / 7), col: i % 7 });
+  }
+
+  return (
+    <div className="md:hidden bg-white rounded-airbnb border border-airbnb-light-gray overflow-hidden">
+      <h2 className="text-lg font-semibold text-minbak-black px-3 pt-3 pb-2">
+        {month}{t("calendar.month")}
+      </h2>
+      <div
+        className="grid gap-px bg-airbnb-light-gray p-px"
+        style={{
+          gridTemplateColumns: "repeat(7, 1fr)",
+          gridAutoRows: "minmax(52px, auto)",
+        }}
+      >
+        {WEEKDAY_KEYS.map((k, i) => (
+          <div
+            key={i}
+            className="bg-airbnb-bg py-1.5 text-center text-[11px] font-medium text-airbnb-gray"
+            style={{ gridColumn: i + 1, gridRow: 1 }}
+          >
+            {t(`calendar.weekday.${k}`)}
+          </div>
+        ))}
+        {cells.map(({ index, row, col }) => {
+          const d = calendarDays[index];
+          const dateKey = toDateKey(d);
+          const isCurrentMonth = d.getMonth() === month - 1;
+          const isToday = dateKey === todayKey;
+          const isBlocked = blockedSet.has(dateKey);
+          const bookingAt = getBookingAt(dateKey);
+          const isFirst = bookingAt != null && bookingAt.startIndex === index;
+          const isContinuation = isContinuationOfBooking(index);
+
+          if (isContinuation) {
+            return <div key={index} className="bg-airbnb-bg/30" style={{ gridColumn: col + 1, gridRow: row + 2 }} />;
+          }
+
+          if (isFirst && bookingAt) {
+            const { booking, startIndex, span } = bookingAt;
+            const segments: { row: number; col: number; span: number }[] = [];
+            let remaining = span;
+            let idx = startIndex;
+            while (remaining > 0) {
+              const c = idx % 7;
+              const r = Math.floor(idx / 7);
+              const take = Math.min(remaining, 7 - c);
+              segments.push({ row: r, col: c, span: take });
+              remaining -= take;
+              idx += take;
+            }
+            return (
+              <React.Fragment key={index}>
+                {segments.map((seg, si) => (
+                  <div
+                    key={`${index}-${si}`}
+                    className="flex flex-col justify-center rounded px-1 py-1 bg-gray-800 text-white min-h-[52px]"
+                    style={{
+                      gridColumn: `${seg.col + 1} / span ${seg.span}`,
+                      gridRow: seg.row + 2,
+                    }}
+                  >
+                    <p className="text-[11px] font-medium truncate leading-tight">
+                      {booking.guestName}
+                      {span > 1 ? ` +${span - 1}` : ""}
+                    </p>
+                    <p className="text-[10px] opacity-90 mt-0.5">
+                      ₩{booking.totalPrice.toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </React.Fragment>
+            );
+          }
+
+          return (
+            <div
+              key={index}
+              className={`flex flex-col justify-center items-center py-1 px-0.5 min-h-[52px] ${
+                !isCurrentMonth ? "bg-airbnb-bg/50 text-airbnb-gray" : "bg-white"
+              } ${isToday ? "ring-2 ring-inset ring-red-500 rounded-full w-7 h-7 flex items-center justify-center" : ""}`}
+              style={{ gridColumn: col + 1, gridRow: row + 2 }}
+            >
+              <span className={`text-[13px] font-medium ${isToday ? "text-red-600" : "text-minbak-black"}`}>
+                {d.getDate()}
+              </span>
+              {isCurrentMonth && (
+                <span
+                  className={`text-[10px] leading-tight mt-0.5 truncate max-w-full ${
+                    isBlocked ? "text-gray-400 line-through" : "text-airbnb-gray"
+                  }`}
+                >
+                  {isBlocked ? t("calendar.blocked") : `₩${listing.pricePerNight.toLocaleString()}`}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 type Booking = {
   id: string;
@@ -53,15 +215,16 @@ function getCalendarDays(year: number, month: number): Date[] {
 function getBookingStatusLabel(
   status: string,
   checkIn: string,
-  checkOut: string
+  checkOut: string,
+  t: (k: string) => string
 ): string {
   const today = toDateKey(new Date());
   const cin = checkIn.slice(0, 10);
   const cout = checkOut.slice(0, 10);
-  if (today >= cin && today <= cout) return "현재 호스팅 중";
-  if (status === "confirmed") return "확정됨";
-  if (status === "pending") return "대기";
-  return "확정됨";
+  if (today >= cin && today <= cout) return t("calendar.hostingNow");
+  if (status === "confirmed") return t("bookings.confirmed");
+  if (status === "pending") return t("bookings.pending");
+  return t("bookings.confirmed");
 }
 
 /** 두 날짜 키(YYYY-MM-DD) 사이의 모든 날짜 키 배열 (양끝 포함) */
@@ -83,6 +246,7 @@ function getDateKeysBetweenKeys(startKey: string, endKey: string): string[] {
 export default function HostCalendarView() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useHostTranslations().t;
   const monthParam = searchParams.get("month"); // YYYY-MM
   const now = new Date();
   const [year, setYear] = useState(() =>
@@ -221,20 +385,20 @@ export default function HostCalendarView() {
   return (
     <>
       <Header />
-      <main className="min-h-screen pt-32 md:pt-40">
-        <div className="flex min-h-[calc(100vh-8rem)]">
-          {/* Left sidebar */}
-          <aside className="w-72 border-r border-airbnb-light-gray bg-white flex-shrink-0 overflow-y-auto">
+      <main className="min-h-screen pt-4 md:pt-8">
+        <div className="flex flex-col md:flex-row min-h-[calc(100vh-5rem)] md:min-h-[calc(100vh-8rem)]">
+          {/* Left sidebar: 모바일에서 상단 고정 높이, 데스크톱에서 세로 스크롤 */}
+          <aside className="md:w-72 w-full max-h-[220px] md:max-h-none border-b md:border-b-0 md:border-r border-airbnb-light-gray bg-white flex-shrink-0 overflow-y-auto">
             <div className="p-4 border-b border-airbnb-light-gray">
               <h2 className="text-airbnb-body font-semibold text-airbnb-black">
-                리스팅 {listings.length}개
+                {t("calendar.listingsCount", { count: listings.length })}
               </h2>
               <input
                 type="text"
-                placeholder="리스팅 검색..."
+                placeholder={t("calendar.searchPlaceholder")}
                 value={sidebarSearch}
                 onChange={(e) => setSidebarSearch(e.target.value)}
-                className="mt-2 w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb text-airbnb-body placeholder:text-airbnb-gray focus:outline-none focus:ring-2 focus:ring-airbnb-black/20"
+                className="mt-2 w-full px-3 py-2.5 min-h-[44px] border border-airbnb-light-gray rounded-airbnb text-airbnb-body placeholder:text-airbnb-gray focus:outline-none focus:ring-2 focus:ring-airbnb-black/20"
               />
             </div>
             <ul className="p-2">
@@ -245,7 +409,7 @@ export default function HostCalendarView() {
                     onClick={() =>
                       setSelectedListingId((id) => (id === l.id ? null : l.id))
                     }
-                    className={`w-full flex gap-3 p-3 rounded-airbnb text-left transition-colors ${
+                    className={`w-full flex gap-3 p-3 min-h-[56px] rounded-airbnb text-left transition-colors ${
                       selectedListingId === l.id
                         ? "bg-airbnb-bg ring-1 ring-airbnb-light-gray"
                         : "hover:bg-airbnb-bg"
@@ -275,48 +439,61 @@ export default function HostCalendarView() {
           </aside>
 
           {/* Calendar area */}
-          <div className="flex-1 overflow-x-auto bg-airbnb-bg p-4">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
+          <div className="flex-1 overflow-x-auto bg-airbnb-bg p-4 min-w-0">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+              <div className="flex items-center gap-1 sm:gap-2">
                 <button
                   type="button"
                   onClick={goToPrevMonth}
-                  className="p-2 rounded-airbnb hover:bg-white"
-                  aria-label="이전 달"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-airbnb hover:bg-white"
+                  aria-label={t("calendar.prevMonth")}
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
-                <span className="text-airbnb-body font-semibold text-airbnb-black min-w-[120px] text-center">
+                <span className="text-sm sm:text-airbnb-body font-semibold text-airbnb-black min-w-[100px] sm:min-w-[120px] text-center">
                   {year}년 {month}월
                 </span>
                 <button
                   type="button"
                   onClick={goToNextMonth}
-                  className="p-2 rounded-airbnb hover:bg-white"
-                  aria-label="다음 달"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-airbnb hover:bg-white"
+                  aria-label={t("calendar.nextMonth")}
                 >
                   <ChevronRight className="w-5 h-5" />
                 </button>
                 <button
                   type="button"
                   onClick={goToToday}
-                  className="ml-2 px-3 py-1.5 text-airbnb-caption border border-airbnb-light-gray rounded-airbnb hover:bg-white"
+                  className="min-h-[44px] flex items-center px-3 py-2 text-airbnb-caption border border-airbnb-light-gray rounded-airbnb hover:bg-white"
                 >
-                  오늘
+                  {t("calendar.today")}
                 </button>
               </div>
             </div>
 
             {loading ? (
               <div className="flex items-center justify-center py-20 text-airbnb-gray">
-                로딩 중...
+                {t("calendar.loading")}
               </div>
             ) : (
-              <div className="bg-white rounded-airbnb border border-airbnb-light-gray overflow-hidden relative">
+              <>
+                {/* 모바일 전용: 월 그리드 (두 번째 첨부 디자인) */}
+                <MobileMonthGrid
+                  listing={selectedListingId
+                    ? filteredListings.find((l) => l.id === selectedListingId) ?? filteredListings[0]
+                    : filteredListings[0]}
+                  calendarDays={calendarDays}
+                  month={month}
+                  year={year}
+                  todayKey={todayKey}
+                />
+
+                {/* 데스크톱 전용: 기존 가로 스크롤 캘린더 */}
+                <div className="hidden md:block bg-white rounded-airbnb border border-airbnb-light-gray overflow-hidden relative">
                 {selectedRange && (
                   <div className="absolute left-1/2 -translate-x-1/2 top-2 z-10 flex items-center gap-2 px-3 py-2 bg-white border border-minbak-light-gray rounded-airbnb shadow-lg">
                     <span className="text-airbnb-caption text-minbak-black whitespace-nowrap">
-                      선택한 날짜 {selectedRange.dateKeys.length}일
+                      {t("calendar.selectedDays", { count: selectedRange.dateKeys.length })}
                     </span>
                     <button
                       type="button"
@@ -344,7 +521,7 @@ export default function HostCalendarView() {
                       }}
                       className="px-3 py-1.5 text-sm font-medium rounded-airbnb bg-gray-700 text-white hover:bg-gray-800 disabled:opacity-50"
                     >
-                      블락
+                      {t("calendar.block")}
                     </button>
                     <button
                       type="button"
@@ -372,14 +549,14 @@ export default function HostCalendarView() {
                       }}
                       className="px-3 py-1.5 text-sm font-medium rounded-airbnb bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50"
                     >
-                      오픈
+                      {t("calendar.open")}
                     </button>
                     <button
                       type="button"
                       onClick={() => setSelectedRange(null)}
                       className="px-3 py-1.5 text-sm font-medium rounded-airbnb border border-minbak-light-gray text-minbak-black hover:bg-minbak-bg"
                     >
-                      취소
+                      {t("calendar.cancel")}
                     </button>
                   </div>
                 )}
@@ -399,7 +576,7 @@ export default function HostCalendarView() {
                         d.getMonth() !== month - 1 ? "text-airbnb-gray bg-airbnb-bg/50" : ""
                       } ${toDateKey(d) === todayKey ? "bg-airbnb-red/10 font-medium" : ""}`}
                     >
-                      {WEEKDAYS[d.getDay()]} {d.getDate()}
+                      {t(`calendar.weekday.${WEEKDAY_KEYS[d.getDay()]}`)} {d.getDate()}
                     </div>
                   ))}
 
@@ -417,10 +594,12 @@ export default function HostCalendarView() {
                       selectionDateKeys={selectionByListing.get(listing.id)}
                       onCellMouseDown={handleCellMouseDown}
                       onCellMouseEnter={handleCellMouseEnter}
+                      t={t}
                     />
                   ))}
                 </div>
-              </div>
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -437,6 +616,7 @@ function CalendarRow({
   selectionDateKeys,
   onCellMouseDown,
   onCellMouseEnter,
+  t,
 }: {
   listing: ListingWithBookings;
   calendarDays: Date[];
@@ -445,6 +625,7 @@ function CalendarRow({
   selectionDateKeys?: Set<string>;
   onCellMouseDown?: (listingId: string, dateKey: string) => void;
   onCellMouseEnter?: (listingId: string, dateKey: string) => void;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }) {
   const todayKey = toDateKey(new Date());
   const blockedSet = useMemo(
@@ -492,7 +673,7 @@ function CalendarRow({
                 isCurrentMonth && isBlocked ? "bg-gray-200/80" : ""
               } ${isSelected ? "ring-2 ring-inset ring-teal-500 bg-teal-50/80" : ""}`}
               style={{ gridColumn: gridCol }}
-              title={isCurrentMonth && isBlocked ? "막힌 날짜 (드래그로 선택)" : isCurrentMonth ? "예약 가능 (드래그로 선택)" : undefined}
+              title={isCurrentMonth && isBlocked ? t("calendar.dateBlocked") : isCurrentMonth ? t("calendar.dateAvailable") : undefined}
               onMouseDown={() => {
                 onCellMouseDown?.(listing.id, dateKey);
               }}
@@ -507,7 +688,7 @@ function CalendarRow({
               )}
               {isCurrentMonth && isBlocked && (
                 <span className="text-airbnb-caption text-gray-500" aria-hidden>
-                  막힘
+                  {t("calendar.blocked")}
                 </span>
               )}
             </div>
@@ -540,7 +721,8 @@ function CalendarRow({
                 {getBookingStatusLabel(
                   booking.status,
                   booking.checkIn,
-                  booking.checkOut
+                  booking.checkOut,
+                  t
                 )}
               </p>
               <HostCalendarBookingActions

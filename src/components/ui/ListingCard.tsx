@@ -36,7 +36,7 @@ export default function ListingCard({
     <Link
       href={`/listing/${id}`}
       className={cn(
-        "group block flex-shrink-0 rounded-lg overflow-hidden bg-white transition-all duration-200 hover:shadow-airbnb focus-visible:ring-2 focus-visible:ring-minbak-primary focus-visible:ring-offset-2 focus-visible:outline-none",
+        "group block flex-shrink-0 rounded-lg overflow-hidden bg-white transition-all duration-200 hover:shadow-airbnb focus-visible:ring-2 focus-visible:ring-minbak-primary focus-visible:ring-offset-2 focus-visible:outline-none active:opacity-95",
         className
       )}
       aria-label={`${title} - ${location}, 1박 ₩${price.toLocaleString()}`}
@@ -70,7 +70,7 @@ export default function ListingCard({
             {amenities.slice(0, 4).map((a) => (
               <span
                 key={a}
-                className="px-3 py-1 rounded-[30px] text-airbnb-caption font-semibold text-minbak-black bg-minbak-pill-bg"
+                className="px-3 py-1 rounded-[30px] text-airbnb-caption font-semibold text-minbak-black bg-minbak-pill-bg border border-minbak-light-gray"
               >
                 {a}
               </span>

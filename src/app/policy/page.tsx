@@ -13,7 +13,7 @@ export default function PolicyPage() {
       <Header />
       <main className="min-h-screen pt-24">
         {/* Hero */}
-        <section className="bg-minbak-bg border-b border-minbak-light-gray">
+        <section className="bg-white border-b border-minbak-light-gray">
           <div className="max-w-[720px] mx-auto px-6 py-12">
             <h1 className="text-airbnb-h1 font-bold text-minbak-black mb-2">
               개인정보 이용방침

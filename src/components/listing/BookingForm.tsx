@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { useState, useEffect, useRef, useLayoutEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
@@ -14,32 +14,44 @@ const CALENDAR_APPROX_HEIGHT = 440;
 type BookingFormProps = {
   listingId: string;
   pricePerNight: number;
+  cleaningFee: number;
   maxGuests: number;
   listingTitle: string;
+  /** 가격 미리보기 계산 시 (박수/총액) 정보를 상위 컴포넌트로 전달 */
+  onPriceChange?: (summary: { nights: number; totalPrice: number } | null) => void;
 };
 
 type PriceResult = {
   totalPrice: number;
   allAvailable: boolean;
+  cleaningFee?: number;
   nights: { date: string; pricePerNight: number; available: boolean }[];
 };
 
 export default function BookingForm({
   listingId,
   pricePerNight,
+  cleaningFee,
   maxGuests,
   listingTitle,
+  onPriceChange,
 }: BookingFormProps) {
   const router = useRouter();
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [guests, setGuests] = useState(1);
+  const [adults, setAdults] = useState(1);
+  const [children, setChildren] = useState(0);
+  const [infants, setInfants] = useState(0);
+  const [guestSelectorOpen, setGuestSelectorOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [priceResult, setPriceResult] = useState<PriceResult | null>(null);
   const [blockedDateKeys, setBlockedDateKeys] = useState<string[]>([]);
+  const [checkoutOnlyDateKeys, setCheckoutOnlyDateKeys] = useState<string[]>([]);
   const calendarWrapRef = useRef<HTMLDivElement>(null);
+  const guestSelectorRef = useRef<HTMLDivElement>(null);
   const [calendarPosition, setCalendarPosition] = useState<{
     top: number;
     left: number;
@@ -82,7 +94,7 @@ export default function BookingForm({
     return () => document.removeEventListener("mousedown", handleClickBackdrop);
   }, [calendarOpen]);
 
-  useEffect(() => {
+  const fetchBlockedDates = useCallback(() => {
     const from = new Date();
     from.setHours(0, 0, 0, 0);
     const to = new Date(from);
@@ -94,32 +106,81 @@ export default function BookingForm({
     )
       .then((res) => res.json())
       .then((data) => {
-        if (!data.error && Array.isArray(data.dateKeys)) setBlockedDateKeys(data.dateKeys);
+        if (!data.error) {
+          if (Array.isArray(data.dateKeys)) setBlockedDateKeys(data.dateKeys);
+          if (Array.isArray(data.checkoutOnlyDateKeys)) setCheckoutOnlyDateKeys(data.checkoutOnlyDateKeys);
+        }
       })
       .catch(() => {});
   }, [listingId]);
 
   useEffect(() => {
+    fetchBlockedDates();
+  }, [fetchBlockedDates]);
+
+  useEffect(() => {
+    if (calendarOpen) {
+      fetchBlockedDates();
+    }
+  }, [calendarOpen, fetchBlockedDates]);
+
+  // 인원 선택 패널 바깥 클릭 시 닫힘
+  useEffect(() => {
+    if (!guestSelectorOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      const target = e.target as HTMLElement | null;
+      if (!guestSelectorRef.current || !target) return;
+      if (!guestSelectorRef.current.contains(target)) {
+        setGuestSelectorOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [guestSelectorOpen]);
+
+  // 인원 패널의 성인/어린이/유아 합계를 guests 상태와 동기화
+  useEffect(() => {
+    const total = adults + children + infants;
+    setGuests(total > 0 ? total : 1);
+  }, [adults, children, infants]);
+
+  useEffect(() => {
     if (!checkIn || !checkOut || checkOut <= checkIn) {
       setPriceResult(null);
+      onPriceChange?.(null);
       return;
     }
     let cancelled = false;
     fetch(
-      `/api/listings/${listingId}/price?checkIn=${encodeURIComponent(checkIn)}&checkOut=${encodeURIComponent(checkOut)}`
+      `/api/listings/${listingId}/price?checkIn=${encodeURIComponent(
+        checkIn
+      )}&checkOut=${encodeURIComponent(checkOut)}&guests=${guests}`
     )
       .then((res) => res.json())
       .then((data) => {
-        if (!cancelled && !data.error) setPriceResult(data);
-        else if (!cancelled) setPriceResult(null);
+        if (!cancelled && !data.error) {
+          setPriceResult(data);
+          const nightsCount = Array.isArray(data.nights) ? data.nights.length : 0;
+          if (nightsCount > 0 && typeof data.totalPrice === "number") {
+            onPriceChange?.({ nights: nightsCount, totalPrice: data.totalPrice });
+          } else {
+            onPriceChange?.(null);
+          }
+        } else if (!cancelled) {
+          setPriceResult(null);
+          onPriceChange?.(null);
+        }
       })
       .catch(() => {
-        if (!cancelled) setPriceResult(null);
+        if (!cancelled) {
+          setPriceResult(null);
+          onPriceChange?.(null);
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, [listingId, checkIn, checkOut]);
+  }, [listingId, checkIn, checkOut, guests, onPriceChange]);
 
   const nights = priceResult?.nights?.length ?? 0;
   const totalPrice = priceResult?.totalPrice ?? 0;
@@ -215,6 +276,7 @@ export default function BookingForm({
                     onCheckOutChange={setCheckOut}
                     onComplete={() => setCalendarOpen(false)}
                     blockedDateKeys={blockedDateKeys}
+                    checkoutOnlyDateKeys={checkoutOnlyDateKeys}
                   />
                 </div>
               )}
@@ -223,34 +285,133 @@ export default function BookingForm({
           )}
       </div>
 
-      <label className="flex flex-col gap-1 mb-4">
-        <span className="text-airbnb-caption text-airbnb-gray">인원</span>
-        <select
-          value={guests}
-          onChange={(e) => setGuests(Number(e.target.value))}
-          className="px-3 py-2 border border-minbak-light-gray rounded-airbnb text-airbnb-body text-minbak-black focus:outline-none focus-visible:ring-2 focus-visible:ring-minbak-primary focus-visible:border-minbak-primary"
+      {/* 인원 선택: 에어비앤비 스타일 패널 */}
+      <div className="mb-4 relative" ref={guestSelectorRef}>
+        <button
+          type="button"
+          onClick={() => setGuestSelectorOpen((open) => !open)}
+          className="w-full flex items-center justify-between px-3 py-2 border border-minbak-light-gray rounded-airbnb text-airbnb-body text-minbak-black focus:outline-none focus-visible:ring-2 focus-visible:ring-minbak-primary focus-visible:border-minbak-primary"
         >
-          {Array.from({ length: maxGuests }, (_, i) => i + 1).map((n) => (
-            <option key={n} value={n}>
-              {n}명
-            </option>
-          ))}
-        </select>
-      </label>
+          <div className="flex flex-col text-left">
+            <span className="text-[12px] text-[#717171]">인원</span>
+            <span className="text-[14px] text-[#222]">
+              게스트 {guests}명
+            </span>
+          </div>
+          <span className="text-[20px] leading-none text-[#717171]">
+            {guestSelectorOpen ? "▴" : "▾"}
+          </span>
+        </button>
+
+        {guestSelectorOpen && (
+          <div className="absolute z-[120] mt-2 w-full rounded-2xl border border-airbnb-light-gray bg-white shadow-[0_12px_40px_rgba(0,0,0,0.18)] p-4 space-y-3">
+            {[
+              {
+                label: "성인",
+                desc: "13세 이상",
+                value: adults,
+                setValue: setAdults,
+              },
+              {
+                label: "어린이",
+                desc: "2~12세",
+                value: children,
+                setValue: setChildren,
+              },
+              {
+                label: "유아",
+                desc: "2세 미만",
+                value: infants,
+                setValue: setInfants,
+              },
+            ].map((row) => {
+              const totalWithoutThis =
+                guests - row.value; // 현재 값 제외한 합
+              const canIncrement =
+                totalWithoutThis + row.value + 1 <= maxGuests;
+              const canDecrement =
+                row.label === "성인"
+                  ? row.value > 1 // 성인은 최소 1명
+                  : row.value > 0;
+              return (
+                <div
+                  key={row.label}
+                  className="flex items-center justify-between"
+                >
+                  <div className="flex flex-col">
+                    <span className="text-airbnb-body text-airbnb-black">
+                      {row.label}
+                    </span>
+                    <span className="text-airbnb-caption text-airbnb-gray">
+                      {row.desc}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        canDecrement &&
+                        row.setValue((v) =>
+                          row.label === "성인" ? Math.max(1, v - 1) : Math.max(0, v - 1)
+                        )
+                      }
+                      disabled={!canDecrement}
+                      className={`w-8 h-8 flex items-center justify-center rounded-full border text-[18px] ${
+                        canDecrement
+                          ? "border-airbnb-light-gray text-airbnb-black hover:bg-airbnb-bg"
+                          : "border-airbnb-light-gray text-airbnb-light-gray cursor-not-allowed"
+                      }`}
+                      aria-label={`${row.label} 감소`}
+                    >
+                      −
+                    </button>
+                    <span className="min-w-[20px] text-center text-airbnb-body">
+                      {row.value}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        canIncrement &&
+                        row.setValue((v) => v + 1)
+                      }
+                      disabled={!canIncrement}
+                      className={`w-8 h-8 flex items-center justify-center rounded-full border text-[18px] ${
+                        canIncrement
+                          ? "border-airbnb-light-gray text-airbnb-black hover:bg-airbnb-bg"
+                          : "border-airbnb-light-gray text-airbnb-light-gray cursor-not-allowed"
+                      }`}
+                      aria-label={`${row.label} 증가`}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => setGuestSelectorOpen(false)}
+              className="mt-2 ml-auto px-3 py-1.5 text-airbnb-caption text-airbnb-black hover:underline"
+            >
+              닫기
+            </button>
+          </div>
+        )}
+      </div>
 
       {nights > 0 && priceResult && (
         <div className="border-t border-airbnb-light-gray pt-4 space-y-2 mb-4">
-          {priceResult.nights.some((n) => n.pricePerNight !== pricePerNight) ? (
-            <div className="flex justify-between text-airbnb-body text-airbnb-black">
-              <span>날짜별 요금 적용 · {nights}박</span>
-              <span>₩{totalPrice.toLocaleString()}</span>
-            </div>
-          ) : (
-            <div className="flex justify-between text-airbnb-body text-airbnb-black">
-              <span>₩{pricePerNight.toLocaleString()} x {nights}박</span>
-              <span>₩{totalPrice.toLocaleString()}</span>
-            </div>
-          )}
+          {(() => {
+            const perNight = nights > 0 ? Math.floor(totalPrice / nights) : 0;
+            return (
+              <div className="flex justify-between text-airbnb-body text-airbnb-black">
+                <span>
+                  ₩{perNight.toLocaleString()} x {nights}박
+                </span>
+                <span>₩{totalPrice.toLocaleString()}</span>
+              </div>
+            );
+          })()}
           <div className="flex justify-between text-airbnb-body font-semibold text-airbnb-black pt-2 border-t border-airbnb-light-gray">
             <span>총 합계</span>
             <span>₩{totalPrice.toLocaleString()}</span>

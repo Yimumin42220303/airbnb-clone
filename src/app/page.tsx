@@ -46,7 +46,7 @@ export default async function Home() {
 
       <main className="min-h-screen pt-0">
         {/* Framer 스타일 히어로: 헤더+검색바 아래로 제목이 완전히 보이도록 여유 있게 */}
-        <section className="relative min-h-[420px] md:min-h-[640px] flex flex-col items-center justify-center bg-black text-white px-4 pt-[152px] pb-12 md:pt-[172px] md:pb-[100px] md:px-6 overflow-hidden">
+        <section className="relative min-h-[380px] sm:min-h-[420px] md:min-h-[640px] flex flex-col items-center justify-center bg-black text-white px-4 pt-[140px] pb-10 sm:pt-[152px] sm:pb-12 md:pt-[172px] md:pb-[100px] md:px-6 overflow-hidden">
           {/* 비디오 배경 (NEXT_PUBLIC_HERO_VIDEO_URL 또는 기본 URL) */}
           <video
             autoPlay
@@ -86,7 +86,7 @@ export default async function Home() {
         </section>
 
         {/* Framer 스타일 추천 민박: PC 3열 / 태블릿 2열 / 모바일 1열 */}
-        <section className="px-4 py-12 md:px-6 md:py-16 xl:py-20">
+        <section className="px-4 py-10 sm:py-12 md:px-6 md:py-16 xl:py-20">
           <div className="max-w-[1280px] mx-auto flex flex-col items-center gap-4 md:gap-6">
             <div className="w-full flex flex-col items-center gap-2">
               <h2 className="text-airbnb-h2 md:text-framer-h2 font-extrabold text-minbak-black">
