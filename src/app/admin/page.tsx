@@ -63,10 +63,10 @@ export default async function AdminDashboardPage({
   }
 
   try {
-    bookingCounts = await prisma.booking.groupBy({
+    bookingCounts = (await prisma.booking.groupBy({
       by: ["status"],
       _count: { id: true },
-    });
+    })) as unknown as { status: string; _count: { id: number } }[];
   } catch (err) {
     console.error("Admin dashboard: bookingCounts error", err);
     errorParts.push("예약 수");
