@@ -3,7 +3,9 @@
 /.pnp
 .pnp.js
 .yarn/install-state.gz
-
+node_modules
+.env
+.env.local
 # testing
 /coverage
 
@@ -26,6 +28,7 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
+.env.vercel
 
 # uploads (로컬 업로드 파일, 배포 시 외부 저장소 사용 권장)
 /public/uploads
@@ -36,3 +39,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/prisma/dev.db

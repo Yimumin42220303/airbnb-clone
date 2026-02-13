@@ -150,7 +150,6 @@ function Lightbox({
   onNext: () => void;
 }) {
   const img = images[currentIndex];
-  if (!img) return null;
 
   // ESC 키로 닫기
   useEffect(() => {
@@ -162,6 +161,8 @@ function Lightbox({
     window.addEventListener("keydown", handleKeydown);
     return () => window.removeEventListener("keydown", handleKeydown);
   }, [onClose]);
+
+  if (!img) return null;
 
   return (
     <div
