@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { invalidateIcalCacheForUrls } from "@/lib/ical";
 
@@ -48,7 +48,7 @@ export async function GET(
  * iCal 캐시 무효화 (테스트용)
  */
 export async function POST(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: listingId } = await params;

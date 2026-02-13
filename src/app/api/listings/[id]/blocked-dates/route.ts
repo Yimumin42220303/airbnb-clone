@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getListingBlockedDateKeys, getListingCheckoutOnlyDateKeys } from "@/lib/availability";
 
 /**
@@ -7,7 +7,7 @@ import { getListingBlockedDateKeys, getListingCheckoutOnlyDateKeys } from "@/lib
  * + 체크아웃만 가능한 날짜 목록 (우리 예약·외부 ICS 체크아웃일)
  */
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: listingId } = await params;
