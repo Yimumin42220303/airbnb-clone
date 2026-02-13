@@ -150,8 +150,6 @@ function AdminListingReviewsClient({
         </p>
         {/* 기존 관리자 리뷰 폼 재사용 */}
         {/* AdminReviewForm는 /api/listings/[id]/reviews 로 POST 요청을 보내고, 관리자로 제한되어 있습니다. */}
-        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
-        {/* @ts-expect-error Server Component에서 클라이언트 컴포넌트 사용 */}
         <AdminReviewForm listingId={listingId} />
       </section>
     </div>
