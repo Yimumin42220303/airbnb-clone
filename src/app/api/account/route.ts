@@ -21,8 +21,8 @@ export async function PATCH(request: Request) {
   const { name, phone } = body;
 
   const data: { name?: string; phone?: string } = {};
-  if (typeof name === "string") data.name = name.trim() || null;
-  if (typeof phone === "string") data.phone = phone.trim() || null;
+  if (typeof name === "string") data.name = name.trim() || undefined;
+  if (typeof phone === "string") data.phone = phone.trim() || undefined;
 
   if (Object.keys(data).length === 0) {
     return NextResponse.json(
