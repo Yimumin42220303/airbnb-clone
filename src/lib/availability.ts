@@ -53,12 +53,13 @@ export async function getNightlyAvailability(
   checkOut: Date
 ): Promise<{
   listingPricePerNight: number;
+  cleaningFee: number;
   baseGuests: number;
   extraGuestFee: number;
   nights: NightlyPrice[];
   totalPrice: number;
   allAvailable: boolean;
- }> {
+}> {
   const listing = await prisma.listing.findUnique({
     where: { id: listingId },
     select: {
