@@ -159,7 +159,7 @@ function AdminListingReviewsClient({
 }
 
 // AdminReviewForm는 클라이언트 컴포넌트이므로 파일 하단에서 동적 import 대신 직접 참조합니다.
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+// eslint-disable-next-line
 const AdminReviewForm =
   require("@/components/listing/AdminReviewForm").default;
 
