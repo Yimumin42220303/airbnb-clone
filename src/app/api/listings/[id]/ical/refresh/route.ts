@@ -32,7 +32,7 @@ export async function POST(
   try {
     const body = await request.json().catch(() => ({}));
     if (Array.isArray(body.urls) && body.urls.length > 0) {
-      urls = body.urls.filter((u): u is string => typeof u === "string" && u.trim().length > 0);
+      urls = (body.urls as unknown[]).filter((u): u is string => typeof u === "string" && u.trim().length > 0);
     }
     if (urls.length === 0) {
       const arr = JSON.parse(listing.icalImportUrls ?? "[]");
