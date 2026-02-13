@@ -18,5 +18,5 @@ export default async function HostBookingsPage() {
       })
     : [];
 
-  return <HostBookingsContent bookings={bookings} userId={userId} />;
+  return <HostBookingsContent bookings={bookings} userId={userId ?? null} />;
 }
