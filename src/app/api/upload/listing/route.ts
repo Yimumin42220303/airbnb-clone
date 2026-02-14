@@ -73,7 +73,8 @@ export async function POST(request: Request) {
         const filename = `listings/${crypto.randomUUID()}${ext}`;
         const blob = await put(filename, file, {
           access: "public",
-          addRandomSuffix: false,
+          addRandomSuffix: true,
+          allowOverwrite: true,
         });
         urls.push(blob.url);
       }

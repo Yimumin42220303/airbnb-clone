@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { upload } from "@vercel/blob/client";
 import { Header, Footer } from "@/components/layout";
 import { Button } from "@/components/ui";
 import Link from "next/link";
@@ -214,15 +213,18 @@ export default function EditListingForm({
       let finalUrls = [...existingImageUrls];
       if (newImageFiles.length > 0) {
         try {
-          const uploadPromises = newImageFiles.map(async (file) => {
-            const uniquePath = `listings/${crypto.randomUUID()}-${file.name}`;
-            const blob = await upload(uniquePath, file, {
-              access: "public",
-              handleUploadUrl: "/api/upload/listing/token",
-            });
-            return blob.url;
+          const formData = new FormData();
+          newImageFiles.forEach((f) => formData.append("files", f));
+          const uploadRes = await fetch("/api/upload/listing", {
+            method: "POST",
+            body: formData,
           });
-          const newUrls = await Promise.all(uploadPromises);
+          const uploadData = await uploadRes.json();
+          if (!uploadRes.ok) {
+            setError(uploadData.error || "이미지 업로드에 실패했습니다.");
+            return;
+          }
+          const newUrls = uploadData.urls ?? [];
           finalUrls = [...existingImageUrls, ...newUrls];
         } catch (uploadErr) {
           const msg = uploadErr instanceof Error ? uploadErr.message : String(uploadErr);

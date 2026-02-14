@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { upload } from "@vercel/blob/client";
 import { Button } from "@/components/ui";
 import Link from "next/link";
 
@@ -96,18 +95,25 @@ export default function NewListingForm({ amenities, categories: initialCategorie
     }
     setLoading(true);
     try {
-      // 클라이언트 사이드 직접 업로드 (Vercel Blob) 또는 서버 경유 (로컬 개발)
+      // 서버 경유 업로드 (파일명을 서버에서 생성하여 blob 충돌 방지)
       let imageUrls: string[];
       try {
-        const uploadPromises = imageFiles.map(async (file) => {
-          const uniquePath = `listings/${crypto.randomUUID()}-${file.name}`;
-          const blob = await upload(uniquePath, file, {
-            access: "public",
-            handleUploadUrl: "/api/upload/listing/token",
-          });
-          return blob.url;
+        const formData = new FormData();
+        imageFiles.forEach((f) => formData.append("files", f));
+        const uploadRes = await fetch("/api/upload/listing", {
+          method: "POST",
+          body: formData,
         });
-        imageUrls = await Promise.all(uploadPromises);
+        const uploadData = await uploadRes.json();
+        if (!uploadRes.ok) {
+          setError(uploadData.error || "이미지 업로드에 실패했습니다.");
+          return;
+        }
+        imageUrls = uploadData.urls ?? [];
+        if (imageUrls.length === 0) {
+          setError("이미지 업로드에 실패했습니다.");
+          return;
+        }
       } catch (uploadErr) {
         const msg = uploadErr instanceof Error ? uploadErr.message : String(uploadErr);
         setError(`이미지 업로드 실패: ${msg}`);
