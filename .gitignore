@@ -31,6 +31,7 @@ yarn-error.log*
 .env.vercel
 .env.check
 .env.vercel-check
+.env.vercel.import
 
 # uploads (로컬 업로드 파일, 배포 시 외부 저장소 사용 권장)
 /public/uploads
