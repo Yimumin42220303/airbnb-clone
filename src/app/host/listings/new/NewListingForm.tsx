@@ -96,35 +96,35 @@ export default function NewListingForm({ amenities, categories: initialCategorie
     }
     setLoading(true);
     try {
-      // 한 장씩 업로드 (Vercel 4.5MB 요청 제한 회피)
+      // 병렬 업로드 (Vercel 4.5MB 제한 회피 위해 한 장씩 요청, 동시에 여러 개 전송)
       let imageUrls: string[] = [];
       try {
-        for (const file of imageFiles) {
-          const formData = new FormData();
-          formData.append("files", file);
-          const uploadRes = await fetch("/api/upload/listing", {
-            method: "POST",
-            body: formData,
-          });
-          const text = await uploadRes.text();
-          let uploadData: { urls?: string[]; error?: string };
-          try {
-            uploadData = text ? JSON.parse(text) : {};
-          } catch {
-            setError(
-              uploadRes.status === 413
-                ? "이미지가 너무 큽니다. 4MB 이하로 압축해 주세요."
-                : `이미지 업로드 실패: 서버 오류 (${text.slice(0, 80)}...)`
-            );
-            return;
-          }
-          if (!uploadRes.ok) {
-            setError(uploadData.error || "이미지 업로드에 실패했습니다.");
-            return;
-          }
-          const urls = uploadData.urls ?? [];
-          if (urls.length > 0) imageUrls.push(urls[0]);
-        }
+        const results = await Promise.all(
+          imageFiles.map(async (file) => {
+            const formData = new FormData();
+            formData.append("files", file);
+            const uploadRes = await fetch("/api/upload/listing", {
+              method: "POST",
+              body: formData,
+            });
+            const text = await uploadRes.text();
+            let uploadData: { urls?: string[]; error?: string };
+            try {
+              uploadData = text ? JSON.parse(text) : {};
+            } catch {
+              throw new Error(
+                uploadRes.status === 413
+                  ? "이미지가 너무 큽니다. 4MB 이하로 압축해 주세요."
+                  : `서버 오류 (${text.slice(0, 80)}...)`
+              );
+            }
+            if (!uploadRes.ok) {
+              throw new Error(uploadData.error || "이미지 업로드에 실패했습니다.");
+            }
+            return uploadData.urls?.[0] ?? null;
+          })
+        );
+        imageUrls = results.filter((u): u is string => !!u);
         if (imageUrls.length === 0) {
           setError("이미지 업로드에 실패했습니다.");
           return;
