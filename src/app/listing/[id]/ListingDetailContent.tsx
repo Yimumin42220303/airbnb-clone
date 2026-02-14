@@ -125,7 +125,7 @@ export default function ListingDetailContent({
           </div>
 
           {/* 숙소 스펙 (갤러리 아래) */}
-          <p className="text-[42px] font-semibold text-black leading-tight mb-8">
+          <p className="text-[18px] sm:text-[22px] md:text-[26px] font-semibold text-black leading-tight mb-8">
             {listing.category?.name
               ? `${listing.category.name}`
               : "숙소"}{" "}
