@@ -100,15 +100,7 @@ export default function ListingDetailContent({
                   className="flex-shrink-0"
                 />
               </div>
-              <div className="flex flex-col gap-1 text-[14px] text-[#717171]">
-                <p>
-                  {listing.category?.name
-                    ? `${listing.category.name}`
-                    : "숙소"}{" "}
-                  · 최대 인원 {listing.maxGuests}명 · 침실 {listing.bedrooms} · 침대{" "}
-                  {listing.beds} · 욕실 {listing.baths}
-                </p>
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[14px] text-[#717171]">
                   <span className="flex items-center gap-1">
                     <MapPin className="w-4 h-4 flex-shrink-0" aria-hidden />
                     {listing.location}
@@ -118,7 +110,6 @@ export default function ListingDetailContent({
                       ★ {listing.rating.toFixed(1)} · 리뷰 {listing.reviewCount}개
                     </span>
                   )}
-                </div>
               </div>
             </div>
           </div>
@@ -132,6 +123,15 @@ export default function ListingDetailContent({
               title={listing.title}
             />
           </div>
+
+          {/* 숙소 스펙 (갤러리 아래) */}
+          <p className="text-[42px] font-semibold text-black leading-tight mb-8">
+            {listing.category?.name
+              ? `${listing.category.name}`
+              : "숙소"}{" "}
+            · 최대 인원 {listing.maxGuests}명 · 침실 {listing.bedrooms} · 침대{" "}
+            {listing.beds} · 욕실 {listing.baths}
+          </p>
 
           {/* 하단: 왼쪽 = 숙소 소개·부가시설 등, 오른쪽 = 예약 모듈(빨간 영역) */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
