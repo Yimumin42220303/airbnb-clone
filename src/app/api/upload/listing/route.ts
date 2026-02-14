@@ -22,6 +22,8 @@ function useCloudinary(): boolean {
   );
 }
 
+export const maxDuration = 30;
+
 /**
  * POST /api/upload/listing
  * 로그인 사용자가 숙소 이미지를 업로드.
