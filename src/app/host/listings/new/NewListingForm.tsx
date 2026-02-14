@@ -100,7 +100,8 @@ export default function NewListingForm({ amenities, categories: initialCategorie
       let imageUrls: string[];
       try {
         const uploadPromises = imageFiles.map(async (file) => {
-          const blob = await upload(`listings/${file.name}`, file, {
+          const uniquePath = `listings/${crypto.randomUUID()}-${file.name}`;
+          const blob = await upload(uniquePath, file, {
             access: "public",
             handleUploadUrl: "/api/upload/listing/token",
           });
