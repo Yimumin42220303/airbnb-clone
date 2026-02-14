@@ -4,10 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
 import Link from "next/link";
-import { canUseClientUpload, uploadImageClient } from "@/lib/cloudinary-client-upload";
-
-type Amenity = { id: string; name: string };
-type Category = { id: string; name: string };
+import AmenitySelector from "@/components/host/AmenitySelector";
+import { uploadListingImages, getUploadErrorMessage } from "@/lib/useListingImageUpload";
+import type { Amenity, Category } from "@/types";
 
 type Props = {
   amenities: Amenity[];
@@ -97,53 +96,15 @@ export default function NewListingForm({ amenities, categories: initialCategorie
     }
     setLoading(true);
     try {
-      let imageUrls: string[] = [];
-      const useClientUpload = canUseClientUpload();
+      let imageUrls: string[];
       try {
-        if (useClientUpload) {
-          for (const file of imageFiles) {
-            const url = await uploadImageClient(file);
-            imageUrls.push(url);
-          }
-        } else {
-          for (const file of imageFiles) {
-            const formData = new FormData();
-            formData.append("files", file);
-            const uploadRes = await fetch("/api/upload/listing", {
-              method: "POST",
-              body: formData,
-              signal: AbortSignal.timeout(25000),
-            });
-            const text = await uploadRes.text();
-            let uploadData: { urls?: string[]; error?: string };
-            try {
-              uploadData = text ? JSON.parse(text) : {};
-            } catch {
-              const friendlyMsg =
-                uploadRes.status === 413
-                  ? "이미지가 너무 큽니다. 4MB 이하로 압축해 주세요."
-                  : /forbidden|403|access denied/i.test(text)
-                    ? "이미지 저장소 접근이 거부되었습니다. docs/Cloudinary-설정.md 에서 Upload Preset(클라이언트 업로드) 설정을 확인해 주세요."
-                    : `서버 오류 (${text.slice(0, 80)}...)`;
-              throw new Error(friendlyMsg);
-            }
-            if (!uploadRes.ok) {
-              throw new Error(uploadData.error || "이미지 업로드에 실패했습니다.");
-            }
-            const url = uploadData.urls?.[0];
-            if (url) imageUrls.push(url);
-          }
-        }
+        imageUrls = await uploadListingImages(imageFiles);
         if (imageUrls.length === 0) {
           setError("이미지 업로드에 실패했습니다.");
           return;
         }
       } catch (uploadErr) {
-        const msg = uploadErr instanceof Error ? uploadErr.message : String(uploadErr);
-        const friendly = /failed to fetch|network|timeout/i.test(msg)
-          ? "네트워크 연결을 확인하고, 이미지를 4MB 이하로 줄인 뒤 다시 시도해 주세요."
-          : msg;
-        setError(`이미지 업로드 실패: ${friendly}`);
+        setError(`이미지 업로드 실패: ${getUploadErrorMessage(uploadErr)}`);
         return;
       }
       const rawMap = form.mapUrl.trim();
@@ -568,33 +529,11 @@ export default function NewListingForm({ amenities, categories: initialCategorie
           </div>
         </section>
 
-        {/* 섹션 4: 편의시설 */}
-        {amenities.length > 0 && (
-          <section className="rounded-2xl border border-airbnb-light-gray bg-white p-6 md:p-8">
-            <h2 className="text-lg font-semibold text-airbnb-black mb-4">
-              4. 편의시설
-            </h2>
-            <p className="text-airbnb-caption text-airbnb-gray mb-4">
-              해당하는 항목을 선택해 주세요.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {amenities.map((a) => (
-                <button
-                  key={a.id}
-                  type="button"
-                  onClick={() => toggleAmenity(a.id)}
-                  className={`px-4 py-2 rounded-airbnb border text-airbnb-body transition-colors ${
-                    form.amenityIds.includes(a.id)
-                      ? "bg-airbnb-black text-white border-airbnb-black"
-                      : "border-airbnb-light-gray text-airbnb-black hover:bg-airbnb-bg"
-                  }`}
-                >
-                  {a.name}
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
+        <AmenitySelector
+          amenities={amenities}
+          selectedIds={form.amenityIds}
+          onToggle={toggleAmenity}
+        />
 
         {error && (
           <p className="text-airbnb-body text-airbnb-red" role="alert">
