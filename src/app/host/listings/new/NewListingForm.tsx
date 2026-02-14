@@ -95,21 +95,35 @@ export default function NewListingForm({ amenities, categories: initialCategorie
     }
     setLoading(true);
     try {
-      // 서버 경유 업로드 (파일명을 서버에서 생성하여 blob 충돌 방지)
-      let imageUrls: string[];
+      // 한 장씩 업로드 (Vercel 4.5MB 요청 제한 회피)
+      let imageUrls: string[] = [];
       try {
-        const formData = new FormData();
-        imageFiles.forEach((f) => formData.append("files", f));
-        const uploadRes = await fetch("/api/upload/listing", {
-          method: "POST",
-          body: formData,
-        });
-        const uploadData = await uploadRes.json();
-        if (!uploadRes.ok) {
-          setError(uploadData.error || "이미지 업로드에 실패했습니다.");
-          return;
+        for (const file of imageFiles) {
+          const formData = new FormData();
+          formData.append("files", file);
+          const uploadRes = await fetch("/api/upload/listing", {
+            method: "POST",
+            body: formData,
+          });
+          const text = await uploadRes.text();
+          let uploadData: { urls?: string[]; error?: string };
+          try {
+            uploadData = text ? JSON.parse(text) : {};
+          } catch {
+            setError(
+              uploadRes.status === 413
+                ? "이미지가 너무 큽니다. 4MB 이하로 압축해 주세요."
+                : `이미지 업로드 실패: 서버 오류 (${text.slice(0, 80)}...)`
+            );
+            return;
+          }
+          if (!uploadRes.ok) {
+            setError(uploadData.error || "이미지 업로드에 실패했습니다.");
+            return;
+          }
+          const urls = uploadData.urls ?? [];
+          if (urls.length > 0) imageUrls.push(urls[0]);
         }
-        imageUrls = uploadData.urls ?? [];
         if (imageUrls.length === 0) {
           setError("이미지 업로드에 실패했습니다.");
           return;
@@ -170,7 +184,7 @@ export default function NewListingForm({ amenities, categories: initialCategorie
   function addImageFiles(files: FileList | null) {
     if (!files?.length) return;
     const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    const toAdd = Array.from(files).filter((f) => allowed.includes(f.type) && f.size <= 5 * 1024 * 1024);
+    const toAdd = Array.from(files).filter((f) => allowed.includes(f.type) && f.size <= 4 * 1024 * 1024);
     setImageFiles((prev) => {
       const next = [...prev, ...toAdd].slice(0, 100);
       return next;
@@ -337,7 +351,7 @@ export default function NewListingForm({ amenities, categories: initialCategorie
             2. 이미지
           </h2>
           <p className="text-airbnb-caption text-airbnb-gray mb-4">
-            첫 번째 이미지가 대표 이미지로 사용됩니다. JPEG/PNG/WebP/GIF, 최대 5MB, 최대 100장.
+            첫 번째 이미지가 대표 이미지로 사용됩니다. JPEG/PNG/WebP/GIF, 최대 4MB, 최대 100장.
           </p>
           <div className="space-y-3">
             <div className="flex flex-wrap gap-3">

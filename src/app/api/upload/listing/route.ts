@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { put } from "@vercel/blob";
 
-const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_SIZE = 4 * 1024 * 1024; // 4MB (Vercel 요청 본문 4.5MB 제한 회피)
 const MAX_FILES = 100;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
   );
   if (valid.length === 0) {
     return NextResponse.json(
-      { error: "이미지 파일을 1개 이상 첨부해 주세요. (JPEG/PNG/WebP/GIF, 최대 5MB)" },
+      { error: "이미지 파일을 1개 이상 첨부해 주세요. (JPEG/PNG/WebP/GIF, 최대 4MB)" },
       { status: 400 }
     );
   }

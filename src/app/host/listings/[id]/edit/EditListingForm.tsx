@@ -152,7 +152,7 @@ export default function EditListingForm({
   function addNewImageFiles(files: FileList | null) {
     if (!files?.length) return;
     const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    const toAdd = Array.from(files).filter((f) => allowed.includes(f.type) && f.size <= 5 * 1024 * 1024);
+    const toAdd = Array.from(files).filter((f) => allowed.includes(f.type) && f.size <= 4 * 1024 * 1024);
     const maxToAdd = Math.max(0, 100 - existingImageUrls.length);
     setNewImageFiles((prev) => [...prev, ...toAdd].slice(0, maxToAdd));
   }
@@ -213,18 +213,33 @@ export default function EditListingForm({
       let finalUrls = [...existingImageUrls];
       if (newImageFiles.length > 0) {
         try {
-          const formData = new FormData();
-          newImageFiles.forEach((f) => formData.append("files", f));
-          const uploadRes = await fetch("/api/upload/listing", {
-            method: "POST",
-            body: formData,
-          });
-          const uploadData = await uploadRes.json();
-          if (!uploadRes.ok) {
-            setError(uploadData.error || "이미지 업로드에 실패했습니다.");
-            return;
+          const newUrls: string[] = [];
+          for (const file of newImageFiles) {
+            const formData = new FormData();
+            formData.append("files", file);
+            const uploadRes = await fetch("/api/upload/listing", {
+              method: "POST",
+              body: formData,
+            });
+            const text = await uploadRes.text();
+            let uploadData: { urls?: string[]; error?: string };
+            try {
+              uploadData = text ? JSON.parse(text) : {};
+            } catch {
+              setError(
+                uploadRes.status === 413
+                  ? "이미지가 너무 큽니다. 4MB 이하로 압축해 주세요."
+                  : `이미지 업로드 실패: 서버 오류 (${text.slice(0, 80)}...)`
+              );
+              return;
+            }
+            if (!uploadRes.ok) {
+              setError(uploadData.error || "이미지 업로드에 실패했습니다.");
+              return;
+            }
+            const urls = uploadData.urls ?? [];
+            if (urls.length > 0) newUrls.push(urls[0]);
           }
-          const newUrls = uploadData.urls ?? [];
           finalUrls = [...existingImageUrls, ...newUrls];
         } catch (uploadErr) {
           const msg = uploadErr instanceof Error ? uploadErr.message : String(uploadErr);
@@ -410,7 +425,7 @@ export default function EditListingForm({
               <span className="text-airbnb-body font-medium text-airbnb-black block mb-1">
                 이미지 * (첫 장이 대표, 최대 100장)
               </span>
-              <p className="text-airbnb-caption text-airbnb-gray mb-2">기존 이미지를 유지하거나 새로 업로드할 수 있습니다. JPEG/PNG/WebP/GIF, 최대 5MB.</p>
+              <p className="text-airbnb-caption text-airbnb-gray mb-2">기존 이미지를 유지하거나 새로 업로드할 수 있습니다. JPEG/PNG/WebP/GIF, 최대 4MB.</p>
               <div className="flex flex-wrap gap-3 mb-3">
                 {allThumbnails.map((thumb, globalIndex) => {
                   const isExisting = thumb.kind === "existing";
