@@ -96,18 +96,18 @@ export default function NewListingForm({ amenities, categories: initialCategorie
     }
     setLoading(true);
     try {
-      // 병렬 업로드 (Vercel 4.5MB 제한 회피 위해 한 장씩 요청, 동시에 여러 개 전송)
+      // 순차 업로드 (Failed to fetch/타임아웃 방지)
       let imageUrls: string[] = [];
       try {
-        const results = await Promise.all(
-          imageFiles.map(async (file) => {
-            const formData = new FormData();
-            formData.append("files", file);
-            const uploadRes = await fetch("/api/upload/listing", {
-              method: "POST",
-              body: formData,
-            });
-            const text = await uploadRes.text();
+        for (const file of imageFiles) {
+          const formData = new FormData();
+          formData.append("files", file);
+          const uploadRes = await fetch("/api/upload/listing", {
+            method: "POST",
+            body: formData,
+            signal: AbortSignal.timeout(25000),
+          });
+          const text = await uploadRes.text();
             let uploadData: { urls?: string[]; error?: string };
             try {
               uploadData = text ? JSON.parse(text) : {};
@@ -123,17 +123,19 @@ export default function NewListingForm({ amenities, categories: initialCategorie
             if (!uploadRes.ok) {
               throw new Error(uploadData.error || "이미지 업로드에 실패했습니다.");
             }
-            return uploadData.urls?.[0] ?? null;
-          })
-        );
-        imageUrls = results.filter((u): u is string => !!u);
+            const url = uploadData.urls?.[0];
+            if (url) imageUrls.push(url);
+          }
         if (imageUrls.length === 0) {
           setError("이미지 업로드에 실패했습니다.");
           return;
         }
       } catch (uploadErr) {
         const msg = uploadErr instanceof Error ? uploadErr.message : String(uploadErr);
-        setError(`이미지 업로드 실패: ${msg}`);
+        const friendly = /failed to fetch|network|timeout/i.test(msg)
+          ? "네트워크 연결을 확인하고, 이미지를 4MB 이하로 줄인 뒤 다시 시도해 주세요."
+          : msg;
+        setError(`이미지 업로드 실패: ${friendly}`);
         return;
       }
       const rawMap = form.mapUrl.trim();
