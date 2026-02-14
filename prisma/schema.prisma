@@ -44,8 +44,9 @@ model Account {
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String?
-  session_state     String?
+  id_token                  String?
+  session_state             String?
+  refresh_token_expires_in  Int?    // 카카오 OAuth용
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -120,6 +121,7 @@ model Listing {
   bedrooms    Int      @default(1)
   beds        Int      @default(1)
   baths       Int      @default(1)
+  isPromoted  Boolean  @default(false) // 직영숙소(프로모션대상) 여부
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

@@ -59,7 +59,7 @@ export default function UserMenu() {
               alt={user.name ?? "프로필"}
               width={32}
               height={32}
-              className="object-cover"
+              className="w-full h-full object-cover"
             />
           ) : (
             <User className="w-5 h-5 text-white" />

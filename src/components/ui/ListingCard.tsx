@@ -15,6 +15,8 @@ export interface ListingCardProps {
   reviewCount?: number;
   /** 도쿄민박 스타일: 편의시설 태그 (WiFi, 주방 등) */
   amenities?: string[];
+  /** 직영숙소(프로모션대상) 여부 */
+  isPromoted?: boolean;
   className?: string;
   initialSaved?: boolean;
 }
@@ -29,6 +31,7 @@ export default function ListingCard({
   rating,
   reviewCount,
   amenities = [],
+  isPromoted = false,
   className,
   initialSaved = false,
 }: ListingCardProps) {
@@ -49,6 +52,13 @@ export default function ListingCard({
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1240px) 33vw, 25vw"
           className="object-cover transition-transform duration-300 group-hover:scale-105"
         />
+        {isPromoted && (
+          <div className="absolute top-3 left-3 z-10">
+            <span className="inline-block px-3 py-1 rounded-full text-xs font-bold text-white bg-gradient-to-r from-rose-500 to-orange-400 shadow-sm">
+              프로모션대상
+            </span>
+          </div>
+        )}
         <div className="absolute top-3 right-3 z-10">
           <WishlistHeart listingId={id} initialSaved={initialSaved} />
         </div>

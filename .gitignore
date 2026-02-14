@@ -29,6 +29,8 @@ yarn-error.log*
 .env*.local
 .env
 .env.vercel
+.env.check
+.env.vercel-check
 
 # uploads (로컬 업로드 파일, 배포 시 외부 저장소 사용 권장)
 /public/uploads
@@ -41,3 +43,4 @@ yarn-error.log*
 next-env.d.ts
 
 /prisma/dev.db
+.env*.local

@@ -12,6 +12,9 @@ export default function VerifyRequestPage() {
         <p className="text-airbnb-body text-airbnb-gray text-center mb-6">
           입력하신 이메일 주소로 로그인 링크를 보냈습니다. 링크를 클릭하여 로그인하세요.
         </p>
+        <p className="text-airbnb-caption text-airbnb-gray text-center mb-6">
+          ※ 메일이 안보인다면 &apos;스팸함&apos;을 확인해 주세요.
+        </p>
         {isDev && (
           <div
             className="mb-6 p-3 rounded-airbnb bg-amber-50 border border-amber-200 text-airbnb-body text-amber-800"

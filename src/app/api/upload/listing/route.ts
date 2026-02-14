@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { put } from "@vercel/blob";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_FILES = 100;
@@ -15,8 +14,9 @@ function getExt(name: string): string {
 
 /**
  * POST /api/upload/listing
- * 로그인 사용자가 숙소 이미지를 업로드. public/uploads/listings 에 저장 후 URL 목록 반환.
- * 배포 시 Vercel 등은 파일시스템이 휘발성이므로 S3/Cloudinary 등 외부 저장소 사용을 권장.
+ * 로그인 사용자가 숙소 이미지를 업로드.
+ * Vercel Blob 스토리지에 저장 후 URL 목록 반환.
+ * BLOB_READ_WRITE_TOKEN이 없으면 로컬 파일시스템(개발용) 사용.
  */
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -61,18 +61,45 @@ export async function POST(request: Request) {
     );
   }
 
-  const dir = path.join(process.cwd(), "public", "uploads", "listings");
-  await mkdir(dir, { recursive: true });
+  const useBlobStorage = !!process.env.BLOB_READ_WRITE_TOKEN;
 
-  const urls: string[] = [];
-  for (const file of valid) {
-    const ext = getExt(file.name);
-    const filename = `${crypto.randomUUID()}${ext}`;
-    const filepath = path.join(dir, filename);
-    const buf = Buffer.from(await file.arrayBuffer());
-    await writeFile(filepath, buf);
-    urls.push(`/uploads/listings/${filename}`);
+  try {
+    if (useBlobStorage) {
+      // --- Vercel Blob 스토리지 (프로덕션) ---
+      const urls: string[] = [];
+      for (const file of valid) {
+        const ext = getExt(file.name);
+        const filename = `listings/${crypto.randomUUID()}${ext}`;
+        const blob = await put(filename, file, {
+          access: "public",
+          addRandomSuffix: false,
+        });
+        urls.push(blob.url);
+      }
+      return NextResponse.json({ urls });
+    } else {
+      // --- 로컬 파일시스템 (개발용) ---
+      const { writeFile, mkdir } = await import("fs/promises");
+      const path = await import("path");
+      const dir = path.join(process.cwd(), "public", "uploads", "listings");
+      await mkdir(dir, { recursive: true });
+
+      const urls: string[] = [];
+      for (const file of valid) {
+        const ext = getExt(file.name);
+        const filename = `${crypto.randomUUID()}${ext}`;
+        const filepath = path.join(dir, filename);
+        const buf = Buffer.from(await file.arrayBuffer());
+        await writeFile(filepath, buf);
+        urls.push(`/uploads/listings/${filename}`);
+      }
+      return NextResponse.json({ urls });
+    }
+  } catch (err) {
+    console.error("Image upload error:", err);
+    return NextResponse.json(
+      { error: "이미지 업로드 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요." },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json({ urls });
 }

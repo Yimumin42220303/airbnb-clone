@@ -43,6 +43,7 @@ type Props = {
     bedrooms: number;
     beds: number;
     baths: number;
+    isPromoted: boolean;
     categoryId: string;
     icalImportUrls: string[];
     amenityIds: string[];
@@ -90,6 +91,7 @@ export default function EditListingForm({
     bedrooms: String(initial.bedrooms),
     beds: String(initial.beds),
     baths: String(initial.baths),
+    isPromoted: initial.isPromoted,
     categoryId: initial.categoryId,
     icalImportUrls: initial.icalImportUrls.join("\n"),
     amenityIds: initial.amenityIds ?? [],
@@ -248,6 +250,7 @@ export default function EditListingForm({
         bedrooms: parseInt(form.bedrooms, 10) || 1,
         beds: parseInt(form.beds, 10) || 1,
         baths: parseInt(form.baths, 10) || 1,
+        isPromoted: form.isPromoted,
         categoryId: form.categoryId.trim() || undefined,
         icalImportUrls: form.icalImportUrls
           .split("\n")
@@ -779,6 +782,21 @@ export default function EditListingForm({
                   onChange={(e) => setForm((f) => ({ ...f, baths: e.target.value }))}
                   className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
                 />
+              </label>
+            </div>
+            {/* 프로모션대상 토글 (관리자용) */}
+            <div className="border border-airbnb-light-gray rounded-airbnb p-4 bg-airbnb-bg/50">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.isPromoted}
+                  onChange={(e) => setForm((f) => ({ ...f, isPromoted: e.target.checked }))}
+                  className="w-5 h-5 rounded accent-rose-500"
+                />
+                <div>
+                  <span className="text-airbnb-body font-medium text-airbnb-black">프로모션대상 (직영숙소)</span>
+                  <p className="text-airbnb-caption text-airbnb-gray">체크하면 숙소 카드에 &apos;프로모션대상&apos; 배지가 표시됩니다.</p>
+                </div>
               </label>
             </div>
             <div className="border border-airbnb-light-gray rounded-airbnb p-4 space-y-3 bg-airbnb-bg/50">
