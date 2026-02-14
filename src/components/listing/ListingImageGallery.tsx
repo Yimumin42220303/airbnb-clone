@@ -255,21 +255,26 @@ function AllPhotosOverlay({
         </div>
         <div className="w-8 h-8" aria-hidden />
       </header>
-      <div className="flex-1 overflow-y-auto px-4 md:px-10 py-4 md:py-8">
-        <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
+      <div className="flex-1 overflow-y-auto px-4 md:px-6 lg:px-10 py-4 md:py-6 lg:py-8">
+        <div className="w-full max-w-7xl mx-auto">
+          <div
+            className="grid gap-4 md:gap-5 lg:gap-6"
+            style={{
+              gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 380px), 1fr))",
+            }}
+          >
             {images.map((img, index) => (
               <div
                 key={img.id ?? `${img.url}-${index}`}
-                className="relative w-full overflow-hidden rounded-lg bg-minbak-light-gray"
+                className="relative w-full overflow-hidden rounded-xl bg-minbak-light-gray"
               >
-                <div className="relative pb-[75%]">
+                <div className="relative aspect-[4/3]">
                   <Image
                     src={img.url}
                     alt={`${title} 추가 사진 ${index + 1}`}
                     fill
                     className="object-cover"
-                    sizes="(max-width: 768px) 100vw, 33vw"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, min(380px, 50vw)"
                   />
                 </div>
               </div>
