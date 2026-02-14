@@ -1,6 +1,8 @@
 # Vercel Blob 스토리지 설정 (이미지 업로드용)
 
-숙소 등록 시 이미지 업로드가 동작하려면 Vercel Blob 스토리지가 필요합니다.
+숙소 등록 시 이미지 업로드가 동작하려면 Vercel Blob 또는 **Cloudinary**(권장)가 필요합니다.
+
+> **Forbidden 에러가 계속되면** → [Cloudinary 설정](Cloudinary-설정.md)으로 전환하세요. 무료이며 설정이 간단합니다.
 
 ## 설정 방법
 
