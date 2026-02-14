@@ -30,6 +30,8 @@ export async function POST(request: Request) {
             "image/gif",
           ],
           maximumSizeInBytes: 10 * 1024 * 1024, // 10MB
+          addRandomSuffix: true,
+          allowOverwrite: true,
           tokenPayload: JSON.stringify({
             userId: (session as { userId?: string })?.userId || session.user.email,
           }),
