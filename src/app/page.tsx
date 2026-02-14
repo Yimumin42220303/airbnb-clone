@@ -12,6 +12,8 @@ const FaqSection = dynamic(
   { ssr: false, loading: () => <div className="min-h-[200px] bg-minbak-bg animate-pulse" /> }
 );
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "도쿄 숙소, 가격도 소통도 걱정 없이",
   description:

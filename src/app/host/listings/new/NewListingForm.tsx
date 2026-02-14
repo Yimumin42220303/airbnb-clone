@@ -116,7 +116,7 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                 uploadRes.status === 413
                   ? "이미지가 너무 큽니다. 4MB 이하로 압축해 주세요."
                   : /forbidden|403|access denied/i.test(text)
-                    ? "이미지 저장소 접근이 거부되었습니다. Vercel 대시보드 → Storage → Blob → Reset Credentials 후 Redeploy 해 주세요."
+                    ? "이미지 저장소 접근이 거부되었습니다. Cloudinary 설정(docs/Cloudinary-설정.md) 또는 Vercel Blob 연결을 확인한 뒤 Redeploy 해 주세요."
                     : `서버 오류 (${text.slice(0, 80)}...)`;
               throw new Error(friendlyMsg);
             }

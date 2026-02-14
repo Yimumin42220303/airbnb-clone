@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
 import { Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
 import SessionProvider from "@/components/auth/SessionProvider";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import HostLocaleProvider from "@/components/host/HostLocaleProvider";
-import { getHostLocaleFromCookie } from "@/lib/host-i18n";
 
 const notoSansKr = Noto_Sans_KR({
   subsets: ["latin"],
@@ -43,19 +41,17 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = await cookies();
-  const initialLocale = getHostLocaleFromCookie(cookieStore.toString());
   return (
     <html lang="ko" className={`h-full ${notoSansKr.variable}`}>
       <body className="min-h-full antialiased font-sans">
         <ErrorBoundary>
           <SessionProvider>
-            <HostLocaleProvider initialLocale={initialLocale}>
+            <HostLocaleProvider>
               {children}
             </HostLocaleProvider>
           </SessionProvider>

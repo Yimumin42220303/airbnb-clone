@@ -14,6 +14,25 @@ Vercel Blob에서 Forbidden 에러가 계속될 때 Cloudinary를 사용할 수 
 
 ## 3. Vercel 환경 변수 추가
 
+### 방법 A: 스크립트 사용 (권장)
+
+1. `.env.vercel.import` 파일에서 `CLOUDINARY_API_SECRET=` 뒤에 API Secret 붙여넣기  
+   (Cloudinary 대시보드 → API Keys → Root 옆 **Reveal** 클릭 후 복사)
+2. PowerShell에서 실행: `.\scripts\cloudinary-env-setup.ps1`
+3. Vercel 토큰 입력 (없으면 [vercel.com/account/tokens](https://vercel.com/account/tokens)에서 생성)
+
+### Invalid Signature 에러가 나면
+
+Cloudinary 대시보드 → **API Keys**에서 **CLOUDINARY_URL** 형식을 복사해 사용하세요.
+
+형식: `cloudinary://API_KEY:API_SECRET@CLOUD_NAME`
+
+예: `cloudinary://987656547758197:SZ_0RVHSL7Xm51qGNx6cb3RFQeM@doqmedazc`
+
+이 값을 `CLOUDINARY_URL` 환경 변수로 Vercel에 추가하면 됩니다.
+
+### 방법 B: 수동 추가
+
 Vercel 대시보드 → 프로젝트 → **Settings** → **Environment Variables**에서 추가:
 
 | 이름 | 값 | 환경 |
@@ -24,7 +43,10 @@ Vercel 대시보드 → 프로젝트 → **Settings** → **Environment Variable
 
 ## 4. Redeploy
 
-환경 변수 추가 후 **Deployments** → 최신 배포 → **Redeploy** 실행
+환경 변수 추가 후 새 배포가 필요합니다.
+
+- **자동**: `node scripts/vercel-env-api.js --redeploy` 실행 시 환경변수 반영 후 자동 Redeploy
+- **수동**: Vercel 대시보드 → **Deployments** → 최신 배포 → **Redeploy**
 
 ## 참고
 
