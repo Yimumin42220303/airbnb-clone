@@ -115,7 +115,7 @@ export default function Header() {
           <nav className="flex items-center gap-2 sm:gap-4 md:gap-5 flex-shrink-0">
             {isHostMode && (
               <>
-                {pathname?.startsWith("/host") && <HostLocaleSwitcher />}
+                <HostLocaleSwitcher />
                 <Link
                   href="/"
                   className="min-h-[44px] flex items-center text-xs sm:text-airbnb-caption md:text-airbnb-body text-minbak-black hover:text-minbak-primary transition-colors px-1"
@@ -126,6 +126,7 @@ export default function Header() {
             )}
             {!isHostMode && (
               <>
+            <HostLocaleSwitcher />
             <a
               href={INSTAGRAM_LINK}
               target="_blank"
