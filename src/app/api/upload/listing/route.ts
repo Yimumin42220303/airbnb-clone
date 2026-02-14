@@ -62,6 +62,7 @@ export async function POST(request: Request) {
   }
 
   const useBlobStorage = !!process.env.BLOB_READ_WRITE_TOKEN;
+  console.log("[upload] useBlobStorage:", useBlobStorage, "files:", valid.length);
 
   try {
     if (useBlobStorage) {
@@ -96,9 +97,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ urls });
     }
   } catch (err) {
-    console.error("Image upload error:", err);
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error("Image upload error:", errMsg, err);
     return NextResponse.json(
-      { error: "이미지 업로드 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요." },
+      { error: `이미지 업로드 중 오류: ${errMsg}` },
       { status: 500 }
     );
   }

@@ -101,7 +101,13 @@ export default function NewListingForm({ amenities, categories: initialCategorie
         method: "POST",
         body: fd,
       });
-      const uploadData = await uploadRes.json();
+      let uploadData;
+      try {
+        uploadData = await uploadRes.json();
+      } catch {
+        setError(`이미지 업로드 서버 오류 (HTTP ${uploadRes.status})`);
+        return;
+      }
       if (!uploadRes.ok) {
         setError(uploadData.error || "이미지 업로드에 실패했습니다.");
         return;
@@ -133,15 +139,23 @@ export default function NewListingForm({ amenities, categories: initialCategorie
           amenityIds: form.amenityIds.length > 0 ? form.amenityIds : undefined,
         }),
       });
-      const data = await res.json();
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        setError(`숙소 등록 서버 오류 (HTTP ${res.status})`);
+        return;
+      }
       if (!res.ok) {
         setError(data.error || "등록에 실패했습니다.");
         return;
       }
       router.push("/admin/listings");
       router.refresh();
-    } catch {
-      setError("네트워크 오류가 발생했습니다.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("숙소 등록 에러:", msg, err);
+      setError(`네트워크 오류가 발생했습니다. (${msg})`);
     } finally {
       setLoading(false);
     }
