@@ -38,6 +38,7 @@ type ListingData = {
   hostName: string;
   hostImage: string | null;
   amenities: string[];
+  houseRules?: string;
   reviews: ReviewItem[];
 };
 
@@ -179,14 +180,28 @@ export default function ListingDetailContent({
                 )}
 
                 {/* 3. 주의사항 / 하우스룰 */}
-                <DetailSection title="주의사항">
-                  <ul className="list-disc pl-5 space-y-1 text-[15px] text-[#222] leading-relaxed">
-                    <li>엘리베이터가 없는 건물인 경우 짐 이동에 유의해 주세요.</li>
-                    <li>실내에서는 금연입니다. 흡연은 건물 밖 지정된 장소에서만 가능합니다.</li>
-                    <li>밤 10시 이후에는 이웃을 위해 소음을 줄여 주세요.</li>
-                    <li>반려동물 동반, 파티·이벤트 허용 여부는 예약 전 호스트에게 꼭 문의해 주세요.</li>
-                  </ul>
-                </DetailSection>
+                {(() => {
+                  const rules = (listing.houseRules ?? "")
+                    .split("\n")
+                    .map((r) => r.trim())
+                    .filter(Boolean);
+                  const defaultRules = [
+                    "엘리베이터가 없는 건물인 경우 짐 이동에 유의해 주세요.",
+                    "실내에서는 금연입니다. 흡연은 건물 밖 지정된 장소에서만 가능합니다.",
+                    "밤 10시 이후에는 이웃을 위해 소음을 줄여 주세요.",
+                    "반려동물 동반, 파티·이벤트 허용 여부는 예약 전 호스트에게 꼭 문의해 주세요.",
+                  ];
+                  const items = rules.length > 0 ? rules : defaultRules;
+                  return (
+                    <DetailSection title="주의사항">
+                      <ul className="list-disc pl-5 space-y-1 text-[15px] text-[#222] leading-relaxed">
+                        {items.map((rule, i) => (
+                          <li key={i}>{rule}</li>
+                        ))}
+                      </ul>
+                    </DetailSection>
+                  );
+                })()}
 
                 {/* 4. 위치 / 오시는 방법 */}
                 <DetailSection title="위치 / 오시는 방법">

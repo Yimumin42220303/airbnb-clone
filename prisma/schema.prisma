@@ -122,6 +122,8 @@ model Listing {
   beds        Int      @default(1)
   baths       Int      @default(1)
   isPromoted  Boolean  @default(false) // 직영숙소(프로모션대상) 여부
+  /// 주의사항 (줄바꿈으로 구분, 각 줄이 하나의 항목)
+  houseRules  String?  @default("")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

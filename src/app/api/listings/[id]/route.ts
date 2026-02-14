@@ -88,6 +88,7 @@ export async function PATCH(
         beds: body.beds,
         baths: body.baths,
         isPromoted: body.isPromoted,
+        houseRules: body.houseRules,
         categoryId: body.categoryId,
         amenityIds: body.amenityIds,
         icalImportUrls: body.icalImportUrls,

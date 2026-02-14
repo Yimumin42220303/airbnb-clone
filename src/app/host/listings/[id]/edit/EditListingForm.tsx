@@ -45,6 +45,7 @@ type Props = {
     beds: number;
     baths: number;
     isPromoted: boolean;
+    houseRules: string;
     categoryId: string;
     icalImportUrls: string[];
     amenityIds: string[];
@@ -93,6 +94,7 @@ export default function EditListingForm({
     beds: String(initial.beds),
     baths: String(initial.baths),
     isPromoted: initial.isPromoted,
+    houseRules: initial.houseRules ?? "",
     categoryId: initial.categoryId,
     icalImportUrls: initial.icalImportUrls.join("\n"),
     amenityIds: initial.amenityIds ?? [],
@@ -258,6 +260,7 @@ export default function EditListingForm({
         beds: parseInt(form.beds, 10) || 1,
         baths: parseInt(form.baths, 10) || 1,
         isPromoted: form.isPromoted,
+        houseRules: form.houseRules,
         categoryId: form.categoryId.trim() || undefined,
         icalImportUrls: form.icalImportUrls
           .split("\n")
@@ -805,6 +808,20 @@ export default function EditListingForm({
                   <p className="text-airbnb-caption text-airbnb-gray">체크하면 숙소 카드에 &apos;프로모션대상&apos; 배지가 표시됩니다.</p>
                 </div>
               </label>
+            </div>
+            {/* 주의사항 편집 */}
+            <div className="border border-airbnb-light-gray rounded-airbnb p-4 space-y-3 bg-airbnb-bg/50">
+              <h3 className="text-airbnb-body font-medium text-airbnb-black">주의사항</h3>
+              <p className="text-airbnb-caption text-airbnb-gray">
+                숙소 상세 페이지에 표시되는 주의사항입니다. 한 줄에 하나씩 입력하세요.
+              </p>
+              <textarea
+                rows={6}
+                value={form.houseRules}
+                onChange={(e) => setForm((f) => ({ ...f, houseRules: e.target.value }))}
+                placeholder={"엘리베이터가 없는 건물인 경우 짐 이동에 유의해 주세요.\n실내에서는 금연입니다.\n밤 10시 이후에는 소음을 줄여 주세요."}
+                className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb text-airbnb-body resize-y"
+              />
             </div>
             <div className="border border-airbnb-light-gray rounded-airbnb p-4 space-y-3 bg-airbnb-bg/50">
               <h3 className="text-airbnb-body font-medium text-airbnb-black">

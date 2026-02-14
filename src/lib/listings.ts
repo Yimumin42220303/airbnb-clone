@@ -127,6 +127,7 @@ export async function getListings(filters?: ListingFilters) {
       category: l.category ? { id: l.category.id, name: l.category.name } : undefined,
       amenities: l.listingAmenities.map((la) => la.amenity.name),
       isPromoted: l.isPromoted,
+      houseRules: l.houseRules ?? "",
     };
   });
 
@@ -200,6 +201,7 @@ export async function getListingById(id: string) {
     beds: listing.beds,
     baths: listing.baths,
     isPromoted: listing.isPromoted,
+    houseRules: listing.houseRules ?? "",
     category: listing.category ? { id: listing.category.id, name: listing.category.name } : null,
     mapUrl: listing.mapUrl ?? null,
     rating: rating !== null ? Math.round(rating * 100) / 100 : null,
@@ -254,6 +256,7 @@ export type CreateListingInput = {
   beds?: number;
   baths?: number;
   isPromoted?: boolean;
+  houseRules?: string;
   categoryId?: string | null;
   amenityIds?: string[];
 };
@@ -400,6 +403,7 @@ export async function updateListing(
   if (input.beds != null) data.beds = input.beds;
   if (input.baths != null) data.baths = input.baths;
   if (input.isPromoted != null) data.isPromoted = input.isPromoted;
+  if (input.houseRules !== undefined) data.houseRules = input.houseRules;
   if (input.mapUrl !== undefined) {
     const trimmed = input.mapUrl?.trim();
     data.mapUrl = trimmed && trimmed.length > 0 ? trimmed : null;
