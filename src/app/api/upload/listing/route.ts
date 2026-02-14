@@ -170,9 +170,9 @@ export async function POST(request: Request) {
       return String(err);
     })();
     console.error("Image upload error:", errMsg, err);
-    const isForbidden = /forbidden|403|access denied/i.test(errMsg);
+    const isForbidden = /forbidden|403|access denied|unauthorized|invalid.*signature|invalid.*cloud/i.test(errMsg);
     const error = isForbidden
-      ? "Vercel Blob 접근 거부. Cloudinary로 전환하세요. docs/Cloudinary-설정.md 참고."
+      ? `저장소 접근 거부: ${errMsg}. Cloudinary 대시보드에서 API Key/Secret 확인 후 docs/Cloudinary-설정.md 참고.`
       : `이미지 업로드 중 오류: ${errMsg}`;
     return NextResponse.json({ error }, { status: 500 });
   }
