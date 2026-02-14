@@ -112,9 +112,11 @@ export async function POST(request: Request) {
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
     console.error("Image upload error:", errMsg, err);
-    return NextResponse.json(
-      { error: `이미지 업로드 중 오류: ${errMsg}` },
-      { status: 500 }
-    );
+    // Forbidden: BLOB_READ_WRITE_TOKEN 만료/무효화 가능성
+    const isForbidden = /forbidden|403|access denied/i.test(errMsg);
+    const error = isForbidden
+      ? "이미지 저장소 접근이 거부되었습니다. Vercel 대시보드에서 Blob 스토리지를 다시 연결해 주세요. (Storage → Blob → 프로젝트 연결 확인)"
+      : `이미지 업로드 중 오류: ${errMsg}`;
+    return NextResponse.json({ error }, { status: 500 });
   }
 }

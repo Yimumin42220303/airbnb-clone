@@ -14,6 +14,14 @@
 - Vercel 프로젝트 → **Settings** → **Environment Variables**
 - `BLOB_READ_WRITE_TOKEN` 이 있는지 확인
 
+## Forbidden 에러가 발생할 때
+
+"이미지 업로드 실패: Forbidden" 또는 "Access denied" 에러가 나면:
+
+1. **토큰 재생성**: Vercel 대시보드 → Storage → Blob → 해당 스토리지 선택 → **Disconnect** 후 다시 **Connect to Project**
+2. **환경 변수 확인**: Settings → Environment Variables → `BLOB_READ_WRITE_TOKEN`이 Production/Preview 모두에 설정되어 있는지 확인
+3. **재배포**: 토큰 변경 후 **Redeploy**로 새 배포 실행
+
 ## 참고
 
 - Blob은 Vercel의 파일 스토리지 서비스입니다.
