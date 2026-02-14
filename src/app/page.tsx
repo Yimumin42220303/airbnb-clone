@@ -1,4 +1,4 @@
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -7,7 +7,7 @@ import { ListingCard } from "@/components/ui";
 import { getListings } from "@/lib/listings";
 import { getWishlistListingIds } from "@/lib/wishlist";
 
-const FaqSection = dynamic(
+const FaqSection = nextDynamic(
   () => import("@/components/home/FaqSection"),
   { ssr: false, loading: () => <div className="min-h-[200px] bg-minbak-bg animate-pulse" /> }
 );
