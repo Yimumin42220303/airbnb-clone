@@ -27,9 +27,9 @@ type Listing = {
   _count: { reviews: number };
 };
 
-type Props = { listings: Listing[]; userId: string | null };
+type Props = { listings: Listing[]; userId: string | null; isAdmin?: boolean };
 
-export default function HostListingsContent({ listings, userId }: Props) {
+export default function HostListingsContent({ listings, userId, isAdmin }: Props) {
   const t = useHostTranslations().t;
 
   return (
@@ -42,6 +42,14 @@ export default function HostListingsContent({ listings, userId }: Props) {
               {t("listings.title")}
             </h1>
             <div className="flex items-center gap-2">
+              {isAdmin && (
+                <Link
+                  href="/admin/listings/import"
+                  className="min-h-[44px] flex items-center gap-2 px-4 py-2.5 rounded-airbnb bg-minbak-primary text-white text-sm sm:text-airbnb-body font-medium hover:bg-minbak-primary-hover transition-colors"
+                >
+                  일괄 등록
+                </Link>
+              )}
               <button
                 type="button"
                 className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-airbnb border border-minbak-light-gray text-minbak-black hover:bg-minbak-bg transition-colors"

@@ -20,6 +20,7 @@ const nextConfig = {
       { protocol: "https", hostname: "k.kakaocdn.net", pathname: "/**" },
       { protocol: "https", hostname: "phinf.pstatic.net", pathname: "/**" },
       { protocol: "https", hostname: "*.public.blob.vercel-storage.com", pathname: "/**" },
+      { protocol: "https", hostname: "placehold.co", pathname: "/**" },
     ],
   },
 };

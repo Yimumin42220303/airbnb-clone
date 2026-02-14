@@ -2,10 +2,10 @@ import type { DefaultSession } from "next-auth";
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import KakaoProvider from "next-auth/providers/kakao";
-import EmailProvider from "next-auth/providers/email";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { Resend } from "resend";
 import { prisma } from "./prisma";
+import { verifyPassword } from "./password";
 
 declare module "next-auth" {
   interface Session {
@@ -25,8 +25,7 @@ const hasGoogle =
   process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET;
 const hasKakao =
   process.env.KAKAO_CLIENT_ID && process.env.KAKAO_CLIENT_SECRET;
-const hasResend = !!process.env.RESEND_API_KEY;
-const hasEmail = true; // 이메일 로그인 활성화
+const hasCredentials = true; // 이메일/비밀번호 로그인
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -73,52 +72,30 @@ export const authOptions: NextAuthOptions = {
           }),
         ]
       : []),
-    ...(hasEmail
+    ...(hasCredentials
       ? [
-          EmailProvider({
-            server: process.env.EMAIL_SERVER || "smtp://dummy", // Resend 사용 시 무시됨
-            from: process.env.EMAIL_FROM ?? "도쿄민박 <noreply@tokyominbak.net>",
-            sendVerificationRequest: async ({ identifier, url }) => {
-              // 개발 모드 + Resend 미설정 시 콘솔 출력
-              if (process.env.NODE_ENV === "development" && !hasResend) {
-                console.log("\n[개발 모드] 이메일 로그인 링크:");
-                console.log(`  이메일: ${identifier}`);
-                console.log(`  링크: ${url}\n`);
-                return;
-              }
-
-              if (!hasResend) {
-                throw new Error("RESEND_API_KEY가 설정되지 않았습니다.");
-              }
-
-              const resend = new Resend(process.env.RESEND_API_KEY);
-              // 도메인 인증 전: onboarding@resend.dev 사용
-              // 도메인 인증 후: EMAIL_FROM 환경변수로 커스텀 발신자 사용
-              const fromEmail = process.env.EMAIL_FROM ?? "도쿄민박 <onboarding@resend.dev>";
-
-              await resend.emails.send({
-                from: fromEmail,
-                to: identifier,
-                subject: "도쿄민박 로그인 링크",
-                html: `
-                  <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
-                    <h1 style="font-size: 24px; font-weight: 700; color: #222; margin-bottom: 24px;">도쿄민박 로그인</h1>
-                    <p style="font-size: 16px; color: #484848; line-height: 1.6; margin-bottom: 32px;">
-                      아래 버튼을 클릭하면 도쿄민박에 로그인됩니다.<br/>
-                      이 링크는 10분간 유효합니다.
-                    </p>
-                    <a href="${url}" 
-                       style="display: inline-block; background-color: #FF385C; color: white; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 8px;">
-                      로그인하기
-                    </a>
-                    <p style="font-size: 13px; color: #999; margin-top: 32px; line-height: 1.5;">
-                      본인이 요청하지 않았다면 이 이메일을 무시하세요.<br/>
-                      링크를 클릭할 수 없는 경우 아래 URL을 브라우저에 붙여넣으세요:<br/>
-                      <span style="color: #666; word-break: break-all;">${url}</span>
-                    </p>
-                  </div>
-                `,
+          CredentialsProvider({
+            name: "이메일 로그인",
+            credentials: {
+              email: { label: "이메일", type: "email" },
+              password: { label: "비밀번호", type: "password" },
+            },
+            async authorize(credentials) {
+              if (!credentials?.email || !credentials?.password) return null;
+              const email = credentials.email.trim().toLowerCase();
+              const user = await prisma.user.findUnique({
+                where: { email },
+                select: { id: true, email: true, name: true, image: true, password: true, emailVerified: true },
               });
+              if (!user?.password || !user.emailVerified) return null;
+              const ok = await verifyPassword(credentials.password, user.password);
+              if (!ok) return null;
+              return {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                image: user.image,
+              };
             },
           }),
         ]
@@ -126,7 +103,14 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user: authUser }) {
-      if (authUser?.email) {
+      if (authUser?.id) {
+        token.userId = authUser.id;
+        const u = await prisma.user.findUnique({
+          where: { id: authUser.id },
+          select: { role: true },
+        });
+        if (u) token.role = u.role;
+      } else if (authUser?.email) {
         try {
           const dbUser = await prisma.user.upsert({
             where: { email: authUser.email },

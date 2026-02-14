@@ -15,7 +15,8 @@ datasource db {
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
-  emailVerified DateTime? // NextAuth 이메일 로그인용
+  password      String?   // 이메일 회원가입 시 해시된 비밀번호 (OAuth 사용자는 null)
+  emailVerified DateTime? // 이메일 인증 완료 시각 (인증 전 null)
   name          String?
   image         String?
   phone         String?   // 전화번호 (선택)

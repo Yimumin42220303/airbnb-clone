@@ -313,6 +313,8 @@ export async function createListing(
       bedrooms: input.bedrooms ?? 1,
       beds: input.beds ?? 1,
       baths: input.baths ?? 1,
+      isPromoted: input.isPromoted ?? false,
+      houseRules: input.houseRules?.trim() || null,
       categoryId: input.categoryId?.trim() || null,
     },
   });

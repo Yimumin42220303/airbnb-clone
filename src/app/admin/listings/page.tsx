@@ -20,12 +20,20 @@ export default async function AdminListingsPage() {
         >
           ← 대시보드
         </Link>
-        <Link
-          href="/host/listings/new"
-          className="inline-flex items-center justify-center px-4 py-2 rounded-airbnb bg-minbak-black text-white text-airbnb-body font-medium hover:bg-minbak-black/90 transition-colors"
-        >
-          숙소 등록
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/host/listings/new"
+            className="inline-flex items-center justify-center px-4 py-2 rounded-airbnb bg-minbak-black text-white text-airbnb-body font-medium hover:bg-minbak-black/90 transition-colors"
+          >
+            숙소 등록
+          </Link>
+          <Link
+            href="/admin/listings/import"
+            className="inline-flex items-center justify-center px-4 py-2 rounded-airbnb bg-minbak-primary text-white text-airbnb-body font-medium hover:bg-minbak-primary-hover transition-colors"
+          >
+            일괄 등록
+          </Link>
+        </div>
       </div>
       <h1 className="text-airbnb-h2 font-semibold text-airbnb-black mb-6">
         숙소 목록

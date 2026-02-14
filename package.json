@@ -14,7 +14,11 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "node prisma/seed.js",
     "db:studio": "prisma studio",
-    "db:add-amenities": "node scripts/add-airbnb-amenities.js"
+    "db:add-amenities": "node scripts/add-airbnb-amenities.js",
+    "import:minbak-tokyo": "node scripts/import-from-minbak-tokyo.js",
+    "seed:minbak-tokyo": "node scripts/seed-minbak-tokyo.js",
+    "deploy:watch": "node scripts/watch-and-deploy.js",
+    "test:email-auth": "node scripts/test-email-auth.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

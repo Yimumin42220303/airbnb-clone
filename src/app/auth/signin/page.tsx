@@ -11,6 +11,7 @@ export default async function SignInPage({
     "/";
   const errorCode =
     typeof params.error === "string" ? params.error : params.error?.[0] ?? null;
+  const verified = params.verified === "1" || params.verified?.[0] === "1";
 
   const googleEnabled = !!(
     process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
@@ -27,6 +28,7 @@ export default async function SignInPage({
       googleEnabled={googleEnabled}
       kakaoEnabled={kakaoEnabled}
       emailEnabled={emailEnabled}
+      verified={verified}
     />
   );
 }

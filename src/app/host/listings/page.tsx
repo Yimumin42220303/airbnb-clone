@@ -6,6 +6,8 @@ import HostListingsContent from "@/components/host/HostListingsContent";
 export default async function HostListingsPage() {
   const session = await getServerSession(authOptions);
   const userId = (session as { userId?: string } | null)?.userId;
+  const role = (session?.user as { role?: string } | undefined)?.role;
+  const isAdmin = role === "admin";
 
   const listings = userId
     ? await prisma.listing.findMany({
@@ -24,5 +26,5 @@ export default async function HostListingsPage() {
       })
     : [];
 
-  return <HostListingsContent listings={listings} userId={userId} />;
+  return <HostListingsContent listings={listings} userId={userId} isAdmin={isAdmin} />;
 }
