@@ -84,11 +84,16 @@ export async function POST(request: Request) {
   try {
     if (useCloudinary) {
       // --- Cloudinary (Vercel Blob Forbidden 대안) ---
-      cloudinary.config({
-        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-        api_key: process.env.CLOUDINARY_API_KEY,
-        api_secret: process.env.CLOUDINARY_API_SECRET,
-      });
+      const url = process.env.CLOUDINARY_URL;
+      if (url) {
+        cloudinary.config({ url });
+      } else {
+        cloudinary.config({
+          cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+          api_key: process.env.CLOUDINARY_API_KEY,
+          api_secret: process.env.CLOUDINARY_API_SECRET,
+        });
+      }
       const urls: string[] = [];
       for (const file of valid) {
         const buf = Buffer.from(await file.arrayBuffer());
@@ -140,7 +145,21 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ urls });
   } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err);
+    const errMsg = (() => {
+      if (err instanceof Error) return err.message;
+      if (err && typeof err === "object") {
+        const o = err as Record<string, unknown>;
+        if (typeof o.message === "string") return o.message;
+        if (o.error && typeof (o.error as Record<string, unknown>).message === "string")
+          return (o.error as Record<string, unknown>).message as string;
+        if (typeof o.error === "string") return o.error;
+        try {
+          const s = JSON.stringify(o);
+          if (s && s !== "{}") return s.slice(0, 200);
+        } catch {}
+      }
+      return String(err);
+    })();
     console.error("Image upload error:", errMsg, err);
     const isForbidden = /forbidden|403|access denied/i.test(errMsg);
     const error = isForbidden
