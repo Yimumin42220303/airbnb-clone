@@ -6,10 +6,10 @@ import { Header, Footer } from "@/components/layout";
 import { Button } from "@/components/ui";
 import Link from "next/link";
 import DeleteListingButton from "@/components/host/DeleteListingButton";
-import { canUseClientUpload, uploadImageClient } from "@/lib/cloudinary-client-upload";
+import AmenitySelector from "@/components/host/AmenitySelector";
+import { uploadListingImages, getUploadErrorMessage } from "@/lib/useListingImageUpload";
+import type { Amenity, Category } from "@/types";
 
-type Amenity = { id: string; name: string };
-type Category = { id: string; name: string };
 type Host = { id: string; email: string; name: string };
 
 type Props = {
@@ -214,48 +214,10 @@ export default function EditListingForm({
       let finalUrls = [...existingImageUrls];
       if (newImageFiles.length > 0) {
         try {
-          const newUrls: string[] = [];
-          if (canUseClientUpload()) {
-            for (const file of newImageFiles) {
-              const url = await uploadImageClient(file);
-              newUrls.push(url);
-            }
-          } else {
-            for (const file of newImageFiles) {
-              const formData = new FormData();
-              formData.append("files", file);
-              const uploadRes = await fetch("/api/upload/listing", {
-                method: "POST",
-                body: formData,
-                signal: AbortSignal.timeout(25000),
-              });
-              const text = await uploadRes.text();
-              let uploadData: { urls?: string[]; error?: string };
-              try {
-                uploadData = text ? JSON.parse(text) : {};
-              } catch {
-                const friendlyMsg =
-                  uploadRes.status === 413
-                    ? "이미지가 너무 큽니다. 4MB 이하로 압축해 주세요."
-                    : /forbidden|403|access denied/i.test(text)
-                      ? "이미지 저장소 접근이 거부되었습니다. docs/Cloudinary-설정.md 에서 Upload Preset(클라이언트 업로드) 설정을 확인해 주세요."
-                      : `서버 오류 (${text.slice(0, 80)}...)`;
-                throw new Error(friendlyMsg);
-              }
-              if (!uploadRes.ok) {
-                throw new Error(uploadData.error || "이미지 업로드에 실패했습니다.");
-              }
-              const url = uploadData.urls?.[0];
-              if (url) newUrls.push(url);
-            }
-          }
+          const newUrls = await uploadListingImages(newImageFiles);
           finalUrls = [...existingImageUrls, ...newUrls];
         } catch (uploadErr) {
-          const msg = uploadErr instanceof Error ? uploadErr.message : String(uploadErr);
-          const friendly = /failed to fetch|network|timeout/i.test(msg)
-            ? "네트워크 연결을 확인하고, 이미지를 4MB 이하로 줄인 뒤 다시 시도해 주세요."
-            : msg;
-          setError(`이미지 업로드 실패: ${friendly}`);
+          setError(`이미지 업로드 실패: ${getUploadErrorMessage(uploadErr)}`);
           return;
         }
       }
@@ -497,34 +459,14 @@ export default function EditListingForm({
               )}
             </div>
 
-            {/* 편의시설 수정 */}
-            <section className="border border-airbnb-light-gray rounded-airbnb bg-white p-4 space-y-3">
-              <h2 className="text-airbnb-body font-semibold text-airbnb-black">
-                부가시설 및 서비스
-              </h2>
-              <p className="text-airbnb-caption text-airbnb-gray">
-                게스트가 숙소에서 사용할 수 있는 편의시설을 선택해 주세요.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {amenities.map((a) => {
-                  const checked = form.amenityIds.includes(a.id);
-                  return (
-                    <button
-                      key={a.id}
-                      type="button"
-                      onClick={() => toggleAmenity(a.id)}
-                      className={`px-3 py-1.5 rounded-full text-[13px] border ${
-                        checked
-                          ? "bg-airbnb-black text-white border-airbnb-black"
-                          : "bg-white text-airbnb-black border-airbnb-light-gray hover:bg-airbnb-bg"
-                      }`}
-                    >
-                      {a.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
+            <AmenitySelector
+              amenities={amenities}
+              selectedIds={form.amenityIds}
+              onToggle={toggleAmenity}
+              title="부가시설 및 서비스"
+              description="게스트가 숙소에서 사용할 수 있는 편의시설을 선택해 주세요."
+              variant="compact"
+            />
             <label className="block">
               <span className="text-airbnb-body font-medium text-airbnb-black block mb-1">설명</span>
               <textarea
