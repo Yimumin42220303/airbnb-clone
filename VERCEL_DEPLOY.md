@@ -41,6 +41,10 @@ Vercel은 서버리스 환경이라 SQLite를 지원하지 않습니다. **Postg
 | `GOOGLE_CLIENT_SECRET` | (선택) Google 로그인 | |
 | `KAKAO_CLIENT_ID` | (선택) 카카오 로그인 | |
 | `KAKAO_CLIENT_SECRET` | (선택) 카카오 로그인 | |
+| `RESEND_API_KEY` | (선택) 이메일 발송 - 회원가입 인증 메일 | [resend.com](https://resend.com) API 키 |
+| `EMAIL_FROM` | (선택) 발신 이메일 주소 | `도쿄민박 <onboarding@resend.dev>` |
+
+**이메일 회원가입 사용 시:** `RESEND_API_KEY` 필수. 상세 설정은 [docs/RESEND_SETUP.md](docs/RESEND_SETUP.md) 참고.
 
 **Neon 사용 시:** `DIRECT_URL`은 `DATABASE_URL`과 동일하게 설정해도 됩니다.
 
