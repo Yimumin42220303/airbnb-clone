@@ -18,9 +18,10 @@
 
 "이미지 업로드 실패: Forbidden" 또는 "Access denied" 에러가 나면:
 
-1. **토큰 재생성**: Vercel 대시보드 → Storage → Blob → 해당 스토리지 선택 → **Disconnect** 후 다시 **Connect to Project**
-2. **환경 변수 확인**: Settings → Environment Variables → `BLOB_READ_WRITE_TOKEN`이 Production/Preview 모두에 설정되어 있는지 확인
-3. **재배포**: 토큰 변경 후 **Redeploy**로 새 배포 실행
+1. **Reset Credentials** (가장 빠름): Vercel 대시보드 → Storage → Blob → 해당 스토리지 → **Settings** → **Reset Credentials** → **Reset** 클릭
+2. 또는 **Disconnect 후 재연결**: Blob 스토리지 → **Projects** 탭에서 Disconnect 후 다시 Connect to Project
+3. **환경 변수 확인**: Settings → Environment Variables → `BLOB_READ_WRITE_TOKEN`이 Production/Preview 모두에 설정되어 있는지 확인
+4. **재배포 필수**: 토큰 변경 후 반드시 **Redeploy** 실행 (Deployments → 최신 배포 → ⋯ → Redeploy)
 
 ## 참고
 
