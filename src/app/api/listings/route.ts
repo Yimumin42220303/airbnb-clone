@@ -94,6 +94,7 @@ export async function POST(request: Request) {
         baths: body.baths,
         categoryId: body.categoryId,
         amenityIds: body.amenityIds,
+        isPromoted: body.isPromoted,
       });
       if (!result.ok) {
         return NextResponse.json({ error: result.error }, { status: 400 });
@@ -119,6 +120,7 @@ export async function POST(request: Request) {
       baths: body.baths,
       categoryId: body.categoryId,
       amenityIds: body.amenityIds,
+      isPromoted: body.isPromoted,
     });
 
     if (!result.ok) {
