@@ -62,7 +62,19 @@ export async function POST(request: Request) {
   }
 
   const useBlobStorage = !!process.env.BLOB_READ_WRITE_TOKEN;
-  console.log("[upload] useBlobStorage:", useBlobStorage, "files:", valid.length);
+  const isVercel = !!process.env.VERCEL;
+  console.log("[upload] useBlobStorage:", useBlobStorage, "isVercel:", isVercel, "files:", valid.length);
+
+  // Vercel에서는 파일시스템 쓰기 불가 → Blob 토큰 필수
+  if (!useBlobStorage && isVercel) {
+    return NextResponse.json(
+      {
+        error:
+          "이미지 저장소가 설정되지 않았습니다. Vercel 대시보드에서 Blob 스토리지를 연결해 주세요. (Storage → Blob → Create Database)",
+      },
+      { status: 503 }
+    );
+  }
 
   try {
     if (useBlobStorage) {
