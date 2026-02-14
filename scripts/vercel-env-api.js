@@ -1,12 +1,14 @@
 /**
  * Vercel API로 환경변수 추가
  * 사용: $env:VERCEL_TOKEN="xxx"; node scripts/vercel-env-api.js
+ *       $env:VERCEL_TOKEN="xxx"; node scripts/vercel-env-api.js --redeploy  (환경변수 반영 후 자동 Redeploy)
  * 토큰: https://vercel.com/account/tokens 에서 생성
  */
 
 const fs = require("fs");
 const path = require("path");
 
+const doRedeploy = process.argv.includes("--redeploy");
 const token = process.env.VERCEL_TOKEN;
 const teamId = process.env.VERCEL_TEAM_ID || "team_1qdVcZtzKQGHJmkdtvE2xrHZ";
 const useTeam = process.env.VERCEL_USE_TEAM !== "0";
@@ -53,7 +55,7 @@ if (envVars.EMAIL_FROM && envVars.EMAIL_FROM.includes("・・")) {
   envVars.EMAIL_FROM = EMAIL_FROM_FIX;
 }
 
-const sensitiveKeys = ["DATABASE_URL", "DIRECT_URL", "NEXTAUTH_SECRET", "GOOGLE_CLIENT_SECRET", "KAKAO_CLIENT_SECRET", "RESEND_API_KEY"];
+const sensitiveKeys = ["DATABASE_URL", "DIRECT_URL", "NEXTAUTH_SECRET", "GOOGLE_CLIENT_SECRET", "KAKAO_CLIENT_SECRET", "RESEND_API_KEY", "CLOUDINARY_API_SECRET", "CLOUDINARY_URL"];
 
 async function addEnvVar(key, value, type = "plain") {
   const body = {
@@ -81,6 +83,57 @@ async function addEnvVar(key, value, type = "plain") {
   return res.json();
 }
 
+async function triggerRedeploy() {
+  const deployHook = process.env.VERCEL_DEPLOY_HOOK?.trim();
+  if (deployHook) {
+    const res = await fetch(deployHook, { method: "POST" });
+    if (res.ok) {
+      console.log("Deploy Hook 호출 완료. 배포가 시작됩니다.");
+      return;
+    }
+    console.warn("Deploy Hook 실패:", res.status);
+  }
+  const listQs = `?projectId=${projectId}&limit=1${useTeam && teamId ? `&teamId=${teamId}` : ""}`;
+  const listRes = await fetch(
+    `https://api.vercel.com/v6/deployments${listQs}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  if (!listRes.ok) {
+    console.warn("배포 목록 조회 실패. 수동 Redeploy 필요.");
+    return;
+  }
+  const { deployments = [] } = await listRes.json();
+  const latest = deployments[0];
+  if (!latest?.id) {
+    console.warn("배포를 찾을 수 없음. 수동 Redeploy 필요.");
+    return;
+  }
+  const createQs = useTeam && teamId ? `?teamId=${teamId}` : "";
+  const createRes = await fetch(
+    `https://api.vercel.com/v13/deployments${createQs}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: "airbnb-clone",
+        project: projectId,
+        deploymentId: latest.id,
+        target: "production",
+      }),
+    }
+  );
+  if (!createRes.ok) {
+    const err = await createRes.text();
+    console.warn("Redeploy 실패:", err, "- 수동 Redeploy 필요.");
+    return;
+  }
+  const data = await createRes.json();
+  console.log("Redeploy 트리거 완료. 배포 ID:", data.id);
+}
+
 async function main() {
   projectId = await getProjectId();
   console.log(`프로젝트: ${projectId}\n`);
@@ -93,7 +146,12 @@ async function main() {
       console.error(`  ${key} FAIL:`, e.message);
     }
   }
-  console.log("\n완료. Vercel 대시보드에서 Redeploy 하세요.");
+  if (doRedeploy) {
+    console.log("\nRedeploy 트리거 중...");
+    await triggerRedeploy();
+  } else {
+    console.log("\n완료. Redeploy: node scripts/vercel-env-api.js --redeploy");
+  }
 }
 
 main().catch(console.error);

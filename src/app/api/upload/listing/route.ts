@@ -13,10 +13,14 @@ function getExt(name: string): string {
   return m ? `.${m[1].toLowerCase().replace("jpeg", "jpg")}` : ".jpg";
 }
 
-const useCloudinary =
-  !!process.env.CLOUDINARY_CLOUD_NAME &&
-  !!process.env.CLOUDINARY_API_KEY &&
-  !!process.env.CLOUDINARY_API_SECRET;
+function useCloudinary(): boolean {
+  return !!(
+    process.env.CLOUDINARY_URL?.trim() ||
+    (process.env.CLOUDINARY_CLOUD_NAME?.trim() &&
+      process.env.CLOUDINARY_API_KEY?.trim() &&
+      process.env.CLOUDINARY_API_SECRET?.trim())
+  );
+}
 
 /**
  * POST /api/upload/listing
@@ -66,12 +70,13 @@ export async function POST(request: Request) {
     );
   }
 
+  const useCloud = useCloudinary();
   const useBlobStorage = !!process.env.BLOB_READ_WRITE_TOKEN;
   const isVercel = !!process.env.VERCEL;
-  console.log("[upload] useCloudinary:", useCloudinary, "useBlob:", useBlobStorage, "isVercel:", isVercel, "files:", valid.length);
+  console.log("[upload] useCloudinary:", useCloud, "useBlob:", useBlobStorage, "isVercel:", isVercel, "files:", valid.length);
 
-  // Vercel에서는 Cloudinary 또는 Blob 필요
-  if (!useCloudinary && !useBlobStorage && isVercel) {
+  // Vercel에서는 Cloudinary 또는 Blob 필요 (Cloudinary 우선)
+  if (!useCloud && !useBlobStorage && isVercel) {
     return NextResponse.json(
       {
         error:
@@ -82,17 +87,19 @@ export async function POST(request: Request) {
   }
 
   try {
-    if (useCloudinary) {
+    if (useCloud) {
       // --- Cloudinary (Vercel Blob Forbidden 대안) ---
-      const url = process.env.CLOUDINARY_URL;
-      if (url) {
-        cloudinary.config({ url });
+      const cloud = process.env.CLOUDINARY_CLOUD_NAME?.trim();
+      const key = process.env.CLOUDINARY_API_KEY?.trim();
+      const secret = process.env.CLOUDINARY_API_SECRET?.trim();
+      const url = process.env.CLOUDINARY_URL?.trim();
+      // CLOUDINARY_URL 우선 (Invalid Signature 방지 - 대시보드에서 복사한 형식 사용)
+      const envUrl = url || (cloud && key && secret ? `cloudinary://${key}:${secret}@${cloud}` : null);
+      if (envUrl) {
+        process.env.CLOUDINARY_URL = envUrl;
+        cloudinary.config(true); // config 리셋 후 env에서 재로드
       } else {
-        cloudinary.config({
-          cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-          api_key: process.env.CLOUDINARY_API_KEY,
-          api_secret: process.env.CLOUDINARY_API_SECRET,
-        });
+        cloudinary.config({ cloud_name: cloud, api_key: key, api_secret: secret });
       }
       const urls: string[] = [];
       for (const file of valid) {
