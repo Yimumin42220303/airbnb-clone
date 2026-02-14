@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { upload } from "@vercel/blob/client";
 import { Button } from "@/components/ui";
 import Link from "next/link";
 
@@ -95,24 +96,22 @@ export default function NewListingForm({ amenities, categories: initialCategorie
     }
     setLoading(true);
     try {
-      const fd = new FormData();
-      imageFiles.forEach((f) => fd.append("files", f));
-      const uploadRes = await fetch("/api/upload/listing", {
-        method: "POST",
-        body: fd,
-      });
-      let uploadData;
+      // 클라이언트 사이드 직접 업로드 (Vercel Blob) 또는 서버 경유 (로컬 개발)
+      let imageUrls: string[];
       try {
-        uploadData = await uploadRes.json();
-      } catch {
-        setError(`이미지 업로드 서버 오류 (HTTP ${uploadRes.status})`);
+        const uploadPromises = imageFiles.map(async (file) => {
+          const blob = await upload(`listings/${file.name}`, file, {
+            access: "public",
+            handleUploadUrl: "/api/upload/listing/token",
+          });
+          return blob.url;
+        });
+        imageUrls = await Promise.all(uploadPromises);
+      } catch (uploadErr) {
+        const msg = uploadErr instanceof Error ? uploadErr.message : String(uploadErr);
+        setError(`이미지 업로드 실패: ${msg}`);
         return;
       }
-      if (!uploadRes.ok) {
-        setError(uploadData.error || "이미지 업로드에 실패했습니다.");
-        return;
-      }
-      const imageUrls = uploadData.urls as string[];
       const rawMap = form.mapUrl.trim();
       const mapUrl =
         rawMap && rawMap.includes("<iframe")
