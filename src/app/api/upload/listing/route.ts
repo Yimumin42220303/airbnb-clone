@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { put } from "@vercel/blob";
+import { v2 as cloudinary } from "cloudinary";
 
 const MAX_SIZE = 4 * 1024 * 1024; // 4MB (Vercel 요청 본문 4.5MB 제한 회피)
 const MAX_FILES = 100;
@@ -12,11 +13,15 @@ function getExt(name: string): string {
   return m ? `.${m[1].toLowerCase().replace("jpeg", "jpg")}` : ".jpg";
 }
 
+const useCloudinary =
+  !!process.env.CLOUDINARY_CLOUD_NAME &&
+  !!process.env.CLOUDINARY_API_KEY &&
+  !!process.env.CLOUDINARY_API_SECRET;
+
 /**
  * POST /api/upload/listing
  * 로그인 사용자가 숙소 이미지를 업로드.
- * Vercel Blob 스토리지에 저장 후 URL 목록 반환.
- * BLOB_READ_WRITE_TOKEN이 없으면 로컬 파일시스템(개발용) 사용.
+ * Cloudinary > Vercel Blob > 로컬 파일시스템 순으로 사용.
  */
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -63,22 +68,48 @@ export async function POST(request: Request) {
 
   const useBlobStorage = !!process.env.BLOB_READ_WRITE_TOKEN;
   const isVercel = !!process.env.VERCEL;
-  console.log("[upload] useBlobStorage:", useBlobStorage, "isVercel:", isVercel, "files:", valid.length);
+  console.log("[upload] useCloudinary:", useCloudinary, "useBlob:", useBlobStorage, "isVercel:", isVercel, "files:", valid.length);
 
-  // Vercel에서는 파일시스템 쓰기 불가 → Blob 토큰 필수
-  if (!useBlobStorage && isVercel) {
+  // Vercel에서는 Cloudinary 또는 Blob 필요
+  if (!useCloudinary && !useBlobStorage && isVercel) {
     return NextResponse.json(
       {
         error:
-          "이미지 저장소가 설정되지 않았습니다. Vercel 대시보드에서 Blob 스토리지를 연결해 주세요. (Storage → Blob → Create Database)",
+          "이미지 저장소가 설정되지 않았습니다. Cloudinary(권장) 또는 Vercel Blob 환경 변수를 설정해 주세요. docs/Cloudinary-설정.md 참고.",
       },
       { status: 503 }
     );
   }
 
   try {
+    if (useCloudinary) {
+      // --- Cloudinary (Vercel Blob Forbidden 대안) ---
+      cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET,
+      });
+      const urls: string[] = [];
+      for (const file of valid) {
+        const buf = Buffer.from(await file.arrayBuffer());
+        const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
+          cloudinary.uploader
+            .upload_stream(
+              { folder: "listings", resource_type: "image" },
+              (err, uploadResult) => {
+                if (err) reject(err);
+                else if (uploadResult) resolve(uploadResult as { secure_url: string });
+                else reject(new Error("Upload failed"));
+              }
+            )
+            .end(buf);
+        });
+        urls.push(result.secure_url);
+      }
+      return NextResponse.json({ urls });
+    }
     if (useBlobStorage) {
-      // --- Vercel Blob 스토리지 (프로덕션) ---
+      // --- Vercel Blob ---
       const urls: string[] = [];
       for (const file of valid) {
         const ext = getExt(file.name);
@@ -91,31 +122,29 @@ export async function POST(request: Request) {
         urls.push(blob.url);
       }
       return NextResponse.json({ urls });
-    } else {
-      // --- 로컬 파일시스템 (개발용) ---
-      const { writeFile, mkdir } = await import("fs/promises");
-      const path = await import("path");
-      const dir = path.join(process.cwd(), "public", "uploads", "listings");
-      await mkdir(dir, { recursive: true });
-
-      const urls: string[] = [];
-      for (const file of valid) {
-        const ext = getExt(file.name);
-        const filename = `${crypto.randomUUID()}${ext}`;
-        const filepath = path.join(dir, filename);
-        const buf = Buffer.from(await file.arrayBuffer());
-        await writeFile(filepath, buf);
-        urls.push(`/uploads/listings/${filename}`);
-      }
-      return NextResponse.json({ urls });
     }
+    // --- 로컬 파일시스템 (개발용) ---
+    const { writeFile, mkdir } = await import("fs/promises");
+    const path = await import("path");
+    const dir = path.join(process.cwd(), "public", "uploads", "listings");
+    await mkdir(dir, { recursive: true });
+
+    const urls: string[] = [];
+    for (const file of valid) {
+      const ext = getExt(file.name);
+      const filename = `${crypto.randomUUID()}${ext}`;
+      const filepath = path.join(dir, filename);
+      const buf = Buffer.from(await file.arrayBuffer());
+      await writeFile(filepath, buf);
+      urls.push(`/uploads/listings/${filename}`);
+    }
+    return NextResponse.json({ urls });
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
     console.error("Image upload error:", errMsg, err);
-    // Forbidden: BLOB_READ_WRITE_TOKEN 만료/무효화 가능성
     const isForbidden = /forbidden|403|access denied/i.test(errMsg);
     const error = isForbidden
-      ? "이미지 저장소 접근이 거부되었습니다. Vercel 대시보드에서 Blob 스토리지를 다시 연결해 주세요. (Storage → Blob → 프로젝트 연결 확인)"
+      ? "Vercel Blob 접근 거부. Cloudinary로 전환하세요. docs/Cloudinary-설정.md 참고."
       : `이미지 업로드 중 오류: ${errMsg}`;
     return NextResponse.json({ error }, { status: 500 });
   }
