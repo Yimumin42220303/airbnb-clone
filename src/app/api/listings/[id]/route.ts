@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getListingById, updateListing, deleteListing } from "@/lib/listings";
+import { prisma } from "@/lib/prisma";
 
 /**
  * GET /api/listings/[id]
@@ -114,7 +115,7 @@ export async function PATCH(
 
 /**
  * DELETE /api/listings/[id]
- * 숙소 삭제 (호스트 본인만)
+ * 숙소 삭제 (호스트 본인 또는 어드민)
  */
 export async function DELETE(
   _request: Request,
@@ -129,7 +130,12 @@ export async function DELETE(
     );
   }
   const { id } = await params;
-  const result = await deleteListing(id, userId);
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  const isAdmin = user?.role === "admin";
+  const result = await deleteListing(id, userId, isAdmin);
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: 400 });
   }

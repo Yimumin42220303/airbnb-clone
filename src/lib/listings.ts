@@ -467,16 +467,16 @@ export async function updateListing(
 }
 
 /**
- * 숙소 삭제 (본인 숙소만)
+ * 숙소 삭제 (본인 숙소 또는 어드민)
  */
-export async function deleteListing(listingId: string, userId: string) {
+export async function deleteListing(listingId: string, userId: string, isAdmin = false) {
   const existing = await prisma.listing.findUnique({
     where: { id: listingId },
   });
   if (!existing) {
     return { ok: false as const, error: "숙소를 찾을 수 없습니다." };
   }
-  if (existing.userId !== userId) {
+  if (existing.userId !== userId && !isAdmin) {
     return { ok: false as const, error: "삭제 권한이 없습니다." };
   }
   await prisma.listing.delete({ where: { id: listingId } });
