@@ -76,14 +76,18 @@ export function calculateRefundAmount(params: {
     bookingCreatedAt,
   } = params;
 
-  const cancel = new Date(cancellationDate);
-  cancel.setHours(0, 0, 0, 0);
+  // Normalize dates to midnight for "days before" calculation
+  const cancelMidnight = new Date(cancellationDate);
+  cancelMidnight.setHours(0, 0, 0, 0);
   const checkIn = new Date(checkInDate);
   checkIn.setHours(0, 0, 0, 0);
 
   const daysBeforeCheckIn = Math.floor(
-    (checkIn.getTime() - cancel.getTime()) / (24 * 60 * 60 * 1000)
+    (checkIn.getTime() - cancelMidnight.getTime()) / (24 * 60 * 60 * 1000)
   );
+
+  // Use actual (non-midnight) cancellation time for 48h grace period
+  const cancelActual = new Date(cancellationDate);
 
   const policyInfo = CANCELLATION_POLICIES[policy] || CANCELLATION_POLICIES.flexible;
   let rate = 0;
@@ -93,44 +97,44 @@ export function calculateRefundAmount(params: {
     case "flexible":
       if (daysBeforeCheckIn >= 1) {
         rate = 1.0;
-        description = "Check-in 1 day+ before: 100% refund";
+        description = "체크인 1일 이상 전: 100% 환불";
       } else {
         rate = 0;
-        description = "Check-in day or after: no refund";
+        description = "체크인 당일 이후: 환불 불가";
       }
       break;
 
     case "moderate":
       if (daysBeforeCheckIn >= 5) {
         rate = 1.0;
-        description = "Check-in 5 days+ before: 100% refund";
+        description = "체크인 5일 이상 전: 100% 환불";
       } else if (daysBeforeCheckIn >= 1) {
         rate = 0.5;
-        description = "Check-in 1-4 days before: 50% refund";
+        description = "체크인 1~4일 전: 50% 환불";
       } else {
         rate = 0;
-        description = "Check-in day or after: no refund";
+        description = "체크인 당일 이후: 환불 불가";
       }
       break;
 
     case "strict":
-      // Check 48h grace period
+      // Check 48h grace period using actual time (not midnight)
       if (bookingCreatedAt) {
         const hoursSinceBooking =
-          (cancel.getTime() - new Date(bookingCreatedAt).getTime()) /
+          (cancelActual.getTime() - new Date(bookingCreatedAt).getTime()) /
           (1000 * 60 * 60);
         if (hoursSinceBooking <= 48 && daysBeforeCheckIn >= 14) {
           rate = 1.0;
-          description = "Within 48h of booking & 14+ days before check-in: 100% refund";
+          description = "예약 후 48시간 이내 & 체크인 14일 이상 전: 100% 환불";
           break;
         }
       }
       if (daysBeforeCheckIn >= 7) {
         rate = 0.5;
-        description = "7+ days before check-in: 50% refund";
+        description = "체크인 7일 이상 전: 50% 환불";
       } else {
         rate = 0;
-        description = "Less than 7 days before check-in: no refund";
+        description = "체크인 7일 이내: 환불 불가";
       }
       break;
 
@@ -138,7 +142,7 @@ export function calculateRefundAmount(params: {
       // fallback to flexible
       if (daysBeforeCheckIn >= 1) {
         rate = 1.0;
-        description = "Default: 100% refund";
+        description = "기본: 100% 환불";
       }
   }
 

@@ -123,6 +123,7 @@ export async function PATCH(
       data: {
         status: "cancelled",
         rejectedByHost: action === "reject",
+        ...(refundDone ? { paymentStatus: "refunded" } : {}),
       },
     });
     return NextResponse.json({

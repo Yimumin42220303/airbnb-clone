@@ -64,9 +64,10 @@ export async function POST(
     );
   }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  if (booking.checkIn < today) {
+  const now = new Date();
+  const todayMidnight = new Date(now);
+  todayMidnight.setHours(0, 0, 0, 0);
+  if (booking.checkIn < todayMidnight) {
     return NextResponse.json(
       { error: "Cannot cancel past bookings" },
       { status: 400 }
@@ -74,12 +75,13 @@ export async function POST(
   }
 
   // Calculate refund based on listing's cancellation policy
+  // Pass actual current time (not midnight) for accurate 48h grace period calculation
   const policy = (booking.listing.cancellationPolicy || "flexible") as CancellationPolicyType;
   const refundResult = calculateRefundAmount({
     policy,
     totalPrice: booking.totalPrice,
     checkInDate: booking.checkIn,
-    cancellationDate: today,
+    cancellationDate: now,
     bookingCreatedAt: booking.createdAt,
   });
 
@@ -124,7 +126,10 @@ export async function POST(
 
   await prisma.booking.update({
     where: { id },
-    data: { status: "cancelled" },
+    data: {
+      status: "cancelled",
+      ...(portoneRefundDone ? { paymentStatus: "refunded" } : {}),
+    },
   });
 
   return NextResponse.json({
