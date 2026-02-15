@@ -15,17 +15,10 @@ export async function POST(
   try {
     const session = await getServerSession(authOptions);
     const userId = (session as { userId?: string } | null)?.userId;
-    const userRole = (session?.user as { role?: string } | undefined)?.role;
     if (!userId) {
       return NextResponse.json(
         { error: "로그인 후 이용할 수 있습니다." },
         { status: 401 }
-      );
-    }
-    if (userRole !== "admin") {
-      return NextResponse.json(
-        { error: "리뷰는 관리자만 등록할 수 있습니다." },
-        { status: 403 }
       );
     }
 

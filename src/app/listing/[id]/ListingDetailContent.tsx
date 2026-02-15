@@ -8,6 +8,7 @@ import { Header, Footer } from "@/components/layout";
 import BookingForm from "@/components/listing/BookingForm";
 import ListingImageGallery from "@/components/listing/ListingImageGallery";
 import ReviewCard from "@/components/listing/ReviewCard";
+import ReviewForm from "@/components/listing/ReviewForm";
 import WishlistHeart from "@/components/wishlist/WishlistHeart";
 
 type ReviewItem = {
@@ -50,6 +51,8 @@ type Props = {
   initialCheckIn?: string;
   initialCheckOut?: string;
   initialGuests?: number;
+  canReview?: boolean;
+  hasReviewed?: boolean;
 };
 
 const DESCRIPTION_PREVIEW_LENGTH = 200;
@@ -73,6 +76,8 @@ function DetailSection({
 
 export default function ListingDetailContent({
   listing,
+  canReview = false,
+  hasReviewed = false,
   isSaved,
   isLoggedIn,
   initialCheckIn,
@@ -391,6 +396,15 @@ export default function ListingDetailContent({
                     아직 리뷰가 없습니다.
                   </p>
                 )}
+                {/* Guest Review Form */}
+                <div className="p-4 md:p-6 border-t border-[#ebebeb]">
+                  <ReviewForm
+                    listingId={listing.id}
+                    hasReviewed={hasReviewed}
+                    isLoggedIn={isLoggedIn}
+                    canReview={canReview}
+                  />
+                </div>
               </div>
 
               {/* 모바일 전용 가격: 날짜·인원 선택이 완료되어 총액이 계산된 경우에만 표시 */}
