@@ -21,12 +21,19 @@ export default async function BookingCompletePage({ searchParams }: Props) {
   const booking = id
     ? await prisma.booking.findUnique({
         where: { id },
-        select: { paymentStatus: true, status: true, listingId: true },
+        select: {
+          paymentStatus: true,
+          status: true,
+          listingId: true,
+          paymentMethod: true,
+          scheduledPaymentDate: true,
+        },
       })
     : null;
 
   const isPaid = booking?.paymentStatus === "paid";
   const isConfirmed = booking?.status === "confirmed";
+  const isDeferred = booking?.paymentMethod === "deferred";
 
   // 예약 확정 시 → 메시지 페이지로 자동 리다이렉트
   if (isConfirmed && id) {
@@ -46,19 +53,25 @@ export default async function BookingCompletePage({ searchParams }: Props) {
         <div className="max-w-[560px] mx-auto py-12">
           <div className="text-center mb-8">
             <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 ${
-              isPaid ? "bg-green-100" : "bg-amber-100"
+              isPaid ? "bg-green-100" : isDeferred ? "bg-blue-100" : "bg-amber-100"
             }`}>
-              <span className={`text-3xl ${isPaid ? "text-green-600" : "text-amber-600"}`} aria-hidden>
-                {isPaid ? "\u2713" : "\u23F3"}
+              <span className={`text-3xl ${isPaid ? "text-green-600" : isDeferred ? "text-blue-600" : "text-amber-600"}`} aria-hidden>
+                {isPaid ? "\u2713" : isDeferred ? "\uD83D\uDCB3" : "\u23F3"}
               </span>
             </div>
             <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-2">
-              {isPaid ? "예약 및 결제가 완료되었습니다" : "예약이 완료되었습니다"}
+              {isPaid
+                ? "예약 및 결제가 완료되었습니다"
+                : isDeferred
+                  ? "카드 등록이 완료되었습니다"
+                  : "예약이 완료되었습니다"}
             </h1>
             <p className="text-minbak-body text-minbak-gray">
               {isPaid
                 ? "결제가 확인되었습니다. 호스트와 메시지로 연락할 수 있어요."
-                : "예약 내역을 확인하고, 호스트와 메시지로 연락할 수 있어요."}
+                : isDeferred
+                  ? "예약이 확정되었습니다. 체크인 7일 전에 자동으로 결제됩니다."
+                  : "예약 내역을 확인하고, 호스트와 메시지로 연락할 수 있어요."}
             </p>
           </div>
 
@@ -92,12 +105,26 @@ export default async function BookingCompletePage({ searchParams }: Props) {
                   예약 확정
                 </span>
               )}
-              {!isPaid && booking && (
+              {isDeferred && !isPaid && booking && (
+                <span className="text-minbak-caption font-medium px-2.5 py-1 rounded-full bg-blue-100 text-blue-800">
+                  카드 등록 완료
+                </span>
+              )}
+              {!isDeferred && !isPaid && booking && (
                 <span className="text-minbak-caption font-medium px-2.5 py-1 rounded-full bg-amber-100 text-amber-800">
                   결제 대기
                 </span>
               )}
             </div>
+            {isDeferred && !isPaid && booking?.scheduledPaymentDate && (
+              <p className="text-minbak-caption text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg mt-2">
+                자동 결제 예정일: {booking.scheduledPaymentDate.toLocaleDateString("ko-KR", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </p>
+            )}
             {id && (
               <p className="text-minbak-caption text-minbak-gray pt-1">
                 예약 번호: {id}

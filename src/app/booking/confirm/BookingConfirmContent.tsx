@@ -62,6 +62,13 @@ export default function BookingConfirmContent({
     specialRequests: "",
   });
 
+  // 체크인까지 남은 일수 계산
+  const daysBeforeCheckIn = Math.floor(
+    (new Date(checkIn + "T00:00:00").getTime() - new Date().getTime()) /
+      (24 * 60 * 60 * 1000)
+  );
+  const isDeferred = daysBeforeCheckIn >= 7;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -111,69 +118,123 @@ export default function BookingConfirmContent({
       });
 
       if (PORTONE_READY) {
-        let paymentSuccess = false;
-        try {
-          const PortOne = await import("@portone/browser-sdk/v2");
-          const generatedPaymentId = `b${data.id}${Date.now()}`;
-          const result = await PortOne.requestPayment({
-            storeId: PORTONE_STORE_ID,
-            channelKey: PORTONE_CHANNEL_KEY,
-            paymentId: generatedPaymentId,
-            orderName: listingTitle.slice(0, 50),
-            totalAmount: totalPrice,
-            currency: "CURRENCY_KRW",
-            payMethod: "CARD",
-            customer: {
-              fullName: form.fullName.trim(),
-              email: form.email.trim(),
-              phoneNumber: form.phone.trim().replace(/-/g, "") || undefined,
-            },
-          });
-          // SDK 에러 코드가 있으면 구체적 에러 표시
-          if (result && result.code) {
-            setError(result.message || "결제 요청에 실패했습니다. (" + result.code + ")");
+        if (isDeferred) {
+          // === 빌링키(카드 등록만) 방식 ===
+          let billingKeySuccess = false;
+          try {
+            const PortOne = await import("@portone/browser-sdk/v2");
+            const issueResult = await PortOne.requestIssueBillingKey({
+              storeId: PORTONE_STORE_ID,
+              channelKey: PORTONE_CHANNEL_KEY,
+              billingKeyMethod: "CARD",
+              customer: {
+                fullName: form.fullName.trim(),
+                email: form.email.trim(),
+                phoneNumber: form.phone.trim().replace(/-/g, "") || undefined,
+              },
+            });
+            if (issueResult && issueResult.code) {
+              setError(issueResult.message || "카드 등록에 실패했습니다. (" + issueResult.code + ")");
+              await fetch(`/api/bookings/${data.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: "cancelled" }),
+              });
+              return;
+            }
+            if (issueResult && issueResult.billingKey) {
+              // 빌링키를 서버로 전송
+              const bkRes = await fetch("/api/bookings/billing-key", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  bookingId: data.id,
+                  billingKey: issueResult.billingKey,
+                }),
+              });
+              const bkData = await bkRes.json();
+              if (bkRes.ok && bkData.ok) {
+                billingKeySuccess = true;
+              } else {
+                setError(bkData.error || "카드 등록 처리에 실패했습니다.");
+                return;
+              }
+            }
+          } catch {
+            billingKeySuccess = false;
+          }
+          if (!billingKeySuccess) {
             await fetch(`/api/bookings/${data.id}`, {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ status: "cancelled" }),
             });
+            setError("카드 등록이 취소되었거나 완료되지 않았습니다. 예약은 진행되지 않았습니다.");
             return;
           }
-          // 결제창 X(닫기) 시 SDK는 reject가 아니라 undefined로 resolve함
-          if (result && result.transactionType === "PAYMENT" && !result.code) {
-            const verifyRes = await fetch("/api/payments/verify", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                paymentId: generatedPaymentId,
-                bookingId: data.id,
-              }),
+        } else {
+          // === 즉시 결제 방식 (기존 로직) ===
+          let paymentSuccess = false;
+          try {
+            const PortOne = await import("@portone/browser-sdk/v2");
+            const generatedPaymentId = `b${data.id}${Date.now()}`;
+            const result = await PortOne.requestPayment({
+              storeId: PORTONE_STORE_ID,
+              channelKey: PORTONE_CHANNEL_KEY,
+              paymentId: generatedPaymentId,
+              orderName: listingTitle.slice(0, 50),
+              totalAmount: totalPrice,
+              currency: "CURRENCY_KRW",
+              payMethod: "CARD",
+              customer: {
+                fullName: form.fullName.trim(),
+                email: form.email.trim(),
+                phoneNumber: form.phone.trim().replace(/-/g, "") || undefined,
+              },
             });
-            const verifyData = await verifyRes.json();
-            if (verifyRes.ok && verifyData.ok) {
-              paymentSuccess = true;
-            } else {
-              setError(verifyData.error || "결제 검증에 실패했습니다.");
+            if (result && result.code) {
+              setError(result.message || "결제 요청에 실패했습니다. (" + result.code + ")");
+              await fetch(`/api/bookings/${data.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: "cancelled" }),
+              });
               return;
             }
+            if (result && result.transactionType === "PAYMENT" && !result.code) {
+              const verifyRes = await fetch("/api/payments/verify", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  paymentId: generatedPaymentId,
+                  bookingId: data.id,
+                }),
+              });
+              const verifyData = await verifyRes.json();
+              if (verifyRes.ok && verifyData.ok) {
+                paymentSuccess = true;
+              } else {
+                setError(verifyData.error || "결제 검증에 실패했습니다.");
+                return;
+              }
+            }
+          } catch {
+            paymentSuccess = false;
           }
-        } catch (payErr) {
-          // SDK가 reject한 경우 (일부 환경에서 취소 시 throw)
-          paymentSuccess = false;
-        }
-        if (!paymentSuccess) {
-          await fetch(`/api/bookings/${data.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status: "cancelled" }),
-          });
-          setError("결제가 취소되었거나 완료되지 않았습니다. 예약은 진행되지 않았습니다.");
-          return;
+          if (!paymentSuccess) {
+            await fetch(`/api/bookings/${data.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ status: "cancelled" }),
+            });
+            setError("결제가 취소되었거나 완료되지 않았습니다. 예약은 진행되지 않았습니다.");
+            return;
+          }
         }
       }
 
       router.push(`/booking/complete?${completeParams.toString()}`);
-    } catch (err) {
+    } catch {
       setError("예약 요청 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
@@ -441,12 +502,22 @@ export default function BookingConfirmContent({
                     <CreditCard className="w-5 h-5 text-[#E31C23] mt-0.5 flex-shrink-0" />
                     <div>
                       <span className="font-semibold text-[#222]">
-                        신용카드 결제 (KG이니시스)
+                        {isDeferred ? "카드 등록 (KG이니시스)" : "신용카드 결제 (KG이니시스)"}
                       </span>
                       <p className="mt-1 text-[13px] text-[#717171]">
-                        결제하기 버튼 클릭 시 KG이니시스 결제창이 열립니다.
-                        신용카드, 간편결제 등 다양한 결제 수단을 이용할 수 있습니다.
+                        {isDeferred
+                          ? "카드 정보를 등록하면, 체크인 7일 전에 자동으로 결제됩니다. 그 전에 취소하시면 수수료 없이 전액 취소됩니다."
+                          : "결제하기 버튼 클릭 시 KG이니시스 결제창이 열립니다. 신용카드, 간편결제 등 다양한 결제 수단을 이용할 수 있습니다."}
                       </p>
+                      {isDeferred && (
+                        <p className="mt-2 text-[13px] font-medium text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg">
+                          자동 결제 예정일: {(() => {
+                            const d = new Date(checkIn + "T00:00:00");
+                            d.setDate(d.getDate() - 7);
+                            return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
+                          })()}
+                        </p>
+                      )}
                       {!PORTONE_READY && (
                         <p className="mt-1 text-[12px] text-amber-600">
                           현재 카드 결제를 이용할 수 없습니다.
@@ -471,7 +542,7 @@ export default function BookingConfirmContent({
                 </ul>
               </div>
 
-              {/* 결제하기 */}
+              {/* 결제하기 / 카드등록 */}
               <div className="bg-white rounded-2xl border border-[#ebebeb] shadow-[0_1px_3px_rgba(0,0,0,0.08)] p-6 space-y-4">
                 {error && (
                   <p className="text-[14px] text-[#E31C23]" role="alert">
@@ -479,18 +550,25 @@ export default function BookingConfirmContent({
                   </p>
                 )}
                 <p className="text-[14px] text-[#222]">
-                  아래 결제하기를 누르면 KG이니시스 결제창이 열립니다.
+                  {isDeferred
+                    ? "아래 버튼을 누르면 카드 등록 화면이 열립니다."
+                    : "아래 결제하기를 누르면 KG이니시스 결제창이 열립니다."}
                 </p>
                 <button
                   type="submit"
                   disabled={loading || !PORTONE_READY}
                   className="w-full py-3.5 rounded-full text-[16px] font-semibold text-white bg-[#E31C23] hover:bg-[#c91820] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                 >
-                  {loading ? "처리 중..." : "₩" + totalPrice.toLocaleString() + " 결제하기"}
+                  {loading
+                    ? "처리 중..."
+                    : isDeferred
+                      ? "카드 등록하기"
+                      : "₩" + totalPrice.toLocaleString() + " 결제하기"}
                 </button>
                 <p className="text-[13px] text-[#717171]">
-                  결제 완료 후 예약이 확정됩니다. 취소 시 취소 정책에 따라
-                  환불됩니다.
+                  {isDeferred
+                    ? "카드 등록 후 예약이 확정됩니다. 체크인 7일 전 자동 결제되며, 그 전 취소 시 수수료가 발생하지 않습니다."
+                    : "결제 완료 후 예약이 확정됩니다. 취소 시 취소 정책에 따라 환불됩니다."}
                 </p>
               </div>
             </div>
