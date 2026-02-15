@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, ChevronDown, ChevronUp } from "lucide-react";
+import { MapPin, ChevronDown, ChevronUp, MessageCircle } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import BookingForm from "@/components/listing/BookingForm";
 import ListingImageGallery from "@/components/listing/ListingImageGallery";
@@ -60,8 +60,8 @@ function DetailSection({
   className?: string;
 }) {
   return (
-    <section className={`py-6 border-b border-[#ebebeb] last:border-b-0 ${className}`}>
-      <h2 className="text-[17px] font-semibold text-[#222] mb-4">{title}</h2>
+    <section className={`py-8 border-b border-[#ebebeb] last:border-b-0 ${className}`}>
+      <h2 className="text-lg font-semibold text-[#222] mb-5 tracking-tight">{title}</h2>
       {children}
     </section>
   );
@@ -92,7 +92,7 @@ export default function ListingDetailContent({
           <div className="max-w-[1240px] mx-auto px-4 md:px-6 pb-6">
             <div className="flex flex-col gap-3">
               <div className="flex items-start justify-between gap-4">
-                <h1 className="text-[18px] sm:text-[22px] md:text-[26px] font-semibold text-[#222] leading-tight min-w-0 flex-1">
+                <h1 className="text-2xl sm:text-[28px] md:text-3xl font-bold text-[#222] leading-tight min-w-0 flex-1 tracking-tight">
                   {listing.title}
                 </h1>
                 <WishlistHeart
@@ -101,13 +101,13 @@ export default function ListingDetailContent({
                   className="flex-shrink-0"
                 />
               </div>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[14px] text-[#717171]">
-                  <span className="flex items-center gap-1">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px] text-[#717171]">
+                  <span className="flex items-center gap-1.5">
                     <MapPin className="w-4 h-4 flex-shrink-0" aria-hidden />
                     {listing.location}
                   </span>
                   {listing.reviewCount > 0 && listing.rating != null && (
-                    <span className="text-[#222]">
+                    <span className="text-[#222] font-medium">
                       ★ {listing.rating.toFixed(1)} · 리뷰 {listing.reviewCount}개
                     </span>
                   )}
@@ -118,7 +118,7 @@ export default function ListingDetailContent({
 
         <div className="max-w-[1240px] mx-auto px-4 md:px-6 pt-6 sm:pt-8 md:pt-10 pb-6 md:py-8">
           {/* 상단: 갤러리만 — 헤더와 사진 사이 여백(빨간 화살표 길이) */}
-          <div className="rounded-2xl overflow-hidden bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)] mb-8 mt-7">
+          <div className="rounded-2xl overflow-hidden bg-white mb-10 mt-7">
             <ListingImageGallery
               images={listing.images}
               title={listing.title}
@@ -126,13 +126,22 @@ export default function ListingDetailContent({
           </div>
 
           {/* 숙소 스펙 (갤러리 아래) */}
-          <p className="text-[18px] sm:text-[22px] md:text-[26px] font-semibold text-black leading-tight mb-8">
-            {listing.category?.name
-              ? `${listing.category.name}`
-              : "숙소"}{" "}
-            · 최대 인원 {listing.maxGuests}명 · 침실 {listing.bedrooms} · 침대{" "}
-            {listing.beds} · 욕실 {listing.baths}
-          </p>
+          <div className="mb-8">
+            <p className="text-xl sm:text-2xl font-semibold text-[#222] leading-tight tracking-tight">
+              {listing.category?.name
+                ? `${listing.category.name}`
+                : "숙소"}
+            </p>
+            <p className="text-[15px] text-[#717171] mt-2 flex flex-wrap items-center gap-x-1">
+              <span>최대 인원 {listing.maxGuests}명</span>
+              <span className="text-[#d1d1d1]">·</span>
+              <span>침실 {listing.bedrooms}</span>
+              <span className="text-[#d1d1d1]">·</span>
+              <span>침대 {listing.beds}</span>
+              <span className="text-[#d1d1d1]">·</span>
+              <span>욕실 {listing.baths}</span>
+            </p>
+          </div>
 
           {/* 하단: 왼쪽 = 숙소 소개·부가시설 등, 오른쪽 = 예약 모듈(빨간 영역) */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -166,14 +175,15 @@ export default function ListingDetailContent({
                 {/* 2. 부가시설 및 서비스 */}
                 {listing.amenities.length > 0 && (
                   <DetailSection title="부가시설 및 서비스">
-                    <div className="flex flex-wrap gap-2">
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                       {listing.amenities.map((a) => (
-                        <span
+                        <div
                           key={a}
-                          className="inline-flex items-center px-3 py-1.5 rounded-full text-[13px] font-medium text-[#222] bg-[#f0f0f0]"
+                          className="flex items-center gap-2.5 text-[15px] text-[#222] py-1"
                         >
+                          <span className="w-2 h-2 rounded-full bg-minbak-primary flex-shrink-0" />
                           {a}
-                        </span>
+                        </div>
                       ))}
                     </div>
                   </DetailSection>
@@ -257,30 +267,37 @@ export default function ListingDetailContent({
                 </DetailSection>
 
                 {/* 호스트 */}
-                <DetailSection title="호스트">
-                  <div className="flex items-center gap-4">
-                    <div className="relative w-14 h-14 rounded-full overflow-hidden bg-[#f0f0f0] flex-shrink-0">
+                <DetailSection title="호스트 소개">
+                  <div className="flex items-start gap-5">
+                    <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-[#f0f0f0] to-[#e0e0e0] flex-shrink-0 ring-2 ring-white shadow-md">
                       {listing.hostImage ? (
                         <Image
                           src={listing.hostImage}
                           alt={listing.hostName}
                           fill
                           className="object-cover"
-                          sizes="56px"
+                          sizes="64px"
                         />
                       ) : (
-                        <span className="w-full h-full flex items-center justify-center text-lg font-semibold text-[#222]">
+                        <span className="w-full h-full flex items-center justify-center text-xl font-bold text-[#222]">
                           {listing.hostName.charAt(0).toUpperCase()}
                         </span>
                       )}
                     </div>
-                    <div>
-                      <p className="text-[15px] font-semibold text-[#222]">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[16px] font-semibold text-[#222]">
                         {listing.hostName} 님이 호스팅
                       </p>
-                      <p className="text-[14px] text-[#717171] mt-0.5">
-                        호스트 프로필
+                      <p className="text-[14px] text-[#717171] mt-1 leading-relaxed">
+                        궁금한 점이 있으시면 언제든 문의해 주세요. 빠르게 답변드리겠습니다.
                       </p>
+                      <Link
+                        href="/messages"
+                        className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 rounded-full border border-[#222] text-[14px] font-medium text-[#222] hover:bg-[#f7f7f7] active:scale-[0.98] transition-all"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        호스트에게 연락하기
+                      </Link>
                     </div>
                   </div>
                 </DetailSection>
@@ -338,9 +355,9 @@ export default function ListingDetailContent({
 
             {/* 오른쪽: 예약 모듈(빨간 영역 - 숙소 소개 옆). 헤더와 여유 공간, 스크롤 시 top 192px 아래로 */}
             <div className="lg:col-span-1 mt-6 lg:mt-0 lg:pt-2">
-              <div className="lg:sticky lg:top-[200px]">
+              <div className="lg:sticky lg:top-[200px] transition-shadow duration-300">
                 {/* overflow-visible 로 변경하여 인원/캘린더 패널이 카드 밖으로 넘쳐도 보이도록 */}
-                <div className="bg-white rounded-2xl border border-[#ebebeb] shadow-[0_6px_20px_rgba(0,0,0,0.08)] overflow-visible">
+                <div className="bg-white rounded-2xl border border-[#e8e8e8] shadow-xl overflow-visible">
                   <div className="p-4 md:p-6 border-b border-[#ebebeb]">
                     <div className="flex items-baseline gap-1">
                             {(() => {
