@@ -13,8 +13,8 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 const variantStyles: Record<ButtonVariant, string> = {
   primary: "bg-minbak-primary text-white hover:bg-minbak-primary-hover",
   secondary: "bg-minbak-primary text-white hover:bg-minbak-primary-hover",
-  ghost: "bg-transparent hover:bg-airbnb-bg",
-  outline: "border border-airbnb-light-gray hover:border-airbnb-gray",
+  ghost: "bg-transparent hover:bg-minbak-bg",
+  outline: "border border-minbak-light-gray hover:border-minbak-gray",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
@@ -44,7 +44,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           "inline-flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-minbak-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed",
           variantStyles[variant],
           sizeStyles[size],
-          rounded === "full" ? "rounded-airbnb-full" : "rounded-airbnb",
+          rounded === "full" ? "rounded-minbak-full" : "rounded-minbak",
           className
         )}
         {...props}

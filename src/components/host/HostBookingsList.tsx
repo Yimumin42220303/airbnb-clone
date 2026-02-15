@@ -44,33 +44,33 @@ export default function HostBookingsList({ bookings }: Props) {
       {bookings.map((b) => (
         <li
           key={b.id}
-          className="p-4 border border-airbnb-light-gray rounded-airbnb bg-white"
+          className="p-4 border border-minbak-light-gray rounded-minbak bg-white"
         >
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
               <Link
                 href={`/listing/${b.listing.id}`}
-                className="font-semibold text-airbnb-black hover:underline"
+                className="font-semibold text-minbak-black hover:underline"
               >
                 {b.listing.title}
               </Link>
-              <p className="text-airbnb-caption text-airbnb-gray mt-0.5">
+              <p className="text-minbak-caption text-minbak-gray mt-0.5">
                 {b.user.name || b.user.email || t("bookings.guest")} · {t("bookings.guestsCount", { count: b.guests })}
               </p>
-              <p className="text-airbnb-body text-airbnb-black mt-1">
+              <p className="text-minbak-body text-minbak-black mt-1">
                 {b.checkIn.toISOString().slice(0, 10)} ~{" "}
                 {b.checkOut.toISOString().slice(0, 10)}
               </p>
-              <p className="text-airbnb-body font-medium text-airbnb-black">
+              <p className="text-minbak-body font-medium text-minbak-black">
                 ₩{b.totalPrice.toLocaleString()}
               </p>
               <span
-                className={`inline-block mt-1 text-airbnb-caption px-2 py-0.5 rounded ${statusClass(b)}`}
+                className={`inline-block mt-1 text-minbak-caption px-2 py-0.5 rounded ${statusClass(b)}`}
               >
                 {statusLabel(b, t)}
               </span>
               {b.status === "confirmed" && b.paymentStatus === "pending" && (
-                <span className="ml-2 text-airbnb-caption text-airbnb-gray">
+                <span className="ml-2 text-minbak-caption text-minbak-gray">
                   · {t("bookings.paymentPending")}
                 </span>
               )}
@@ -85,7 +85,7 @@ export default function HostBookingsList({ bookings }: Props) {
               {b.status !== "cancelled" && (
                 <StartMessageLink
                   bookingId={b.id}
-                  className="text-airbnb-body text-airbnb-gray hover:text-airbnb-black hover:underline"
+                  className="text-minbak-body text-minbak-gray hover:text-minbak-black hover:underline"
                 >
                   {t("bookings.message")}
                 </StartMessageLink>

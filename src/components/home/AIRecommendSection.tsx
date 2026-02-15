@@ -102,10 +102,10 @@ export default function AIRecommendSection() {
                   <Sparkles className="w-6 h-6 md:w-7 md:h-7 text-white" />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-airbnb-body-lg md:text-airbnb-h3 font-bold text-minbak-black">
+                  <h2 className="text-minbak-body-lg md:text-minbak-h3 font-bold text-minbak-black">
                     AI 맞춤 숙소 추천
                   </h2>
-                  <p className="text-airbnb-caption md:text-airbnb-body text-minbak-dark-gray mt-0.5 truncate">
+                  <p className="text-minbak-caption md:text-minbak-body text-minbak-dark-gray mt-0.5 truncate">
                     여행 일정·인원·선호사항 입력 후 AI가 맞춤 숙소를 추천해 드립니다
                   </p>
                 </div>
@@ -121,16 +121,16 @@ export default function AIRecommendSection() {
           {/* 펼쳐진 상태: 폼 */}
           {expanded && (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="bg-white border border-minbak-light-gray rounded-airbnb p-4 md:p-6 shadow-sm">
-                <h3 className="text-airbnb-body font-semibold text-minbak-black mb-4">여행 정보</h3>
+              <div className="bg-white border border-minbak-light-gray rounded-minbak p-4 md:p-6 shadow-sm">
+                <h3 className="text-minbak-body font-semibold text-minbak-black mb-4">여행 정보</h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label className="block text-airbnb-caption text-minbak-gray mb-1">체크인 · 체크아웃</label>
+                    <label className="block text-minbak-caption text-minbak-gray mb-1">체크인 · 체크아웃</label>
                     <button
                       type="button"
                       onClick={() => setDateOpen(true)}
-                      className="w-full flex items-center justify-between px-4 py-3 border border-minbak-light-gray rounded-airbnb text-left text-airbnb-body hover:border-minbak-primary transition-colors"
+                      className="w-full flex items-center justify-between px-4 py-3 border border-minbak-light-gray rounded-minbak text-left text-minbak-body hover:border-minbak-primary transition-colors"
                     >
                       <span className="text-minbak-black">
                         {checkIn && checkOut
@@ -140,11 +140,11 @@ export default function AIRecommendSection() {
                     </button>
                   </div>
                   <div>
-                    <label className="block text-airbnb-caption text-minbak-gray mb-1">인원</label>
+                    <label className="block text-minbak-caption text-minbak-gray mb-1">인원</label>
                     <button
                       type="button"
                       onClick={() => setGuestOpen(true)}
-                      className="w-full flex items-center justify-between px-4 py-3 border border-minbak-light-gray rounded-airbnb text-left text-airbnb-body hover:border-minbak-primary transition-colors"
+                      className="w-full flex items-center justify-between px-4 py-3 border border-minbak-light-gray rounded-minbak text-left text-minbak-body hover:border-minbak-primary transition-colors"
                     >
                       <span className="text-minbak-black">
                         {guests.adult + guests.child + guests.infant > 0
@@ -156,7 +156,7 @@ export default function AIRecommendSection() {
                 </div>
 
                 <div>
-                  <label htmlFor="preferences" className="block text-airbnb-caption text-minbak-gray mb-1">
+                  <label htmlFor="preferences" className="block text-minbak-caption text-minbak-gray mb-1">
                     선호사항 (자유 입력)
                   </label>
                   <textarea
@@ -164,14 +164,14 @@ export default function AIRecommendSection() {
                     value={preferences}
                     onChange={(e) => setPreferences(e.target.value)}
                     placeholder="예: 시부야 근처, 조용한 동네, 주방 필수, 와이파이 빠른 곳"
-                    className="w-full px-4 py-3 border border-minbak-light-gray rounded-airbnb text-airbnb-body text-minbak-black placeholder:text-minbak-gray resize-none focus:outline-none focus:ring-2 focus:ring-minbak-primary focus:border-transparent"
+                    className="w-full px-4 py-3 border border-minbak-light-gray rounded-minbak text-minbak-body text-minbak-black placeholder:text-minbak-gray resize-none focus:outline-none focus:ring-2 focus:ring-minbak-primary focus:border-transparent"
                     rows={3}
                   />
                 </div>
               </div>
 
               {error && (
-                <div className="p-4 rounded-airbnb bg-red-50 border border-red-200 text-red-700 text-airbnb-body">
+                <div className="p-4 rounded-minbak bg-red-50 border border-red-200 text-red-700 text-minbak-body">
                   {error}
                 </div>
               )}
@@ -179,7 +179,7 @@ export default function AIRecommendSection() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-4 rounded-airbnb bg-minbak-primary hover:bg-minbak-primary-hover disabled:opacity-70 disabled:cursor-not-allowed text-white font-semibold text-airbnb-body flex items-center justify-center gap-2 transition-colors shadow-lg shadow-minbak-primary/25"
+                className="w-full py-4 rounded-minbak bg-minbak-primary hover:bg-minbak-primary-hover disabled:opacity-70 disabled:cursor-not-allowed text-white font-semibold text-minbak-body flex items-center justify-center gap-2 transition-colors shadow-lg shadow-minbak-primary/25"
               >
                 {loading ? (
                   <>
@@ -198,11 +198,11 @@ export default function AIRecommendSection() {
 
           {results !== null && results.length > 0 && (
             <div className="mt-8 md:mt-10">
-              <h3 className="text-airbnb-h3 font-bold text-minbak-black mb-4">
+              <h3 className="text-minbak-h3 font-bold text-minbak-black mb-4">
                 AI 추천 숙소 {results.length}곳
               </h3>
               {message && (
-                <p className="text-airbnb-caption text-minbak-gray mb-4">{message}</p>
+                <p className="text-minbak-caption text-minbak-gray mb-4">{message}</p>
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {results.map((item) => (
@@ -223,7 +223,7 @@ export default function AIRecommendSection() {
                       amenities={item.amenities}
                       isPromoted={item.isPromoted}
                     />
-                    <p className="mt-2 text-airbnb-caption text-minbak-dark-gray line-clamp-2">
+                    <p className="mt-2 text-minbak-caption text-minbak-dark-gray line-clamp-2">
                       <span className="font-medium text-minbak-primary">추천 이유:</span> {item.reason}
                     </p>
                   </div>

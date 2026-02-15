@@ -38,35 +38,35 @@ export default function HostListingsContent({ listings, userId, isAdmin }: Props
       <main className="min-h-screen pt-4 md:pt-8 px-4 md:px-6">
         <div className="max-w-[1200px] mx-auto py-4 md:py-8">
           <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4 mb-4 md:mb-6">
-            <h1 className="text-[22px] sm:text-airbnb-h2 font-semibold text-minbak-black">
+            <h1 className="text-[22px] sm:text-minbak-h2 font-semibold text-minbak-black">
               {t("listings.title")}
             </h1>
             <div className="flex items-center gap-2">
               {isAdmin && (
                 <Link
                   href="/admin/listings/import"
-                  className="min-h-[44px] flex items-center gap-2 px-4 py-2.5 rounded-airbnb bg-minbak-primary text-white text-sm sm:text-airbnb-body font-medium hover:bg-minbak-primary-hover transition-colors"
+                  className="min-h-[44px] flex items-center gap-2 px-4 py-2.5 rounded-minbak bg-minbak-primary text-white text-sm sm:text-minbak-body font-medium hover:bg-minbak-primary-hover transition-colors"
                 >
                   일괄 등록
                 </Link>
               )}
               <button
                 type="button"
-                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-airbnb border border-minbak-light-gray text-minbak-black hover:bg-minbak-bg transition-colors"
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-minbak border border-minbak-light-gray text-minbak-black hover:bg-minbak-bg transition-colors"
                 aria-label="검색"
               >
                 <Search className="w-5 h-5" />
               </button>
               <button
                 type="button"
-                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-airbnb border border-minbak-light-gray text-minbak-black hover:bg-minbak-bg transition-colors"
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-minbak border border-minbak-light-gray text-minbak-black hover:bg-minbak-bg transition-colors"
                 aria-label="보기 전환"
               >
                 <LayoutGrid className="w-5 h-5" />
               </button>
               <Link
                 href="/host/listings/new"
-                className="min-h-[44px] flex items-center gap-2 px-4 py-2.5 rounded-airbnb bg-minbak-black text-white text-sm sm:text-airbnb-body font-medium hover:bg-minbak-black/90 transition-colors"
+                className="min-h-[44px] flex items-center gap-2 px-4 py-2.5 rounded-minbak bg-minbak-black text-white text-sm sm:text-minbak-body font-medium hover:bg-minbak-black/90 transition-colors"
               >
                 <Plus className="w-5 h-5 flex-shrink-0" />
                 <span className="whitespace-nowrap">{t("listings.addListing")}</span>
@@ -75,7 +75,7 @@ export default function HostListingsContent({ listings, userId, isAdmin }: Props
           </div>
 
           {!userId ? (
-            <p className="text-airbnb-body text-minbak-gray">
+            <p className="text-minbak-body text-minbak-gray">
               {t("listings.loginPrompt")}{" "}
               <Link href="/auth/signin?callbackUrl=/host/listings" className="text-minbak-primary hover:underline">
                 {t("listings.login")}
@@ -86,11 +86,11 @@ export default function HostListingsContent({ listings, userId, isAdmin }: Props
               <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center mx-auto mb-4">
                 <Plus className="w-7 h-7 text-neutral-400" />
               </div>
-              <p className="text-airbnb-body text-minbak-black font-medium mb-2">{t("listings.empty")}</p>
-              <p className="text-airbnb-caption text-minbak-gray mb-6">숙소를 등록하고 호스팅을 시작해보세요.</p>
+              <p className="text-minbak-body text-minbak-black font-medium mb-2">{t("listings.empty")}</p>
+              <p className="text-minbak-caption text-minbak-gray mb-6">숙소를 등록하고 호스팅을 시작해보세요.</p>
               <Link
                 href="/host/listings/new"
-                className="inline-flex items-center gap-2 min-h-[44px] px-6 py-2.5 rounded-airbnb-full bg-minbak-primary text-white text-airbnb-body font-medium hover:bg-minbak-primary-hover transition-colors"
+                className="inline-flex items-center gap-2 min-h-[44px] px-6 py-2.5 rounded-minbak-full bg-minbak-primary text-white text-minbak-body font-medium hover:bg-minbak-primary-hover transition-colors"
               >
                 <Plus className="w-5 h-5" />
                 {t("listings.addListing")}
@@ -100,34 +100,34 @@ export default function HostListingsContent({ listings, userId, isAdmin }: Props
             <>
               <ul className="md:hidden space-y-3">
                 {listings.map((l) => (
-                  <li key={l.id} className="border border-minbak-light-gray rounded-airbnb bg-white overflow-hidden">
+                  <li key={l.id} className="border border-minbak-light-gray rounded-minbak bg-white overflow-hidden">
                     <Link href={`/listing/${l.id}`} className="flex items-center gap-3 p-4 min-h-[72px] active:opacity-95 block">
                       <div className="relative w-16 h-16 flex-shrink-0 rounded overflow-hidden bg-minbak-light-gray">
                         <Image src={l.imageUrl} alt="" fill className="object-cover" sizes="64px" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="font-medium text-minbak-black text-[15px] line-clamp-2">{l.title}</p>
-                        <p className="text-airbnb-caption text-minbak-gray truncate mt-0.5">{l.location}</p>
+                        <p className="text-minbak-caption text-minbak-gray truncate mt-0.5">{l.location}</p>
                       </div>
                     </Link>
                     <div className="flex flex-wrap items-center gap-2 px-4 pb-4 pt-0 border-t border-minbak-light-gray/50">
-                      <Link href={`/host/listings/${l.id}/edit`} className="min-h-[44px] flex items-center text-airbnb-body text-minbak-black hover:underline px-2 font-medium">
+                      <Link href={`/host/listings/${l.id}/edit`} className="min-h-[44px] flex items-center text-minbak-body text-minbak-black hover:underline px-2 font-medium">
                         {t("listings.edit")}
                       </Link>
                     </div>
                   </li>
                 ))}
               </ul>
-              <div className="hidden md:block border border-minbak-light-gray rounded-airbnb bg-white overflow-hidden">
+              <div className="hidden md:block border border-minbak-light-gray rounded-minbak bg-white overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
                     <thead>
                       <tr className="border-b border-minbak-light-gray bg-minbak-bg/50">
-                        <th className="py-3 px-4 text-airbnb-caption font-semibold text-minbak-gray uppercase tracking-wide">{t("listings.listing")}</th>
-                        <th className="py-3 px-4 text-airbnb-caption font-semibold text-minbak-gray uppercase tracking-wide whitespace-nowrap">{t("listings.type")}</th>
-                        <th className="py-3 px-4 text-airbnb-caption font-semibold text-minbak-gray uppercase tracking-wide whitespace-nowrap">{t("listings.location")}</th>
-                        <th className="py-3 px-4 text-airbnb-caption font-semibold text-minbak-gray uppercase tracking-wide whitespace-nowrap">{t("listings.status")}</th>
-                        <th className="py-3 px-4 text-airbnb-caption font-semibold text-minbak-gray uppercase tracking-wide whitespace-nowrap">{t("listings.syncStatus")}</th>
+                        <th className="py-3 px-4 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide">{t("listings.listing")}</th>
+                        <th className="py-3 px-4 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide whitespace-nowrap">{t("listings.type")}</th>
+                        <th className="py-3 px-4 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide whitespace-nowrap">{t("listings.location")}</th>
+                        <th className="py-3 px-4 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide whitespace-nowrap">{t("listings.status")}</th>
+                        <th className="py-3 px-4 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide whitespace-nowrap">{t("listings.syncStatus")}</th>
                         <th className="py-3 px-4 w-0" aria-label="액션" />
                       </tr>
                     </thead>
@@ -141,32 +141,32 @@ export default function HostListingsContent({ listings, userId, isAdmin }: Props
                               </div>
                               <div className="min-w-0">
                                 <p className="font-medium text-minbak-black truncate group-hover:underline">{l.title}</p>
-                                <p className="text-airbnb-caption text-minbak-gray truncate">{l.location}</p>
+                                <p className="text-minbak-caption text-minbak-gray truncate">{l.location}</p>
                               </div>
                             </Link>
                           </td>
-                          <td className="py-3 px-4 text-airbnb-body text-minbak-black">{t("listings.accommodation")}</td>
-                          <td className="py-3 px-4 text-airbnb-body text-minbak-black">{l.location}</td>
+                          <td className="py-3 px-4 text-minbak-body text-minbak-black">{t("listings.accommodation")}</td>
+                          <td className="py-3 px-4 text-minbak-body text-minbak-black">{l.location}</td>
                           <td className="py-3 px-4">
-                            <span className="inline-flex items-center gap-1.5 text-airbnb-body text-minbak-black">
+                            <span className="inline-flex items-center gap-1.5 text-minbak-body text-minbak-black">
                               <span className="w-2 h-2 rounded-full bg-green-500" aria-hidden />
                               {t("listings.published")}
                             </span>
                           </td>
                           <td className="py-3 px-4">
                             {hasIcalSync(l.icalImportUrls) ? (
-                              <span className="inline-flex items-center gap-1.5 text-airbnb-body text-minbak-black">
+                              <span className="inline-flex items-center gap-1.5 text-minbak-body text-minbak-black">
                                 <span className="w-2 h-2 rounded-full bg-green-500" aria-hidden />
                                 {t("listings.syncComplete")}
                               </span>
                             ) : (
-                              <span className="text-airbnb-caption text-minbak-gray">—</span>
+                              <span className="text-minbak-caption text-minbak-gray">—</span>
                             )}
                           </td>
                           <td className="py-3 px-4">
                             <Link
                               href={`/host/listings/${l.id}/edit`}
-                              className="min-h-[44px] flex items-center px-3 py-2 text-airbnb-body text-minbak-black hover:underline border border-minbak-light-gray rounded-airbnb hover:bg-minbak-bg transition-colors"
+                              className="min-h-[44px] flex items-center px-3 py-2 text-minbak-body text-minbak-black hover:underline border border-minbak-light-gray rounded-minbak hover:bg-minbak-bg transition-colors"
                             >
                               {t("listings.edit")}
                             </Link>

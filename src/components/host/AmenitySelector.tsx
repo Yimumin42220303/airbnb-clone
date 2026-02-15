@@ -23,19 +23,19 @@ export default function AmenitySelector({
 
   const sectionClass =
     variant === "compact"
-      ? "border border-airbnb-light-gray rounded-airbnb bg-white p-4 space-y-3"
-      : "rounded-2xl border border-airbnb-light-gray bg-white p-6 md:p-8";
+      ? "border border-minbak-light-gray rounded-minbak bg-white p-4 space-y-3"
+      : "rounded-2xl border border-minbak-light-gray bg-white p-6 md:p-8";
   const btnClass =
     variant === "compact"
       ? "px-3 py-1.5 rounded-full text-[13px] border"
-      : "px-4 py-2 rounded-airbnb border text-airbnb-body transition-colors";
+      : "px-4 py-2 rounded-minbak border text-minbak-body transition-colors";
 
   return (
     <section className={sectionClass}>
-      <h2 className="text-airbnb-body font-semibold text-airbnb-black">
+      <h2 className="text-minbak-body font-semibold text-minbak-black">
         {title}
       </h2>
-      <p className="text-airbnb-caption text-airbnb-gray">
+      <p className="text-minbak-caption text-minbak-gray">
         {description}
       </p>
       <div className="flex flex-wrap gap-2">
@@ -46,10 +46,10 @@ export default function AmenitySelector({
             onClick={() => onToggle(a.id)}
             className={`${btnClass} ${
               selectedIds.includes(a.id)
-                ? "bg-airbnb-black text-white border-airbnb-black"
+                ? "bg-minbak-black text-white border-minbak-black"
                 : variant === "compact"
-                  ? "bg-white text-airbnb-black border-airbnb-light-gray hover:bg-airbnb-bg"
-                  : "border-airbnb-light-gray text-airbnb-black hover:bg-airbnb-bg"
+                  ? "bg-white text-minbak-black border-minbak-light-gray hover:bg-minbak-bg"
+                  : "border-minbak-light-gray text-minbak-black hover:bg-minbak-bg"
             }`}
           >
             {a.name}

@@ -47,32 +47,32 @@ export default async function MyBookingsPage() {
       <Header />
       <main className="min-h-screen pt-24 px-6">
         <div className="max-w-[900px] mx-auto py-8">
-          <h1 className="text-airbnb-h2 font-semibold text-airbnb-black mb-6">
+          <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
             내 예약
           </h1>
           {!userId ? (
-            <div className="bg-white border border-minbak-light-gray rounded-airbnb p-8 text-center max-w-md mx-auto">
-              <p className="text-airbnb-body text-minbak-gray mb-4">
+            <div className="bg-white border border-minbak-light-gray rounded-minbak p-8 text-center max-w-md mx-auto">
+              <p className="text-minbak-body text-minbak-gray mb-4">
                 로그인하면 예약 내역을 볼 수 있어요.
               </p>
               <Link
                 href="/auth/signin?callbackUrl=/my-bookings"
-                className="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 rounded-airbnb-full bg-minbak-primary text-white font-medium hover:bg-minbak-primary-hover transition-colors"
+                className="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 rounded-minbak-full bg-minbak-primary text-white font-medium hover:bg-minbak-primary-hover transition-colors"
               >
                 로그인하기
               </Link>
             </div>
           ) : bookings.length === 0 ? (
-            <div className="bg-white border border-minbak-light-gray rounded-airbnb p-10 text-center max-w-md mx-auto">
-              <p className="text-airbnb-body-lg text-minbak-black font-medium mb-2">
+            <div className="bg-white border border-minbak-light-gray rounded-minbak p-10 text-center max-w-md mx-auto">
+              <p className="text-minbak-body-lg text-minbak-black font-medium mb-2">
                 아직 예약한 숙소가 없어요
               </p>
-              <p className="text-airbnb-body text-minbak-gray mb-6">
+              <p className="text-minbak-body text-minbak-gray mb-6">
                 마음에 드는 숙소를 찾아 예약해 보세요.
               </p>
               <Link
                 href="/search"
-                className="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 rounded-airbnb-full bg-minbak-primary text-white font-medium hover:bg-minbak-primary-hover transition-colors"
+                className="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 rounded-minbak-full bg-minbak-primary text-white font-medium hover:bg-minbak-primary-hover transition-colors"
               >
                 숙소 검색하기
               </Link>
@@ -93,11 +93,11 @@ export default async function MyBookingsPage() {
                 return (
                   <li
                     key={b.id}
-                    className="flex flex-col sm:flex-row gap-4 p-5 bg-white border border-minbak-light-gray rounded-airbnb hover:shadow-airbnb transition-shadow"
+                    className="flex flex-col sm:flex-row gap-4 p-5 bg-white border border-minbak-light-gray rounded-minbak hover:shadow-minbak transition-shadow"
                   >
                     <Link
                       href={`/listing/${b.listing.id}`}
-                      className="relative w-full sm:w-40 h-44 sm:h-28 flex-shrink-0 rounded-airbnb overflow-hidden bg-minbak-bg"
+                      className="relative w-full sm:w-40 h-44 sm:h-28 flex-shrink-0 rounded-minbak overflow-hidden bg-minbak-bg"
                     >
                       <Image
                         src={b.listing.imageUrl}
@@ -110,22 +110,22 @@ export default async function MyBookingsPage() {
                     <div className="flex-1 min-w-0">
                       <Link
                         href={`/listing/${b.listing.id}`}
-                        className="font-semibold text-minbak-black hover:text-minbak-primary hover:underline block truncate text-airbnb-body"
+                        className="font-semibold text-minbak-black hover:text-minbak-primary hover:underline block truncate text-minbak-body"
                       >
                         {b.listing.title}
                       </Link>
-                      <p className="text-airbnb-caption text-minbak-gray mt-0.5">
+                      <p className="text-minbak-caption text-minbak-gray mt-0.5">
                         {b.listing.location}
                       </p>
-                      <p className="text-airbnb-body text-minbak-black mt-2">
+                      <p className="text-minbak-body text-minbak-black mt-2">
                         {checkInStr} ~ {checkOutStr}
                       </p>
-                      <p className="text-airbnb-body text-minbak-gray">
+                      <p className="text-minbak-body text-minbak-gray">
                         게스트 {b.guests}명 · ₩{b.totalPrice.toLocaleString()}
                       </p>
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         <span
-                          className={`inline-block text-airbnb-caption font-medium px-2.5 py-1 rounded-full ${
+                          className={`inline-block text-minbak-caption font-medium px-2.5 py-1 rounded-full ${
                             b.status === "confirmed"
                               ? "bg-green-100 text-green-800"
                               : b.status === "cancelled"
@@ -140,17 +140,17 @@ export default async function MyBookingsPage() {
                               : "대기"}
                         </span>
                         {b.paymentStatus === "paid" && b.status !== "cancelled" && (
-                          <span className="inline-block text-airbnb-caption font-medium px-2.5 py-1 rounded-full bg-blue-100 text-blue-800">
+                          <span className="inline-block text-minbak-caption font-medium px-2.5 py-1 rounded-full bg-blue-100 text-blue-800">
                             결제완료
                           </span>
                         )}
                         {b.paymentStatus === "refunded" && (
-                          <span className="inline-block text-airbnb-caption font-medium px-2.5 py-1 rounded-full bg-purple-100 text-purple-800">
+                          <span className="inline-block text-minbak-caption font-medium px-2.5 py-1 rounded-full bg-purple-100 text-purple-800">
                             환불완료
                           </span>
                         )}
                         {b.transactions[0] && (
-                          <span className="inline-block text-airbnb-caption font-medium px-2.5 py-1 rounded-full bg-orange-100 text-orange-800">
+                          <span className="inline-block text-minbak-caption font-medium px-2.5 py-1 rounded-full bg-orange-100 text-orange-800">
                             ₩{b.transactions[0].amount.toLocaleString()} 환불
                           </span>
                         )}
@@ -160,7 +160,7 @@ export default async function MyBookingsPage() {
                           b.status === "confirmed" && (
                             <Link
                               href={`/booking/${b.id}/pay`}
-                              className="inline-flex items-center min-h-[36px] px-4 py-2 rounded-airbnb text-airbnb-body font-medium bg-minbak-primary text-white hover:bg-minbak-primary-hover transition-colors"
+                              className="inline-flex items-center min-h-[36px] px-4 py-2 rounded-minbak text-minbak-body font-medium bg-minbak-primary text-white hover:bg-minbak-primary-hover transition-colors"
                             >
                               결제하기
                             </Link>
@@ -181,7 +181,7 @@ export default async function MyBookingsPage() {
                         {b.status !== "cancelled" && (
                           <StartMessageLink
                             bookingId={b.id}
-                            className="inline-flex items-center min-h-[36px] px-4 py-2 rounded-airbnb text-airbnb-body text-minbak-gray border border-minbak-light-gray hover:bg-minbak-bg transition-colors"
+                            className="inline-flex items-center min-h-[36px] px-4 py-2 rounded-minbak text-minbak-body text-minbak-gray border border-minbak-light-gray hover:bg-minbak-bg transition-colors"
                           />
                         )}
                         {/* Review link: show for completed stays (checkout passed, confirmed) */}
@@ -191,7 +191,7 @@ export default async function MyBookingsPage() {
                           !reviewedListingIds.has(b.listing.id) && (
                             <Link
                               href={`/listing/${b.listing.id}#review`}
-                              className="inline-flex items-center min-h-[36px] px-4 py-2 rounded-airbnb text-airbnb-body font-medium text-minbak-primary border border-minbak-primary hover:bg-red-50 transition-colors"
+                              className="inline-flex items-center min-h-[36px] px-4 py-2 rounded-minbak text-minbak-body font-medium text-minbak-primary border border-minbak-primary hover:bg-red-50 transition-colors"
                             >
                               &#9997; 리뷰 작성
                             </Link>
@@ -200,7 +200,7 @@ export default async function MyBookingsPage() {
                           b.status === "confirmed" &&
                           new Date(b.checkOut.toISOString().slice(0, 10)) <
                             new Date(new Date().toISOString().slice(0, 10)) && (
-                            <span className="inline-flex items-center min-h-[36px] px-4 py-2 rounded-airbnb text-airbnb-body text-minbak-gray bg-gray-50">
+                            <span className="inline-flex items-center min-h-[36px] px-4 py-2 rounded-minbak text-minbak-body text-minbak-gray bg-gray-50">
                               &#10003; 리뷰 작성완료
                             </span>
                           )}

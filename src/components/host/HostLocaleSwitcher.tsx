@@ -31,7 +31,7 @@ export default function HostLocaleSwitcher() {
       </button>
       {open && (
         <div
-          className="absolute right-0 top-full mt-1 py-1 min-w-[120px] bg-white border border-minbak-light-gray rounded-airbnb shadow-lg z-[10002]"
+          className="absolute right-0 top-full mt-1 py-1 min-w-[120px] bg-white border border-minbak-light-gray rounded-minbak shadow-lg z-[10002]"
           role="menu"
         >
           <button
@@ -41,7 +41,7 @@ export default function HostLocaleSwitcher() {
               setLocale("ko");
               setOpen(false);
             }}
-            className={`w-full px-4 py-2.5 text-left text-airbnb-body transition-colors ${
+            className={`w-full px-4 py-2.5 text-left text-minbak-body transition-colors ${
               locale === "ko" ? "bg-minbak-bg font-medium text-minbak-black" : "text-minbak-black hover:bg-minbak-bg"
             }`}
           >
@@ -54,7 +54,7 @@ export default function HostLocaleSwitcher() {
               setLocale("ja");
               setOpen(false);
             }}
-            className={`w-full px-4 py-2.5 text-left text-airbnb-body transition-colors ${
+            className={`w-full px-4 py-2.5 text-left text-minbak-body transition-colors ${
               locale === "ja" ? "bg-minbak-bg font-medium text-minbak-black" : "text-minbak-black hover:bg-minbak-bg"
             }`}
           >

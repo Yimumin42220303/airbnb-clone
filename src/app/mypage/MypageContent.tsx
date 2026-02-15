@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { signOut } from "next-auth/react";
+import { toast } from "sonner";
 import { Briefcase, User, LogOut, Home } from "lucide-react";
 import CancelBookingButton from "@/components/booking/CancelBookingButton";
 
@@ -52,7 +53,7 @@ export default function MypageContent({ user, bookings }: Props) {
     <div className="flex flex-col md:flex-row gap-6">
       {/* 사이드바 */}
       <aside className="w-full md:w-56 shrink-0">
-        <nav className="bg-white border border-minbak-light-gray rounded-airbnb overflow-hidden">
+        <nav className="bg-white border border-minbak-light-gray rounded-minbak overflow-hidden">
           <Link
             href="#"
             onClick={(e) => {
@@ -108,18 +109,18 @@ export default function MypageContent({ user, bookings }: Props) {
 
 function ReservationsSection({ bookings }: { bookings: BookingData[] }) {
   return (
-    <section className="bg-white border border-minbak-light-gray rounded-airbnb p-6">
+    <section className="bg-white border border-minbak-light-gray rounded-minbak p-6">
       <h2 className="text-[18px] font-semibold text-minbak-black mb-4">
         나의 예약
       </h2>
       {bookings.length === 0 ? (
         <div className="py-12 text-center">
-          <p className="text-airbnb-body text-minbak-gray mb-4">
+          <p className="text-minbak-body text-minbak-gray mb-4">
             예약된 내용은 여기까지입니다.
           </p>
           <Link
             href="/search"
-            className="inline-flex items-center gap-2 min-h-[44px] px-6 py-2.5 rounded-airbnb bg-minbak-primary text-white font-medium hover:bg-minbak-primary-hover transition-colors"
+            className="inline-flex items-center gap-2 min-h-[44px] px-6 py-2.5 rounded-minbak bg-minbak-primary text-white font-medium hover:bg-minbak-primary-hover transition-colors"
           >
             숙소 검색하기
           </Link>
@@ -144,9 +145,9 @@ function ReservationsSection({ bookings }: { bookings: BookingData[] }) {
             return (
               <li
                 key={b.id}
-                className="border border-minbak-light-gray rounded-airbnb p-5 hover:shadow-airbnb transition-shadow"
+                className="border border-minbak-light-gray rounded-minbak p-5 hover:shadow-minbak transition-shadow"
               >
-                <p className="text-airbnb-caption text-minbak-gray mb-3">
+                <p className="text-minbak-caption text-minbak-gray mb-3">
                   예약번호 {b.id}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
@@ -170,19 +171,19 @@ function ReservationsSection({ bookings }: { bookings: BookingData[] }) {
                       <p className="font-medium text-minbak-black line-clamp-2">
                         {b.listing.title}
                       </p>
-                      <p className="text-airbnb-caption text-minbak-gray mt-0.5">
+                      <p className="text-minbak-caption text-minbak-gray mt-0.5">
                         {b.listing.location}
                       </p>
-                      <p className="text-airbnb-body text-minbak-black mt-1">
+                      <p className="text-minbak-body text-minbak-black mt-1">
                         {checkInStr} - {checkOutStr}
                       </p>
-                      <p className="text-airbnb-caption text-minbak-gray">
+                      <p className="text-minbak-caption text-minbak-gray">
                         {nights}박 {nights + 1}일 · 이용인원 {b.guests}명
                       </p>
                     </div>
                   </Link>
                   <div className="flex flex-col items-end gap-2 shrink-0">
-                    <p className="text-airbnb-body font-semibold text-minbak-black">
+                    <p className="text-minbak-body font-semibold text-minbak-black">
                       결제금액 {b.totalPrice.toLocaleString()}원
                     </p>
                     <div className="flex flex-wrap gap-2 justify-end">
@@ -208,13 +209,13 @@ function ReservationsSection({ bookings }: { bookings: BookingData[] }) {
                                 ? `/booking/${b.id}/pay`
                                 : `/listing/${b.listing.id}`
                             }
-                            className="inline-flex min-h-[36px] px-4 py-2 rounded-airbnb text-airbnb-body font-medium text-minbak-black border border-minbak-light-gray hover:bg-minbak-bg transition-colors"
+                            className="inline-flex min-h-[36px] px-4 py-2 rounded-minbak text-minbak-body font-medium text-minbak-black border border-minbak-light-gray hover:bg-minbak-bg transition-colors"
                           >
                             상세
                           </Link>
                           <Link
                             href={`/listing/${b.listing.id}`}
-                            className="inline-flex min-h-[36px] px-4 py-2 rounded-airbnb text-airbnb-body font-medium text-white bg-[#4A90E2] hover:bg-[#3a7bc8] transition-colors"
+                            className="inline-flex min-h-[36px] px-4 py-2 rounded-minbak text-minbak-body font-medium text-white bg-[#4A90E2] hover:bg-[#3a7bc8] transition-colors"
                           >
                             다시예약
                           </Link>
@@ -229,7 +230,7 @@ function ReservationsSection({ bookings }: { bookings: BookingData[] }) {
         </ul>
       )}
       {bookings.length > 0 && (
-        <p className="mt-6 text-airbnb-caption text-minbak-gray">
+        <p className="mt-6 text-minbak-caption text-minbak-gray">
           예약된 내용은 여기까지입니다.{" "}
           <Link href="/search" className="text-minbak-primary hover:underline">
             혹시 예약된 내용이 표시되지 않고 있나요?
@@ -253,12 +254,12 @@ function AccountSection({ user }: { user: UserData }) {
       const res = await fetch("/api/account", { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || "탈퇴에 실패했습니다.");
+        toast.error(data.error || "탈퇴에 실패했습니다.");
         return;
       }
       await signOut({ callbackUrl: "/" });
     } catch {
-      alert("네트워크 오류가 발생했습니다.");
+      toast.error("네트워크 오류가 발생했습니다.");
     } finally {
       setDeleteLoading(false);
     }
@@ -267,7 +268,7 @@ function AccountSection({ user }: { user: UserData }) {
   return (
     <section className="space-y-6">
       {/* 기본 개인정보 */}
-      <div className="bg-white border border-minbak-light-gray rounded-airbnb p-6">
+      <div className="bg-white border border-minbak-light-gray rounded-minbak p-6">
         <h2 className="text-[18px] font-semibold text-minbak-black mb-4">
           나의 계정관리
         </h2>
@@ -297,22 +298,22 @@ function AccountSection({ user }: { user: UserData }) {
           </div>
           <div className="flex-1 min-w-0 space-y-3">
             <div>
-              <p className="text-airbnb-caption text-minbak-gray">이용자 이름</p>
-              <p className="text-airbnb-body font-medium text-minbak-black">
+              <p className="text-minbak-caption text-minbak-gray">이용자 이름</p>
+              <p className="text-minbak-body font-medium text-minbak-black">
                 {user.name ?? "이름 없음"}
               </p>
             </div>
             <div>
-              <p className="text-airbnb-caption text-minbak-gray">
+              <p className="text-minbak-caption text-minbak-gray">
                 등록된 이메일
               </p>
-              <p className="text-airbnb-body text-minbak-black">
+              <p className="text-minbak-body text-minbak-black">
                 {user.email || "이메일 정보 없음"}
               </p>
             </div>
             <div>
-              <p className="text-airbnb-caption text-minbak-gray">전화번호</p>
-              <p className="text-airbnb-body text-minbak-black">
+              <p className="text-minbak-caption text-minbak-gray">전화번호</p>
+              <p className="text-minbak-body text-minbak-black">
                 {user.phone || "전화번호 미등록"}
               </p>
             </div>
@@ -321,7 +322,7 @@ function AccountSection({ user }: { user: UserData }) {
       </div>
 
       {/* 소셜 어카운트 연동현황 */}
-      <div className="bg-white border border-minbak-light-gray rounded-airbnb p-6">
+      <div className="bg-white border border-minbak-light-gray rounded-minbak p-6">
         <h3 className="text-[16px] font-semibold text-minbak-black mb-4">
           소셜 어카운트 연동현황
         </h3>
@@ -331,7 +332,7 @@ function AccountSection({ user }: { user: UserData }) {
             return (
               <div
                 key={provider}
-                className={`flex items-center gap-3 px-4 py-3 rounded-airbnb border min-w-[140px] ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-minbak border min-w-[140px] ${
                   isLinked
                     ? "border-minbak-light-gray bg-white"
                     : "border-minbak-light-gray bg-minbak-bg/50 opacity-75"
@@ -367,7 +368,7 @@ function AccountSection({ user }: { user: UserData }) {
                     />
                   </svg>
                 )}
-                <span className="text-airbnb-body text-minbak-black">
+                <span className="text-minbak-body text-minbak-black">
                   {PROVIDER_LABELS[provider] ?? provider}
                 </span>
               </div>
@@ -377,8 +378,8 @@ function AccountSection({ user }: { user: UserData }) {
       </div>
 
       {/* 탈퇴하기 */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-minbak-bg/50 rounded-airbnb">
-        <p className="text-airbnb-caption text-minbak-gray">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-minbak-bg/50 rounded-minbak">
+        <p className="text-minbak-caption text-minbak-gray">
           계정을 삭제하시면 모든 계정정보가 삭제되며, 해당 정보는 복구할 수
           없습니다.
         </p>
@@ -386,7 +387,7 @@ function AccountSection({ user }: { user: UserData }) {
           type="button"
           onClick={handleDeleteAccount}
           disabled={deleteLoading}
-          className="shrink-0 min-h-[44px] px-6 py-2.5 rounded-airbnb text-airbnb-body font-medium text-minbak-gray bg-white border border-minbak-light-gray hover:bg-minbak-light-gray/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="shrink-0 min-h-[44px] px-6 py-2.5 rounded-minbak text-minbak-body font-medium text-minbak-gray bg-white border border-minbak-light-gray hover:bg-minbak-light-gray/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {deleteLoading ? "처리 중..." : "탈퇴하기"}
         </button>

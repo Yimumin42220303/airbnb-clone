@@ -35,9 +35,9 @@ export default async function ConversationPage({ params }: Props) {
         <Header />
         <main className="min-h-screen pt-24 px-6">
           <div className="max-w-[600px] mx-auto py-8">
-            <p className="text-airbnb-body text-airbnb-gray">
+            <p className="text-minbak-body text-minbak-gray">
               로그인하면 대화를 볼 수 있습니다.{" "}
-              <Link href={`/auth/signin?callbackUrl=/messages/${conversationId}`} className="text-airbnb-red hover:underline">
+              <Link href={`/auth/signin?callbackUrl=/messages/${conversationId}`} className="text-minbak-primary hover:underline">
                 Google로 로그인
               </Link>
             </p>
@@ -82,19 +82,19 @@ export default async function ConversationPage({ params }: Props) {
           <div className="mb-4">
             <Link
               href="/messages"
-              className="text-airbnb-body text-airbnb-gray hover:text-airbnb-black"
+              className="text-minbak-body text-minbak-gray hover:text-minbak-black"
             >
               ← 메시지 목록
             </Link>
           </div>
-          <div className="border border-airbnb-light-gray rounded-airbnb overflow-hidden bg-white">
-            <div className="px-4 py-3 border-b border-airbnb-light-gray bg-airbnb-bg">
-              <h1 className="text-airbnb-body font-semibold text-airbnb-black">
+          <div className="border border-minbak-light-gray rounded-minbak overflow-hidden bg-white">
+            <div className="px-4 py-3 border-b border-minbak-light-gray bg-minbak-bg">
+              <h1 className="text-minbak-body font-semibold text-minbak-black">
                 {otherName} · {listing.title}
               </h1>
               <Link
                 href={`/listing/${listing.id}`}
-                className="text-airbnb-caption text-airbnb-gray hover:underline"
+                className="text-minbak-caption text-minbak-gray hover:underline"
               >
                 숙소 보기
               </Link>

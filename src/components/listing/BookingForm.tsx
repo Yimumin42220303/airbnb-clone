@@ -245,14 +245,14 @@ export default function BookingForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-airbnb"
+      className="rounded-minbak"
     >
       <div className="mb-4 relative" ref={calendarWrapRef}>
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
             onClick={() => setCalendarOpen(true)}
-            className="flex flex-col gap-1 text-left px-3 py-2 border border-[#ebebeb] rounded-airbnb hover:border-[#b0b0b0] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E31C23] focus-visible:border-[#E31C23]"
+            className="flex flex-col gap-1 text-left px-3 py-2 border border-[#ebebeb] rounded-minbak hover:border-[#b0b0b0] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E31C23] focus-visible:border-[#E31C23]"
           >
             <span className="text-[12px] text-[#717171]">체크인</span>
             <span className="text-[14px] text-[#222]">
@@ -262,7 +262,7 @@ export default function BookingForm({
           <button
             type="button"
             onClick={() => setCalendarOpen(true)}
-            className="flex flex-col gap-1 text-left px-3 py-2 border border-[#ebebeb] rounded-airbnb hover:border-[#b0b0b0] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E31C23] focus-visible:border-[#E31C23]"
+            className="flex flex-col gap-1 text-left px-3 py-2 border border-[#ebebeb] rounded-minbak hover:border-[#b0b0b0] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E31C23] focus-visible:border-[#E31C23]"
           >
             <span className="text-[12px] text-[#717171]">체크아웃</span>
             <span className="text-[14px] text-[#222]">
@@ -318,7 +318,7 @@ export default function BookingForm({
         <button
           type="button"
           onClick={() => setGuestSelectorOpen((open) => !open)}
-          className="w-full flex items-center justify-between px-3 py-2 border border-minbak-light-gray rounded-airbnb text-airbnb-body text-minbak-black focus:outline-none focus-visible:ring-2 focus-visible:ring-minbak-primary focus-visible:border-minbak-primary"
+          className="w-full flex items-center justify-between px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body text-minbak-black focus:outline-none focus-visible:ring-2 focus-visible:ring-minbak-primary focus-visible:border-minbak-primary"
         >
           <div className="flex flex-col text-left">
             <span className="text-[12px] text-[#717171]">인원</span>
@@ -332,7 +332,7 @@ export default function BookingForm({
         </button>
 
         {guestSelectorOpen && (
-          <div className="absolute z-[120] mt-2 w-full rounded-2xl border border-airbnb-light-gray bg-white shadow-[0_12px_40px_rgba(0,0,0,0.18)] p-4 space-y-3">
+          <div className="absolute z-[120] mt-2 w-full rounded-2xl border border-minbak-light-gray bg-white shadow-[0_12px_40px_rgba(0,0,0,0.18)] p-4 space-y-3">
             {[
               {
                 label: "성인",
@@ -367,10 +367,10 @@ export default function BookingForm({
                   className="flex items-center justify-between"
                 >
                   <div className="flex flex-col">
-                    <span className="text-airbnb-body text-airbnb-black">
+                    <span className="text-minbak-body text-minbak-black">
                       {row.label}
                     </span>
-                    <span className="text-airbnb-caption text-airbnb-gray">
+                    <span className="text-minbak-caption text-minbak-gray">
                       {row.desc}
                     </span>
                   </div>
@@ -386,14 +386,14 @@ export default function BookingForm({
                       disabled={!canDecrement}
                       className={`w-8 h-8 flex items-center justify-center rounded-full border text-[18px] ${
                         canDecrement
-                          ? "border-airbnb-light-gray text-airbnb-black hover:bg-airbnb-bg"
-                          : "border-airbnb-light-gray text-airbnb-light-gray cursor-not-allowed"
+                          ? "border-minbak-light-gray text-minbak-black hover:bg-minbak-bg"
+                          : "border-minbak-light-gray text-minbak-light-gray cursor-not-allowed"
                       }`}
                       aria-label={`${row.label} 감소`}
                     >
                       −
                     </button>
-                    <span className="min-w-[20px] text-center text-airbnb-body">
+                    <span className="min-w-[20px] text-center text-minbak-body">
                       {row.value}
                     </span>
                     <button
@@ -405,8 +405,8 @@ export default function BookingForm({
                       disabled={!canIncrement}
                       className={`w-8 h-8 flex items-center justify-center rounded-full border text-[18px] ${
                         canIncrement
-                          ? "border-airbnb-light-gray text-airbnb-black hover:bg-airbnb-bg"
-                          : "border-airbnb-light-gray text-airbnb-light-gray cursor-not-allowed"
+                          ? "border-minbak-light-gray text-minbak-black hover:bg-minbak-bg"
+                          : "border-minbak-light-gray text-minbak-light-gray cursor-not-allowed"
                       }`}
                       aria-label={`${row.label} 증가`}
                     >
@@ -419,7 +419,7 @@ export default function BookingForm({
             <button
               type="button"
               onClick={() => setGuestSelectorOpen(false)}
-              className="mt-2 ml-auto px-3 py-1.5 text-airbnb-caption text-airbnb-black hover:underline"
+              className="mt-2 ml-auto px-3 py-1.5 text-minbak-caption text-minbak-black hover:underline"
             >
               닫기
             </button>
@@ -428,20 +428,20 @@ export default function BookingForm({
       </div>
 
       {priceLoading && checkIn && checkOut && (
-        <div className="border-t border-airbnb-light-gray pt-4 mb-4">
-          <div className="flex items-center gap-2 text-airbnb-body text-airbnb-gray">
-            <span className="inline-block w-4 h-4 border-2 border-airbnb-gray border-t-transparent rounded-full animate-spin" />
+        <div className="border-t border-minbak-light-gray pt-4 mb-4">
+          <div className="flex items-center gap-2 text-minbak-body text-minbak-gray">
+            <span className="inline-block w-4 h-4 border-2 border-minbak-gray border-t-transparent rounded-full animate-spin" />
             요금 계산 중...
           </div>
         </div>
       )}
 
       {!priceLoading && nights > 0 && priceResult && (
-        <div className="border-t border-airbnb-light-gray pt-4 space-y-2 mb-4">
+        <div className="border-t border-minbak-light-gray pt-4 space-y-2 mb-4">
           {(() => {
             const perNight = nights > 0 ? Math.floor(totalPrice / nights) : 0;
             return (
-              <div className="flex justify-between text-airbnb-body text-airbnb-black">
+              <div className="flex justify-between text-minbak-body text-minbak-black">
                 <span>
                   ₩{perNight.toLocaleString()} x {nights}박
                 </span>
@@ -457,13 +457,13 @@ export default function BookingForm({
       )}
 
       {error && (
-        <p className="text-airbnb-body text-airbnb-red mb-3" role="alert">
+        <p className="text-minbak-body text-minbak-primary mb-3" role="alert">
           {error}
         </p>
       )}
 
       {nights > 0 && !allAvailable && (
-        <p className="text-airbnb-body text-airbnb-red mb-3" role="alert">
+        <p className="text-minbak-body text-minbak-primary mb-3" role="alert">
           선택한 날짜 중 예약 불가한 날이 있습니다.
         </p>
       )}

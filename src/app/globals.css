@@ -12,11 +12,11 @@
   --minbak-bg: #f7f7f7;
   --minbak-dark-gray: #374151;
   --minbak-pill-bg: #f4f4f5;
-  --airbnb-red: #D74132;
-  --airbnb-dark: #c0392b;
-  --airbnb-black: #1e1e1e;
-  --airbnb-gray: #6b7280;
-  --airbnb-light-gray: #e0e0e0;
+  --minbak-primary: #D74132;
+  --minbak-primary-hover: #c0392b;
+  --minbak-black: #1e1e1e;
+  --minbak-gray: #6b7280;
+  --minbak-light-gray: #e0e0e0;
   --font-noto-sans-kr: var(--font-noto-sans-kr), "Noto Sans KR", system-ui, sans-serif;
 }
 

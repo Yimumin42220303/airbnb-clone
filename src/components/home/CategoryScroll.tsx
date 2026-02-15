@@ -26,10 +26,10 @@ export default function CategoryScroll({ className }: CategoryScrollProps) {
           <span className="text-2xl group-hover:scale-110 transition-transform">
             {icon}
           </span>
-          <span className="text-airbnb-caption text-airbnb-gray group-hover:text-airbnb-black whitespace-nowrap">
+          <span className="text-minbak-caption text-minbak-gray group-hover:text-minbak-black whitespace-nowrap">
             {label}
           </span>
-          <span className="w-0 h-0.5 bg-airbnb-black rounded-full group-hover:w-full transition-all" />
+          <span className="w-0 h-0.5 bg-minbak-black rounded-full group-hover:w-full transition-all" />
         </button>
       ))}
     </div>

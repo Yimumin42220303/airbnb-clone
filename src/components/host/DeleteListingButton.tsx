@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { useHostTranslations } from "./HostLocaleProvider";
 
 export default function DeleteListingButton({
@@ -22,7 +23,7 @@ export default function DeleteListingButton({
       const res = await fetch(`/api/listings/${listingId}`, { method: "DELETE" });
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || t("actions.deleteFailed"));
+        toast.error(data.error || t("actions.deleteFailed"));
         return;
       }
       router.push("/host/listings");
@@ -37,7 +38,7 @@ export default function DeleteListingButton({
       type="button"
       onClick={handleDelete}
       disabled={loading}
-      className="self-center min-h-[44px] flex items-center px-3 py-2 text-airbnb-body text-airbnb-red border border-airbnb-red rounded-airbnb hover:bg-red-50 disabled:opacity-50"
+      className="self-center min-h-[44px] flex items-center px-3 py-2 text-minbak-body text-minbak-primary border border-minbak-primary rounded-minbak hover:bg-red-50 disabled:opacity-50"
     >
       {loading ? t("edit.deleting") : t("edit.delete")}
     </button>

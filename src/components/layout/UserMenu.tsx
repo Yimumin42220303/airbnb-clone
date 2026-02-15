@@ -26,7 +26,7 @@ export default function UserMenu() {
 
   if (status === "loading") {
     return (
-      <div className="w-10 h-10 rounded-full bg-airbnb-light-gray animate-pulse" />
+      <div className="w-10 h-10 rounded-full bg-minbak-light-gray animate-pulse" />
     );
   }
 
@@ -47,12 +47,12 @@ export default function UserMenu() {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 px-3 py-2 rounded-airbnb-full border border-airbnb-light-gray hover:shadow-airbnb transition-shadow"
+        className="flex items-center gap-2 px-3 py-2 rounded-minbak-full border border-minbak-light-gray hover:shadow-minbak transition-shadow"
         aria-expanded={open}
         aria-haspopup="true"
       >
-        <Menu className="w-5 h-5 text-airbnb-gray" />
-        <div className="w-8 h-8 rounded-full bg-airbnb-gray overflow-hidden flex items-center justify-center">
+        <Menu className="w-5 h-5 text-minbak-gray" />
+        <div className="w-8 h-8 rounded-full bg-minbak-gray overflow-hidden flex items-center justify-center">
           {user.image ? (
             <Image
               src={user.image}
@@ -68,18 +68,18 @@ export default function UserMenu() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-60 bg-white border border-minbak-light-gray rounded-airbnb shadow-airbnb py-2">
+        <div className="absolute right-0 top-full mt-2 w-60 bg-white border border-minbak-light-gray rounded-minbak shadow-minbak py-2">
           <div className="px-4 py-3 border-b border-minbak-light-gray">
-            <p className="text-airbnb-body font-medium text-minbak-black truncate">
+            <p className="text-minbak-body font-medium text-minbak-black truncate">
               {user.name ?? "사용자"}
             </p>
-            <p className="text-airbnb-caption text-minbak-gray truncate">
+            <p className="text-minbak-caption text-minbak-gray truncate">
               {user.email}
             </p>
           </div>
           <Link
             href="/mypage"
-            className="flex items-center gap-3 px-4 py-3 border-b border-minbak-light-gray text-airbnb-body text-minbak-black hover:bg-minbak-bg transition-colors"
+            className="flex items-center gap-3 px-4 py-3 border-b border-minbak-light-gray text-minbak-body text-minbak-black hover:bg-minbak-bg transition-colors"
             onClick={() => setOpen(false)}
           >
             <User className="w-5 h-5 text-minbak-gray shrink-0" />
@@ -88,7 +88,7 @@ export default function UserMenu() {
           </Link>
           {/* 게스트 모드 / 호스트 모드 전환 */}
           <div className="px-3 py-3 border-b border-minbak-light-gray">
-            <p className="px-1 pb-2 text-airbnb-caption font-semibold text-minbak-gray uppercase tracking-wide">
+            <p className="px-1 pb-2 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide">
               모드 전환
             </p>
             <div className="flex rounded-[90px] border border-minbak-light-gray bg-minbak-bg p-1">
@@ -117,12 +117,12 @@ export default function UserMenu() {
           {/* 게스트 모드일 때만: 여행 메뉴 */}
           {!isHostMode && (
             <div className="px-2 py-1.5">
-              <p className="px-2 py-1 text-airbnb-caption font-semibold text-minbak-gray uppercase tracking-wide">
+              <p className="px-2 py-1 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide">
                 여행
               </p>
               <Link
                 href="/search"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-airbnb text-airbnb-body text-minbak-black hover:bg-minbak-bg transition-colors"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-minbak text-minbak-body text-minbak-black hover:bg-minbak-bg transition-colors"
                 onClick={() => setOpen(false)}
               >
                 <Home className="w-4 h-4 text-minbak-gray" />
@@ -131,7 +131,7 @@ export default function UserMenu() {
               </Link>
               <Link
                 href="/#ai-recommend"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-airbnb text-airbnb-body text-minbak-black hover:bg-minbak-bg transition-colors"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-minbak text-minbak-body text-minbak-black hover:bg-minbak-bg transition-colors"
                 onClick={() => setOpen(false)}
               >
                 <Sparkles className="w-4 h-4 text-minbak-gray" />
@@ -140,7 +140,7 @@ export default function UserMenu() {
               </Link>
               <Link
                 href="/my-bookings"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-airbnb text-airbnb-body text-minbak-black hover:bg-minbak-bg transition-colors"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-minbak text-minbak-body text-minbak-black hover:bg-minbak-bg transition-colors"
                 onClick={() => setOpen(false)}
               >
                 <Calendar className="w-4 h-4 text-minbak-gray" />
@@ -149,7 +149,7 @@ export default function UserMenu() {
               </Link>
               <Link
                 href="/wishlist"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-airbnb text-airbnb-body text-minbak-black hover:bg-minbak-bg transition-colors"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-minbak text-minbak-body text-minbak-black hover:bg-minbak-bg transition-colors"
                 onClick={() => setOpen(false)}
               >
                 <Heart className="w-4 h-4 text-minbak-gray" />
@@ -158,7 +158,7 @@ export default function UserMenu() {
               </Link>
               <Link
                 href="/messages"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-airbnb text-airbnb-body text-minbak-black hover:bg-minbak-bg transition-colors"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-minbak text-minbak-body text-minbak-black hover:bg-minbak-bg transition-colors"
                 onClick={() => setOpen(false)}
               >
                 <MessageCircle className="w-4 h-4 text-minbak-gray" />
@@ -171,12 +171,12 @@ export default function UserMenu() {
           {isHostMode && (
             <>
               <div className="border-t border-minbak-light-gray px-2 py-1.5">
-                <p className="px-2 py-1 text-airbnb-caption font-semibold text-minbak-gray uppercase tracking-wide">
+                <p className="px-2 py-1 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide">
                   호스팅
                 </p>
                 <Link
                   href="/host/listings"
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-airbnb text-airbnb-body text-minbak-black hover:bg-minbak-bg transition-colors"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-minbak text-minbak-body text-minbak-black hover:bg-minbak-bg transition-colors"
                   onClick={() => setOpen(false)}
                 >
                   내 숙소
@@ -184,7 +184,7 @@ export default function UserMenu() {
                 </Link>
                 <Link
                   href="/host/calendar"
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-airbnb text-airbnb-body text-minbak-black hover:bg-minbak-bg transition-colors"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-minbak text-minbak-body text-minbak-black hover:bg-minbak-bg transition-colors"
                   onClick={() => setOpen(false)}
                 >
                   예약 현황
@@ -192,7 +192,7 @@ export default function UserMenu() {
                 </Link>
                 <Link
                   href="/host/bookings"
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-airbnb text-airbnb-body text-minbak-black hover:bg-minbak-bg transition-colors"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-minbak text-minbak-body text-minbak-black hover:bg-minbak-bg transition-colors"
                   onClick={() => setOpen(false)}
                 >
                   예약 관리
@@ -200,7 +200,7 @@ export default function UserMenu() {
                 </Link>
                 <Link
                   href="/host/revenue"
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-airbnb text-airbnb-body text-minbak-black hover:bg-minbak-bg transition-colors"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-minbak text-minbak-body text-minbak-black hover:bg-minbak-bg transition-colors"
                   onClick={() => setOpen(false)}
                 >
                   매출·정산
@@ -210,7 +210,7 @@ export default function UserMenu() {
               {(user as { role?: string }).role === "admin" && (
                 <Link
                   href="/admin"
-                  className="flex items-center gap-3 px-3 py-2.5 mx-2 rounded-airbnb text-airbnb-body text-minbak-black hover:bg-minbak-bg transition-colors border-t border-minbak-light-gray mt-1 pt-1"
+                  className="flex items-center gap-3 px-3 py-2.5 mx-2 rounded-minbak text-minbak-body text-minbak-black hover:bg-minbak-bg transition-colors border-t border-minbak-light-gray mt-1 pt-1"
                   onClick={() => setOpen(false)}
                 >
                   Admin
@@ -225,7 +225,7 @@ export default function UserMenu() {
               setOpen(false);
               signOut({ callbackUrl: "/" });
             }}
-            className="w-full flex items-center gap-2 px-4 py-3 mt-1 border-t border-minbak-light-gray text-airbnb-body text-minbak-black hover:bg-minbak-bg transition-colors text-left"
+            className="w-full flex items-center gap-2 px-4 py-3 mt-1 border-t border-minbak-light-gray text-minbak-body text-minbak-black hover:bg-minbak-bg transition-colors text-left"
           >
             <LogOut className="w-4 h-4" />
             로그아웃

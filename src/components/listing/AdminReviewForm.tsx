@@ -64,8 +64,8 @@ export default function AdminReviewForm({ listingId }: Props) {
             <Star
               className={`w-8 h-8 transition-colors ${
                 value <= (hoverRating || rating)
-                  ? "text-airbnb-red"
-                  : "text-airbnb-light-gray"
+                  ? "text-minbak-primary"
+                  : "text-minbak-light-gray"
               }`}
               fill={
                 value <= (hoverRating || rating)

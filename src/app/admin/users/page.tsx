@@ -19,19 +19,19 @@ export default async function AdminUsersPage() {
       <div className="mb-6 flex items-center gap-4">
         <Link
           href="/admin"
-          className="text-airbnb-body text-airbnb-gray hover:text-airbnb-black"
+          className="text-minbak-body text-minbak-gray hover:text-minbak-black"
         >
           ← 대시보드
         </Link>
       </div>
-      <h1 className="text-airbnb-h2 font-semibold text-airbnb-black mb-6">
+      <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
         회원 목록
       </h1>
-      <div className="border border-airbnb-light-gray rounded-airbnb overflow-hidden bg-white">
+      <div className="border border-minbak-light-gray rounded-minbak overflow-hidden bg-white">
         <div className="overflow-x-auto">
-          <table className="w-full text-airbnb-body text-airbnb-black">
+          <table className="w-full text-minbak-body text-minbak-black">
             <thead>
-              <tr className="border-b border-airbnb-light-gray bg-airbnb-bg text-left">
+              <tr className="border-b border-minbak-light-gray bg-minbak-bg text-left">
                 <th className="py-3 px-4">이메일</th>
                 <th className="py-3 px-4">이름</th>
                 <th className="py-3 px-4">역할</th>
@@ -42,15 +42,15 @@ export default async function AdminUsersPage() {
             </thead>
             <tbody>
               {users.map((u) => (
-                <tr key={u.id} className="border-b border-airbnb-light-gray">
+                <tr key={u.id} className="border-b border-minbak-light-gray">
                   <td className="py-3 px-4">{u.email}</td>
                   <td className="py-3 px-4">{u.name ?? "-"}</td>
                   <td className="py-3 px-4">
                     <span
-                      className={`text-airbnb-caption px-2 py-0.5 rounded ${
+                      className={`text-minbak-caption px-2 py-0.5 rounded ${
                         u.role === "admin"
-                          ? "bg-airbnb-red/10 text-airbnb-red"
-                          : "bg-airbnb-bg text-airbnb-gray"
+                          ? "bg-minbak-primary/10 text-minbak-primary"
+                          : "bg-minbak-bg text-minbak-gray"
                       }`}
                     >
                       {u.role === "admin" ? "관리자" : "회원"}
@@ -58,7 +58,7 @@ export default async function AdminUsersPage() {
                   </td>
                   <td className="py-3 px-4">{u._count.listings}</td>
                   <td className="py-3 px-4">{u._count.bookings}</td>
-                  <td className="py-3 px-4 text-airbnb-caption text-airbnb-gray">
+                  <td className="py-3 px-4 text-minbak-caption text-minbak-gray">
                     {u.createdAt.toLocaleDateString("ko-KR")}
                   </td>
                 </tr>

@@ -56,7 +56,7 @@ export default function ListingImageGallery({ images, title }: Props) {
           <div className="aspect-square w-full max-md:max-w-full rounded-xl overflow-hidden">
             <button
               type="button"
-              className="relative w-full h-full bg-airbnb-light-gray overflow-hidden focus:outline-none focus:ring-2 focus:ring-airbnb-black/20 rounded-xl"
+              className="relative w-full h-full bg-minbak-light-gray overflow-hidden focus:outline-none focus:ring-2 focus:ring-minbak-black/20 rounded-xl"
               onClick={() => {
                 setShowAll(false);
                 setLightboxIndex(0);
@@ -78,7 +78,7 @@ export default function ListingImageGallery({ images, title }: Props) {
               <div key={img.id} className="w-full h-full min-h-0 rounded-xl overflow-hidden">
                 <button
                   type="button"
-                  className="relative w-full h-full bg-airbnb-light-gray overflow-hidden focus:outline-none focus:ring-2 focus:ring-airbnb-black/20 rounded-xl"
+                  className="relative w-full h-full bg-minbak-light-gray overflow-hidden focus:outline-none focus:ring-2 focus:ring-minbak-black/20 rounded-xl"
                   onClick={() => {
                     setShowAll(false);
                     setLightboxIndex(i + 1);
@@ -99,7 +99,7 @@ export default function ListingImageGallery({ images, title }: Props) {
         {images.length > 1 && (
           <button
             type="button"
-            className="absolute bottom-4 right-4 min-h-[44px] px-4 py-2.5 flex items-center bg-white/95 border border-airbnb-light-gray rounded-airbnb text-[14px] font-medium shadow-airbnb hover:bg-white z-10"
+            className="absolute bottom-4 right-4 min-h-[44px] px-4 py-2.5 flex items-center bg-white/95 border border-minbak-light-gray rounded-minbak text-[14px] font-medium shadow-minbak hover:bg-white z-10"
             onClick={() => {
               setLightboxIndex(null);
               setShowAll(true);
@@ -175,7 +175,7 @@ function Lightbox({
       <button
         type="button"
         onClick={onClose}
-        className="absolute top-[72px] md:top-[80px] right-4 p-2 text-white hover:bg-white/10 rounded-airbnb-full z-10"
+        className="absolute top-[72px] md:top-[80px] right-4 p-2 text-white hover:bg-white/10 rounded-minbak-full z-10"
         aria-label="닫기"
       >
         <X className="w-8 h-8" />
@@ -188,7 +188,7 @@ function Lightbox({
               e.stopPropagation();
               onPrev();
             }}
-            className="absolute left-4 top-1/2 -translate-y-1/2 p-2 text-white hover:bg-white/10 rounded-airbnb-full z-10"
+            className="absolute left-4 top-1/2 -translate-y-1/2 p-2 text-white hover:bg-white/10 rounded-minbak-full z-10"
             aria-label="이전"
           >
             <ChevronLeft className="w-10 h-10" />
@@ -199,7 +199,7 @@ function Lightbox({
               e.stopPropagation();
               onNext();
             }}
-            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-white hover:bg-white/10 rounded-airbnb-full z-10"
+            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-white hover:bg-white/10 rounded-minbak-full z-10"
             aria-label="다음"
           >
             <ChevronRight className="w-10 h-10" />
@@ -218,7 +218,7 @@ function Lightbox({
           sizes="90vw"
         />
       </div>
-      <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-airbnb-caption">
+      <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-minbak-caption">
         {currentIndex + 1} / {images.length}
       </p>
     </div>
@@ -246,10 +246,10 @@ function AllPhotosOverlay({
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div className="flex flex-col items-center gap-1">
-          <h2 className="text-airbnb-body md:text-[17px] font-semibold text-minbak-black">
+          <h2 className="text-minbak-body md:text-[17px] font-semibold text-minbak-black">
             추가 사진
           </h2>
-          <p className="text-airbnb-caption text-minbak-gray">
+          <p className="text-minbak-caption text-minbak-gray">
             총 {images.length}장
           </p>
         </div>

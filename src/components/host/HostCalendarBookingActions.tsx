@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { useHostTranslations } from "./HostLocaleProvider";
 
 type Props = {
@@ -28,7 +29,7 @@ export default function HostCalendarBookingActions({
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || t("actions.processFailed"));
+        toast.error(data.error || t("actions.processFailed"));
         return;
       }
       router.refresh();

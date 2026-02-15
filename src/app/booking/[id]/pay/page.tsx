@@ -21,12 +21,12 @@ export default async function BookingPayPage({ params }: Props) {
         <Header />
         <main className="min-h-screen pt-24 px-6">
           <div className="max-w-[600px] mx-auto py-8">
-            <h1 className="text-airbnb-h2 font-semibold text-airbnb-black mb-6">
+            <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
               결제
             </h1>
-            <p className="text-airbnb-body text-airbnb-gray">
+            <p className="text-minbak-body text-minbak-gray">
               로그인하면 결제를 진행할 수 있습니다.{" "}
-              <Link href={`/auth/signin?callbackUrl=/booking/${id}/pay`} className="text-airbnb-red hover:underline">
+              <Link href={`/auth/signin?callbackUrl=/booking/${id}/pay`} className="text-minbak-primary hover:underline">
                 Google로 로그인
               </Link>
             </p>
@@ -62,22 +62,22 @@ export default async function BookingPayPage({ params }: Props) {
       <Header />
       <main className="min-h-screen pt-24 px-6">
         <div className="max-w-[600px] mx-auto py-8">
-          <h1 className="text-airbnb-h2 font-semibold text-airbnb-black mb-6">
+          <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
             결제
           </h1>
-          <div className="border border-airbnb-light-gray rounded-airbnb p-6 space-y-3 mb-6">
-            <p className="font-semibold text-airbnb-black">
+          <div className="border border-minbak-light-gray rounded-minbak p-6 space-y-3 mb-6">
+            <p className="font-semibold text-minbak-black">
               {booking.listing.title}
             </p>
-            <p className="text-airbnb-body text-airbnb-gray">
+            <p className="text-minbak-body text-minbak-gray">
               {booking.listing.location}
             </p>
-            <p className="text-airbnb-body text-airbnb-gray">
+            <p className="text-minbak-body text-minbak-gray">
               {booking.checkIn.toISOString().slice(0, 10)} ~{" "}
               {booking.checkOut.toISOString().slice(0, 10)} · {nights}박 ·{" "}
               {booking.guests}명
             </p>
-            <p className="text-airbnb-body font-semibold text-airbnb-black">
+            <p className="text-minbak-body font-semibold text-minbak-black">
               결제 금액: ₩{booking.totalPrice.toLocaleString()}
             </p>
           </div>

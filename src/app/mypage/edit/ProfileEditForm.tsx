@@ -50,7 +50,7 @@ export default function ProfileEditForm({ user }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-white border border-minbak-light-gray rounded-airbnb p-6">
+      <div className="bg-white border border-minbak-light-gray rounded-minbak p-6">
         <div className="flex flex-col sm:flex-row gap-6 items-start">
           <div className="flex flex-col items-center gap-2 shrink-0">
             <div className="w-24 h-24 rounded-full bg-green-500 flex items-center justify-center overflow-hidden">
@@ -68,7 +68,7 @@ export default function ProfileEditForm({ user }: Props) {
                 </span>
               )}
             </div>
-            <p className="text-airbnb-caption text-minbak-gray">
+            <p className="text-minbak-caption text-minbak-gray">
               프로필 사진은 소셜 로그인에서 가져옵니다
             </p>
           </div>
@@ -76,7 +76,7 @@ export default function ProfileEditForm({ user }: Props) {
             <div>
               <label
                 htmlFor="name"
-                className="block text-airbnb-caption font-medium text-minbak-black mb-1.5"
+                className="block text-minbak-caption font-medium text-minbak-black mb-1.5"
               >
                 이용자 이름
               </label>
@@ -86,13 +86,13 @@ export default function ProfileEditForm({ user }: Props) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="이름을 입력하세요"
-                className="w-full min-h-[44px] px-4 py-2.5 border border-minbak-light-gray rounded-airbnb text-airbnb-body text-minbak-black placeholder:text-minbak-gray focus:outline-none focus:ring-2 focus:ring-minbak-primary focus:border-transparent"
+                className="w-full min-h-[44px] px-4 py-2.5 border border-minbak-light-gray rounded-minbak text-minbak-body text-minbak-black placeholder:text-minbak-gray focus:outline-none focus:ring-2 focus:ring-minbak-primary focus:border-transparent"
               />
             </div>
             <div>
               <label
                 htmlFor="email"
-                className="block text-airbnb-caption font-medium text-minbak-black mb-1.5"
+                className="block text-minbak-caption font-medium text-minbak-black mb-1.5"
               >
                 등록된 이메일
               </label>
@@ -101,16 +101,16 @@ export default function ProfileEditForm({ user }: Props) {
                 type="email"
                 value={user.email}
                 disabled
-                className="w-full min-h-[44px] px-4 py-2.5 border border-minbak-light-gray rounded-airbnb text-airbnb-body text-minbak-gray bg-minbak-bg/50 cursor-not-allowed"
+                className="w-full min-h-[44px] px-4 py-2.5 border border-minbak-light-gray rounded-minbak text-minbak-body text-minbak-gray bg-minbak-bg/50 cursor-not-allowed"
               />
-              <p className="mt-1 text-airbnb-caption text-minbak-gray">
+              <p className="mt-1 text-minbak-caption text-minbak-gray">
                 이메일은 소셜 로그인 연동 정보로 변경할 수 없습니다.
               </p>
             </div>
             <div>
               <label
                 htmlFor="phone"
-                className="block text-airbnb-caption font-medium text-minbak-black mb-1.5"
+                className="block text-minbak-caption font-medium text-minbak-black mb-1.5"
               >
                 전화번호
               </label>
@@ -120,7 +120,7 @@ export default function ProfileEditForm({ user }: Props) {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="예: 010-1234-5678"
-                className="w-full min-h-[44px] px-4 py-2.5 border border-minbak-light-gray rounded-airbnb text-airbnb-body text-minbak-black placeholder:text-minbak-gray focus:outline-none focus:ring-2 focus:ring-minbak-primary focus:border-transparent"
+                className="w-full min-h-[44px] px-4 py-2.5 border border-minbak-light-gray rounded-minbak text-minbak-body text-minbak-black placeholder:text-minbak-gray focus:outline-none focus:ring-2 focus:ring-minbak-primary focus:border-transparent"
               />
             </div>
           </div>
@@ -128,20 +128,20 @@ export default function ProfileEditForm({ user }: Props) {
       </div>
 
       {error && (
-        <p className="text-airbnb-body text-red-600 font-medium">{error}</p>
+        <p className="text-minbak-body text-red-600 font-medium">{error}</p>
       )}
 
       <div className="flex flex-wrap gap-3">
         <button
           type="submit"
           disabled={loading}
-          className="min-h-[44px] px-6 py-2.5 rounded-airbnb text-airbnb-body font-medium text-white bg-minbak-primary hover:bg-minbak-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="min-h-[44px] px-6 py-2.5 rounded-minbak text-minbak-body font-medium text-white bg-minbak-primary hover:bg-minbak-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? "저장 중..." : "저장하기"}
         </button>
         <Link
           href="/mypage"
-          className="min-h-[44px] px-6 py-2.5 rounded-airbnb text-airbnb-body font-medium text-minbak-black border border-minbak-light-gray hover:bg-minbak-bg transition-colors inline-flex items-center justify-center"
+          className="min-h-[44px] px-6 py-2.5 rounded-minbak text-minbak-body font-medium text-minbak-black border border-minbak-light-gray hover:bg-minbak-bg transition-colors inline-flex items-center justify-center"
         >
           취소
         </Link>

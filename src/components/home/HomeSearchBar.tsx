@@ -87,8 +87,8 @@ export default function HomeSearchBar({
           onClick={() => setDateOpen(true)}
           className="flex-1 min-w-0 flex flex-col items-start py-0.5 md:py-1 px-2 md:px-4 border-r border-minbak-light-gray cursor-pointer text-left"
         >
-          <span className="text-[11px] md:text-airbnb-caption text-minbak-gray block">체크인</span>
-          <span className="text-airbnb-body font-medium text-minbak-black truncate w-full">
+          <span className="text-[11px] md:text-minbak-caption text-minbak-gray block">체크인</span>
+          <span className="text-minbak-body font-medium text-minbak-black truncate w-full">
             {checkIn ? formatDateDisplay(checkIn) : "날짜 추가"}
           </span>
         </button>
@@ -98,8 +98,8 @@ export default function HomeSearchBar({
           onClick={() => setDateOpen(true)}
           className="flex-1 min-w-0 flex flex-col items-start py-0.5 md:py-1 px-2 md:px-4 border-r border-minbak-light-gray cursor-pointer text-left"
         >
-          <span className="text-[11px] md:text-airbnb-caption text-minbak-gray block">체크아웃</span>
-          <span className="text-airbnb-body font-medium text-minbak-black truncate w-full">
+          <span className="text-[11px] md:text-minbak-caption text-minbak-gray block">체크아웃</span>
+          <span className="text-minbak-body font-medium text-minbak-black truncate w-full">
             {checkOut ? formatDateDisplay(checkOut) : "날짜 추가"}
           </span>
         </button>
@@ -109,8 +109,8 @@ export default function HomeSearchBar({
           onClick={() => setGuestOpen(true)}
           className="flex-1 min-w-0 flex flex-col items-start py-0.5 md:py-1 px-2 md:px-4 cursor-pointer text-left"
         >
-          <span className="text-[11px] md:text-airbnb-caption text-minbak-gray block">인원</span>
-          <span className="text-airbnb-body font-medium text-minbak-black truncate w-full">
+          <span className="text-[11px] md:text-minbak-caption text-minbak-gray block">인원</span>
+          <span className="text-minbak-body font-medium text-minbak-black truncate w-full">
             {guests.adult + guests.child + guests.infant > 0
               ? formatGuestLabel(guests)
               : "게스트 추가"}
