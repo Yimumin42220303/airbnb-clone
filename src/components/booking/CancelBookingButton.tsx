@@ -93,6 +93,7 @@ export default function CancelBookingButton({
       const res = await fetch(url, options);
       const data = await res.json();
       if (!res.ok) {
+        setLoading(false);
         alert(data.error || "취소에 실패했습니다.");
         return;
       }

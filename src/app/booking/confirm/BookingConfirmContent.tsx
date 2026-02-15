@@ -196,6 +196,13 @@ export default function BookingConfirmContent({
   return (
     <div className="max-w-[1240px] mx-auto px-4 md:px-6 py-8">
       <div className="mb-8">
+        <button
+          type="button"
+          onClick={() => window.history.back()}
+          className="inline-flex items-center gap-1 text-[14px] text-[#717171] hover:text-[#222] mb-4 transition-colors"
+        >
+          &larr; 뒤로가기
+        </button>
         <h1 className="text-[28px] md:text-[32px] font-bold text-[#222] mb-2">
           예약 확인 및 결제
         </h1>

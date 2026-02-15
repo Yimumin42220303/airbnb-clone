@@ -25,6 +25,7 @@ export default function ReviewForm({
   const [body, setBody] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
   if (!isLoggedIn) {
     return (
@@ -81,12 +82,23 @@ export default function ReviewForm({
         setError(data.error || "리뷰 저장에 실패했습니다.");
         return;
       }
+      setSuccess(true);
       router.refresh();
     } catch {
       setError("네트워크 오류가 발생했습니다.");
     } finally {
       setLoading(false);
     }
+  }
+
+  if (success) {
+    return (
+      <div className="mt-8 p-6 border border-green-200 rounded-airbnb bg-green-50">
+        <p className="text-airbnb-body font-medium text-green-800">
+          &#10003; 리뷰가 등록되었습니다. 감사합니다!
+        </p>
+      </div>
+    );
   }
 
   return (
@@ -102,7 +114,7 @@ export default function ReviewForm({
             onClick={() => setRating(value)}
             onMouseEnter={() => setHoverRating(value)}
             onMouseLeave={() => setHoverRating(0)}
-            className="p-1 focus:outline-none"
+            className="p-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-airbnb-red focus-visible:rounded"
             aria-label={`${value}점`}
           >
             <Star
