@@ -222,7 +222,7 @@ model Booking {
   guests          Int      @default(1)
   totalPrice      Int      // 총 결제 금액
   status          String   @default("pending") // pending | confirmed | cancelled
-  paymentStatus   String   @default("pending") // pending | paid
+  paymentStatus   String   @default("pending") // pending | paid | refunded
   rejectedByHost  Boolean? @default(false) // 취소 시 호스트 거절 여부 (기록용)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

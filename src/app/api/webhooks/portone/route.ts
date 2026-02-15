@@ -84,8 +84,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, action: "paid" });
   }
 
-  // Payment cancelled (CANCELLED)
-  if (portonePayment.status === "CANCELLED") {
+  // Payment cancelled or partially cancelled (CANCELLED / PARTIAL_CANCELLED)
+  if (portonePayment.status === "CANCELLED" || portonePayment.status === "PARTIAL_CANCELLED") {
     await prisma.$transaction([
       prisma.paymentTransaction.update({
         where: { id: transaction.id },
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
       }),
       prisma.booking.update({
         where: { id: booking.id },
-        data: { status: "cancelled" },
+        data: { status: "cancelled", paymentStatus: "refunded" },
       }),
     ]);
     return NextResponse.json({ ok: true, action: "cancelled" });

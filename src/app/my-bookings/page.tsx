@@ -136,6 +136,11 @@ export default async function MyBookingsPage() {
                             결제완료
                           </span>
                         )}
+                        {b.paymentStatus === "refunded" && (
+                          <span className="inline-block text-airbnb-caption font-medium px-2.5 py-1 rounded-full bg-purple-100 text-purple-800">
+                            환불완료
+                          </span>
+                        )}
                         {b.transactions[0] && (
                           <span className="inline-block text-airbnb-caption font-medium px-2.5 py-1 rounded-full bg-orange-100 text-orange-800">
                             ₩{b.transactions[0].amount.toLocaleString()} 환불
