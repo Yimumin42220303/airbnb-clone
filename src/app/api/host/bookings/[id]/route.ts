@@ -2,11 +2,14 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { cancelPayment } from "@/lib/portone";
 
 /**
  * PATCH /api/host/bookings/[id]
  * 호스트가 예약 승인(accept) / 거절(reject) / 취소(cancel)
  * 본인 숙소의 예약만 가능
+ *
+ * 결제 완료된 예약을 호스트가 취소/거절할 경우 100% 전액 환불 처리
  */
 export async function PATCH(
   request: Request,
@@ -29,6 +32,11 @@ export async function PATCH(
     where: { id },
     include: {
       listing: { select: { userId: true, title: true } },
+      transactions: {
+        where: { status: "paid" },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+      },
     },
   });
   if (!booking) {
@@ -73,6 +81,43 @@ export async function PATCH(
         { status: 400 }
       );
     }
+
+    // 결제 완료된 예약이면 호스트 사유로 100% 전액 환불
+    const paidTransaction = booking.transactions[0];
+    let refundDone = false;
+    if (paidTransaction && booking.paymentStatus === "paid") {
+      try {
+        const reason =
+          action === "reject"
+            ? "호스트 거절로 인한 전액 환불"
+            : "호스트 취소로 인한 전액 환불";
+        const refundResult = await cancelPayment(
+          paidTransaction.paymentId,
+          reason
+        );
+        await prisma.paymentTransaction.create({
+          data: {
+            bookingId: id,
+            paymentId: paidTransaction.paymentId,
+            transactionId: refundResult.cancellation?.id || null,
+            amount: booking.totalPrice,
+            status: "refunded",
+            method: paidTransaction.method,
+            pgProvider: paidTransaction.pgProvider,
+            rawResponse: JSON.stringify(refundResult),
+            verifiedAt: new Date(),
+          },
+        });
+        refundDone = true;
+      } catch (err) {
+        console.error("호스트 취소 환불 오류:", err);
+        return NextResponse.json(
+          { error: "환불 처리 중 오류가 발생했습니다. 관리자에게 문의해 주세요." },
+          { status: 500 }
+        );
+      }
+    }
+
     await prisma.booking.update({
       where: { id },
       data: {
@@ -80,7 +125,12 @@ export async function PATCH(
         rejectedByHost: action === "reject",
       },
     });
-    return NextResponse.json({ ok: true, status: "cancelled" });
+    return NextResponse.json({
+      ok: true,
+      status: "cancelled",
+      refunded: refundDone,
+      refundAmount: refundDone ? booking.totalPrice : 0,
+    });
   }
 
   return NextResponse.json(

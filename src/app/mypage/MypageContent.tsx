@@ -191,6 +191,9 @@ function ReservationsSection({ bookings }: { bookings: BookingData[] }) {
                         <CancelBookingButton
                           bookingId={b.id}
                           listingTitle={b.listing.title}
+                          paymentStatus={b.paymentStatus}
+                          checkIn={(typeof b.checkIn === "string" ? b.checkIn : b.checkIn.toISOString()).slice(0, 10)}
+                          totalPrice={b.totalPrice}
                         />
                       )}
                       {b.status !== "cancelled" && (
