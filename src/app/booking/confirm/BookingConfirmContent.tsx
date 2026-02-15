@@ -136,11 +136,11 @@ export default function BookingConfirmContent({
         let paymentSuccess = false;
         try {
           const PortOne = await import("@portone/browser-sdk/v2");
+          const generatedPaymentId = `b${data.id}${Date.now()}`;
           const result = await PortOne.requestPayment({
             storeId: PORTONE_STORE_ID,
             channelKey: PORTONE_CHANNEL_KEY,
-            // KG이니시스 oid 제한 1~40자 (booking-{id}-{ts}=47자 초과 방지)
-            paymentId: `b${data.id}${Date.now()}`,
+            paymentId: generatedPaymentId,
             orderName: listingTitle.slice(0, 50),
             totalAmount: totalPrice,
             currency: "CURRENCY_KRW",
@@ -151,14 +151,24 @@ export default function BookingConfirmContent({
               phoneNumber: form.phone.trim().replace(/-/g, "") || undefined,
             },
           });
-          // 결제창 X(닫기) 시 SDK는 reject가 아니라 undefined로 resolve함 → 성공이 아님
+          // 결제창 X(닫기) 시 SDK는 reject가 아니라 undefined로 resolve함
           if (result && result.transactionType === "PAYMENT" && !result.code) {
-            paymentSuccess = true;
-            await fetch(`/api/bookings/${data.id}`, {
-              method: "PATCH",
+            // ✅ 서버 측 결제 검증 (포트원 API로 금액/상태 확인)
+            const verifyRes = await fetch("/api/payments/verify", {
+              method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ paymentStatus: "paid" }),
+              body: JSON.stringify({
+                paymentId: generatedPaymentId,
+                bookingId: data.id,
+              }),
             });
+            const verifyData = await verifyRes.json();
+            if (verifyRes.ok && verifyData.ok) {
+              paymentSuccess = true;
+            } else {
+              setError(verifyData.error || "결제 검증에 실패했습니다.");
+              return;
+            }
           }
         } catch (payErr) {
           // SDK가 reject한 경우 (일부 환경에서 취소 시 throw)
