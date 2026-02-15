@@ -51,7 +51,7 @@ export default function ListingImageGallery({ images, title }: Props) {
   return (
     <>
       <div className="relative w-full">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-[6px] md:gap-[8px] overflow-hidden bg-white w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 overflow-hidden bg-white w-full">
           {/* 메인 1장: 정사각형, 라운드 */}
           <div className="aspect-square w-full max-md:max-w-full rounded-xl overflow-hidden">
             <button
@@ -73,7 +73,7 @@ export default function ListingImageGallery({ images, title }: Props) {
             </button>
           </div>
           {/* 서브 4장: 2x2 정사각형, 라운드 */}
-          <div className="hidden md:grid grid-cols-2 grid-rows-2 gap-[6px] md:gap-[8px] aspect-square w-full rounded-xl overflow-hidden">
+          <div className="hidden md:grid grid-cols-2 grid-rows-2 gap-2 md:gap-3 aspect-square w-full rounded-xl overflow-hidden">
             {rest.map((img, i) => (
               <div key={img.id} className="w-full h-full min-h-0 rounded-xl overflow-hidden">
                 <button
