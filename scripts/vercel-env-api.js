@@ -10,7 +10,7 @@ const path = require("path");
 
 const doRedeploy = process.argv.includes("--redeploy");
 const token = process.env.VERCEL_TOKEN;
-const teamId = process.env.VERCEL_TEAM_ID || "team_1qdVcZtzKQGHJmkdtvE2xrHZ";
+const teamId = process.env.VERCEL_TEAM_ID || "team_ZSwD0UVtxOgbCA0KkP3lLGBf";
 const useTeam = process.env.VERCEL_USE_TEAM !== "0";
 let projectId = process.env.VERCEL_PROJECT_ID || "airbnb-clone";
 
