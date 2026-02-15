@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Header, Footer } from "@/components/layout";
 import { prisma } from "@/lib/prisma";
 
@@ -26,6 +27,17 @@ export default async function BookingCompletePage({ searchParams }: Props) {
 
   const isPaid = booking?.paymentStatus === "paid";
   const isConfirmed = booking?.status === "confirmed";
+
+  // 예약 확정 시 → 메시지 페이지로 자동 리다이렉트
+  if (isConfirmed && id) {
+    const conversation = await prisma.conversation.findUnique({
+      where: { bookingId: id },
+      select: { id: true },
+    });
+    if (conversation) {
+      redirect(`/messages/${conversation.id}`);
+    }
+  }
 
   return (
     <>
