@@ -19,6 +19,8 @@ export interface ListingCardProps {
   isPromoted?: boolean;
   className?: string;
   initialSaved?: boolean;
+  /** 검색 파라미터를 상세 페이지로 전달 */
+  searchQuery?: string;
 }
 
 export default function ListingCard({
@@ -34,10 +36,12 @@ export default function ListingCard({
   isPromoted = false,
   className,
   initialSaved = false,
+  searchQuery,
 }: ListingCardProps) {
+  const listingHref = searchQuery ? `/listing/${id}?${searchQuery}` : `/listing/${id}`;
   return (
     <Link
-      href={`/listing/${id}`}
+      href={listingHref}
       className={cn(
         "group block flex-shrink-0 rounded-lg overflow-hidden bg-white transition-all duration-200 hover:shadow-airbnb focus-visible:ring-2 focus-visible:ring-minbak-primary focus-visible:ring-offset-2 focus-visible:outline-none active:opacity-95",
         className

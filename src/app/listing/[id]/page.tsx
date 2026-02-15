@@ -12,6 +12,7 @@ const BASE_URL =
 
 interface PageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -52,13 +53,23 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function ListingDetailPage({ params }: PageProps) {
+export default async function ListingDetailPage({ params, searchParams }: PageProps) {
   const resolved = await params;
   const id =
     typeof resolved === "object" && resolved !== null && "id" in resolved
       ? resolved.id
       : "";
   if (!id) notFound();
+
+  const sp = await searchParams;
+  const initialCheckIn = typeof sp.checkIn === "string" ? sp.checkIn : undefined;
+  const initialCheckOut = typeof sp.checkOut === "string" ? sp.checkOut : undefined;
+  const initialAdults = typeof sp.adults === "string" ? parseInt(sp.adults, 10) : undefined;
+  const initialChildren = typeof sp.children === "string" ? parseInt(sp.children, 10) : undefined;
+  const initialGuests = (
+    (initialAdults != null && !isNaN(initialAdults) ? initialAdults : 1) +
+    (initialChildren != null && !isNaN(initialChildren) ? initialChildren : 0)
+  );
 
   const [listing, session] = await Promise.all([
     getListingById(id),
@@ -119,6 +130,9 @@ export default async function ListingDetailPage({ params }: PageProps) {
         listing={listing}
         isSaved={wishlistIds.includes(id)}
         isLoggedIn={!!userId}
+        initialCheckIn={initialCheckIn}
+        initialCheckOut={initialCheckOut}
+        initialGuests={initialGuests > 0 ? initialGuests : undefined}
       />
     </>
   );

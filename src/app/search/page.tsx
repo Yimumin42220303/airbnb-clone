@@ -60,6 +60,14 @@ export default async function SearchPage({
   const sort = getString(params.sort);
   if (sort) filters.sort = sort;
 
+  // 검색 파라미터를 상세 페이지로 전달하기 위한 query string 생성
+  const searchQuery = new URLSearchParams();
+  if (checkIn) searchQuery.set("checkIn", checkIn);
+  if (checkOut) searchQuery.set("checkOut", checkOut);
+  if (adults != null) searchQuery.set("adults", String(adults));
+  if (children != null) searchQuery.set("children", String(children));
+  const searchQueryStr = searchQuery.toString();
+
   const session = await getServerSession(authOptions);
   const userId = (session as { userId?: string } | null)?.userId ?? null;
   const [listings, wishlistIds] = await Promise.all([
@@ -85,6 +93,7 @@ export default async function SearchPage({
                   key={listing.id}
                   {...listing}
                   initialSaved={wishlistIds.includes(listing.id)}
+                  searchQuery={searchQueryStr || undefined}
                 />
               ))}
             </div>

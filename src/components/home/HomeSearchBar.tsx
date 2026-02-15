@@ -38,16 +38,16 @@ export default function HomeSearchBar({
   const [dateOpen, setDateOpen] = useState(false);
   const [guestOpen, setGuestOpen] = useState(false);
 
-  // URL과 동기화 (검색 페이지일 때)
+  // URL과 동기화 (검색 페이지 및 숙소 상세 페이지에서 query params 반영)
   useEffect(() => {
-    if (pathname !== "/search") return;
-    const ci = searchParams.get("checkIn") ?? "";
-    const co = searchParams.get("checkOut") ?? "";
+    const ci = searchParams.get("checkIn");
+    const co = searchParams.get("checkOut");
+    if (!ci && !co) return; // query params 없으면 스킵
+    setCheckIn(ci ?? "");
+    setCheckOut(co ?? "");
     const adults = parseInt(searchParams.get("adults") ?? "1", 10);
     const children = parseInt(searchParams.get("children") ?? "0", 10);
     const infants = parseInt(searchParams.get("infants") ?? "0", 10);
-    setCheckIn(ci);
-    setCheckOut(co);
     setGuests({
       adult: isNaN(adults) ? 1 : Math.max(1, adults),
       child: isNaN(children) ? 0 : Math.max(0, children),
