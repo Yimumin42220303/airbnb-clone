@@ -90,9 +90,9 @@ export default function ListingDetailContent({
         {/* 상단: 숙소명 · 위치 · 평점 · 찜 (minbak.tokyo 상단 영역) */}
         <div className="bg-white border-b border-[#ebebeb] pt-6 md:pt-8">
           <div className="max-w-[1240px] mx-auto px-4 md:px-6 pb-6">
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-4">
               <div className="flex items-start justify-between gap-4">
-                <h1 className="text-2xl sm:text-[28px] md:text-3xl font-bold text-[#222] leading-tight min-w-0 flex-1 tracking-tight">
+                <h1 className="text-2xl sm:text-[28px] md:text-3xl font-bold text-neutral-900 leading-[1.2] min-w-0 flex-1 tracking-tight">
                   {listing.title}
                 </h1>
                 <WishlistHeart
@@ -227,8 +227,8 @@ export default function ListingDetailContent({
                     </div>
                     {listing.mapUrl && (
                       isEmbeddableMap ? (
-                        <div className="mt-2 rounded-2xl overflow-hidden border border-[#ebebeb] bg-[#f7f7f7]">
-                          <div className="relative w-full pb-[60%]">
+                        <div className="mt-3 rounded-xl overflow-hidden border border-[#ebebeb] bg-[#f7f7f7]">
+                          <div className="relative w-full aspect-[16/9]">
                             <iframe
                               src={listing.mapUrl}
                               title="숙소 위치 지도"

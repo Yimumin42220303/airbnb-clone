@@ -412,7 +412,7 @@ export default function BookingForm({
               </div>
             );
           })()}
-          <div className="flex justify-between text-airbnb-body font-semibold text-airbnb-black pt-2 border-t border-airbnb-light-gray">
+          <div className="flex justify-between text-lg font-semibold text-neutral-900 pt-3 border-t border-neutral-200">
             <span>총 합계</span>
             <span>₩{totalPrice.toLocaleString()}</span>
           </div>
