@@ -70,6 +70,30 @@ export async function PATCH(
       data: { status: "confirmed" },
     });
 
+    // 자동으로 대화방 생성 + 호스트 환영 메시지 전송
+    let conversationId: string | null = null;
+    try {
+      let conversation = await prisma.conversation.findUnique({
+        where: { bookingId: id },
+      });
+      if (!conversation) {
+        conversation = await prisma.conversation.create({
+          data: { bookingId: id },
+        });
+      }
+      conversationId = conversation.id;
+
+      await prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          senderId: userId,
+          body: "예약감사합니다. 3일내에 체크인방법에대해 안내드릴예정이니 조금 기다려주세요.",
+        },
+      });
+    } catch (err) {
+      console.error("자동 메시지 전송 오류:", err);
+    }
+
     // Notify guest: booking accepted
     if (booking.user?.email) {
       const nights = Math.floor(
@@ -91,7 +115,7 @@ export async function PATCH(
       sendEmailAsync({ to: booking.user.email, ...mail });
     }
 
-    return NextResponse.json({ ok: true, status: "confirmed" });
+    return NextResponse.json({ ok: true, status: "confirmed", conversationId });
   }
 
   if (action === "reject" || action === "cancel") {
