@@ -54,6 +54,25 @@ function bookingTable(p: {
 </table>`;
 }
 
+function bookingTableEn(p: {
+  listingTitle: string;
+  checkIn: string;
+  checkOut: string;
+  guests: number;
+  nights: number;
+  totalPrice: number;
+}): string {
+  return `
+<table style="width:100%;border-collapse:collapse;margin:16px 0;">
+  ${infoRow("Listing", p.listingTitle)}
+  ${infoRow("Check-in", p.checkIn)}
+  ${infoRow("Check-out", p.checkOut)}
+  ${infoRow("Guests", String(p.guests))}
+  ${infoRow("Nights", String(p.nights))}
+  ${infoRow("Total", "\\u20A9" + p.totalPrice.toLocaleString())}
+</table>`;
+}
+
 function actionButton(url: string, label: string): string {
   return `
 <div style="text-align:center;margin:24px 0;">
@@ -92,14 +111,14 @@ export function bookingConfirmationGuest(info: BookingEmailInfo) {
 
 export function bookingNotificationHost(info: BookingEmailInfo & { hostName: string }) {
   const body = `
-    <p>${info.hostName}님, 새로운 예약 요청이 있습니다!</p>
-    ${bookingTable(info)}
-    <p><strong>예약자:</strong> ${info.guestName} (${info.guestEmail})</p>
-    ${actionButton(info.baseUrl + "/host/bookings", "예약 관리")}
-    <p style="font-size:13px;color:${GRAY_COLOR};">빠른 응답이 게스트 만족도를 높입니다.</p>`;
+    <p>Hi ${info.hostName}, you have a new booking request!</p>
+    ${bookingTableEn(info)}
+    <p><strong>Guest:</strong> ${info.guestName} (${info.guestEmail})</p>
+    ${actionButton(info.baseUrl + "/host/bookings", "Manage Bookings")}
+    <p style="font-size:13px;color:${GRAY_COLOR};">A quick response improves guest satisfaction.</p>`;
   return {
-    subject: "[도쿄민박] 새 예약 요청 - " + info.listingTitle,
-    html: layout("새 예약 요청", body),
+    subject: "[TokyoMinbak] New Booking Request - " + info.listingTitle,
+    html: layout("New Booking Request", body),
   };
 }
 
@@ -161,12 +180,12 @@ export function bookingCancelledGuest(info: BookingEmailInfo & { refundAmount: n
 
 export function bookingCancelledHost(info: BookingEmailInfo & { hostName: string }) {
   const body = `
-    <p>${info.hostName}님, 게스트가 예약을 취소했습니다.</p>
-    ${bookingTable(info)}
-    <p><strong>게스트:</strong> ${info.guestName}</p>
-    ${actionButton(info.baseUrl + "/host/bookings", "예약 관리")}`;
+    <p>Hi ${info.hostName}, a guest has cancelled their booking.</p>
+    ${bookingTableEn(info)}
+    <p><strong>Guest:</strong> ${info.guestName}</p>
+    ${actionButton(info.baseUrl + "/host/bookings", "Manage Bookings")}`;
   return {
-    subject: "[도쿄민박] 예약 취소됨 - " + info.listingTitle,
-    html: layout("예약 취소됨", body),
+    subject: "[TokyoMinbak] Booking Cancelled - " + info.listingTitle,
+    html: layout("Booking Cancelled", body),
   };
 }
