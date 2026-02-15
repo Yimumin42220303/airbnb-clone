@@ -19,6 +19,12 @@ type BookingFormProps = {
   listingTitle: string;
   /** 가격 미리보기 계산 시 (박수/총액) 정보를 상위 컴포넌트로 전달 */
   onPriceChange?: (summary: { nights: number; totalPrice: number } | null) => void;
+  /** 검색에서 전달된 초기 체크인 날짜 (YYYY-MM-DD) */
+  initialCheckIn?: string;
+  /** 검색에서 전달된 초기 체크아웃 날짜 (YYYY-MM-DD) */
+  initialCheckOut?: string;
+  /** 검색에서 전달된 초기 게스트 수 */
+  initialGuests?: number;
 };
 
 type PriceResult = {
@@ -35,13 +41,17 @@ export default function BookingForm({
   maxGuests,
   listingTitle,
   onPriceChange,
+  initialCheckIn,
+  initialCheckOut,
+  initialGuests,
 }: BookingFormProps) {
   const router = useRouter();
-  const [checkIn, setCheckIn] = useState("");
-  const [checkOut, setCheckOut] = useState("");
+  const [checkIn, setCheckIn] = useState(initialCheckIn ?? "");
+  const [checkOut, setCheckOut] = useState(initialCheckOut ?? "");
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [guests, setGuests] = useState(1);
-  const [adults, setAdults] = useState(1);
+  const initAdults = Math.min(initialGuests ?? 1, maxGuests);
+  const [guests, setGuests] = useState(initAdults);
+  const [adults, setAdults] = useState(initAdults);
   const [children, setChildren] = useState(0);
   const [infants, setInfants] = useState(0);
   const [guestSelectorOpen, setGuestSelectorOpen] = useState(false);

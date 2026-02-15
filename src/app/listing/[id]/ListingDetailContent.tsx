@@ -47,6 +47,9 @@ type Props = {
   listing: ListingData;
   isSaved: boolean;
   isLoggedIn: boolean;
+  initialCheckIn?: string;
+  initialCheckOut?: string;
+  initialGuests?: number;
 };
 
 const DESCRIPTION_PREVIEW_LENGTH = 200;
@@ -72,6 +75,9 @@ export default function ListingDetailContent({
   listing,
   isSaved,
   isLoggedIn,
+  initialCheckIn,
+  initialCheckOut,
+  initialGuests,
 }: Props) {
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [priceSummary, setPriceSummary] = useState<{ nights: number; totalPrice: number } | null>(null);
@@ -447,7 +453,10 @@ export default function ListingDetailContent({
                       cleaningFee={listing.cleaningFee ?? 0}
                       maxGuests={listing.maxGuests}
                       listingTitle={listing.title}
-                            onPriceChange={setPriceSummary}
+                      onPriceChange={setPriceSummary}
+                      initialCheckIn={initialCheckIn}
+                      initialCheckOut={initialCheckOut}
+                      initialGuests={initialGuests}
                     />
                   </div>
                 </div>
