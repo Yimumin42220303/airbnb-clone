@@ -22,6 +22,7 @@ export default async function MyBookingsPage() {
               title: true,
               location: true,
               imageUrl: true,
+              cancellationPolicy: true,
             },
           },
           transactions: {
@@ -160,6 +161,8 @@ export default async function MyBookingsPage() {
                             paymentStatus={b.paymentStatus}
                             checkIn={b.checkIn.toISOString().slice(0, 10)}
                             totalPrice={b.totalPrice}
+                            cancellationPolicy={b.listing.cancellationPolicy}
+                            bookingCreatedAt={b.createdAt.toISOString()}
                           />
                         )}
                         {b.status !== "cancelled" && (

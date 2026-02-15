@@ -88,6 +88,7 @@ export default async function BookingConfirmPage({ searchParams }: Props) {
           totalPrice={totalPrice}
           userName={userName}
           userEmail={userEmail}
+          cancellationPolicy={listing.cancellationPolicy}
         />
       </main>
       <Footer />

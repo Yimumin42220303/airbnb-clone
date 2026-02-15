@@ -3,16 +3,16 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { cancelPayment } from "@/lib/portone";
+import {
+  calculateRefundAmount,
+  type CancellationPolicyType,
+} from "@/lib/policies";
 
 /**
  * POST /api/bookings/[id]/refund
  *
  * Cancel booking + Portone refund processing.
- * Refund rate calculated based on cancellation policy:
- * - 30+ days before check-in: 100% refund
- * - 8-29 days before: 50% refund
- * - 1-7 days before: 30% refund
- * - Check-in day: No refund
+ * Refund calculated based on the listing's cancellation policy (flexible/moderate/strict).
  */
 export async function POST(
   request: Request,
@@ -34,6 +34,9 @@ export async function POST(
   const booking = await prisma.booking.findUnique({
     where: { id },
     include: {
+      listing: {
+        select: { cancellationPolicy: true },
+      },
       transactions: {
         where: { status: "paid" },
         orderBy: { createdAt: "desc" },
@@ -70,27 +73,19 @@ export async function POST(
     );
   }
 
-  const daysUntilCheckIn = Math.floor(
-    (booking.checkIn.getTime() - today.getTime()) / (24 * 60 * 60 * 1000)
-  );
+  // Calculate refund based on listing's cancellation policy
+  const policy = (booking.listing.cancellationPolicy || "flexible") as CancellationPolicyType;
+  const refundResult = calculateRefundAmount({
+    policy,
+    totalPrice: booking.totalPrice,
+    checkInDate: booking.checkIn,
+    cancellationDate: today,
+    bookingCreatedAt: booking.createdAt,
+  });
 
-  let refundRate = 0;
-  let refundPolicy = "";
-  if (daysUntilCheckIn >= 30) {
-    refundRate = 1.0;
-    refundPolicy = "30+ days before check-in: 100% refund";
-  } else if (daysUntilCheckIn >= 8) {
-    refundRate = 0.5;
-    refundPolicy = "8-29 days before check-in: 50% refund";
-  } else if (daysUntilCheckIn >= 1) {
-    refundRate = 0.3;
-    refundPolicy = "1-7 days before check-in: 30% refund";
-  } else {
-    refundRate = 0;
-    refundPolicy = "Check-in day: No refund";
-  }
-
-  const refundAmount = Math.floor(booking.totalPrice * refundRate);
+  const refundRate = refundResult.rate;
+  const refundPolicy = refundResult.policyLabel + ": " + refundResult.description;
+  const refundAmount = refundResult.amount;
 
   const paidTransaction = booking.transactions[0];
   let portoneRefundDone = false;

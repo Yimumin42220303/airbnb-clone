@@ -24,11 +24,13 @@ type BookingData = {
   totalPrice: number;
   status: string;
   paymentStatus: string;
+  createdAt: Date | string;
   listing: {
     id: string;
     title: string;
     location: string;
     imageUrl: string;
+    cancellationPolicy?: string;
   };
 };
 
@@ -194,6 +196,8 @@ function ReservationsSection({ bookings }: { bookings: BookingData[] }) {
                           paymentStatus={b.paymentStatus}
                           checkIn={(typeof b.checkIn === "string" ? b.checkIn : b.checkIn.toISOString()).slice(0, 10)}
                           totalPrice={b.totalPrice}
+                          cancellationPolicy={b.listing.cancellationPolicy}
+                          bookingCreatedAt={(typeof b.createdAt === "string" ? b.createdAt : b.createdAt.toISOString())}
                         />
                       )}
                       {b.status !== "cancelled" && (

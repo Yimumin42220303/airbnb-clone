@@ -45,6 +45,7 @@ type Props = {
     beds: number;
     baths: number;
     isPromoted: boolean;
+    cancellationPolicy: string;
     houseRules: string;
     categoryId: string;
     icalImportUrls: string[];
@@ -94,6 +95,7 @@ export default function EditListingForm({
     beds: String(initial.beds),
     baths: String(initial.baths),
     isPromoted: initial.isPromoted,
+    cancellationPolicy: initial.cancellationPolicy ?? "flexible",
     houseRules: initial.houseRules ?? "",
     categoryId: initial.categoryId,
     icalImportUrls: initial.icalImportUrls.join("\n"),
@@ -252,6 +254,7 @@ export default function EditListingForm({
         beds: parseInt(form.beds, 10) || 1,
         baths: parseInt(form.baths, 10) || 1,
         isPromoted: form.isPromoted,
+        cancellationPolicy: form.cancellationPolicy,
         houseRules: form.houseRules,
         categoryId: form.categoryId.trim() || undefined,
         icalImportUrls: form.icalImportUrls
@@ -783,6 +786,42 @@ export default function EditListingForm({
               </label>
             </div>
             )}
+            {/* 취소 정책 */}
+            <div className="border border-airbnb-light-gray rounded-airbnb p-4 space-y-3 bg-airbnb-bg/50">
+              <h3 className="text-airbnb-body font-medium text-airbnb-black">취소 정책</h3>
+              <p className="text-airbnb-caption text-airbnb-gray">
+                게스트의 예약 취소 시 적용할 환불 정책을 선택하세요.
+              </p>
+              <div className="space-y-2">
+                {([
+                  { value: "flexible", label: "유연", desc: "체크인 1일 전까지 취소 시 100% 환불" },
+                  { value: "moderate", label: "보통", desc: "체크인 5일 전까지 100% 환불, 1~4일 전 50% 환불" },
+                  { value: "strict", label: "엄격", desc: "예약 후 48시간 이내(체크인 14일 이상) 100% 환불, 7일 전까지 50% 환불" },
+                ] as const).map((opt) => (
+                  <label
+                    key={opt.value}
+                    className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
+                      form.cancellationPolicy === opt.value
+                        ? "border-[#E31C23] bg-red-50/50"
+                        : "border-airbnb-light-gray hover:bg-airbnb-bg"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="cancellationPolicy"
+                      value={opt.value}
+                      checked={form.cancellationPolicy === opt.value}
+                      onChange={(e) => setForm((f) => ({ ...f, cancellationPolicy: e.target.value }))}
+                      className="mt-0.5 w-4 h-4 accent-rose-500"
+                    />
+                    <div>
+                      <span className="font-medium text-airbnb-body text-airbnb-black">{opt.label}</span>
+                      <p className="text-airbnb-caption text-airbnb-gray mt-0.5">{opt.desc}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
             {/* 주의사항 편집 */}
             <div className="border border-airbnb-light-gray rounded-airbnb p-4 space-y-3 bg-airbnb-bg/50">
               <h3 className="text-airbnb-body font-medium text-airbnb-black">주의사항</h3>

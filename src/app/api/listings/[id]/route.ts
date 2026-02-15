@@ -90,6 +90,7 @@ export async function PATCH(
         beds: body.beds,
         baths: body.baths,
         isPromoted,
+        cancellationPolicy: body.cancellationPolicy,
         houseRules: body.houseRules,
         categoryId: body.categoryId,
         amenityIds: body.amenityIds,

@@ -97,6 +97,7 @@ export default async function EditListingPage({ params }: Props) {
         amenityIds: initialAmenityIds,
         mapUrl: listing.mapUrl ?? null,
         isPromoted: listing.isPromoted ?? false,
+        cancellationPolicy: listing.cancellationPolicy ?? "flexible",
         houseRules: listing.houseRules ?? "",
       }}
     />

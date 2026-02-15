@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  calculateRefundAmount,
+  POLICY_LABELS_KO,
+  type CancellationPolicyType,
+} from "@/lib/policies";
 
 type Props = {
   bookingId: string;
@@ -9,29 +14,32 @@ type Props = {
   paymentStatus?: string;
   checkIn?: string;
   totalPrice?: number;
+  cancellationPolicy?: string;
+  bookingCreatedAt?: string;
 };
 
 /**
- * 환불 비율 계산 (취소 정책과 동일)
+ * 환불 비율 계산 (숙소의 취소 정책 기반)
  */
-function getRefundInfo(checkIn: string, totalPrice: number) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const checkInDate = new Date(checkIn);
-  checkInDate.setHours(0, 0, 0, 0);
-  const daysUntil = Math.floor(
-    (checkInDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000)
-  );
-
-  if (daysUntil >= 30) {
-    return { rate: 100, amount: totalPrice, policy: "체크인 30일 전 이상: 100% 환불" };
-  } else if (daysUntil >= 8) {
-    return { rate: 50, amount: Math.floor(totalPrice * 0.5), policy: "체크인 29~8일 전: 50% 환불" };
-  } else if (daysUntil >= 1) {
-    return { rate: 30, amount: Math.floor(totalPrice * 0.3), policy: "체크인 7일 전: 30% 환불" };
-  } else {
-    return { rate: 0, amount: 0, policy: "체크인 당일: 환불 불가" };
-  }
+function getRefundInfo(
+  checkIn: string,
+  totalPrice: number,
+  cancellationPolicy: CancellationPolicyType = "flexible",
+  bookingCreatedAt?: string
+) {
+  const result = calculateRefundAmount({
+    policy: cancellationPolicy,
+    totalPrice,
+    checkInDate: new Date(checkIn),
+    cancellationDate: new Date(),
+    bookingCreatedAt: bookingCreatedAt ? new Date(bookingCreatedAt) : undefined,
+  });
+  const policyLabel = POLICY_LABELS_KO[cancellationPolicy] || "유연";
+  return {
+    rate: Math.round(result.rate * 100),
+    amount: result.amount,
+    policy: `${policyLabel} 정책: ${result.description}`,
+  };
 }
 
 export default function CancelBookingButton({
@@ -40,6 +48,8 @@ export default function CancelBookingButton({
   paymentStatus,
   checkIn,
   totalPrice,
+  cancellationPolicy,
+  bookingCreatedAt,
 }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -50,7 +60,12 @@ export default function CancelBookingButton({
     let confirmMsg = `"${listingTitle}" 예약을 취소할까요?`;
 
     if (isPaid && checkIn && totalPrice) {
-      const refund = getRefundInfo(checkIn, totalPrice);
+      const refund = getRefundInfo(
+        checkIn,
+        totalPrice,
+        (cancellationPolicy || "flexible") as CancellationPolicyType,
+        bookingCreatedAt
+      );
       confirmMsg =
         `"${listingTitle}" 예약을 취소할까요?\n\n` +
         `취소 정책: ${refund.policy}\n` +
