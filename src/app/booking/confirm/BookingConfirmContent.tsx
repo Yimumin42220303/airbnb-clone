@@ -67,8 +67,7 @@ export default function BookingConfirmContent({
   const [error, setError] = useState("");
   const defaultEmail = userEmail ?? "";
   const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
+    fullName: "",
     email: defaultEmail,
     phone: "",
     specialRequests: "",
@@ -77,8 +76,8 @@ export default function BookingConfirmContent({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!form.lastName?.trim() || !form.firstName?.trim()) {
-      setError("이름과 성을 입력해 주세요.");
+    if (!form.fullName?.trim()) {
+      setError("예약자 성함을 입력해 주세요.");
       return;
     }
     if (!form.email?.trim()) {
@@ -136,7 +135,7 @@ export default function BookingConfirmContent({
             currency: "CURRENCY_KRW",
             payMethod: "CARD",
             customer: {
-              fullName: `${form.lastName} ${form.firstName}`.trim(),
+              fullName: form.fullName.trim(),
               email: form.email.trim(),
               phoneNumber: form.phone.trim().replace(/-/g, "") || undefined,
             },
@@ -284,36 +283,20 @@ export default function BookingConfirmContent({
                 </h2>
               </div>
               <div className="p-6 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[14px] font-medium text-[#222]">
-                      이름 *
-                    </span>
-                    <input
-                      type="text"
-                      value={form.firstName}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, firstName: e.target.value }))
-                      }
-                      className="px-3 py-2.5 border border-[#ebebeb] rounded-lg text-[15px] text-[#222] focus:outline-none focus:ring-2 focus:ring-[#E31C23] focus:border-[#E31C23]"
-                      placeholder="길동"
-                    />
-                  </label>
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[14px] font-medium text-[#222]">
-                      성 *
-                    </span>
-                    <input
-                      type="text"
-                      value={form.lastName}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, lastName: e.target.value }))
-                      }
-                      className="px-3 py-2.5 border border-[#ebebeb] rounded-lg text-[15px] text-[#222] focus:outline-none focus:ring-2 focus:ring-[#E31C23] focus:border-[#E31C23]"
-                      placeholder="홍"
-                    />
-                  </label>
-                </div>
+                <label className="flex flex-col gap-1">
+                  <span className="text-[14px] font-medium text-[#222]">
+                    예약자 성함 *
+                  </span>
+                  <input
+                    type="text"
+                    value={form.fullName}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, fullName: e.target.value }))
+                    }
+                    className="px-3 py-2.5 border border-[#ebebeb] rounded-lg text-[15px] text-[#222] focus:outline-none focus:ring-2 focus:ring-[#E31C23] focus:border-[#E31C23]"
+                    placeholder="홍길동"
+                  />
+                </label>
                 <label className="block flex flex-col gap-1">
                   <span className="text-[14px] font-medium text-[#222]">
                     이메일 *
