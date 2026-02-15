@@ -127,6 +127,7 @@ export async function getListings(filters?: ListingFilters) {
       category: l.category ? { id: l.category.id, name: l.category.name } : undefined,
       amenities: l.listingAmenities.map((la) => la.amenity.name),
       isPromoted: l.isPromoted,
+      cancellationPolicy: (l.cancellationPolicy as "flexible" | "moderate" | "strict") || "flexible",
       houseRules: l.houseRules ?? "",
     };
   });
@@ -201,6 +202,7 @@ export async function getListingById(id: string) {
     beds: listing.beds,
     baths: listing.baths,
     isPromoted: listing.isPromoted,
+    cancellationPolicy: (listing.cancellationPolicy as "flexible" | "moderate" | "strict") || "flexible",
     houseRules: listing.houseRules ?? "",
     category: listing.category ? { id: listing.category.id, name: listing.category.name } : null,
     mapUrl: listing.mapUrl ?? null,
@@ -256,6 +258,7 @@ export type CreateListingInput = {
   beds?: number;
   baths?: number;
   isPromoted?: boolean;
+  cancellationPolicy?: string;
   houseRules?: string;
   categoryId?: string | null;
   amenityIds?: string[];
@@ -314,6 +317,7 @@ export async function createListing(
       beds: input.beds ?? 1,
       baths: input.baths ?? 1,
       isPromoted: input.isPromoted ?? false,
+      cancellationPolicy: input.cancellationPolicy ?? "flexible",
       houseRules: input.houseRules?.trim() || null,
       categoryId: input.categoryId?.trim() || null,
     },
@@ -405,6 +409,9 @@ export async function updateListing(
   if (input.beds != null) data.beds = input.beds;
   if (input.baths != null) data.baths = input.baths;
   if (input.isPromoted != null) data.isPromoted = input.isPromoted;
+  if (input.cancellationPolicy && ["flexible", "moderate", "strict"].includes(input.cancellationPolicy)) {
+    data.cancellationPolicy = input.cancellationPolicy;
+  }
   if (input.houseRules !== undefined) data.houseRules = input.houseRules;
   if (input.mapUrl !== undefined) {
     const trimmed = input.mapUrl?.trim();

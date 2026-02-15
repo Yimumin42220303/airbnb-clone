@@ -37,6 +37,7 @@ type Props = {
   totalPrice: number;
   userName?: string | null;
   userEmail?: string | null;
+  cancellationPolicy?: string;
 };
 
 function formatDate(iso: string) {
@@ -64,6 +65,7 @@ export default function BookingConfirmContent({
   totalPrice,
   userName,
   userEmail,
+  cancellationPolicy = "flexible",
 }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -357,20 +359,58 @@ export default function BookingConfirmContent({
             </div>
 
             {/* 취소 정책 카드 */}
-            <div className="bg-white rounded-2xl border border-[#ebebeb] shadow-[0_1px_3px_rgba(0,0,0,0.08)] overflow-hidden">
-              <div className="p-6 border-b border-[#ebebeb]">
-                <h2 className="text-[17px] font-semibold text-[#222] flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-[#717171]" />
-                  취소 정책
-                </h2>
-              </div>
-              <ul className="p-6 space-y-2 text-[14px] text-[#222]">
-                <li>100%환불: 체크인 30일전</li>
-                <li>50%환불: 체크인 29~8일전</li>
-                <li>30%환불: 체크인 7일전</li>
-                <li>환불불가: 체크인 당일/노쇼</li>
-              </ul>
-            </div>
+            {(() => {
+              const policyMap: Record<string, { label: string; color: string; rules: string[] }> = {
+                flexible: {
+                  label: "유연",
+                  color: "bg-green-100 text-green-800",
+                  rules: [
+                    "체크인 1일 전까지 취소 시 100% 환불",
+                    "체크인 당일 이후 환불 불가",
+                  ],
+                },
+                moderate: {
+                  label: "보통",
+                  color: "bg-amber-100 text-amber-800",
+                  rules: [
+                    "체크인 5일 전까지 취소 시 100% 환불",
+                    "체크인 1~4일 전 취소 시 50% 환불",
+                    "체크인 당일 이후 환불 불가",
+                  ],
+                },
+                strict: {
+                  label: "엄격",
+                  color: "bg-red-100 text-red-800",
+                  rules: [
+                    "예약 후 48시간 이내 취소 시 100% 환불 (체크인 14일 이상 남은 경우)",
+                    "체크인 7일 전까지 취소 시 50% 환불",
+                    "체크인 7일 이내 환불 불가",
+                  ],
+                },
+              };
+              const info = policyMap[cancellationPolicy] || policyMap.flexible;
+              return (
+                <div className="bg-white rounded-2xl border border-[#ebebeb] shadow-[0_1px_3px_rgba(0,0,0,0.08)] overflow-hidden">
+                  <div className="p-6 border-b border-[#ebebeb]">
+                    <h2 className="text-[17px] font-semibold text-[#222] flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-[#717171]" />
+                      취소 정책
+                      <span className={`text-[12px] font-semibold px-2 py-0.5 rounded-full ${info.color}`}>
+                        {info.label}
+                      </span>
+                    </h2>
+                  </div>
+                  <ul className="p-6 space-y-2 text-[14px] text-[#222]">
+                    {info.rules.map((rule, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#717171] flex-shrink-0" />
+                        {rule}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })()}
           </div>
 
           {/* 오른쪽 컬럼 (1/3) */}

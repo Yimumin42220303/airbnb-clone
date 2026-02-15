@@ -37,6 +37,7 @@ export default async function MypagePage() {
             title: true,
             location: true,
             imageUrl: true,
+            cancellationPolicy: true,
           },
         },
       },

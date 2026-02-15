@@ -118,6 +118,7 @@ export async function POST(request: Request) {
       categoryId: body.categoryId,
       amenityIds: body.amenityIds,
       isPromoted,
+      cancellationPolicy: ["flexible", "moderate", "strict"].includes(body.cancellationPolicy) ? body.cancellationPolicy : "flexible",
     });
 
     if (!result.ok) {
