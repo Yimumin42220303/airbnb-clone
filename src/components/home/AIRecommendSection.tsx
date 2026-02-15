@@ -203,7 +203,7 @@ export default function AIRecommendSection() {
 
           {dateOpen && (
             <div
-              className="fixed inset-0 z-[10001] flex items-start justify-center pt-28 pb-8 px-4 bg-black/40"
+              className="fixed inset-0 z-[10001] flex items-start justify-center pt-[184px] md:pt-[200px] pb-8 px-4 bg-black/40"
               onClick={() => setDateOpen(false)}
               role="presentation"
             >
