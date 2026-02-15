@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
-import { Resend } from "resend";
+import { sendEmail } from "@/lib/email";
 import { randomBytes } from "crypto";
 
 const hasResend = !!process.env.RESEND_API_KEY;
@@ -76,9 +76,7 @@ export async function POST(request: Request) {
     const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${token}`;
 
     if (process.env.NODE_ENV === "development" && !hasResend) {
-      console.log("\n[개발 모드] 이메일 인증 링크:");
-      console.log(`  이메일: ${email}`);
-      console.log(`  링크: ${verifyUrl}\n`);
+      console.log("\n[Dev] Verify link for " + email + ": " + verifyUrl);
       return NextResponse.json({ ok: true, message: "회원가입이 완료되었습니다. 이메일을 확인해 주세요." });
     }
 
@@ -89,11 +87,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    const fromEmail = process.env.EMAIL_FROM ?? "도쿄민박 <onboarding@resend.dev>";
-
-    await resend.emails.send({
-      from: fromEmail,
+    await sendEmail({
       to: email,
       subject: "도쿄민박 이메일 인증",
       html: `

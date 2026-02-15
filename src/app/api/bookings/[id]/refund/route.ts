@@ -7,6 +7,11 @@ import {
   calculateRefundAmount,
   type CancellationPolicyType,
 } from "@/lib/policies";
+import { sendEmailAsync, BASE_URL } from "@/lib/email";
+import {
+  bookingCancelledGuest,
+  bookingCancelledHost,
+} from "@/lib/email-templates";
 
 /**
  * POST /api/bookings/[id]/refund
@@ -35,8 +40,14 @@ export async function POST(
     where: { id },
     include: {
       listing: {
-        select: { cancellationPolicy: true },
+        select: {
+          cancellationPolicy: true,
+          title: true,
+          location: true,
+          user: { select: { name: true, email: true } },
+        },
       },
+      user: { select: { name: true, email: true } },
       transactions: {
         where: { status: "paid" },
         orderBy: { createdAt: "desc" },
@@ -131,6 +142,40 @@ export async function POST(
       ...(portoneRefundDone ? { paymentStatus: "refunded" } : {}),
     },
   });
+
+  // Send cancellation emails
+  const nights = Math.floor(
+    (booking.checkOut.getTime() - booking.checkIn.getTime()) / (24 * 60 * 60 * 1000)
+  );
+  const emailInfo = {
+    listingTitle: booking.listing.title || "",
+    listingLocation: booking.listing.location || "",
+    checkIn: booking.checkIn.toISOString().slice(0, 10),
+    checkOut: booking.checkOut.toISOString().slice(0, 10),
+    guests: booking.guests,
+    nights,
+    totalPrice: booking.totalPrice,
+    guestName: booking.user?.name || "Guest",
+    guestEmail: booking.user?.email || "",
+    bookingId: id,
+    baseUrl: BASE_URL,
+  };
+
+  if (booking.user?.email) {
+    const guestMail = bookingCancelledGuest({
+      ...emailInfo,
+      refundAmount,
+      refundPolicy,
+    });
+    sendEmailAsync({ to: booking.user.email, ...guestMail });
+  }
+  if (booking.listing.user?.email) {
+    const hostMail = bookingCancelledHost({
+      ...emailInfo,
+      hostName: booking.listing.user.name || "Host",
+    });
+    sendEmailAsync({ to: booking.listing.user.email, ...hostMail });
+  }
 
   return NextResponse.json({
     ok: true,
