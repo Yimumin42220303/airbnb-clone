@@ -17,6 +17,8 @@ import {
 const PORTONE_STORE_ID = process.env.NEXT_PUBLIC_PORTONE_STORE_ID ?? "";
 const PORTONE_CHANNEL_KEY =
   process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY ?? "";
+const PORTONE_VA_CHANNEL_KEY =
+  process.env.NEXT_PUBLIC_PORTONE_VA_CHANNEL_KEY || PORTONE_CHANNEL_KEY;
 const PORTONE_READY = !!(
   PORTONE_STORE_ID &&
   PORTONE_CHANNEL_KEY
@@ -132,7 +134,7 @@ export default function BookingConfirmContent({
           const generatedPaymentId = `b${data.id}${Date.now()}`;
           const paymentRequest: Parameters<typeof PortOne.requestPayment>[0] = {
             storeId: PORTONE_STORE_ID,
-            channelKey: PORTONE_CHANNEL_KEY,
+            channelKey: isVirtualAccount ? PORTONE_VA_CHANNEL_KEY : PORTONE_CHANNEL_KEY,
             paymentId: generatedPaymentId,
             orderName: listingTitle.slice(0, 50),
             totalAmount: totalPrice,
@@ -145,6 +147,16 @@ export default function BookingConfirmContent({
             },
           };
           const result = await PortOne.requestPayment(paymentRequest);
+          // SDK 에러 코드가 있으면 구체적 에러 표시
+          if (result && result.code) {
+            setError(result.message || "결제 요청에 실패했습니다. (" + result.code + ")");
+            await fetch(`/api/bookings/${data.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ status: "cancelled" }),
+            });
+            return;
+          }
           // 결제창 X(닫기) 시 SDK는 reject가 아니라 undefined로 resolve함
           if (result && result.transactionType === "PAYMENT" && !result.code) {
             if (isVirtualAccount) {
