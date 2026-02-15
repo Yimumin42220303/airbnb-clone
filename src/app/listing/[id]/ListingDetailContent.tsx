@@ -392,9 +392,14 @@ export default function ListingDetailContent({
                     ))}
                   </ul>
                 ) : (
-                  <p className="p-4 md:p-6 text-[15px] text-[#717171]">
-                    아직 리뷰가 없습니다.
-                  </p>
+                  <div className="p-4 md:p-6 text-center py-10">
+                    <p className="text-[15px] text-[#717171] mb-1">
+                      아직 리뷰가 없습니다
+                    </p>
+                    <p className="text-[13px] text-[#b0b0b0]">
+                      이 숙소에 머무르셨다면 첫 번째 리뷰를 남겨보세요!
+                    </p>
+                  </div>
                 )}
                 {/* Guest Review Form */}
                 <div className="p-4 md:p-6 border-t border-[#ebebeb]">

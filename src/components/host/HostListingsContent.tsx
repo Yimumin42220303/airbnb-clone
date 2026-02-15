@@ -82,7 +82,20 @@ export default function HostListingsContent({ listings, userId, isAdmin }: Props
               </Link>
             </p>
           ) : listings.length === 0 ? (
-            <p className="text-airbnb-body text-minbak-gray">{t("listings.empty")}</p>
+            <div className="text-center py-16">
+              <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center mx-auto mb-4">
+                <Plus className="w-7 h-7 text-neutral-400" />
+              </div>
+              <p className="text-airbnb-body text-minbak-black font-medium mb-2">{t("listings.empty")}</p>
+              <p className="text-airbnb-caption text-minbak-gray mb-6">숙소를 등록하고 호스팅을 시작해보세요.</p>
+              <Link
+                href="/host/listings/new"
+                className="inline-flex items-center gap-2 min-h-[44px] px-6 py-2.5 rounded-airbnb-full bg-minbak-primary text-white text-airbnb-body font-medium hover:bg-minbak-primary-hover transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                {t("listings.addListing")}
+              </Link>
+            </div>
           ) : (
             <>
               <ul className="md:hidden space-y-3">

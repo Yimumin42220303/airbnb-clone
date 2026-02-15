@@ -94,6 +94,14 @@ export default function Header() {
                 {hostT.t("nav.listings")}
               </Link>
               <Link
+                href="/host/bookings"
+                className={`min-h-[44px] flex items-center px-1.5 sm:px-2 text-xs sm:text-sm font-medium transition-colors ${
+                  pathname?.startsWith("/host/bookings") ? "text-minbak-black border-b-2 border-minbak-black pb-2 -mb-0.5" : "text-minbak-black hover:underline"
+                }`}
+              >
+                {hostT.t("nav.bookings")}
+              </Link>
+              <Link
                 href="/messages"
                 className={`min-h-[44px] flex items-center px-1.5 sm:px-2 text-xs sm:text-sm font-medium transition-colors ${
                   pathname?.startsWith("/messages") ? "text-minbak-black border-b-2 border-minbak-black pb-2 -mb-0.5" : "text-minbak-black hover:underline"

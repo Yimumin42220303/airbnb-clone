@@ -20,7 +20,7 @@ export default async function BookingCompletePage({ searchParams }: Props) {
   const booking = id
     ? await prisma.booking.findUnique({
         where: { id },
-        select: { paymentStatus: true, status: true },
+        select: { paymentStatus: true, status: true, listingId: true },
       })
     : null;
 
@@ -112,6 +112,14 @@ export default async function BookingCompletePage({ searchParams }: Props) {
             >
               내 예약 보기
             </Link>
+            {booking?.listingId && (
+              <Link
+                href={`/listing/${booking.listingId}`}
+                className="inline-flex items-center justify-center min-h-[48px] px-6 py-3 text-airbnb-body font-medium rounded-airbnb-full border border-minbak-light-gray text-minbak-black hover:bg-minbak-bg transition-colors"
+              >
+                숙소 다시 보기
+              </Link>
+            )}
           </div>
         </div>
         <Footer />
