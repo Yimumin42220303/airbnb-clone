@@ -3,6 +3,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createBooking } from "@/lib/bookings";
 import { prisma } from "@/lib/prisma";
+import { sendEmailAsync, BASE_URL } from "@/lib/email";
+import {
+  bookingConfirmationGuest,
+  bookingNotificationHost,
+} from "@/lib/email-templates";
 
 /**
  * GET /api/bookings
@@ -77,6 +82,58 @@ export async function POST(request: Request) {
 
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+
+    // Send booking notification emails (fire-and-forget)
+    try {
+      const booking = result.booking;
+      const listing = await prisma.listing.findUnique({
+        where: { id: String(listingId) },
+        select: {
+          title: true,
+          location: true,
+          user: { select: { name: true, email: true } },
+        },
+      });
+      const guestUser = await prisma.user.findUnique({
+        where: { id: (session as { userId?: string } | null)?.userId ?? "" },
+        select: { name: true, email: true },
+      });
+
+      if (listing && guestUser?.email) {
+        const nights = Math.floor(
+          (new Date(String(checkOut)).getTime() - new Date(String(checkIn)).getTime()) /
+            (24 * 60 * 60 * 1000)
+        );
+        const emailInfo = {
+          listingTitle: listing.title,
+          listingLocation: listing.location,
+          checkIn: String(checkIn),
+          checkOut: String(checkOut),
+          guests: Number(guests),
+          nights,
+          totalPrice: booking.totalPrice,
+          guestName: guestUser.name || "Guest",
+          guestEmail: guestUser.email,
+          bookingId: booking.id,
+          baseUrl: BASE_URL,
+        };
+
+        // Guest email
+        const guestMail = bookingConfirmationGuest(emailInfo);
+        sendEmailAsync({ to: guestUser.email, ...guestMail });
+
+        // Host email
+        if (listing.user?.email) {
+          const hostMail = bookingNotificationHost({
+            ...emailInfo,
+            hostName: listing.user.name || "Host",
+          });
+          sendEmailAsync({ to: listing.user.email, ...hostMail });
+        }
+      }
+    } catch (emailErr) {
+      console.error("[Booking Email] Error:", emailErr);
     }
 
     return NextResponse.json(result.booking, { status: 201 });

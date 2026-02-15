@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getPayment } from "@/lib/portone";
+import { sendEmailAsync, BASE_URL } from "@/lib/email";
+import { paymentConfirmationGuest } from "@/lib/email-templates";
 
 /**
  * POST /api/payments/verify
@@ -137,6 +139,38 @@ export async function POST(request: Request) {
       data: { paymentStatus: "paid", status: "confirmed" },
     }),
   ]);
+
+  // Send payment confirmation email
+  try {
+    const fullBooking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        listing: { select: { title: true, location: true } },
+        user: { select: { name: true, email: true } },
+      },
+    });
+    if (fullBooking?.user?.email) {
+      const nights = Math.floor(
+        (fullBooking.checkOut.getTime() - fullBooking.checkIn.getTime()) / (24 * 60 * 60 * 1000)
+      );
+      const mail = paymentConfirmationGuest({
+        listingTitle: fullBooking.listing.title,
+        listingLocation: fullBooking.listing.location,
+        checkIn: fullBooking.checkIn.toISOString().slice(0, 10),
+        checkOut: fullBooking.checkOut.toISOString().slice(0, 10),
+        guests: fullBooking.guests,
+        nights,
+        totalPrice: fullBooking.totalPrice,
+        guestName: fullBooking.user.name || "Guest",
+        guestEmail: fullBooking.user.email,
+        bookingId,
+        baseUrl: BASE_URL,
+      });
+      sendEmailAsync({ to: fullBooking.user.email, ...mail });
+    }
+  } catch (emailErr) {
+    console.error("[Payment Email] Error:", emailErr);
+  }
 
   return NextResponse.json({
     ok: true,

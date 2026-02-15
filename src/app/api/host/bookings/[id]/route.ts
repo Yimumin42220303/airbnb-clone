@@ -3,6 +3,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { cancelPayment } from "@/lib/portone";
+import { sendEmailAsync, BASE_URL } from "@/lib/email";
+import {
+  bookingAcceptedGuest,
+  bookingRejectedGuest,
+} from "@/lib/email-templates";
 
 /**
  * PATCH /api/host/bookings/[id]
@@ -31,7 +36,8 @@ export async function PATCH(
   const booking = await prisma.booking.findUnique({
     where: { id },
     include: {
-      listing: { select: { userId: true, title: true } },
+      listing: { select: { userId: true, title: true, location: true } },
+      user: { select: { name: true, email: true } },
       transactions: {
         where: { status: "paid" },
         orderBy: { createdAt: "desc" },
@@ -63,6 +69,28 @@ export async function PATCH(
       where: { id },
       data: { status: "confirmed" },
     });
+
+    // Notify guest: booking accepted
+    if (booking.user?.email) {
+      const nights = Math.floor(
+        (booking.checkOut.getTime() - booking.checkIn.getTime()) / (24 * 60 * 60 * 1000)
+      );
+      const mail = bookingAcceptedGuest({
+        listingTitle: booking.listing.title,
+        listingLocation: booking.listing.location || "",
+        checkIn: booking.checkIn.toISOString().slice(0, 10),
+        checkOut: booking.checkOut.toISOString().slice(0, 10),
+        guests: booking.guests,
+        nights,
+        totalPrice: booking.totalPrice,
+        guestName: booking.user.name || "Guest",
+        guestEmail: booking.user.email,
+        bookingId: id,
+        baseUrl: BASE_URL,
+      });
+      sendEmailAsync({ to: booking.user.email, ...mail });
+    }
+
     return NextResponse.json({ ok: true, status: "confirmed" });
   }
 
@@ -126,6 +154,27 @@ export async function PATCH(
         ...(refundDone ? { paymentStatus: "refunded" } : {}),
       },
     });
+    // Notify guest: booking rejected/cancelled by host
+    if (booking.user?.email) {
+      const nights = Math.floor(
+        (booking.checkOut.getTime() - booking.checkIn.getTime()) / (24 * 60 * 60 * 1000)
+      );
+      const mail = bookingRejectedGuest({
+        listingTitle: booking.listing.title,
+        listingLocation: booking.listing.location || "",
+        checkIn: booking.checkIn.toISOString().slice(0, 10),
+        checkOut: booking.checkOut.toISOString().slice(0, 10),
+        guests: booking.guests,
+        nights,
+        totalPrice: booking.totalPrice,
+        guestName: booking.user.name || "Guest",
+        guestEmail: booking.user.email,
+        bookingId: id,
+        baseUrl: BASE_URL,
+      });
+      sendEmailAsync({ to: booking.user.email, ...mail });
+    }
+
     return NextResponse.json({
       ok: true,
       status: "cancelled",
