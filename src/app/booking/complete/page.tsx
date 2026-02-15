@@ -2,18 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Header, Footer } from "@/components/layout";
 import { prisma } from "@/lib/prisma";
-import { getPayment } from "@/lib/portone";
 
 type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
-
-type VaInfo = {
-  bankName: string;
-  accountNumber: string;
-  holderName: string;
-  dueDate: string | null;
-} | null;
 
 export default async function BookingCompletePage({ searchParams }: Props) {
   const params = await searchParams;
@@ -24,8 +16,6 @@ export default async function BookingCompletePage({ searchParams }: Props) {
   const guests = typeof params.guests === "string" ? params.guests : "";
   const total = typeof params.total === "string" ? params.total : "";
   const nights = typeof params.nights === "string" ? params.nights : "";
-  const isVa = params.va === "1";
-  const vaPaymentId = typeof params.paymentId === "string" ? params.paymentId : "";
 
   // DB에서 실제 예약 상태 조회
   const booking = id
@@ -49,26 +39,6 @@ export default async function BookingCompletePage({ searchParams }: Props) {
     }
   }
 
-  // 가상계좌 정보 조회
-  let vaInfo: VaInfo = null;
-  if (isVa && vaPaymentId) {
-    try {
-      const pp = await getPayment(vaPaymentId);
-      const method = pp.method as Record<string, unknown> | undefined;
-      if (method && method.type === "VirtualAccount") {
-        const bank = method.bank as Record<string, string> | undefined;
-        vaInfo = {
-          bankName: bank?.name || String(method.bankCode || ""),
-          accountNumber: String(method.accountNumber || ""),
-          holderName: String(method.remitteeName || method.accountHolder || ""),
-          dueDate: method.dueDate ? String(method.dueDate) : null,
-        };
-      }
-    } catch (err) {
-      console.error("VA info lookup error:", err);
-    }
-  }
-
   return (
     <>
       <Header />
@@ -76,24 +46,18 @@ export default async function BookingCompletePage({ searchParams }: Props) {
         <div className="max-w-[560px] mx-auto py-12">
           <div className="text-center mb-8">
             <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 ${
-              isPaid ? "bg-green-100" : vaInfo ? "bg-blue-100" : "bg-amber-100"
+              isPaid ? "bg-green-100" : "bg-amber-100"
             }`}>
-              <span className={`text-3xl ${isPaid ? "text-green-600" : vaInfo ? "text-blue-600" : "text-amber-600"}`} aria-hidden>
-                {isPaid ? "\u2713" : vaInfo ? "\uD83C\uDFE6" : "\u23F3"}
+              <span className={`text-3xl ${isPaid ? "text-green-600" : "text-amber-600"}`} aria-hidden>
+                {isPaid ? "\u2713" : "\u23F3"}
               </span>
             </div>
             <h1 className="text-airbnb-h2 font-semibold text-minbak-black mb-2">
-              {isPaid
-                ? "예약 및 결제가 완료되었습니다"
-                : vaInfo
-                ? "가상계좌가 발급되었습니다"
-                : "예약이 완료되었습니다"}
+              {isPaid ? "예약 및 결제가 완료되었습니다" : "예약이 완료되었습니다"}
             </h1>
             <p className="text-airbnb-body text-minbak-gray">
               {isPaid
                 ? "결제가 확인되었습니다. 호스트와 메시지로 연락할 수 있어요."
-                : vaInfo
-                ? "아래 계좌로 입금하시면 자동으로 확인되어 예약이 확정됩니다."
                 : "예약 내역을 확인하고, 호스트와 메시지로 연락할 수 있어요."}
             </p>
           </div>
@@ -141,45 +105,8 @@ export default async function BookingCompletePage({ searchParams }: Props) {
             )}
           </div>
 
-          {vaInfo && !isPaid && (
-            <div className="bg-blue-50 border border-blue-200 rounded-airbnb p-6 text-left space-y-3 mb-6">
-              <h2 className="font-semibold text-minbak-black text-airbnb-body flex items-center gap-2">
-                <span aria-hidden>&#x1F3E6;</span> 입금 계좌 안내
-              </h2>
-              <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-airbnb-body">
-                <span className="text-minbak-gray">입금은행</span>
-                <span className="font-medium text-minbak-black">{vaInfo.bankName}</span>
-                <span className="text-minbak-gray">계좌번호</span>
-                <span className="font-medium text-minbak-black">{vaInfo.accountNumber}</span>
-                <span className="text-minbak-gray">예금주</span>
-                <span className="font-medium text-minbak-black">{vaInfo.holderName}</span>
-                <span className="text-minbak-gray">입금금액</span>
-                <span className="font-semibold text-minbak-primary">
-                  {total ? `\u20A9${Number(total).toLocaleString()}` : ""}
-                </span>
-                {vaInfo.dueDate && (
-                  <>
-                    <span className="text-minbak-gray">입금기한</span>
-                    <span className="font-medium text-red-600">
-                      {new Date(vaInfo.dueDate).toLocaleString("ko-KR", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </>
-                )}
-              </div>
-              <p className="text-airbnb-caption text-minbak-gray">
-                입금기한 내 미입금 시 예약이 자동 취소됩니다.
-              </p>
-            </div>
-          )}
-
           <div className="flex flex-col gap-3">
-            {!isPaid && !vaInfo && id && (
+            {!isPaid && id && (
               <Link
                 href={`/booking/${id}/pay`}
                 className="inline-flex items-center justify-center min-h-[48px] px-6 py-3 text-airbnb-body font-medium rounded-airbnb-full bg-minbak-primary text-white hover:bg-minbak-primary-hover transition-colors"
