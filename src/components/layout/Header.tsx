@@ -154,7 +154,7 @@ export default function Header() {
               도쿄여행 가이드
             </Link>
             <Link
-              href="/recommend"
+              href="/#ai-recommend"
               className="hidden sm:inline text-airbnb-body text-minbak-black hover:text-minbak-primary transition-colors md:inline flex items-center gap-1"
             >
               <Sparkles className="w-4 h-4" />
