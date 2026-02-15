@@ -341,6 +341,7 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={() => handleImageDrop(i)}
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element -- blob URL 미리보기 */}
                   <img
                     src={URL.createObjectURL(file)}
                     alt={`미리보기 ${i + 1}`}

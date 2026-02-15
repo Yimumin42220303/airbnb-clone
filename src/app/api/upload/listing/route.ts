@@ -13,7 +13,7 @@ function getExt(name: string): string {
   return m ? `.${m[1].toLowerCase().replace("jpeg", "jpg")}` : ".jpg";
 }
 
-function useCloudinary(): boolean {
+function isCloudinaryEnabled(): boolean {
   return !!(
     process.env.CLOUDINARY_URL?.trim() ||
     (process.env.CLOUDINARY_CLOUD_NAME?.trim() &&
@@ -72,11 +72,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const useCloud = useCloudinary();
+  const useCloud = isCloudinaryEnabled();
   const useBlobStorage = !!process.env.BLOB_READ_WRITE_TOKEN;
   const isVercel = !!process.env.VERCEL;
-  console.log("[upload] useCloudinary:", useCloud, "useBlob:", useBlobStorage, "isVercel:", isVercel, "files:", valid.length);
-
   // Vercel에서는 Cloudinary 또는 Blob 필요 (Cloudinary 우선)
   if (!useCloud && !useBlobStorage && isVercel) {
     return NextResponse.json(

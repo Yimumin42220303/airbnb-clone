@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { Mail } from "lucide-react";
+import { KAKAO_LINK, CONTACT_EMAIL } from "@/lib/constants";
+import KakaoIcon from "@/components/ui/KakaoIcon";
 
 /** Framer Footer 스타일: CTA 블록 → 링크 행 → 사업자 정보 그리드 → 이메일·카카오 */
-const EMAIL_LINK = "mailto:minbaktokyo@gmail.com";
-const KAKAO_LINK = "https://pf.kakao.com/_nxhNjn/chat";
 
 export default function Footer() {
   return (
@@ -59,7 +59,7 @@ export default function Footer() {
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
             <a
-              href={EMAIL_LINK}
+              href={CONTACT_EMAIL}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center w-10 h-10 rounded-full border border-white/40 text-white hover:bg-white/10 transition-colors"
@@ -74,9 +74,7 @@ export default function Footer() {
               className="flex items-center justify-center w-9 h-9 rounded-full bg-[#FEE500] text-[#191919] hover:opacity-90 transition-opacity"
               aria-label="카카오 문의"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                <path d="M12 3c5.799 0 10.5 3.664 10.5 8.185 0 4.52-4.701 8.184-10.5 8.184a13.5 13.5 0 0 1-1.727-.11l-4.408 2.883c-.501.265-.678.236-.472-.413l.892-3.678c-2.88-1.46-4.785-3.99-4.785-6.866C1.5 6.665 6.201 3 12 3Z" />
-              </svg>
+              <KakaoIcon size={20} />
             </a>
           </div>
         </div>

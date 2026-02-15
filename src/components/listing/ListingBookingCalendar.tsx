@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { toISODateString } from "@/lib/date-utils";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -9,13 +10,6 @@ function toDateOnly(d: Date): Date {
   const out = new Date(d);
   out.setHours(0, 0, 0, 0);
   return out;
-}
-
-function toISO(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
 }
 
 function startOfMonth(d: Date): Date {
@@ -118,9 +112,9 @@ function MonthBlock({
   const isDisabled = (day: Date) =>
     isBefore(day, today) ||
     isAfter(day, maxDate) ||
-    blockedSet.has(toISO(day));
+    blockedSet.has(toISODateString(day));
 
-  const isCheckoutOnly = (day: Date) => checkoutOnlySet.has(toISO(day));
+  const isCheckoutOnly = (day: Date) => checkoutOnlySet.has(toISODateString(day));
 
   return (
     <div className="flex-1 min-w-0">
@@ -264,8 +258,8 @@ export default function ListingBookingCalendar({
   const selectingCheckout = !!start && !end;
 
   const handleDayClick = (day: Date) => {
-    const dayIsCheckoutOnly = checkoutOnlySet.has(toISO(day));
-    const isBlocked = blockedSet.has(toISO(day));
+    const dayIsCheckoutOnly = checkoutOnlySet.has(toISODateString(day));
+    const isBlocked = blockedSet.has(toISODateString(day));
 
     if (isBefore(day, today) || isAfter(day, maxDate)) return;
     if (isBlocked && !(selectingCheckout && dayIsCheckoutOnly)) return;
@@ -277,11 +271,11 @@ export default function ListingBookingCalendar({
     setCheckoutOnlyMessage(false);
 
     if (selectingCheckIn) {
-      onCheckInChange(toISO(day));
+      onCheckInChange(toISODateString(day));
       onCheckOutChange("");
     } else {
       if (!start || isSameDay(day, start) || isBefore(day, start)) return;
-      onCheckOutChange(toISO(day));
+      onCheckOutChange(toISODateString(day));
     }
   };
 

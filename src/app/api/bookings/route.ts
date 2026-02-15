@@ -119,17 +119,22 @@ export async function POST(request: Request) {
           baseUrl: BASE_URL,
         };
 
-        // Guest email
-        const guestMail = bookingConfirmationGuest(emailInfo);
-        sendEmailAsync({ to: guestUser.email, ...guestMail });
+        const hostEmail = listing.user?.email;
+        const isSameEmail = hostEmail && hostEmail === guestUser.email;
 
-        // Host email
-        if (listing.user?.email) {
+        // Guest email (호스트와 같은 이메일이면 생략 — 호스트용 일본어 메일만 발송)
+        if (!isSameEmail) {
+          const guestMail = bookingConfirmationGuest(emailInfo);
+          sendEmailAsync({ to: guestUser.email, ...guestMail });
+        }
+
+        // Host email (일본어)
+        if (hostEmail) {
           const hostMail = bookingNotificationHost({
             ...emailInfo,
-            hostName: listing.user.name || "Host",
+            hostName: listing.user?.name || "Host",
           });
-          sendEmailAsync({ to: listing.user.email, ...hostMail });
+          sendEmailAsync({ to: hostEmail, ...hostMail });
         }
       }
     } catch (emailErr) {

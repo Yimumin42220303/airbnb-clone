@@ -37,8 +37,8 @@ export async function POST(request: Request) {
           }),
         };
       },
-      onUploadCompleted: async ({ blob, tokenPayload }) => {
-        console.log("[blob upload completed]", blob.url, tokenPayload);
+      onUploadCompleted: async () => {
+        // upload completed
       },
     });
 

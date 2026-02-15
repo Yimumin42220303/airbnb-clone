@@ -145,6 +145,8 @@ model Listing {
   images       ListingImage[]
   availability ListingAvailability[]
   wishlists    Wishlist[]
+
+  @@index([userId]) // 호스트별 숙소 조회 최적화
 }
 
 // 위시리스트 (찜)
@@ -236,6 +238,8 @@ model Booking {
   transactions PaymentTransaction[]
 
   @@index([listingId, checkIn, checkOut]) // 예약 가능 여부 검색용
+  @@index([status, paymentStatus])        // 상태별 조회 최적화
+  @@index([userId])                        // 사용자별 예약 조회
 }
 
 // ---------- 결제 트랜잭션 (포트원 결제 이력) ----------

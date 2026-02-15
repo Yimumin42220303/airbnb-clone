@@ -66,7 +66,7 @@ export default async function EditListingPage({ params }: Props) {
       amenities={amenities}
       isAdmin={isAdmin}
       hosts={hosts.map((h) => ({ id: h.id, email: h.email, name: h.name ?? h.email }))}
-      currentHostId={owner.userId}
+      currentHostId={owner?.userId ?? ""}
       initial={{
         title: listing.title,
         location: listing.location,
@@ -95,7 +95,7 @@ export default async function EditListingPage({ params }: Props) {
         categoryId: listing.category?.id ?? "",
         icalImportUrls: listing.icalImportUrls ?? [],
         amenityIds: initialAmenityIds,
-        mapUrl: listing.mapUrl ?? null,
+        mapUrl: listing.mapUrl ?? undefined,
         isPromoted: listing.isPromoted ?? false,
         cancellationPolicy: listing.cancellationPolicy ?? "flexible",
         houseRules: listing.houseRules ?? "",

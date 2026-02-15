@@ -5,3 +5,8 @@ import { twMerge } from "tailwind-merge";
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+/** 숫자 → "₩12,345" 통화 포맷 */
+export function formatCurrency(amount: number): string {
+  return `₩${amount.toLocaleString()}`;
+}

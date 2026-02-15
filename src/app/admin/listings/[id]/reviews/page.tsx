@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { formatDateShort } from "@/lib/date-utils";
 
 type RouteParams = { params: Promise<{ id: string }> | { id: string } };
 
@@ -87,10 +88,6 @@ type ClientProps = {
   reviews: ReviewItem[];
 };
 
-function formatDate(date: string) {
-  return new Date(date).toLocaleDateString("ko-KR");
-}
-
 function AdminListingReviewsClient({
   listingId,
   listingTitle,
@@ -131,7 +128,7 @@ function AdminListingReviewsClient({
                       <span className="line-clamp-2">{r.body}</span>
                     </td>
                     <td className="py-2 px-3 whitespace-nowrap text-airbnb-caption text-airbnb-gray">
-                      {formatDate(r.createdAt)}
+                      {formatDateShort(r.createdAt)}
                     </td>
                   </tr>
                 ))}
