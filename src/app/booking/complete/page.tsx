@@ -94,9 +94,21 @@ export default async function BookingCompletePage({ searchParams }: Props) {
           </div>
 
           <div className="flex flex-col gap-3">
+            {!isPaid && id && (
+              <Link
+                href={`/booking/${id}/pay`}
+                className="inline-flex items-center justify-center min-h-[48px] px-6 py-3 text-airbnb-body font-medium rounded-airbnb-full bg-minbak-primary text-white hover:bg-minbak-primary-hover transition-colors"
+              >
+                결제하기
+              </Link>
+            )}
             <Link
               href="/my-bookings"
-              className="inline-flex items-center justify-center min-h-[48px] px-6 py-3 text-airbnb-body font-medium rounded-airbnb-full bg-minbak-primary text-white hover:bg-minbak-primary-hover transition-colors"
+              className={`inline-flex items-center justify-center min-h-[48px] px-6 py-3 text-airbnb-body font-medium rounded-airbnb-full transition-colors ${
+                isPaid
+                  ? "bg-minbak-primary text-white hover:bg-minbak-primary-hover"
+                  : "border border-minbak-light-gray text-minbak-black hover:bg-minbak-bg"
+              }`}
             >
               내 예약 보기
             </Link>

@@ -58,6 +58,7 @@ export default function BookingForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [priceResult, setPriceResult] = useState<PriceResult | null>(null);
+  const [priceLoading, setPriceLoading] = useState(false);
   const [blockedDateKeys, setBlockedDateKeys] = useState<string[]>([]);
   const [checkoutOnlyDateKeys, setCheckoutOnlyDateKeys] = useState<string[]>([]);
   const calendarWrapRef = useRef<HTMLDivElement>(null);
@@ -161,6 +162,7 @@ export default function BookingForm({
       return;
     }
     let cancelled = false;
+    setPriceLoading(true);
     fetch(
       `/api/listings/${listingId}/price?checkIn=${encodeURIComponent(
         checkIn
@@ -186,6 +188,9 @@ export default function BookingForm({
           setPriceResult(null);
           onPriceChange?.(null);
         }
+      })
+      .finally(() => {
+        if (!cancelled) setPriceLoading(false);
       });
     return () => {
       cancelled = true;
@@ -409,7 +414,16 @@ export default function BookingForm({
         )}
       </div>
 
-      {nights > 0 && priceResult && (
+      {priceLoading && checkIn && checkOut && (
+        <div className="border-t border-airbnb-light-gray pt-4 mb-4">
+          <div className="flex items-center gap-2 text-airbnb-body text-airbnb-gray">
+            <span className="inline-block w-4 h-4 border-2 border-airbnb-gray border-t-transparent rounded-full animate-spin" />
+            요금 계산 중...
+          </div>
+        </div>
+      )}
+
+      {!priceLoading && nights > 0 && priceResult && (
         <div className="border-t border-airbnb-light-gray pt-4 space-y-2 mb-4">
           {(() => {
             const perNight = nights > 0 ? Math.floor(totalPrice / nights) : 0;

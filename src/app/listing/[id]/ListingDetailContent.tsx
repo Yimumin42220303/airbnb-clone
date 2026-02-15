@@ -370,7 +370,7 @@ export default function ListingDetailContent({
               </div>
 
               {/* 리뷰 섹션 (별도 카드) */}
-              <div className="mt-6 bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] overflow-hidden">
+              <div id="review" className="mt-6 bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] overflow-hidden scroll-mt-28">
                 <div className="p-4 md:p-6 border-b border-[#ebebeb]">
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-[17px] font-semibold text-[#222]">
