@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useSession } from "next-auth/react";
-import { Menu, User, LogOut, Calendar, Heart, MessageCircle, Home, ChevronRight, Building2 } from "lucide-react";
+import { Menu, User, LogOut, Calendar, Heart, MessageCircle, Home, ChevronRight, Building2, Sparkles } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui";
 
@@ -127,6 +127,15 @@ export default function UserMenu() {
               >
                 <Home className="w-4 h-4 text-minbak-gray" />
                 숙소 검색
+                <ChevronRight className="w-4 h-4 text-minbak-gray ml-auto" />
+              </Link>
+              <Link
+                href="/recommend"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-airbnb text-airbnb-body text-minbak-black hover:bg-minbak-bg transition-colors"
+                onClick={() => setOpen(false)}
+              >
+                <Sparkles className="w-4 h-4 text-minbak-gray" />
+                AI 맞춤 추천
                 <ChevronRight className="w-4 h-4 text-minbak-gray ml-auto" />
               </Link>
               <Link
