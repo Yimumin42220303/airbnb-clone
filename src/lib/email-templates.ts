@@ -54,7 +54,7 @@ function bookingTable(p: {
 </table>`;
 }
 
-function bookingTableEn(p: {
+function bookingTableJa(p: {
   listingTitle: string;
   checkIn: string;
   checkOut: string;
@@ -64,12 +64,12 @@ function bookingTableEn(p: {
 }): string {
   return `
 <table style="width:100%;border-collapse:collapse;margin:16px 0;">
-  ${infoRow("Listing", p.listingTitle)}
-  ${infoRow("Check-in", p.checkIn)}
-  ${infoRow("Check-out", p.checkOut)}
-  ${infoRow("Guests", String(p.guests))}
-  ${infoRow("Nights", String(p.nights))}
-  ${infoRow("Total", "\\u20A9" + p.totalPrice.toLocaleString())}
+  ${infoRow("\u5BBF\u6CCA\u65BD\u8A2D", p.listingTitle)}
+  ${infoRow("\u30C1\u30A7\u30C3\u30AF\u30A4\u30F3", p.checkIn)}
+  ${infoRow("\u30C1\u30A7\u30C3\u30AF\u30A2\u30A6\u30C8", p.checkOut)}
+  ${infoRow("\u30B2\u30B9\u30C8", p.guests + "\u540D")}
+  ${infoRow("\u5BBF\u6CCA", p.nights + "\u6CCA")}
+  ${infoRow("\u5408\u8A08\u91D1\u984D", "\\u20A9" + p.totalPrice.toLocaleString())}
 </table>`;
 }
 
@@ -111,14 +111,14 @@ export function bookingConfirmationGuest(info: BookingEmailInfo) {
 
 export function bookingNotificationHost(info: BookingEmailInfo & { hostName: string }) {
   const body = `
-    <p>Hi ${info.hostName}, you have a new booking request!</p>
-    ${bookingTableEn(info)}
-    <p><strong>Guest:</strong> ${info.guestName} (${info.guestEmail})</p>
-    ${actionButton(info.baseUrl + "/host/bookings", "Manage Bookings")}
-    <p style="font-size:13px;color:${GRAY_COLOR};">A quick response improves guest satisfaction.</p>`;
+    <p>${info.hostName}\u69D8\u3001\u65B0\u3057\u3044\u4E88\u7D04\u30EA\u30AF\u30A8\u30B9\u30C8\u304C\u5C4A\u304D\u307E\u3057\u305F\uFF01</p>
+    ${bookingTableJa(info)}
+    <p><strong>\u4E88\u7D04\u8005:</strong> ${info.guestName} (${info.guestEmail})</p>
+    ${actionButton(info.baseUrl + "/host/bookings", "\u4E88\u7D04\u7BA1\u7406")}
+    <p style="font-size:13px;color:${GRAY_COLOR};">\u8FC5\u901F\u306A\u5BFE\u5FDC\u304C\u30B2\u30B9\u30C8\u306E\u6E80\u8DB3\u5EA6\u3092\u9AD8\u3081\u307E\u3059\u3002</p>`;
   return {
-    subject: "[TokyoMinbak] New Booking Request - " + info.listingTitle,
-    html: layout("New Booking Request", body),
+    subject: "[TokyoMinbak] \u65B0\u3057\u3044\u4E88\u7D04\u30EA\u30AF\u30A8\u30B9\u30C8 - " + info.listingTitle,
+    html: layout("\u65B0\u3057\u3044\u4E88\u7D04\u30EA\u30AF\u30A8\u30B9\u30C8", body),
   };
 }
 
@@ -180,12 +180,12 @@ export function bookingCancelledGuest(info: BookingEmailInfo & { refundAmount: n
 
 export function bookingCancelledHost(info: BookingEmailInfo & { hostName: string }) {
   const body = `
-    <p>Hi ${info.hostName}, a guest has cancelled their booking.</p>
-    ${bookingTableEn(info)}
-    <p><strong>Guest:</strong> ${info.guestName}</p>
-    ${actionButton(info.baseUrl + "/host/bookings", "Manage Bookings")}`;
+    <p>${info.hostName}\u69D8\u3001\u30B2\u30B9\u30C8\u304C\u4E88\u7D04\u3092\u30AD\u30E3\u30F3\u30BB\u30EB\u3057\u307E\u3057\u305F\u3002</p>
+    ${bookingTableJa(info)}
+    <p><strong>\u30B2\u30B9\u30C8:</strong> ${info.guestName}</p>
+    ${actionButton(info.baseUrl + "/host/bookings", "\u4E88\u7D04\u7BA1\u7406")}`;
   return {
-    subject: "[TokyoMinbak] Booking Cancelled - " + info.listingTitle,
-    html: layout("Booking Cancelled", body),
+    subject: "[TokyoMinbak] \u4E88\u7D04\u30AD\u30E3\u30F3\u30BB\u30EB - " + info.listingTitle,
+    html: layout("\u4E88\u7D04\u30AD\u30E3\u30F3\u30BB\u30EB", body),
   };
 }
