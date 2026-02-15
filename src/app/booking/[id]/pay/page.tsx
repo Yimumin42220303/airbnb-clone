@@ -81,11 +81,13 @@ export default async function BookingPayPage({ params }: Props) {
               결제 금액: ₩{booking.totalPrice.toLocaleString()}
             </p>
           </div>
-          <p className="text-airbnb-caption text-airbnb-gray mb-4">
-            실제 결제 연동(카드/계좌)은 추후 적용됩니다. 아래 버튼으로 결제 완료
-            처리할 수 있습니다.
-          </p>
-          <PayButton bookingId={id} totalPrice={booking.totalPrice} />
+          <PayButton
+            bookingId={id}
+            totalPrice={booking.totalPrice}
+            listingTitle={booking.listing.title}
+            userName={session?.user?.name || undefined}
+            userEmail={session?.user?.email || undefined}
+          />
         </div>
         <Footer />
       </main>

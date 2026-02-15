@@ -7,11 +7,14 @@ export default async function AdminBookingsPage() {
     include: {
       listing: { select: { id: true, title: true } },
       user: { select: { id: true, email: true, name: true } },
+      transactions: {
+        orderBy: { createdAt: "desc" },
+      },
     },
   });
 
   return (
-    <div className="max-w-[1100px] mx-auto px-6 py-8">
+    <div className="max-w-[1200px] mx-auto px-6 py-8">
       <div className="mb-6 flex items-center gap-4">
         <Link
           href="/admin"
@@ -35,53 +38,98 @@ export default async function AdminBookingsPage() {
                 <th className="py-3 px-4">상태</th>
                 <th className="py-3 px-4">결제</th>
                 <th className="py-3 px-4">금액</th>
+                <th className="py-3 px-4">환불</th>
+                <th className="py-3 px-4">결제수단</th>
               </tr>
             </thead>
             <tbody>
-              {bookings.map((b) => (
-                <tr key={b.id} className="border-b border-airbnb-light-gray">
-                  <td className="py-3 px-4">
-                    {b.user.name || b.user.email}
-                  </td>
-                  <td className="py-3 px-4">
-                    <Link
-                      href={`/listing/${b.listing.id}`}
-                      className="hover:underline"
-                    >
-                      {b.listing.title}
-                    </Link>
-                  </td>
-                  <td className="py-3 px-4 text-airbnb-caption">
-                    {b.checkIn.toISOString().slice(0, 10)}
-                  </td>
-                  <td className="py-3 px-4 text-airbnb-caption">
-                    {b.checkOut.toISOString().slice(0, 10)}
-                  </td>
-                  <td className="py-3 px-4">
-                    <span
-                      className={`text-airbnb-caption px-2 py-0.5 rounded ${
-                        b.status === "confirmed"
-                          ? "bg-green-100 text-green-800"
+              {bookings.map((b) => {
+                const paidTx = b.transactions.find(
+                  (t) => t.status === "paid"
+                );
+                const refundTx = b.transactions.find(
+                  (t) => t.status === "refunded"
+                );
+                return (
+                  <tr
+                    key={b.id}
+                    className="border-b border-airbnb-light-gray"
+                  >
+                    <td className="py-3 px-4">
+                      {b.user.name || b.user.email}
+                    </td>
+                    <td className="py-3 px-4">
+                      <Link
+                        href={`/listing/${b.listing.id}`}
+                        className="hover:underline"
+                      >
+                        {b.listing.title}
+                      </Link>
+                    </td>
+                    <td className="py-3 px-4 text-airbnb-caption">
+                      {b.checkIn.toISOString().slice(0, 10)}
+                    </td>
+                    <td className="py-3 px-4 text-airbnb-caption">
+                      {b.checkOut.toISOString().slice(0, 10)}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span
+                        className={`text-airbnb-caption px-2 py-0.5 rounded ${
+                          b.status === "confirmed"
+                            ? "bg-green-100 text-green-800"
+                            : b.status === "cancelled"
+                              ? "bg-gray-100 text-gray-600"
+                              : "bg-amber-100 text-amber-800"
+                        }`}
+                      >
+                        {b.status === "confirmed"
+                          ? "확정"
                           : b.status === "cancelled"
-                            ? "bg-gray-100 text-gray-600"
-                            : "bg-amber-100 text-amber-800"
-                      }`}
-                    >
-                      {b.status === "confirmed"
-                        ? "확정"
-                        : b.status === "cancelled"
-                          ? "취소"
-                          : "대기"}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-airbnb-caption">
-                    {b.paymentStatus === "paid" ? "결제완료" : "대기"}
-                  </td>
-                  <td className="py-3 px-4">
-                    ₩{b.totalPrice.toLocaleString()}
-                  </td>
-                </tr>
-              ))}
+                            ? "취소"
+                            : "대기"}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span
+                        className={`text-airbnb-caption px-2 py-0.5 rounded ${
+                          b.paymentStatus === "paid"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {b.paymentStatus === "paid" ? "결제완료" : "대기"}
+                      </span>
+                      {paidTx?.verifiedAt && (
+                        <p className="text-[11px] text-airbnb-gray mt-0.5">
+                          {new Date(paidTx.verifiedAt).toLocaleString("ko-KR")}
+                        </p>
+                      )}
+                    </td>
+                    <td className="py-3 px-4">
+                      ₩{b.totalPrice.toLocaleString()}
+                    </td>
+                    <td className="py-3 px-4">
+                      {refundTx ? (
+                        <span className="text-airbnb-caption px-2 py-0.5 rounded bg-orange-100 text-orange-800">
+                          ₩{refundTx.amount.toLocaleString()} 환불
+                        </span>
+                      ) : (
+                        <span className="text-airbnb-caption text-airbnb-gray">
+                          -
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-airbnb-caption text-airbnb-gray">
+                      {paidTx?.method || "-"}
+                      {paidTx?.pgProvider && (
+                        <span className="block text-[11px]">
+                          {paidTx.pgProvider}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

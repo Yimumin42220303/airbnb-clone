@@ -24,6 +24,11 @@ export default async function MyBookingsPage() {
               imageUrl: true,
             },
           },
+          transactions: {
+            where: { status: "refunded" },
+            orderBy: { createdAt: "desc" },
+            take: 1,
+          },
         },
       })
     : [];
@@ -109,21 +114,33 @@ export default async function MyBookingsPage() {
                       <p className="text-airbnb-body text-minbak-gray">
                         게스트 {b.guests}명 · ₩{b.totalPrice.toLocaleString()}
                       </p>
-                      <span
-                        className={`inline-block mt-2 text-airbnb-caption font-medium px-2.5 py-1 rounded-full ${
-                          b.status === "confirmed"
-                            ? "bg-green-100 text-green-800"
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        <span
+                          className={`inline-block text-airbnb-caption font-medium px-2.5 py-1 rounded-full ${
+                            b.status === "confirmed"
+                              ? "bg-green-100 text-green-800"
+                              : b.status === "cancelled"
+                                ? "bg-gray-100 text-gray-600"
+                                : "bg-amber-100 text-amber-800"
+                          }`}
+                        >
+                          {b.status === "confirmed"
+                            ? "확정"
                             : b.status === "cancelled"
-                              ? "bg-gray-100 text-gray-600"
-                              : "bg-amber-100 text-amber-800"
-                        }`}
-                      >
-                        {b.status === "confirmed"
-                          ? "확정"
-                          : b.status === "cancelled"
-                            ? "취소됨"
-                            : "대기"}
-                      </span>
+                              ? "취소됨"
+                              : "대기"}
+                        </span>
+                        {b.paymentStatus === "paid" && b.status !== "cancelled" && (
+                          <span className="inline-block text-airbnb-caption font-medium px-2.5 py-1 rounded-full bg-blue-100 text-blue-800">
+                            결제완료
+                          </span>
+                        )}
+                        {b.transactions[0] && (
+                          <span className="inline-block text-airbnb-caption font-medium px-2.5 py-1 rounded-full bg-orange-100 text-orange-800">
+                            ₩{b.transactions[0].amount.toLocaleString()} 환불
+                          </span>
+                        )}
+                      </div>
                       <div className="flex flex-wrap gap-2 mt-3">
                         {b.paymentStatus === "pending" &&
                           b.status === "confirmed" && (
@@ -140,6 +157,9 @@ export default async function MyBookingsPage() {
                           <CancelBookingButton
                             bookingId={b.id}
                             listingTitle={b.listing.title}
+                            paymentStatus={b.paymentStatus}
+                            checkIn={b.checkIn.toISOString().slice(0, 10)}
+                            totalPrice={b.totalPrice}
                           />
                         )}
                         {b.status !== "cancelled" && (
