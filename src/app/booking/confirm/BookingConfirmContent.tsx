@@ -17,8 +17,6 @@ import {
 const PORTONE_STORE_ID = process.env.NEXT_PUBLIC_PORTONE_STORE_ID ?? "";
 const PORTONE_CHANNEL_KEY =
   process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY ?? "";
-const PORTONE_TEST_MODE =
-  process.env.NEXT_PUBLIC_PORTONE_TEST_MODE === "true";
 const PORTONE_READY = !!(
   PORTONE_STORE_ID &&
   PORTONE_CHANNEL_KEY
@@ -443,15 +441,7 @@ export default function BookingConfirmContent({
 
               {/* 결제 수단 (포트원 KG이니시스) */}
               <div className="bg-white rounded-2xl border border-[#ebebeb] shadow-[0_1px_3px_rgba(0,0,0,0.08)] overflow-hidden">
-                {PORTONE_TEST_MODE && PORTONE_READY && (
-                  <div className="mx-6 mt-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[13px]">
-                    <p className="font-semibold">⚠️ 테스트 모드</p>
-                    <p className="mt-1">
-                      카카오페이·네이버페이 등 간편결제는 테스트 채널에서도 <strong>실제 결제</strong>될 수 있습니다.
-                      결제 테스트 시에는 <strong>카드 결제만</strong> 사용하세요.
-                    </p>
-                  </div>
-                )}
+                {/* 테스트 모드 안내는 관리자에게만 표시 (PG 심사 시 노출 방지) */}
                 <div className="p-6 border-b border-[#ebebeb]">
                   <h2 className="text-[17px] font-semibold text-[#222] flex items-center gap-2">
                     <CreditCard className="w-5 h-5 text-[#717171]" />
@@ -471,15 +461,15 @@ export default function BookingConfirmContent({
                       />
                       <div>
                         <span className="font-semibold text-[#222]">
-                          카드 · 간편결제 (KG이니시스)
+                          신용카드 결제 (KG이니시스)
                         </span>
                         <p className="mt-1 text-[13px] text-[#717171]">
-                          포트원을 통해 카드/휴대폰/간편결제로 즉시 결제합니다.
-                          결제하기 버튼 클릭 시 결제창이 열립니다.
+                          신용카드로 안전하게 결제합니다.
+                          결제하기 버튼 클릭 시 KG이니시스 결제창이 열립니다.
                         </p>
                         {!PORTONE_READY && (
                           <p className="mt-1 text-[12px] text-amber-600">
-                            PG 설정 후 이용 가능합니다. (env: PORTONE_STORE_ID, CHANNEL_KEY)
+                            현재 카드 결제를 이용할 수 없습니다.
                           </p>
                         )}
                       </div>
@@ -586,7 +576,7 @@ export default function BookingConfirmContent({
                 )}
                 <p className="text-[14px] text-[#222]">
                   {paymentMethod === "card" && PORTONE_READY
-                    ? "아래 결제하기를 누르면 KG이니시스(포트원) 결제창이 열립니다."
+                    ? "아래 결제하기를 누르면 KG이니시스 결제창이 열립니다."
                     : "예약 정보를 확인했으며, 결제를 진행합니다."}
                 </p>
                 <button
