@@ -61,6 +61,7 @@ export default function BookingForm({
   const [priceLoading, setPriceLoading] = useState(false);
   const [blockedDateKeys, setBlockedDateKeys] = useState<string[]>([]);
   const [checkoutOnlyDateKeys, setCheckoutOnlyDateKeys] = useState<string[]>([]);
+  const [blockedDatesError, setBlockedDatesError] = useState(false);
   const calendarWrapRef = useRef<HTMLDivElement>(null);
   const guestSelectorRef = useRef<HTMLDivElement>(null);
   const [calendarPosition, setCalendarPosition] = useState<{
@@ -112,6 +113,7 @@ export default function BookingForm({
     to.setMonth(to.getMonth() + 13);
     const fromStr = from.toISOString().slice(0, 10);
     const toStr = to.toISOString().slice(0, 10);
+    setBlockedDatesError(false);
     fetch(
       `/api/listings/${listingId}/blocked-dates?from=${encodeURIComponent(fromStr)}&to=${encodeURIComponent(toStr)}`
     )
@@ -120,9 +122,14 @@ export default function BookingForm({
         if (!data.error) {
           if (Array.isArray(data.dateKeys)) setBlockedDateKeys(data.dateKeys);
           if (Array.isArray(data.checkoutOnlyDateKeys)) setCheckoutOnlyDateKeys(data.checkoutOnlyDateKeys);
+          setBlockedDatesError(false);
+        } else {
+          setBlockedDatesError(true);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        setBlockedDatesError(true);
+      });
   }, [listingId]);
 
   useEffect(() => {
@@ -263,6 +270,12 @@ export default function BookingForm({
             </span>
           </button>
         </div>
+        {blockedDatesError && (
+          <p className="text-[12px] text-amber-600 mt-1.5">
+            예약 가능 날짜를 불러오지 못했습니다.{" "}
+            <button type="button" onClick={fetchBlockedDates} className="underline hover:text-amber-800">다시 시도</button>
+          </p>
+        )}
         {calendarOpen &&
           typeof document !== "undefined" &&
           createPortal(

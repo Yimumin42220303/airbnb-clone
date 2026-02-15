@@ -56,7 +56,19 @@ export default function HostBookingsContent({ bookings, userId }: Props) {
               </Link>
             </p>
           ) : bookings.length === 0 ? (
-            <p className="text-airbnb-body text-airbnb-gray">{t("bookings.empty")}</p>
+            <div className="text-center py-16">
+              <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl text-neutral-400" aria-hidden>📋</span>
+              </div>
+              <p className="text-airbnb-body text-airbnb-black font-medium mb-2">{t("bookings.empty")}</p>
+              <p className="text-airbnb-caption text-airbnb-gray mb-6">게스트가 예약하면 여기에 표시됩니다.</p>
+              <Link
+                href="/host/listings"
+                className="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 rounded-airbnb-full border border-airbnb-light-gray text-airbnb-black text-airbnb-body font-medium hover:bg-airbnb-bg transition-colors"
+              >
+                {t("bookings.myListings")}
+              </Link>
+            </div>
           ) : (
             <>
               <p className="text-airbnb-caption text-airbnb-gray mb-4">{t("bookings.description")}</p>
