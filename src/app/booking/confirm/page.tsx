@@ -68,7 +68,6 @@ export default async function BookingConfirmPage({ searchParams }: Props) {
   }
 
   const user = session?.user;
-  const userName = user?.name ?? null;
   const userEmail = user?.email ?? null;
 
   return (
@@ -86,7 +85,6 @@ export default async function BookingConfirmPage({ searchParams }: Props) {
           guests={guests}
           nights={nights}
           totalPrice={totalPrice}
-          userName={userName}
           userEmail={userEmail}
           cancellationPolicy={listing.cancellationPolicy}
         />

@@ -33,7 +33,6 @@ type Props = {
   guests: number;
   nights: number;
   totalPrice: number;
-  userName?: string | null;
   userEmail?: string | null;
   cancellationPolicy?: string;
 };
@@ -61,7 +60,6 @@ export default function BookingConfirmContent({
   guests,
   nights,
   totalPrice,
-  userName,
   userEmail,
   cancellationPolicy = "flexible",
 }: Props) {
@@ -71,11 +69,10 @@ export default function BookingConfirmContent({
   const [paymentMethod, setPaymentMethod] = useState<"card" | "virtual_account">(
     PORTONE_READY ? "card" : "virtual_account"
   );
-  const defaultName = userName ?? "";
   const defaultEmail = userEmail ?? "";
   const [form, setForm] = useState({
-    firstName: defaultName.split(" ").slice(1).join(" ") || defaultName || "",
-    lastName: defaultName.split(" ")[0] || "",
+    firstName: "",
+    lastName: "",
     email: defaultEmail,
     phone: "",
     specialRequests: "",
@@ -365,12 +362,22 @@ export default function BookingConfirmContent({
 
             {/* 취소 정책 카드 */}
             {(() => {
+              // 체크인 날짜 기준으로 구체적인 환불 기한 날짜 계산
+              function deadlineDate(daysBefore: number) {
+                const d = new Date(checkIn + "T00:00:00");
+                d.setDate(d.getDate() - daysBefore);
+                const y = d.getFullYear();
+                const m = d.getMonth() + 1;
+                const day = d.getDate();
+                return `${y}년 ${m}월 ${day}일`;
+              }
+
               const policyMap: Record<string, { label: string; color: string; rules: string[] }> = {
                 flexible: {
                   label: "유연",
                   color: "bg-green-100 text-green-800",
                   rules: [
-                    "체크인 1일 전까지 취소 시 100% 환불",
+                    `${deadlineDate(1)}까지 취소 시 100% 환불`,
                     "체크인 당일 이후 환불 불가",
                   ],
                 },
@@ -378,8 +385,8 @@ export default function BookingConfirmContent({
                   label: "보통",
                   color: "bg-amber-100 text-amber-800",
                   rules: [
-                    "체크인 5일 전까지 취소 시 100% 환불",
-                    "체크인 1~4일 전 취소 시 50% 환불",
+                    `${deadlineDate(5)}까지 취소 시 100% 환불`,
+                    `${deadlineDate(4)} ~ ${deadlineDate(1)} 취소 시 50% 환불`,
                     "체크인 당일 이후 환불 불가",
                   ],
                 },
@@ -388,7 +395,7 @@ export default function BookingConfirmContent({
                   color: "bg-red-100 text-red-800",
                   rules: [
                     "예약 후 48시간 이내 취소 시 100% 환불 (체크인 14일 이상 남은 경우)",
-                    "체크인 7일 전까지 취소 시 50% 환불",
+                    `${deadlineDate(7)}까지 취소 시 50% 환불`,
                     "체크인 7일 이내 환불 불가",
                   ],
                 },
