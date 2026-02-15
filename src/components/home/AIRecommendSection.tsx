@@ -201,33 +201,6 @@ export default function AIRecommendSection() {
             </form>
           )}
 
-          {dateOpen && (
-            <div
-              className="fixed inset-0 z-[10001] flex items-start justify-center pt-[184px] md:pt-[200px] pb-8 px-4 bg-black/40"
-              onClick={() => setDateOpen(false)}
-              role="presentation"
-            >
-              <div onClick={(e) => e.stopPropagation()}>
-                <FramerDateRangePicker
-                  checkIn={checkIn}
-                  checkOut={checkOut}
-                  onCheckInChange={setCheckIn}
-                  onCheckOutChange={setCheckOut}
-                  onClose={() => setDateOpen(false)}
-                  compact={typeof window !== "undefined" && window.innerWidth < 768}
-                />
-              </div>
-            </div>
-          )}
-
-          {guestOpen && (
-            <FramerGuestPicker
-              counts={guests}
-              onChange={setGuests}
-              onClose={() => setGuestOpen(false)}
-            />
-          )}
-
           {results !== null && results.length > 0 && (
             <div className="mt-8 md:mt-10">
               <h3 className="text-airbnb-h3 font-bold text-minbak-black mb-4">
@@ -265,6 +238,34 @@ export default function AIRecommendSection() {
           )}
         </div>
       </div>
+
+      {/* 오버레이를 section의 z-10 스태킹 컨텍스트 바깥에 배치 */}
+      {dateOpen && (
+        <div
+          className="fixed inset-0 z-[10001] flex items-start justify-center pt-[184px] md:pt-[200px] pb-8 px-4 bg-black/40"
+          onClick={() => setDateOpen(false)}
+          role="presentation"
+        >
+          <div onClick={(e) => e.stopPropagation()}>
+            <FramerDateRangePicker
+              checkIn={checkIn}
+              checkOut={checkOut}
+              onCheckInChange={setCheckIn}
+              onCheckOutChange={setCheckOut}
+              onClose={() => setDateOpen(false)}
+              compact={typeof window !== "undefined" && window.innerWidth < 768}
+            />
+          </div>
+        </div>
+      )}
+
+      {guestOpen && (
+        <FramerGuestPicker
+          counts={guests}
+          onChange={setGuests}
+          onClose={() => setGuestOpen(false)}
+        />
+      )}
     </section>
   );
 }
