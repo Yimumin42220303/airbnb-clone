@@ -5,7 +5,11 @@ import { prisma } from "@/lib/prisma";
 
 /**
  * PATCH /api/bookings/[id]
- * 예약 결제 완료 등 (본인 예약만)
+ * 예약 상태 변경 (본인 예약만)
+ *
+ * ⚠️ 보안: paymentStatus 변경은 이 API에서 직접 허용하지 않습니다.
+ * 결제 완료 처리는 반드시 POST /api/payments/verify 를 통해
+ * 서버 측에서 포트원 API로 검증한 후에만 수행됩니다.
  */
 export async function PATCH(
   request: Request,
@@ -22,8 +26,15 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await request.json();
-  const paymentStatus = body.paymentStatus;
   const status = body.status;
+
+  // ⚠️ paymentStatus를 클라이언트에서 직접 변경하는 것을 차단
+  if (body.paymentStatus) {
+    return NextResponse.json(
+      { error: "결제 상태는 결제 검증 API(/api/payments/verify)를 통해서만 변경할 수 있습니다." },
+      { status: 403 }
+    );
+  }
 
   const booking = await prisma.booking.findUnique({
     where: { id },
@@ -39,14 +50,6 @@ export async function PATCH(
       { error: "권한이 없습니다." },
       { status: 403 }
     );
-  }
-
-  if (paymentStatus === "paid") {
-    await prisma.booking.update({
-      where: { id },
-      data: { paymentStatus: "paid" },
-    });
-    return NextResponse.json({ ok: true, paymentStatus: "paid" });
   }
 
   if (status === "cancelled") {

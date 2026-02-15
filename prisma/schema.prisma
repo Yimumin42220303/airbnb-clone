@@ -231,8 +231,30 @@ model Booking {
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   conversation Conversation?
+  transactions PaymentTransaction[]
 
   @@index([listingId, checkIn, checkOut]) // 예약 가능 여부 검색용
+}
+
+// ---------- 결제 트랜잭션 (포트원 결제 이력) ----------
+model PaymentTransaction {
+  id              String   @id @default(cuid())
+  bookingId       String
+  booking         Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  paymentId       String   @unique // 포트원 paymentId (결제창 요청 시 생성한 ID)
+  transactionId   String?  // 포트원 transactionId (PG사 응답)
+  amount          Int      // 결제 금액
+  status          String   @default("pending") // pending | paid | failed | cancelled | refunded
+  method          String?  // CARD, VIRTUAL_ACCOUNT 등
+  pgProvider      String?  // KG이니시스 등
+  failReason      String?  // 실패/취소 사유
+  rawResponse     String?  // 포트원 응답 원본 JSON
+  verifiedAt      DateTime? // 서버 측 검증 완료 시각
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([bookingId])
+  @@index([paymentId])
 }
 
 // ---------- 메시지 (예약 단위 대화) ----------
