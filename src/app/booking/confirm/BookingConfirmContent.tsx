@@ -66,9 +66,7 @@ export default function BookingConfirmContent({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "virtual_account">(
-    PORTONE_READY ? "card" : "virtual_account"
-  );
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "virtual_account">("card");
   const defaultEmail = userEmail ?? "";
   const [form, setForm] = useState({
     firstName: "",
@@ -126,45 +124,59 @@ export default function BookingConfirmContent({
         nights: String(nightsNum),
       });
 
-      if (
-        paymentMethod === "card" &&
-        PORTONE_READY
-      ) {
+      if (PORTONE_READY) {
         let paymentSuccess = false;
+        const isVirtualAccount = paymentMethod === "virtual_account";
         try {
           const PortOne = await import("@portone/browser-sdk/v2");
           const generatedPaymentId = `b${data.id}${Date.now()}`;
-          const result = await PortOne.requestPayment({
+          const paymentRequest: Parameters<typeof PortOne.requestPayment>[0] = {
             storeId: PORTONE_STORE_ID,
             channelKey: PORTONE_CHANNEL_KEY,
             paymentId: generatedPaymentId,
             orderName: listingTitle.slice(0, 50),
             totalAmount: totalPrice,
             currency: "CURRENCY_KRW",
-            payMethod: "CARD",
+            payMethod: isVirtualAccount ? "VIRTUAL_ACCOUNT" : "CARD",
             customer: {
               fullName: `${form.lastName} ${form.firstName}`.trim(),
               email: form.email.trim(),
               phoneNumber: form.phone.trim().replace(/-/g, "") || undefined,
             },
-          });
+          };
+          const result = await PortOne.requestPayment(paymentRequest);
           // 결제창 X(닫기) 시 SDK는 reject가 아니라 undefined로 resolve함
           if (result && result.transactionType === "PAYMENT" && !result.code) {
-            // ✅ 서버 측 결제 검증 (포트원 API로 금액/상태 확인)
-            const verifyRes = await fetch("/api/payments/verify", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                paymentId: generatedPaymentId,
-                bookingId: data.id,
-              }),
-            });
-            const verifyData = await verifyRes.json();
-            if (verifyRes.ok && verifyData.ok) {
+            if (isVirtualAccount) {
+              // 가상계좌: 발급 성공 → 서버에 paymentId 기록 후 안내 페이지로 이동
+              await fetch("/api/payments/virtual-account", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  paymentId: generatedPaymentId,
+                  bookingId: data.id,
+                }),
+              });
+              completeParams.set("va", "1");
+              completeParams.set("paymentId", generatedPaymentId);
               paymentSuccess = true;
             } else {
-              setError(verifyData.error || "결제 검증에 실패했습니다.");
-              return;
+              // 카드: 서버 측 결제 검증 (포트원 API로 금액/상태 확인)
+              const verifyRes = await fetch("/api/payments/verify", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  paymentId: generatedPaymentId,
+                  bookingId: data.id,
+                }),
+              });
+              const verifyData = await verifyRes.json();
+              if (verifyRes.ok && verifyData.ok) {
+                paymentSuccess = true;
+              } else {
+                setError(verifyData.error || "결제 검증에 실패했습니다.");
+                return;
+              }
             }
           }
         } catch (payErr) {
@@ -496,6 +508,7 @@ export default function BookingConfirmContent({
                         checked={paymentMethod === "virtual_account"}
                         onChange={() => setPaymentMethod("virtual_account")}
                         className="mt-0.5 w-4 h-4 text-[#E31C23]"
+                        disabled={!PORTONE_READY}
                       />
                       <div>
                         <span className="font-semibold text-[#222] flex items-center gap-1.5">
@@ -503,67 +516,17 @@ export default function BookingConfirmContent({
                           가상계좌 입금
                         </span>
                         <p className="mt-1 text-[13px] text-[#717171]">
-                          예약 후 발급된 가상계좌로 입금하시면 확인 후 확정됩니다.
+                          결제하기 버튼 클릭 시 가상계좌가 자동 발급됩니다.
+                          발급된 계좌로 입금하면 자동 확인 후 예약이 확정됩니다.
                         </p>
+                        {!PORTONE_READY && (
+                          <p className="mt-1 text-[12px] text-amber-600">
+                            현재 가상계좌 결제를 이용할 수 없습니다.
+                          </p>
+                        )}
                       </div>
                     </label>
                   </div>
-
-                  {paymentMethod === "virtual_account" && (
-                    <div className="mt-4 pt-4 border-t border-[#ebebeb] space-y-3 text-[13px]">
-                      <p className="text-[#717171]">
-                        결제하기 클릭 후 예약이 생성되면, 아래 계좌로 입금해 주세요.
-                      </p>
-                      <div>
-                        <p className="text-[12px] text-[#717171] mb-0.5">입금은행</p>
-                        <p className="font-medium flex items-center gap-1.5">
-                          카카오뱅크 3333-35-7006182
-                          <button
-                            type="button"
-                            onClick={() =>
-                              navigator.clipboard?.writeText(
-                                "카카오뱅크 3333-35-7006182"
-                              )
-                            }
-                            className="text-[#717171] hover:text-[#222]"
-                            title="복사"
-                          >
-                            📋
-                          </button>
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[12px] text-[#717171] mb-0.5">예금주</p>
-                        <p className="font-medium">한일익스프레스</p>
-                      </div>
-                      <div>
-                        <p className="text-[12px] text-[#717171] mb-0.5">입금기한</p>
-                        <p className="font-medium">
-                          예약 후 2일 내 (미입금 시 예약 자동 취소)
-                        </p>
-                      </div>
-                      <p className="text-[#717171]">
-                        입금 시 예약자명과 다를 경우 메모란에 예약자 성명을 적어 주세요.
-                      </p>
-                      <div>
-                        <p className="text-[12px] text-[#717171] mb-1.5">현금 영수증</p>
-                        <div className="flex flex-wrap gap-3">
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="cashReceipt" value="none" defaultChecked className="text-[#E31C23]" />
-                            <span>안 함</span>
-                          </label>
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="cashReceipt" value="income" className="text-[#E31C23]" />
-                            <span>소득공제</span>
-                          </label>
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="cashReceipt" value="business" className="text-[#E31C23]" />
-                            <span>사업자지출증빙</span>
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -589,16 +552,13 @@ export default function BookingConfirmContent({
                   </p>
                 )}
                 <p className="text-[14px] text-[#222]">
-                  {paymentMethod === "card" && PORTONE_READY
+                  {paymentMethod === "card"
                     ? "아래 결제하기를 누르면 KG이니시스 결제창이 열립니다."
-                    : "예약 정보를 확인했으며, 결제를 진행합니다."}
+                    : "아래 결제하기를 누르면 가상계좌가 발급됩니다."}
                 </p>
                 <button
                   type="submit"
-                  disabled={
-                    loading ||
-                    (paymentMethod === "card" && !PORTONE_READY)
-                  }
+                  disabled={loading || !PORTONE_READY}
                   className="w-full py-3.5 rounded-full text-[16px] font-semibold text-white bg-[#E31C23] hover:bg-[#c91820] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                 >
                   {loading ? "처리 중..." : "₩" + totalPrice.toLocaleString() + " 결제하기"}

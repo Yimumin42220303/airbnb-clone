@@ -102,6 +102,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, action: "cancelled" });
   }
 
+  // Virtual account issued (입금 대기)
+  if (portonePayment.status === "VIRTUAL_ACCOUNT_ISSUED") {
+    if (transaction.status !== "paid") {
+      await prisma.paymentTransaction.update({
+        where: { id: transaction.id },
+        data: {
+          status: "pending",
+          rawResponse: JSON.stringify(portonePayment),
+        },
+      });
+    }
+    return NextResponse.json({ ok: true, action: "va_issued" });
+  }
+
   // Payment failed (FAILED)
   if (portonePayment.status === "FAILED") {
     await prisma.paymentTransaction.update({
