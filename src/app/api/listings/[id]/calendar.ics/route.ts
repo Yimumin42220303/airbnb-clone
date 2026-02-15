@@ -25,7 +25,7 @@ export async function GET(
   const bookings = await prisma.booking.findMany({
     where: {
       listingId,
-      status: { not: "cancelled" },
+      status: "confirmed",
     },
     select: { id: true, checkIn: true, checkOut: true },
     orderBy: { checkIn: "asc" },

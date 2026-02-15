@@ -182,7 +182,7 @@ export async function getListingBlockedDateKeys(
   const bookings = await prisma.booking.findMany({
     where: {
       listingId,
-      status: { not: "cancelled" },
+      status: "confirmed",
       checkIn: { lt: toDate },
       checkOut: { gt: fromDate },
     },
@@ -233,7 +233,7 @@ export async function getListingCheckoutOnlyDateKeys(
   const bookings = await prisma.booking.findMany({
     where: {
       listingId,
-      status: { not: "cancelled" },
+      status: "confirmed",
       checkIn: { lt: toDate },
       checkOut: { gt: fromDate },
     },
