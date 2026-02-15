@@ -58,43 +58,43 @@ export default async function MessagesPage() {
       <Header />
       <main className="min-h-screen pt-4 md:pt-8 px-4 md:px-6">
         <div className="max-w-[600px] mx-auto py-4 md:py-8">
-          <h1 className="text-[22px] sm:text-airbnb-h2 font-semibold text-airbnb-black mb-4 md:mb-6">
+          <h1 className="text-[22px] sm:text-minbak-h2 font-semibold text-minbak-black mb-4 md:mb-6">
             메시지
           </h1>
           {!userId ? (
-            <p className="text-airbnb-body text-airbnb-gray">
+            <p className="text-minbak-body text-minbak-gray">
               로그인하면 메시지를 볼 수 있습니다.{" "}
-              <Link href="/auth/signin?callbackUrl=/messages" className="text-airbnb-red hover:underline">
+              <Link href="/auth/signin?callbackUrl=/messages" className="text-minbak-primary hover:underline">
                 Google로 로그인
               </Link>
             </p>
           ) : list.length === 0 ? (
-            <p className="text-airbnb-body text-airbnb-gray">
+            <p className="text-minbak-body text-minbak-gray">
               아직 대화가 없습니다. 예약 후 호스트/게스트와 메시지를 주고받을 수 있습니다.
             </p>
           ) : (
-            <ul className="space-y-0 border border-airbnb-light-gray rounded-airbnb overflow-hidden">
+            <ul className="space-y-0 border border-minbak-light-gray rounded-minbak overflow-hidden">
               {list.map((conv) => (
                 <li key={conv.id}>
                   <Link
                     href={`/messages/${conv.id}`}
-                    className="flex gap-4 p-4 min-h-[72px] hover:bg-airbnb-bg border-b border-airbnb-light-gray last:border-b-0 transition-colors active:opacity-95"
+                    className="flex gap-4 p-4 min-h-[72px] hover:bg-minbak-bg border-b border-minbak-light-gray last:border-b-0 transition-colors active:opacity-95"
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-airbnb-black truncate">
+                      <p className="font-semibold text-minbak-black truncate">
                         {conv.otherName} · {conv.listingTitle}
                       </p>
                       {conv.lastBody && (
                         <p
-                          className={`text-airbnb-caption mt-0.5 truncate ${
-                            conv.isFromMe ? "text-airbnb-gray" : "text-airbnb-black"
+                          className={`text-minbak-caption mt-0.5 truncate ${
+                            conv.isFromMe ? "text-minbak-gray" : "text-minbak-black"
                           }`}
                         >
                           {conv.isFromMe ? "나: " : ""}
                           {conv.lastBody}
                         </p>
                       )}
-                      <p className="text-airbnb-caption text-airbnb-gray mt-0.5">
+                      <p className="text-minbak-caption text-minbak-gray mt-0.5">
                         {conv.lastAt.toLocaleString("ko-KR", {
                           month: "short",
                           day: "numeric",

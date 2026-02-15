@@ -8,6 +8,7 @@ import Link from "next/link";
 import DeleteListingButton from "@/components/host/DeleteListingButton";
 import AmenitySelector from "@/components/host/AmenitySelector";
 import { uploadListingImages, getUploadErrorMessage } from "@/lib/useListingImageUpload";
+import { toast } from "sonner";
 import type { Amenity, Category } from "@/types";
 
 type Host = { id: string; email: string; name: string };
@@ -302,26 +303,26 @@ export default function EditListingForm({
           <div className="mb-6">
             <Link
               href="/host/listings"
-              className="text-airbnb-body text-airbnb-gray hover:underline"
+              className="text-minbak-body text-minbak-gray hover:underline"
             >
               ← 내 숙소로
             </Link>
           </div>
-          <h1 className="text-airbnb-h2 font-semibold text-airbnb-black mb-6">
+          <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
             숙소 수정
           </h1>
           <form onSubmit={handleSubmit} className="space-y-6">
             {isAdmin && hosts.length > 0 && (
-              <div className="border border-airbnb-light-gray rounded-airbnb p-4 bg-airbnb-bg/50">
-                <h2 className="text-airbnb-body font-semibold text-airbnb-black mb-3">
+              <div className="border border-minbak-light-gray rounded-minbak p-4 bg-minbak-bg/50">
+                <h2 className="text-minbak-body font-semibold text-minbak-black mb-3">
                   호스트 변경 (관리자 전용)
                 </h2>
                 <label className="block">
-                  <span className="text-airbnb-caption text-airbnb-gray block mb-1">호스트</span>
+                  <span className="text-minbak-caption text-minbak-gray block mb-1">호스트</span>
                   <select
                     value={form.hostId}
                     onChange={(e) => setForm((f) => ({ ...f, hostId: e.target.value }))}
-                    className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                    className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                   >
                     {hosts.map((h) => (
                       <option key={h.id} value={h.id}>
@@ -333,27 +334,27 @@ export default function EditListingForm({
               </div>
             )}
             <label className="block">
-              <span className="text-airbnb-body font-medium text-airbnb-black block mb-1">숙소명 *</span>
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">숙소명 *</span>
               <input
                 type="text"
                 value={form.title}
                 onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 required
               />
             </label>
             <label className="block">
-              <span className="text-airbnb-body font-medium text-airbnb-black block mb-1">위치 *</span>
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">위치 *</span>
               <input
                 type="text"
                 value={form.location}
                 onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
-                className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 required
               />
             </label>
             <label className="block">
-              <span className="text-airbnb-body font-medium text-airbnb-black block mb-1">
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">
                 구글 지도 링크 (선택)
               </span>
               <input
@@ -363,15 +364,15 @@ export default function EditListingForm({
                   setForm((f) => ({ ...f, mapUrl: e.target.value }))
                 }
                 placeholder='예: https://www.google.com/maps/embed?... 또는 &lt;iframe ...&gt; 전체'
-                className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb font-mono text-[13px]"
+                className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak font-mono text-[13px]"
               />
             </label>
             <label className="block">
-              <span className="text-airbnb-body font-medium text-airbnb-black block mb-1">카테고리</span>
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">카테고리</span>
               <select
                 value={form.categoryId}
                 onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
-                className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
               >
                 <option value="">선택 안 함</option>
                 {categories.map((c) => (
@@ -381,29 +382,29 @@ export default function EditListingForm({
             </label>
             <div className="flex flex-wrap items-end gap-2">
               <label className="flex-1 min-w-[180px]">
-                <span className="text-airbnb-body font-medium text-airbnb-black block mb-1">새 카테고리 만들기</span>
+                <span className="text-minbak-body font-medium text-minbak-black block mb-1">새 카테고리 만들기</span>
                 <input
                   type="text"
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
                   placeholder="예: 도미토리, 개인실"
-                  className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 />
               </label>
               <button
                 type="button"
                 onClick={handleAddCategory}
                 disabled={!newCategoryName.trim() || addingCategory}
-                className="px-4 py-2 bg-airbnb-black text-white rounded-airbnb hover:bg-airbnb-gray disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-minbak-black text-white rounded-minbak hover:bg-minbak-gray disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {addingCategory ? "추가 중…" : "추가"}
               </button>
             </div>
             <div className="block">
-              <span className="text-airbnb-body font-medium text-airbnb-black block mb-1">
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">
                 이미지 * (첫 장이 대표, 최대 100장)
               </span>
-              <p className="text-airbnb-caption text-airbnb-gray mb-2">기존 이미지를 유지하거나 새로 업로드할 수 있습니다. JPEG/PNG/WebP/GIF, 최대 4MB.</p>
+              <p className="text-minbak-caption text-minbak-gray mb-2">기존 이미지를 유지하거나 새로 업로드할 수 있습니다. JPEG/PNG/WebP/GIF, 최대 4MB.</p>
               <div className="flex flex-wrap gap-3 mb-3">
                 {allThumbnails.map((thumb, globalIndex) => {
                   const isExisting = thumb.kind === "existing";
@@ -429,7 +430,7 @@ export default function EditListingForm({
                       <img
                         src={src}
                         alt={isExisting ? `기존 ${thumb.index + 1}` : `새로 추가 ${thumb.index + 1}`}
-                        className="w-24 h-24 object-cover rounded-airbnb border border-airbnb-light-gray"
+                        className="w-24 h-24 object-cover rounded-minbak border border-minbak-light-gray"
                       />
                       <button
                         type="button"
@@ -458,7 +459,7 @@ export default function EditListingForm({
                       addNewImageFiles(e.target.files);
                       e.target.value = "";
                     }}
-                    className="block w-full text-airbnb-caption text-airbnb-gray file:mr-3 file:py-2 file:px-3 file:rounded-airbnb file:border file:border-airbnb-light-gray file:bg-white file:text-airbnb-body hover:file:bg-airbnb-bg"
+                    className="block w-full text-minbak-caption text-minbak-gray file:mr-3 file:py-2 file:px-3 file:rounded-minbak file:border file:border-minbak-light-gray file:bg-white file:text-minbak-body hover:file:bg-minbak-bg"
                   />
                 </label>
               )}
@@ -473,81 +474,81 @@ export default function EditListingForm({
               variant="compact"
             />
             <label className="block">
-              <span className="text-airbnb-body font-medium text-airbnb-black block mb-1">설명</span>
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">설명</span>
               <textarea
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 rows={3}
-                className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb resize-y"
+                className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak resize-y"
               />
             </label>
             <label className="block">
-              <span className="text-airbnb-body font-medium text-airbnb-black block mb-1">1박 요금 (원) *</span>
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">1박 요금 (원) *</span>
               <input
                 type="number"
                 min={0}
                 value={form.pricePerNight}
                 onChange={(e) => setForm((f) => ({ ...f, pricePerNight: e.target.value }))}
-                className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 required
               />
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <label>
-                <span className="text-airbnb-caption text-airbnb-gray block mb-1">기본 숙박 인원 (명)</span>
+                <span className="text-minbak-caption text-minbak-gray block mb-1">기본 숙박 인원 (명)</span>
                 <input
                   type="number"
                   min={1}
                   value={form.baseGuests}
                   onChange={(e) => setForm((f) => ({ ...f, baseGuests: e.target.value }))}
-                  className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 />
-                <span className="text-airbnb-caption text-airbnb-gray block mt-0.5">이 인원까지는 1박 요금에 포함됩니다.</span>
+                <span className="text-minbak-caption text-minbak-gray block mt-0.5">이 인원까지는 1박 요금에 포함됩니다.</span>
               </label>
               <label>
-                <span className="text-airbnb-caption text-airbnb-gray block mb-1">최대 인원 (명)</span>
+                <span className="text-minbak-caption text-minbak-gray block mb-1">최대 인원 (명)</span>
                 <input
                   type="number"
                   min={1}
                   value={form.maxGuests}
                   onChange={(e) => setForm((f) => ({ ...f, maxGuests: e.target.value }))}
-                  className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 />
               </label>
               <label>
-                <span className="text-airbnb-caption text-airbnb-gray block mb-1">추가 인원 1인당 1박 요금 (원)</span>
+                <span className="text-minbak-caption text-minbak-gray block mb-1">추가 인원 1인당 1박 요금 (원)</span>
                 <input
                   type="number"
                   min={0}
                   value={form.extraGuestFee}
                   onChange={(e) => setForm((f) => ({ ...f, extraGuestFee: e.target.value }))}
-                  className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                   placeholder="0"
                 />
-                <span className="text-airbnb-caption text-airbnb-gray block mt-0.5">기본 인원 초과 1인당 1박 기준 추가 요금입니다.</span>
+                <span className="text-minbak-caption text-minbak-gray block mt-0.5">기본 인원 초과 1인당 1박 기준 추가 요금입니다.</span>
               </label>
             </div>
             <label className="block">
-              <span className="text-airbnb-body font-medium text-airbnb-black block mb-1">청소비 (원)</span>
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">청소비 (원)</span>
               <input
                 type="number"
                 min={0}
                 value={form.cleaningFee}
                 onChange={(e) => setForm((f) => ({ ...f, cleaningFee: e.target.value }))}
-                className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 placeholder="0"
               />
-              <span className="text-airbnb-caption text-airbnb-gray block mt-0.5">1회 예약당 1회 적용됩니다.</span>
+              <span className="text-minbak-caption text-minbak-gray block mt-0.5">1회 예약당 1회 적용됩니다.</span>
             </label>
-            <section className="border border-airbnb-light-gray rounded-airbnb bg-white p-4 space-y-3">
-              <h3 className="text-airbnb-body font-medium text-airbnb-black">
+            <section className="border border-minbak-light-gray rounded-minbak bg-white p-4 space-y-3">
+              <h3 className="text-minbak-body font-medium text-minbak-black">
                 월별 요금 배수
               </h3>
-              <p className="text-airbnb-caption text-airbnb-gray">
+              <p className="text-minbak-caption text-minbak-gray">
                 기본 1박 요금에 월별 배수를 곱해 적용합니다. 예: 1월=1.1 → 1월은 기본 요금의 110%가 됩니다.
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <label className="text-airbnb-caption text-airbnb-gray">
+                <label className="text-minbak-caption text-minbak-gray">
                   <span className="block mb-1">1월 배수</span>
                   <input
                     type="number"
@@ -555,14 +556,14 @@ export default function EditListingForm({
                     min={0}
                     value={form.januaryFactor}
                     onChange={(e) => setForm((f) => ({ ...f, januaryFactor: e.target.value }))}
-                    className="w-full px-2 py-1.5 border border-airbnb-light-gray rounded-airbnb text-airbnb-body"
+                    className="w-full px-2 py-1.5 border border-minbak-light-gray rounded-minbak text-minbak-body"
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
                     ≈ ₩{monthlyPrice(form.januaryFactor).toLocaleString()}/박
                   </span>
                 </label>
-                <label className="text-airbnb-caption text-airbnb-gray">
+                <label className="text-minbak-caption text-minbak-gray">
                   <span className="block mb-1">2월 배수</span>
                   <input
                     type="number"
@@ -570,14 +571,14 @@ export default function EditListingForm({
                     min={0}
                     value={form.februaryFactor}
                     onChange={(e) => setForm((f) => ({ ...f, februaryFactor: e.target.value }))}
-                    className="w-full px-2 py-1.5 border border-airbnb-light-gray rounded-airbnb text-airbnb-body"
+                    className="w-full px-2 py-1.5 border border-minbak-light-gray rounded-minbak text-minbak-body"
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
                     ≈ ₩{monthlyPrice(form.februaryFactor).toLocaleString()}/박
                   </span>
                 </label>
-                <label className="text-airbnb-caption text-airbnb-gray">
+                <label className="text-minbak-caption text-minbak-gray">
                   <span className="block mb-1">3월 배수</span>
                   <input
                     type="number"
@@ -585,14 +586,14 @@ export default function EditListingForm({
                     min={0}
                     value={form.marchFactor}
                     onChange={(e) => setForm((f) => ({ ...f, marchFactor: e.target.value }))}
-                    className="w-full px-2 py-1.5 border border-airbnb-light-gray rounded-airbnb text-airbnb-body"
+                    className="w-full px-2 py-1.5 border border-minbak-light-gray rounded-minbak text-minbak-body"
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
                     ≈ ₩{monthlyPrice(form.marchFactor).toLocaleString()}/박
                   </span>
                 </label>
-                <label className="text-airbnb-caption text-airbnb-gray">
+                <label className="text-minbak-caption text-minbak-gray">
                   <span className="block mb-1">4월 배수</span>
                   <input
                     type="number"
@@ -600,14 +601,14 @@ export default function EditListingForm({
                     min={0}
                     value={form.aprilFactor}
                     onChange={(e) => setForm((f) => ({ ...f, aprilFactor: e.target.value }))}
-                    className="w-full px-2 py-1.5 border border-airbnb-light-gray rounded-airbnb text-airbnb-body"
+                    className="w-full px-2 py-1.5 border border-minbak-light-gray rounded-minbak text-minbak-body"
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
                     ≈ ₩{monthlyPrice(form.aprilFactor).toLocaleString()}/박
                   </span>
                 </label>
-                <label className="text-airbnb-caption text-airbnb-gray">
+                <label className="text-minbak-caption text-minbak-gray">
                   <span className="block mb-1">5월 배수</span>
                   <input
                     type="number"
@@ -615,14 +616,14 @@ export default function EditListingForm({
                     min={0}
                     value={form.mayFactor}
                     onChange={(e) => setForm((f) => ({ ...f, mayFactor: e.target.value }))}
-                    className="w-full px-2 py-1.5 border border-airbnb-light-gray rounded-airbnb text-airbnb-body"
+                    className="w-full px-2 py-1.5 border border-minbak-light-gray rounded-minbak text-minbak-body"
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
                     ≈ ₩{monthlyPrice(form.mayFactor).toLocaleString()}/박
                   </span>
                 </label>
-                <label className="text-airbnb-caption text-airbnb-gray">
+                <label className="text-minbak-caption text-minbak-gray">
                   <span className="block mb-1">6월 배수</span>
                   <input
                     type="number"
@@ -630,14 +631,14 @@ export default function EditListingForm({
                     min={0}
                     value={form.juneFactor}
                     onChange={(e) => setForm((f) => ({ ...f, juneFactor: e.target.value }))}
-                    className="w-full px-2 py-1.5 border border-airbnb-light-gray rounded-airbnb text-airbnb-body"
+                    className="w-full px-2 py-1.5 border border-minbak-light-gray rounded-minbak text-minbak-body"
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
                     ≈ ₩{monthlyPrice(form.juneFactor).toLocaleString()}/박
                   </span>
                 </label>
-                <label className="text-airbnb-caption text-airbnb-gray">
+                <label className="text-minbak-caption text-minbak-gray">
                   <span className="block mb-1">7월 배수</span>
                   <input
                     type="number"
@@ -645,14 +646,14 @@ export default function EditListingForm({
                     min={0}
                     value={form.julyFactor}
                     onChange={(e) => setForm((f) => ({ ...f, julyFactor: e.target.value }))}
-                    className="w-full px-2 py-1.5 border border-airbnb-light-gray rounded-airbnb text-airbnb-body"
+                    className="w-full px-2 py-1.5 border border-minbak-light-gray rounded-minbak text-minbak-body"
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
                     ≈ ₩{monthlyPrice(form.julyFactor).toLocaleString()}/박
                   </span>
                 </label>
-                <label className="text-airbnb-caption text-airbnb-gray">
+                <label className="text-minbak-caption text-minbak-gray">
                   <span className="block mb-1">8월 배수</span>
                   <input
                     type="number"
@@ -660,14 +661,14 @@ export default function EditListingForm({
                     min={0}
                     value={form.augustFactor}
                     onChange={(e) => setForm((f) => ({ ...f, augustFactor: e.target.value }))}
-                    className="w-full px-2 py-1.5 border border-airbnb-light-gray rounded-airbnb text-airbnb-body"
+                    className="w-full px-2 py-1.5 border border-minbak-light-gray rounded-minbak text-minbak-body"
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
                     ≈ ₩{monthlyPrice(form.augustFactor).toLocaleString()}/박
                   </span>
                 </label>
-                <label className="text-airbnb-caption text-airbnb-gray">
+                <label className="text-minbak-caption text-minbak-gray">
                   <span className="block mb-1">9월 배수</span>
                   <input
                     type="number"
@@ -675,14 +676,14 @@ export default function EditListingForm({
                     min={0}
                     value={form.septemberFactor}
                     onChange={(e) => setForm((f) => ({ ...f, septemberFactor: e.target.value }))}
-                    className="w-full px-2 py-1.5 border border-airbnb-light-gray rounded-airbnb text-airbnb-body"
+                    className="w-full px-2 py-1.5 border border-minbak-light-gray rounded-minbak text-minbak-body"
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
                     ≈ ₩{monthlyPrice(form.septemberFactor).toLocaleString()}/박
                   </span>
                 </label>
-                <label className="text-airbnb-caption text-airbnb-gray">
+                <label className="text-minbak-caption text-minbak-gray">
                   <span className="block mb-1">10월 배수</span>
                   <input
                     type="number"
@@ -690,14 +691,14 @@ export default function EditListingForm({
                     min={0}
                     value={form.octoberFactor}
                     onChange={(e) => setForm((f) => ({ ...f, octoberFactor: e.target.value }))}
-                    className="w-full px-2 py-1.5 border border-airbnb-light-gray rounded-airbnb text-airbnb-body"
+                    className="w-full px-2 py-1.5 border border-minbak-light-gray rounded-minbak text-minbak-body"
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
                     ≈ ₩{monthlyPrice(form.octoberFactor).toLocaleString()}/박
                   </span>
                 </label>
-                <label className="text-airbnb-caption text-airbnb-gray">
+                <label className="text-minbak-caption text-minbak-gray">
                   <span className="block mb-1">11월 배수</span>
                   <input
                     type="number"
@@ -705,14 +706,14 @@ export default function EditListingForm({
                     min={0}
                     value={form.novemberFactor}
                     onChange={(e) => setForm((f) => ({ ...f, novemberFactor: e.target.value }))}
-                    className="w-full px-2 py-1.5 border border-airbnb-light-gray rounded-airbnb text-airbnb-body"
+                    className="w-full px-2 py-1.5 border border-minbak-light-gray rounded-minbak text-minbak-body"
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
                     ≈ ₩{monthlyPrice(form.novemberFactor).toLocaleString()}/박
                   </span>
                 </label>
-                <label className="text-airbnb-caption text-airbnb-gray">
+                <label className="text-minbak-caption text-minbak-gray">
                   <span className="block mb-1">12월 배수</span>
                   <input
                     type="number"
@@ -720,7 +721,7 @@ export default function EditListingForm({
                     min={0}
                     value={form.decemberFactor}
                     onChange={(e) => setForm((f) => ({ ...f, decemberFactor: e.target.value }))}
-                    className="w-full px-2 py-1.5 border border-airbnb-light-gray rounded-airbnb text-airbnb-body"
+                    className="w-full px-2 py-1.5 border border-minbak-light-gray rounded-minbak text-minbak-body"
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
@@ -731,49 +732,49 @@ export default function EditListingForm({
             </section>
             <div className="grid grid-cols-3 gap-4">
               <label>
-                <span className="text-airbnb-caption text-airbnb-gray block mb-1">최대 인원</span>
+                <span className="text-minbak-caption text-minbak-gray block mb-1">최대 인원</span>
                 <input
                   type="number"
                   min={1}
                   value={form.maxGuests}
                   onChange={(e) => setForm((f) => ({ ...f, maxGuests: e.target.value }))}
-                  className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 />
               </label>
               <label>
-                <span className="text-airbnb-caption text-airbnb-gray block mb-1">침실</span>
+                <span className="text-minbak-caption text-minbak-gray block mb-1">침실</span>
                 <input
                   type="number"
                   min={0}
                   value={form.bedrooms}
                   onChange={(e) => setForm((f) => ({ ...f, bedrooms: e.target.value }))}
-                  className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 />
               </label>
               <label>
-                <span className="text-airbnb-caption text-airbnb-gray block mb-1">침대</span>
+                <span className="text-minbak-caption text-minbak-gray block mb-1">침대</span>
                 <input
                   type="number"
                   min={0}
                   value={form.beds}
                   onChange={(e) => setForm((f) => ({ ...f, beds: e.target.value }))}
-                  className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 />
               </label>
               <label>
-                <span className="text-airbnb-caption text-airbnb-gray block mb-1">욕실</span>
+                <span className="text-minbak-caption text-minbak-gray block mb-1">욕실</span>
                 <input
                   type="number"
                   min={0}
                   value={form.baths}
                   onChange={(e) => setForm((f) => ({ ...f, baths: e.target.value }))}
-                  className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 />
               </label>
             </div>
             {/* 프로모션대상 토글 (관리자만 표시·변경 가능) */}
             {isAdmin && (
-            <div className="border border-airbnb-light-gray rounded-airbnb p-4 bg-airbnb-bg/50">
+            <div className="border border-minbak-light-gray rounded-minbak p-4 bg-minbak-bg/50">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -782,16 +783,16 @@ export default function EditListingForm({
                   className="w-5 h-5 rounded accent-rose-500"
                 />
                 <div>
-                  <span className="text-airbnb-body font-medium text-airbnb-black">프로모션대상 (직영숙소)</span>
-                  <p className="text-airbnb-caption text-airbnb-gray">체크하면 숙소 카드에 &apos;프로모션대상&apos; 배지가 표시됩니다.</p>
+                  <span className="text-minbak-body font-medium text-minbak-black">프로모션대상 (직영숙소)</span>
+                  <p className="text-minbak-caption text-minbak-gray">체크하면 숙소 카드에 &apos;프로모션대상&apos; 배지가 표시됩니다.</p>
                 </div>
               </label>
             </div>
             )}
             {/* 취소 정책 */}
-            <div className="border border-airbnb-light-gray rounded-airbnb p-4 space-y-3 bg-airbnb-bg/50">
-              <h3 className="text-airbnb-body font-medium text-airbnb-black">취소 정책</h3>
-              <p className="text-airbnb-caption text-airbnb-gray">
+            <div className="border border-minbak-light-gray rounded-minbak p-4 space-y-3 bg-minbak-bg/50">
+              <h3 className="text-minbak-body font-medium text-minbak-black">취소 정책</h3>
+              <p className="text-minbak-caption text-minbak-gray">
                 게스트의 예약 취소 시 적용할 환불 정책을 선택하세요.
               </p>
               <div className="space-y-2">
@@ -805,7 +806,7 @@ export default function EditListingForm({
                     className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
                       form.cancellationPolicy === opt.value
                         ? "border-[#E31C23] bg-red-50/50"
-                        : "border-airbnb-light-gray hover:bg-airbnb-bg"
+                        : "border-minbak-light-gray hover:bg-minbak-bg"
                     }`}
                   >
                     <input
@@ -817,17 +818,17 @@ export default function EditListingForm({
                       className="mt-0.5 w-4 h-4 accent-rose-500"
                     />
                     <div>
-                      <span className="font-medium text-airbnb-body text-airbnb-black">{opt.label}</span>
-                      <p className="text-airbnb-caption text-airbnb-gray mt-0.5">{opt.desc}</p>
+                      <span className="font-medium text-minbak-body text-minbak-black">{opt.label}</span>
+                      <p className="text-minbak-caption text-minbak-gray mt-0.5">{opt.desc}</p>
                     </div>
                   </label>
                 ))}
               </div>
             </div>
             {/* 주의사항 편집 */}
-            <div className="border border-airbnb-light-gray rounded-airbnb p-4 space-y-3 bg-airbnb-bg/50">
-              <h3 className="text-airbnb-body font-medium text-airbnb-black">주의사항</h3>
-              <p className="text-airbnb-caption text-airbnb-gray">
+            <div className="border border-minbak-light-gray rounded-minbak p-4 space-y-3 bg-minbak-bg/50">
+              <h3 className="text-minbak-body font-medium text-minbak-black">주의사항</h3>
+              <p className="text-minbak-caption text-minbak-gray">
                 숙소 상세 페이지에 표시되는 주의사항입니다. 한 줄에 하나씩 입력하세요.
               </p>
               <textarea
@@ -835,40 +836,40 @@ export default function EditListingForm({
                 value={form.houseRules}
                 onChange={(e) => setForm((f) => ({ ...f, houseRules: e.target.value }))}
                 placeholder={"엘리베이터가 없는 건물인 경우 짐 이동에 유의해 주세요.\n실내에서는 금연입니다.\n밤 10시 이후에는 소음을 줄여 주세요."}
-                className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb text-airbnb-body resize-y"
+                className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body resize-y"
               />
             </div>
-            <div className="border border-airbnb-light-gray rounded-airbnb p-4 space-y-3 bg-airbnb-bg/50">
-              <h3 className="text-airbnb-body font-medium text-airbnb-black">
+            <div className="border border-minbak-light-gray rounded-minbak p-4 space-y-3 bg-minbak-bg/50">
+              <h3 className="text-minbak-body font-medium text-minbak-black">
                 캘린더 연동 (중복 예약 방지)
               </h3>
-              <p className="text-airbnb-caption text-airbnb-gray">
+              <p className="text-minbak-caption text-minbak-gray">
                 에어비앤비·Beds24 등 다른 채널과 같은 숙소를 올렸을 때, 양쪽 예약이 겹치지 않도록 합니다. (임시: iCal/ICS. 추후 Beds24 API 연동 예정)
               </p>
               <div>
-                <span className="text-airbnb-caption font-medium text-airbnb-black block mb-1">
+                <span className="text-minbak-caption font-medium text-minbak-black block mb-1">
                   우리 예약 내보내기 (Export)
                 </span>
-                <p className="text-airbnb-caption text-airbnb-gray mb-1">
+                <p className="text-minbak-caption text-minbak-gray mb-1">
                   아래 URL을 Airbnb·Beds24·구글캘린더의 &quot;캘린더 가져오기&quot;에 등록하면, 우리 사이트에서 잡은 예약이 해당 채널에서 막힙니다.
                 </p>
-                <code className="block text-airbnb-caption text-airbnb-black break-all bg-white border border-airbnb-light-gray rounded px-2 py-1.5">
+                <code className="block text-minbak-caption text-minbak-black break-all bg-white border border-minbak-light-gray rounded px-2 py-1.5">
                   {typeof window !== "undefined"
                     ? `${window.location.origin}/api/listings/${listingId}/calendar.ics`
                     : `/api/listings/${listingId}/calendar.ics`}
                 </code>
               </div>
               <label className="block">
-                <span className="text-airbnb-caption font-medium text-airbnb-black block mb-1">
+                <span className="text-minbak-caption font-medium text-minbak-black block mb-1">
                   외부 캘린더 가져오기 (Import) — 한 줄에 URL 하나
                 </span>
-                <p className="text-airbnb-caption text-airbnb-gray mb-1">
+                <p className="text-minbak-caption text-minbak-gray mb-1">
                   각 채널에서 발급한 &quot;캘린더 내보내기&quot; URL을 넣으면, 그 채널에 예약된 날은 우리 사이트에서 선택할 수 없습니다.
                 </p>
-                <p className="text-airbnb-caption text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5 mb-2">
+                <p className="text-minbak-caption text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5 mb-2">
                   <strong>중요:</strong> Airbnb iCal URL은 Airbnb 예약만 포함합니다. Booking.com 등 외부 예약이 Airbnb에 연동되어 있어도, 우리 사이트에 반영하려면 <strong>Booking.com iCal URL을 별도로 추가</strong>하세요.
                 </p>
-                <p className="text-airbnb-caption text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-1.5 mb-2">
+                <p className="text-minbak-caption text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-1.5 mb-2">
                   <strong>연동 안 될 때:</strong> URL 입력 후 반드시 <strong>&quot;저장&quot; 버튼</strong>을 눌러야 합니다. 저장 후 숙소 페이지에서 날짜 선택 시 예약된 날이 회색으로 표시됩니다.
                 </p>
                 <textarea
@@ -876,7 +877,7 @@ export default function EditListingForm({
                   onChange={(e) => setForm((f) => ({ ...f, icalImportUrls: e.target.value }))}
                   placeholder="https://www.airbnb.com/calendar/ical/..."
                   rows={3}
-                  className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb resize-y font-mono text-airbnb-caption"
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak resize-y font-mono text-minbak-caption"
                 />
                 <div className="mt-2 flex items-center gap-2">
                   <button
@@ -896,26 +897,26 @@ export default function EditListingForm({
                         });
                         const data = await res.json();
                         if (!res.ok) throw new Error(data.error || "새로고침 실패");
-                        alert(data.message || "캘린더를 새로고침했습니다.");
+                        toast.success(data.message || "캘린더를 새로고침했습니다.");
                         router.refresh();
                       } catch (e) {
-                        alert(e instanceof Error ? e.message : "새로고침에 실패했습니다.");
+                        toast.error(e instanceof Error ? e.message : "새로고침에 실패했습니다.");
                       } finally {
                         setIcalRefreshLoading(false);
                       }
                     }}
-                    className="min-h-[44px] flex items-center px-4 py-2 rounded-airbnb border border-airbnb-light-gray text-airbnb-body font-medium text-airbnb-black hover:bg-airbnb-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="min-h-[44px] flex items-center px-4 py-2 rounded-minbak border border-minbak-light-gray text-minbak-body font-medium text-minbak-black hover:bg-minbak-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {icalRefreshLoading ? "새로고침 중..." : "새로고침"}
                   </button>
-                  <span className="text-airbnb-caption text-airbnb-gray">
+                  <span className="text-minbak-caption text-minbak-gray">
                     입력된 URL의 최신 캘린더를 즉시 반영합니다.
                   </span>
                 </div>
               </label>
             </div>
             {error && (
-              <p className="text-airbnb-body text-airbnb-red" role="alert">
+              <p className="text-minbak-body text-minbak-primary" role="alert">
                 {error}
               </p>
             )}

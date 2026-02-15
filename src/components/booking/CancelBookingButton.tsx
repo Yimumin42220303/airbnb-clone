@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   calculateRefundAmount,
   POLICY_LABELS_KO,
@@ -94,20 +95,18 @@ export default function CancelBookingButton({
       const data = await res.json();
       if (!res.ok) {
         setLoading(false);
-        alert(data.error || "취소에 실패했습니다.");
+        toast.error(data.error || "취소에 실패했습니다.");
         return;
       }
 
       // 환불 결과 안내
       if (isPaid && data.refundAmount !== undefined) {
         if (data.refundAmount > 0) {
-          alert(
-            `예약이 취소되었습니다.\n\n` +
-            `환불 금액: ₩${data.refundAmount.toLocaleString()}\n` +
-            `${data.portoneRefund ? "카드 환불이 진행됩니다." : "환불이 처리됩니다."}`
+          toast.success(
+            `예약이 취소되었습니다. 환불 금액: ₩${data.refundAmount.toLocaleString()} ${data.portoneRefund ? "카드 환불이 진행됩니다." : "환불이 처리됩니다."}`
           );
         } else {
-          alert("예약이 취소되었습니다. (환불 불가 기간)");
+          toast.success("예약이 취소되었습니다. (환불 불가 기간)");
         }
       }
 
@@ -122,7 +121,7 @@ export default function CancelBookingButton({
       type="button"
       onClick={handleCancel}
       disabled={loading}
-      className="inline-block mt-2 text-airbnb-body text-airbnb-gray hover:text-airbnb-red hover:underline disabled:opacity-50"
+      className="inline-block mt-2 text-minbak-body text-minbak-gray hover:text-minbak-primary hover:underline disabled:opacity-50"
     >
       {loading ? "취소 중..." : "예약 취소"}
     </button>

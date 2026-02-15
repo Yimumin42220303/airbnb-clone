@@ -23,16 +23,16 @@ export default async function MockPage() {
       <Header />
       <main className="min-h-screen pt-24">
         <div className="max-w-[640px] mx-auto px-6 py-10">
-          <h1 className="text-airbnb-h1 font-semibold text-airbnb-black mb-2">
+          <h1 className="text-minbak-h1 font-semibold text-minbak-black mb-2">
             목업 확인
           </h1>
-          <p className="text-airbnb-body text-airbnb-gray mb-8">
+          <p className="text-minbak-body text-minbak-gray mb-8">
             시드 데이터가 적용된 화면을 한곳에서 확인할 수 있습니다.{" "}
-            <code className="px-1.5 py-0.5 bg-airbnb-light-gray rounded text-airbnb-caption">
+            <code className="px-1.5 py-0.5 bg-minbak-light-gray rounded text-minbak-caption">
               npm run db:seed
             </code>{" "}
             또는{" "}
-            <code className="px-1.5 py-0.5 bg-airbnb-light-gray rounded text-airbnb-caption">
+            <code className="px-1.5 py-0.5 bg-minbak-light-gray rounded text-minbak-caption">
               npm run dev:mock
             </code>{" "}
             실행 후 아래 링크로 이동해 보세요.
@@ -40,7 +40,7 @@ export default async function MockPage() {
 
           <section className="space-y-6">
             <div>
-              <h2 className="text-airbnb-body font-semibold text-airbnb-black mb-2">
+              <h2 className="text-minbak-body font-semibold text-minbak-black mb-2">
                 공통
               </h2>
               <ul className="space-y-1.5">
@@ -72,7 +72,7 @@ export default async function MockPage() {
             </div>
 
             <div>
-              <h2 className="text-airbnb-body font-semibold text-airbnb-black mb-2">
+              <h2 className="text-minbak-body font-semibold text-minbak-black mb-2">
                 숙소 상세 (목업 6개)
               </h2>
               <ul className="space-y-1.5">
@@ -87,7 +87,7 @@ export default async function MockPage() {
                   </li>
                 ))}
                 {listings.length === 0 && (
-                  <li className="text-airbnb-caption text-airbnb-gray">
+                  <li className="text-minbak-caption text-minbak-gray">
                     시드를 실행하면 숙소 링크가 나타납니다.
                   </li>
                 )}
@@ -95,7 +95,7 @@ export default async function MockPage() {
             </div>
 
             <div>
-              <h2 className="text-airbnb-body font-semibold text-airbnb-black mb-2">
+              <h2 className="text-minbak-body font-semibold text-minbak-black mb-2">
                 블로그 글 (목업 2편)
               </h2>
               <ul className="space-y-1.5">
@@ -110,7 +110,7 @@ export default async function MockPage() {
                   </li>
                 ))}
                 {posts.length === 0 && (
-                  <li className="text-airbnb-caption text-airbnb-gray">
+                  <li className="text-minbak-caption text-minbak-gray">
                     시드를 실행하면 블로그 링크가 나타납니다.
                   </li>
                 )}
@@ -118,7 +118,7 @@ export default async function MockPage() {
             </div>
 
             <div>
-              <h2 className="text-airbnb-body font-semibold text-airbnb-black mb-2">
+              <h2 className="text-minbak-body font-semibold text-minbak-black mb-2">
                 관리자·호스트
               </h2>
               <ul className="space-y-1.5">
@@ -158,9 +158,9 @@ export default async function MockPage() {
             </div>
           </section>
 
-          <p className="mt-10 text-airbnb-caption text-airbnb-gray">
+          <p className="mt-10 text-minbak-caption text-minbak-gray">
             DB 직접 확인:{" "}
-            <code className="px-1.5 py-0.5 bg-airbnb-light-gray rounded">
+            <code className="px-1.5 py-0.5 bg-minbak-light-gray rounded">
               npm run db:studio
             </code>
           </p>

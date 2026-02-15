@@ -16,7 +16,7 @@ export default function Error({
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-white">
       <div className="text-center max-w-md">
-        <p className="text-airbnb-body text-minbak-gray mb-4">
+        <p className="text-minbak-body text-minbak-gray mb-4">
           일시적인 오류가 발생했어요.
         </p>
         {process.env.NODE_ENV === "development" && (
@@ -27,7 +27,7 @@ export default function Error({
         <button
           type="button"
           onClick={reset}
-          className="px-4 py-2 bg-minbak-primary text-white rounded-airbnb"
+          className="px-4 py-2 bg-minbak-primary text-white rounded-minbak"
         >
           다시 시도
         </button>

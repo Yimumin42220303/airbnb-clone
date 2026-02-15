@@ -60,17 +60,17 @@ export default function SignInButtons({
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white px-4">
-      <div className="w-full max-w-[420px] bg-white rounded-[32px] shadow-airbnb p-8 md:p-10">
-        <h1 className="text-airbnb-h2 font-semibold text-airbnb-black text-center mb-2">
+      <div className="w-full max-w-[420px] bg-white rounded-[32px] shadow-minbak p-8 md:p-10">
+        <h1 className="text-minbak-h2 font-semibold text-minbak-black text-center mb-2">
           도쿄민박 로그인
         </h1>
-        <p className="text-airbnb-body text-airbnb-gray text-center mb-6">
+        <p className="text-minbak-body text-minbak-gray text-center mb-6">
           카카오톡 또는 구글 계정으로 간편하게 로그인/회원가입하세요.
         </p>
 
         {(errorMessage || verified || signupSuccess) && (
           <div
-            className={`mb-6 p-3 rounded-airbnb text-airbnb-body ${
+            className={`mb-6 p-3 rounded-minbak text-minbak-body ${
               errorMessage
                 ? "bg-red-50 border border-red-200 text-red-700"
                 : "bg-green-50 border border-green-200 text-green-800"
@@ -89,7 +89,7 @@ export default function SignInButtons({
               if (kakaoEnabled) void signIn("kakao", { callbackUrl });
             }}
             disabled={!kakaoEnabled}
-            className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-[999px] text-airbnb-body font-medium ${
+            className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-[999px] text-minbak-body font-medium ${
               kakaoEnabled
                 ? "bg-[#F7E600] text-black hover:bg-[#f2d900]"
                 : "bg-[#F7E600]/60 text-black/50 cursor-not-allowed"
@@ -108,10 +108,10 @@ export default function SignInButtons({
             type="button"
             onClick={() => googleEnabled && signIn("google", { callbackUrl })}
             disabled={!googleEnabled}
-            className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-[999px] border text-airbnb-body font-medium ${
+            className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-[999px] border text-minbak-body font-medium ${
               googleEnabled
-                ? "border-airbnb-light-gray bg-white hover:bg-airbnb-bg"
-                : "border-airbnb-light-gray/60 bg-airbnb-bg cursor-not-allowed text-airbnb-gray"
+                ? "border-minbak-light-gray bg-white hover:bg-minbak-bg"
+                : "border-minbak-light-gray/60 bg-minbak-bg cursor-not-allowed text-minbak-gray"
             }`}
           >
             <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" aria-hidden>
@@ -125,9 +125,9 @@ export default function SignInButtons({
 
           {/* 구분선 */}
           <div className="flex items-center gap-3 py-2">
-            <span className="h-px flex-1 bg-airbnb-light-gray" />
-            <span className="text-airbnb-caption text-airbnb-gray">혹은</span>
-            <span className="h-px flex-1 bg-airbnb-light-gray" />
+            <span className="h-px flex-1 bg-minbak-light-gray" />
+            <span className="text-minbak-caption text-minbak-gray">혹은</span>
+            <span className="h-px flex-1 bg-minbak-light-gray" />
           </div>
 
           {/* 이메일: 회원가입 / 로그인 */}
@@ -136,14 +136,14 @@ export default function SignInButtons({
               <button
                 type="button"
                 onClick={() => setMode("signup")}
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-[999px] border border-airbnb-light-gray bg-white hover:bg-airbnb-bg text-airbnb-body font-medium"
+                className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-[999px] border border-minbak-light-gray bg-white hover:bg-minbak-bg text-minbak-body font-medium"
               >
                 이메일로 회원가입
               </button>
               <button
                 type="button"
                 onClick={() => setMode("login")}
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-[999px] border border-airbnb-light-gray bg-white hover:bg-airbnb-bg text-airbnb-body font-medium"
+                className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-[999px] border border-minbak-light-gray bg-white hover:bg-minbak-bg text-minbak-body font-medium"
               >
                 이메일로 로그인
               </button>
@@ -186,7 +186,7 @@ export default function SignInButtons({
               }}
               className="space-y-3"
             >
-              {error && <p className="text-airbnb-caption text-red-600" role="alert">{error}</p>}
+              {error && <p className="text-minbak-caption text-red-600" role="alert">{error}</p>}
               <input
                 type="email"
                 value={email}
@@ -195,7 +195,7 @@ export default function SignInButtons({
                 required
                 autoFocus
                 disabled={loading}
-                className="w-full px-4 py-3 border border-airbnb-light-gray rounded-[999px] text-airbnb-body placeholder:text-airbnb-gray focus:outline-none focus:ring-2 focus:ring-airbnb-black/20 disabled:opacity-50"
+                className="w-full px-4 py-3 border border-minbak-light-gray rounded-[999px] text-minbak-body placeholder:text-minbak-gray focus:outline-none focus:ring-2 focus:ring-minbak-black/20 disabled:opacity-50"
               />
               <input
                 type="password"
@@ -205,7 +205,7 @@ export default function SignInButtons({
                 required
                 minLength={8}
                 disabled={loading}
-                className="w-full px-4 py-3 border border-airbnb-light-gray rounded-[999px] text-airbnb-body placeholder:text-airbnb-gray focus:outline-none focus:ring-2 focus:ring-airbnb-black/20 disabled:opacity-50"
+                className="w-full px-4 py-3 border border-minbak-light-gray rounded-[999px] text-minbak-body placeholder:text-minbak-gray focus:outline-none focus:ring-2 focus:ring-minbak-black/20 disabled:opacity-50"
               />
               <input
                 type="password"
@@ -214,7 +214,7 @@ export default function SignInButtons({
                 placeholder="비밀번호 확인"
                 required
                 disabled={loading}
-                className="w-full px-4 py-3 border border-airbnb-light-gray rounded-[999px] text-airbnb-body placeholder:text-airbnb-gray focus:outline-none focus:ring-2 focus:ring-airbnb-black/20 disabled:opacity-50"
+                className="w-full px-4 py-3 border border-minbak-light-gray rounded-[999px] text-minbak-body placeholder:text-minbak-gray focus:outline-none focus:ring-2 focus:ring-minbak-black/20 disabled:opacity-50"
               />
               <input
                 type="text"
@@ -222,13 +222,13 @@ export default function SignInButtons({
                 onChange={(e) => setName(e.target.value)}
                 placeholder="이름 (선택)"
                 disabled={loading}
-                className="w-full px-4 py-3 border border-airbnb-light-gray rounded-[999px] text-airbnb-body placeholder:text-airbnb-gray focus:outline-none focus:ring-2 focus:ring-airbnb-black/20 disabled:opacity-50"
+                className="w-full px-4 py-3 border border-minbak-light-gray rounded-[999px] text-minbak-body placeholder:text-minbak-gray focus:outline-none focus:ring-2 focus:ring-minbak-black/20 disabled:opacity-50"
               />
               <div className="flex gap-2">
                 <button
                   type="submit"
                   disabled={loading || !email.trim() || !password || !passwordConfirm}
-                  className="flex-1 py-3 rounded-[999px] bg-airbnb-black text-white text-airbnb-body font-medium hover:bg-airbnb-black/90 disabled:opacity-50"
+                  className="flex-1 py-3 rounded-[999px] bg-minbak-black text-white text-minbak-body font-medium hover:bg-minbak-black/90 disabled:opacity-50"
                 >
                   {loading ? "처리 중..." : "회원가입"}
                 </button>
@@ -236,7 +236,7 @@ export default function SignInButtons({
                   type="button"
                   onClick={resetForm}
                   disabled={loading}
-                  className="px-4 py-3 rounded-[999px] border border-airbnb-light-gray text-airbnb-body font-medium hover:bg-airbnb-bg disabled:opacity-50"
+                  className="px-4 py-3 rounded-[999px] border border-minbak-light-gray text-minbak-body font-medium hover:bg-minbak-bg disabled:opacity-50"
                 >
                   취소
                 </button>
@@ -275,7 +275,7 @@ export default function SignInButtons({
               }}
               className="space-y-3"
             >
-              {error && <p className="text-airbnb-caption text-red-600" role="alert">{error}</p>}
+              {error && <p className="text-minbak-caption text-red-600" role="alert">{error}</p>}
               <input
                 type="email"
                 value={email}
@@ -284,7 +284,7 @@ export default function SignInButtons({
                 required
                 autoFocus
                 disabled={loading}
-                className="w-full px-4 py-3 border border-airbnb-light-gray rounded-[999px] text-airbnb-body placeholder:text-airbnb-gray focus:outline-none focus:ring-2 focus:ring-airbnb-black/20 disabled:opacity-50"
+                className="w-full px-4 py-3 border border-minbak-light-gray rounded-[999px] text-minbak-body placeholder:text-minbak-gray focus:outline-none focus:ring-2 focus:ring-minbak-black/20 disabled:opacity-50"
               />
               <input
                 type="password"
@@ -293,13 +293,13 @@ export default function SignInButtons({
                 placeholder="비밀번호"
                 required
                 disabled={loading}
-                className="w-full px-4 py-3 border border-airbnb-light-gray rounded-[999px] text-airbnb-body placeholder:text-airbnb-gray focus:outline-none focus:ring-2 focus:ring-airbnb-black/20 disabled:opacity-50"
+                className="w-full px-4 py-3 border border-minbak-light-gray rounded-[999px] text-minbak-body placeholder:text-minbak-gray focus:outline-none focus:ring-2 focus:ring-minbak-black/20 disabled:opacity-50"
               />
               <div className="flex gap-2">
                 <button
                   type="submit"
                   disabled={loading || !email.trim() || !password}
-                  className="flex-1 py-3 rounded-[999px] bg-airbnb-black text-white text-airbnb-body font-medium hover:bg-airbnb-black/90 disabled:opacity-50"
+                  className="flex-1 py-3 rounded-[999px] bg-minbak-black text-white text-minbak-body font-medium hover:bg-minbak-black/90 disabled:opacity-50"
                 >
                   {loading ? "로그인 중..." : "로그인"}
                 </button>
@@ -307,7 +307,7 @@ export default function SignInButtons({
                   type="button"
                   onClick={resetForm}
                   disabled={loading}
-                  className="px-4 py-3 rounded-[999px] border border-airbnb-light-gray text-airbnb-body font-medium hover:bg-airbnb-bg disabled:opacity-50"
+                  className="px-4 py-3 rounded-[999px] border border-minbak-light-gray text-minbak-body font-medium hover:bg-minbak-bg disabled:opacity-50"
                 >
                   취소
                 </button>
@@ -316,7 +316,7 @@ export default function SignInButtons({
           )}
         </div>
 
-        <p className="text-airbnb-caption text-airbnb-gray text-center mt-6">
+        <p className="text-minbak-caption text-minbak-gray text-center mt-6">
           <Link href="/" className="hover:underline">
             홈으로 돌아가기
           </Link>

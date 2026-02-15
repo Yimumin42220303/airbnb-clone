@@ -30,7 +30,7 @@ function MobileMonthGrid({
 
   if (!listing) {
     return (
-      <div className="md:hidden bg-white rounded-airbnb border border-airbnb-light-gray p-6 text-center text-airbnb-body text-airbnb-gray">
+      <div className="md:hidden bg-white rounded-minbak border border-minbak-light-gray p-6 text-center text-minbak-body text-minbak-gray">
         {t("calendar.selectListing")}
       </div>
     );
@@ -74,12 +74,12 @@ function MobileMonthGrid({
   }
 
   return (
-    <div className="md:hidden bg-white rounded-airbnb border border-airbnb-light-gray overflow-hidden">
+    <div className="md:hidden bg-white rounded-minbak border border-minbak-light-gray overflow-hidden">
       <h2 className="text-lg font-semibold text-minbak-black px-3 pt-3 pb-2">
         {month}{t("calendar.month")}
       </h2>
       <div
-        className="grid gap-px bg-airbnb-light-gray p-px"
+        className="grid gap-px bg-minbak-light-gray p-px"
         style={{
           gridTemplateColumns: "repeat(7, 1fr)",
           gridAutoRows: "minmax(52px, auto)",
@@ -88,7 +88,7 @@ function MobileMonthGrid({
         {WEEKDAY_KEYS.map((k, i) => (
           <div
             key={i}
-            className="bg-airbnb-bg py-1.5 text-center text-[11px] font-medium text-airbnb-gray"
+            className="bg-minbak-bg py-1.5 text-center text-[11px] font-medium text-minbak-gray"
             style={{ gridColumn: i + 1, gridRow: 1 }}
           >
             {t(`calendar.weekday.${k}`)}
@@ -105,7 +105,7 @@ function MobileMonthGrid({
           const isContinuation = isContinuationOfBooking(index);
 
           if (isContinuation) {
-            return <div key={index} className="bg-airbnb-bg/30" style={{ gridColumn: col + 1, gridRow: row + 2 }} />;
+            return <div key={index} className="bg-minbak-bg/30" style={{ gridColumn: col + 1, gridRow: row + 2 }} />;
           }
 
           if (isFirst && bookingAt) {
@@ -149,7 +149,7 @@ function MobileMonthGrid({
             <div
               key={index}
               className={`flex flex-col justify-center items-center py-1 px-0.5 min-h-[52px] ${
-                !isCurrentMonth ? "bg-airbnb-bg/50 text-airbnb-gray" : "bg-white"
+                !isCurrentMonth ? "bg-minbak-bg/50 text-minbak-gray" : "bg-white"
               } ${isToday ? "ring-2 ring-inset ring-red-500 rounded-full w-7 h-7 flex items-center justify-center" : ""}`}
               style={{ gridColumn: col + 1, gridRow: row + 2 }}
             >
@@ -159,7 +159,7 @@ function MobileMonthGrid({
               {isCurrentMonth && (
                 <span
                   className={`text-[10px] leading-tight mt-0.5 truncate max-w-full ${
-                    isBlocked ? "text-gray-400 line-through" : "text-airbnb-gray"
+                    isBlocked ? "text-gray-400 line-through" : "text-minbak-gray"
                   }`}
                 >
                   {isBlocked ? t("calendar.blocked") : `₩${listing.pricePerNight.toLocaleString()}`}
@@ -385,9 +385,9 @@ export default function HostCalendarView() {
       <main className="min-h-screen pt-4 md:pt-8">
         <div className="flex flex-col md:flex-row min-h-[calc(100vh-5rem)] md:min-h-[calc(100vh-8rem)]">
           {/* Left sidebar: 모바일에서 상단 고정 높이, 데스크톱에서 세로 스크롤 */}
-          <aside className="md:w-72 w-full max-h-[220px] md:max-h-none border-b md:border-b-0 md:border-r border-airbnb-light-gray bg-white flex-shrink-0 overflow-y-auto">
-            <div className="p-4 border-b border-airbnb-light-gray">
-              <h2 className="text-airbnb-body font-semibold text-airbnb-black">
+          <aside className="md:w-72 w-full max-h-[220px] md:max-h-none border-b md:border-b-0 md:border-r border-minbak-light-gray bg-white flex-shrink-0 overflow-y-auto">
+            <div className="p-4 border-b border-minbak-light-gray">
+              <h2 className="text-minbak-body font-semibold text-minbak-black">
                 {t("calendar.listingsCount", { count: listings.length })}
               </h2>
               <input
@@ -395,7 +395,7 @@ export default function HostCalendarView() {
                 placeholder={t("calendar.searchPlaceholder")}
                 value={sidebarSearch}
                 onChange={(e) => setSidebarSearch(e.target.value)}
-                className="mt-2 w-full px-3 py-2.5 min-h-[44px] border border-airbnb-light-gray rounded-airbnb text-airbnb-body placeholder:text-airbnb-gray focus:outline-none focus:ring-2 focus:ring-airbnb-black/20"
+                className="mt-2 w-full px-3 py-2.5 min-h-[44px] border border-minbak-light-gray rounded-minbak text-minbak-body placeholder:text-minbak-gray focus:outline-none focus:ring-2 focus:ring-minbak-black/20"
               />
             </div>
             <ul className="p-2">
@@ -406,10 +406,10 @@ export default function HostCalendarView() {
                     onClick={() =>
                       setSelectedListingId((id) => (id === l.id ? null : l.id))
                     }
-                    className={`w-full flex gap-3 p-3 min-h-[56px] rounded-airbnb text-left transition-colors ${
+                    className={`w-full flex gap-3 p-3 min-h-[56px] rounded-minbak text-left transition-colors ${
                       selectedListingId === l.id
-                        ? "bg-airbnb-bg ring-1 ring-airbnb-light-gray"
-                        : "hover:bg-airbnb-bg"
+                        ? "bg-minbak-bg ring-1 ring-minbak-light-gray"
+                        : "hover:bg-minbak-bg"
                     }`}
                   >
                     <div className="relative w-14 h-14 flex-shrink-0 rounded overflow-hidden">
@@ -422,10 +422,10 @@ export default function HostCalendarView() {
                       />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-airbnb-body font-medium text-airbnb-black truncate">
+                      <p className="text-minbak-body font-medium text-minbak-black truncate">
                         {l.title}
                       </p>
-                      <p className="text-airbnb-caption text-airbnb-gray truncate">
+                      <p className="text-minbak-caption text-minbak-gray truncate">
                         {l.location}
                       </p>
                     </div>
@@ -436,24 +436,24 @@ export default function HostCalendarView() {
           </aside>
 
           {/* Calendar area */}
-          <div className="flex-1 overflow-x-auto bg-airbnb-bg p-4 min-w-0">
+          <div className="flex-1 overflow-x-auto bg-minbak-bg p-4 min-w-0">
             <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <div className="flex items-center gap-1 sm:gap-2">
                 <button
                   type="button"
                   onClick={goToPrevMonth}
-                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-airbnb hover:bg-white"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-minbak hover:bg-white"
                   aria-label={t("calendar.prevMonth")}
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
-                <span className="text-sm sm:text-airbnb-body font-semibold text-airbnb-black min-w-[100px] sm:min-w-[120px] text-center">
+                <span className="text-sm sm:text-minbak-body font-semibold text-minbak-black min-w-[100px] sm:min-w-[120px] text-center">
                   {year}년 {month}월
                 </span>
                 <button
                   type="button"
                   onClick={goToNextMonth}
-                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-airbnb hover:bg-white"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-minbak hover:bg-white"
                   aria-label={t("calendar.nextMonth")}
                 >
                   <ChevronRight className="w-5 h-5" />
@@ -461,7 +461,7 @@ export default function HostCalendarView() {
                 <button
                   type="button"
                   onClick={goToToday}
-                  className="min-h-[44px] flex items-center px-3 py-2 text-airbnb-caption border border-airbnb-light-gray rounded-airbnb hover:bg-white"
+                  className="min-h-[44px] flex items-center px-3 py-2 text-minbak-caption border border-minbak-light-gray rounded-minbak hover:bg-white"
                 >
                   {t("calendar.today")}
                 </button>
@@ -469,7 +469,7 @@ export default function HostCalendarView() {
             </div>
 
             {loading ? (
-              <div className="flex items-center justify-center py-20 text-airbnb-gray">
+              <div className="flex items-center justify-center py-20 text-minbak-gray">
                 {t("calendar.loading")}
               </div>
             ) : (
@@ -486,10 +486,10 @@ export default function HostCalendarView() {
                 />
 
                 {/* 데스크톱 전용: 기존 가로 스크롤 캘린더 */}
-                <div className="hidden md:block bg-white rounded-airbnb border border-airbnb-light-gray overflow-hidden relative">
+                <div className="hidden md:block bg-white rounded-minbak border border-minbak-light-gray overflow-hidden relative">
                 {selectedRange && (
-                  <div className="absolute left-1/2 -translate-x-1/2 top-2 z-10 flex items-center gap-2 px-3 py-2 bg-white border border-minbak-light-gray rounded-airbnb shadow-lg">
-                    <span className="text-airbnb-caption text-minbak-black whitespace-nowrap">
+                  <div className="absolute left-1/2 -translate-x-1/2 top-2 z-10 flex items-center gap-2 px-3 py-2 bg-white border border-minbak-light-gray rounded-minbak shadow-lg">
+                    <span className="text-minbak-caption text-minbak-black whitespace-nowrap">
                       {t("calendar.selectedDays", { count: selectedRange.dateKeys.length })}
                     </span>
                     <button
@@ -516,7 +516,7 @@ export default function HostCalendarView() {
                           setAvailabilityLoading(false);
                         }
                       }}
-                      className="px-3 py-1.5 text-sm font-medium rounded-airbnb bg-gray-700 text-white hover:bg-gray-800 disabled:opacity-50"
+                      className="px-3 py-1.5 text-sm font-medium rounded-minbak bg-gray-700 text-white hover:bg-gray-800 disabled:opacity-50"
                     >
                       {t("calendar.block")}
                     </button>
@@ -544,14 +544,14 @@ export default function HostCalendarView() {
                           setAvailabilityLoading(false);
                         }
                       }}
-                      className="px-3 py-1.5 text-sm font-medium rounded-airbnb bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50"
+                      className="px-3 py-1.5 text-sm font-medium rounded-minbak bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50"
                     >
                       {t("calendar.open")}
                     </button>
                     <button
                       type="button"
                       onClick={() => setSelectedRange(null)}
-                      className="px-3 py-1.5 text-sm font-medium rounded-airbnb border border-minbak-light-gray text-minbak-black hover:bg-minbak-bg"
+                      className="px-3 py-1.5 text-sm font-medium rounded-minbak border border-minbak-light-gray text-minbak-black hover:bg-minbak-bg"
                     >
                       {t("calendar.cancel")}
                     </button>
@@ -565,13 +565,13 @@ export default function HostCalendarView() {
                   }}
                 >
                   {/* Header: empty + weekdays for 5 weeks */}
-                  <div className="bg-airbnb-bg border-b border-r border-airbnb-light-gray p-2" />
+                  <div className="bg-minbak-bg border-b border-r border-minbak-light-gray p-2" />
                   {calendarDays.map((d, i) => (
                     <div
                       key={i}
-                      className={`border-b border-r border-airbnb-light-gray p-1 text-center text-airbnb-caption ${
-                        d.getMonth() !== month - 1 ? "text-airbnb-gray bg-airbnb-bg/50" : ""
-                      } ${toISODateString(d) === todayKey ? "bg-airbnb-red/10 font-medium" : ""}`}
+                      className={`border-b border-r border-minbak-light-gray p-1 text-center text-minbak-caption ${
+                        d.getMonth() !== month - 1 ? "text-minbak-gray bg-minbak-bg/50" : ""
+                      } ${toISODateString(d) === todayKey ? "bg-minbak-primary/10 font-medium" : ""}`}
                     >
                       {t(`calendar.weekday.${WEEKDAY_KEYS[d.getDay()]}`)} {d.getDate()}
                     </div>
@@ -632,13 +632,13 @@ function CalendarRow({
 
   return (
     <>
-      <div className="border-b border-r border-airbnb-light-gray p-2 bg-airbnb-bg flex flex-col justify-center">
-        <p className="text-airbnb-caption text-airbnb-gray">
+      <div className="border-b border-r border-minbak-light-gray p-2 bg-minbak-bg flex flex-col justify-center">
+        <p className="text-minbak-caption text-minbak-gray">
           ₩{listing.pricePerNight.toLocaleString()}/박
         </p>
         <Link
           href={`/listing/${listing.id}`}
-          className="text-airbnb-body font-medium text-airbnb-black hover:underline truncate mt-0.5"
+          className="text-minbak-body font-medium text-minbak-black hover:underline truncate mt-0.5"
         >
           {listing.title}
         </Link>
@@ -664,9 +664,9 @@ function CalendarRow({
           return (
             <div
               key={colIndex}
-              className={`border-b border-r border-airbnb-light-gray min-w-[56px] min-h-[52px] p-1 cursor-crosshair ${
-                !isCurrentMonth ? "bg-airbnb-bg/30" : ""
-              } ${isToday ? "bg-airbnb-red/5" : ""} ${
+              className={`border-b border-r border-minbak-light-gray min-w-[56px] min-h-[52px] p-1 cursor-crosshair ${
+                !isCurrentMonth ? "bg-minbak-bg/30" : ""
+              } ${isToday ? "bg-minbak-primary/5" : ""} ${
                 isCurrentMonth && isBlocked ? "bg-gray-200/80" : ""
               } ${isSelected ? "ring-2 ring-inset ring-teal-500 bg-teal-50/80" : ""}`}
               style={{ gridColumn: gridCol }}
@@ -679,12 +679,12 @@ function CalendarRow({
               }}
             >
               {isCurrentMonth && !isBlocked && (
-                <p className="text-[11px] leading-tight text-airbnb-gray whitespace-nowrap overflow-visible">
+                <p className="text-[11px] leading-tight text-minbak-gray whitespace-nowrap overflow-visible">
                   ₩{listing.pricePerNight.toLocaleString()}
                 </p>
               )}
               {isCurrentMonth && isBlocked && (
-                <span className="text-airbnb-caption text-gray-500" aria-hidden>
+                <span className="text-minbak-caption text-gray-500" aria-hidden>
                   {t("calendar.blocked")}
                 </span>
               )}
@@ -704,17 +704,17 @@ function CalendarRow({
         return (
           <div
             key={colIndex}
-            className="border-b border-r border-airbnb-light-gray min-h-[52px] p-0.5"
+            className="border-b border-r border-minbak-light-gray min-h-[52px] p-0.5"
             style={{ gridColumn: `${gridCol} / span ${span}` }}
           >
             <div className="h-full min-w-0 bg-teal-500/90 hover:bg-teal-600/90 rounded px-2 py-1.5 text-white flex flex-col justify-center overflow-hidden">
-              <p className="text-airbnb-caption font-medium truncate">
+              <p className="text-minbak-caption font-medium truncate">
                 {booking.guestName}
               </p>
-              <p className="text-airbnb-caption opacity-90">
+              <p className="text-minbak-caption opacity-90">
                 ₩{booking.totalPrice.toLocaleString()}
               </p>
-              <p className="text-airbnb-caption opacity-90">
+              <p className="text-minbak-caption opacity-90">
                 {getBookingStatusLabel(
                   booking.status,
                   booking.checkIn,

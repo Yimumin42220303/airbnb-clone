@@ -84,16 +84,16 @@ export default async function BlogPostPage({ params }: Props) {
         <article className="max-w-[720px] mx-auto px-6 py-10">
           <Link
             href="/blog"
-            className="text-airbnb-body text-minbak-primary hover:underline mb-6 inline-block"
+            className="text-minbak-body text-minbak-primary hover:underline mb-6 inline-block"
           >
             ← 블로그 목록
           </Link>
 
           <header className="mb-8">
-            <h1 className="text-airbnb-h1 font-semibold text-airbnb-black mb-3">
+            <h1 className="text-minbak-h1 font-semibold text-minbak-black mb-3">
               {post.title}
             </h1>
-            <p className="text-airbnb-body text-airbnb-gray">
+            <p className="text-minbak-body text-minbak-gray">
               {post.publishedAt
                 ? new Date(post.publishedAt).toLocaleDateString("ko-KR", {
                     year: "numeric",
@@ -108,7 +108,7 @@ export default async function BlogPostPage({ params }: Props) {
           </header>
 
           {post.coverImage && (
-            <div className="relative w-full aspect-video rounded-airbnb overflow-hidden bg-airbnb-light-gray mb-8">
+            <div className="relative w-full aspect-video rounded-minbak overflow-hidden bg-minbak-light-gray mb-8">
               <Image
                 src={post.coverImage}
                 alt=""
@@ -121,7 +121,7 @@ export default async function BlogPostPage({ params }: Props) {
           )}
 
           <div
-            className="prose prose-neutral max-w-none text-airbnb-body text-airbnb-black"
+            className="prose prose-neutral max-w-none text-minbak-body text-minbak-black"
             dangerouslySetInnerHTML={{
               __html: post.body.replace(/\n/g, "<br />"),
             }}

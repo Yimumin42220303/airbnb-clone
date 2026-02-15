@@ -27,7 +27,7 @@ export default function SearchSort() {
     <select
       value={currentSort}
       onChange={handleChange}
-      className="px-3 py-2 border border-minbak-light-gray rounded-airbnb text-airbnb-body text-minbak-black bg-white focus:outline-none focus:ring-2 focus:ring-minbak-primary/30"
+      className="px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body text-minbak-black bg-white focus:outline-none focus:ring-2 focus:ring-minbak-primary/30"
       aria-label="정렬"
     >
       {SORT_OPTIONS.map((opt) => (

@@ -17,7 +17,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-airbnb-body font-medium text-airbnb-black mb-1"
+            className="block text-minbak-body font-medium text-minbak-black mb-1"
           >
             {label}
           </label>
@@ -26,9 +26,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           id={inputId}
           className={cn(
-            "w-full px-4 py-2.5 rounded-airbnb border border-airbnb-light-gray",
-            "text-airbnb-body text-airbnb-black placeholder:text-airbnb-gray",
-            "focus:outline-none focus:ring-2 focus:ring-airbnb-black focus:border-transparent",
+            "w-full px-4 py-2.5 rounded-minbak border border-minbak-light-gray",
+            "text-minbak-body text-minbak-black placeholder:text-minbak-gray",
+            "focus:outline-none focus:ring-2 focus:ring-minbak-black focus:border-transparent",
             "transition-shadow",
             error && "border-red-500 focus:ring-red-500",
             className
@@ -36,7 +36,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           {...props}
         />
         {error && (
-          <p className="mt-1 text-airbnb-caption text-airbnb-red">{error}</p>
+          <p className="mt-1 text-minbak-caption text-minbak-primary">{error}</p>
         )}
       </div>
     );

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { useHostTranslations } from "./HostLocaleProvider";
 
 type Props = {
@@ -40,7 +41,7 @@ export default function HostBookingActions({
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || t("actions.processFailed"));
+        toast.error(data.error || t("actions.processFailed"));
         return;
       }
       router.refresh();
@@ -59,7 +60,7 @@ export default function HostBookingActions({
             type="button"
             onClick={() => handleAction("accept")}
             disabled={!!loading}
-            className="px-3 py-1.5 text-airbnb-body font-medium text-white bg-airbnb-red rounded-airbnb hover:bg-airbnb-dark disabled:opacity-50"
+            className="px-3 py-1.5 text-minbak-body font-medium text-white bg-minbak-primary rounded-minbak hover:bg-minbak-primary-hover disabled:opacity-50"
           >
             {loading === "accept" ? t("actions.processing") : t("actions.accept")}
           </button>
@@ -67,7 +68,7 @@ export default function HostBookingActions({
             type="button"
             onClick={() => handleAction("reject")}
             disabled={!!loading}
-            className="px-3 py-1.5 text-airbnb-body font-medium text-airbnb-gray border border-airbnb-light-gray rounded-airbnb hover:bg-airbnb-bg disabled:opacity-50"
+            className="px-3 py-1.5 text-minbak-body font-medium text-minbak-gray border border-minbak-light-gray rounded-minbak hover:bg-minbak-bg disabled:opacity-50"
           >
             {loading === "reject" ? t("actions.processing") : t("actions.reject")}
           </button>
@@ -78,7 +79,7 @@ export default function HostBookingActions({
           type="button"
           onClick={() => handleAction("cancel")}
           disabled={!!loading}
-          className="px-3 py-1.5 text-airbnb-body text-airbnb-red hover:underline disabled:opacity-50"
+          className="px-3 py-1.5 text-minbak-body text-minbak-primary hover:underline disabled:opacity-50"
         >
           {loading === "cancel" ? t("actions.processing") : t("actions.cancel")}
         </button>

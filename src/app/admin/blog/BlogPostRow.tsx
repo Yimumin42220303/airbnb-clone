@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import type { PostListItem } from "@/lib/blog";
 
 type Props = { post: PostListItem };
@@ -15,7 +16,7 @@ export default function BlogPostRow({ post }: Props) {
     if (res.ok) router.refresh();
     else {
       const data = await res.json().catch(() => ({}));
-      alert(data.error || "삭제에 실패했습니다.");
+      toast.error(data.error || "삭제에 실패했습니다.");
     }
   }
 
@@ -28,15 +29,15 @@ export default function BlogPostRow({ post }: Props) {
     : "초안";
 
   return (
-    <li className="flex items-center justify-between gap-4 px-5 py-4 border-b border-airbnb-light-gray last:border-b-0">
+    <li className="flex items-center justify-between gap-4 px-5 py-4 border-b border-minbak-light-gray last:border-b-0">
       <div className="min-w-0 flex-1">
         <Link
           href={`/admin/blog/${post.id}/edit`}
-          className="text-airbnb-body font-medium text-airbnb-black hover:text-minbak-primary"
+          className="text-minbak-body font-medium text-minbak-black hover:text-minbak-primary"
         >
           {post.title}
         </Link>
-        <p className="text-airbnb-caption text-airbnb-gray mt-0.5">
+        <p className="text-minbak-caption text-minbak-gray mt-0.5">
           /blog/{post.slug} · {dateStr}
           {post.publishedAt ? "" : " (비공개)"}
         </p>
@@ -47,21 +48,21 @@ export default function BlogPostRow({ post }: Props) {
             href={`/blog/${post.slug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-airbnb-caption text-minbak-primary hover:underline"
+            className="text-minbak-caption text-minbak-primary hover:underline"
           >
             보기
           </a>
         )}
         <Link
           href={`/admin/blog/${post.id}/edit`}
-          className="px-3 py-1.5 text-airbnb-caption font-medium text-airbnb-black border border-airbnb-light-gray rounded-airbnb hover:bg-airbnb-bg"
+          className="px-3 py-1.5 text-minbak-caption font-medium text-minbak-black border border-minbak-light-gray rounded-minbak hover:bg-minbak-bg"
         >
           수정
         </Link>
         <button
           type="button"
           onClick={handleDelete}
-          className="px-3 py-1.5 text-airbnb-caption font-medium text-airbnb-red border border-airbnb-light-gray rounded-airbnb hover:bg-red-50"
+          className="px-3 py-1.5 text-minbak-caption font-medium text-minbak-primary border border-minbak-light-gray rounded-minbak hover:bg-red-50"
         >
           삭제
         </button>

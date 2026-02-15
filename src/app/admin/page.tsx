@@ -131,18 +131,18 @@ export default async function AdminDashboardPage({
 
   return (
     <div className="max-w-[1100px] mx-auto px-6 py-8">
-      <h1 className="text-airbnb-h2 font-semibold text-airbnb-black mb-6">
+      <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
         관리자 대시보드
       </h1>
 
       {loadError && (
-        <div className="mb-6 p-4 rounded-airbnb bg-amber-50 border border-amber-200 text-airbnb-body text-amber-800">
+        <div className="mb-6 p-4 rounded-minbak bg-amber-50 border border-amber-200 text-minbak-body text-amber-800">
           {loadError}
         </div>
       )}
 
       {message === "admin-only-listings" && (
-        <div className="mb-6 p-4 rounded-airbnb bg-amber-50 border border-amber-200 text-airbnb-body text-amber-800">
+        <div className="mb-6 p-4 rounded-minbak bg-amber-50 border border-amber-200 text-minbak-body text-amber-800">
           숙소 등록은 관리자만 가능합니다. 관리자로 로그인한 뒤{" "}
           <Link href="/host/listings/new" className="font-medium underline">
             숙소 등록
@@ -152,54 +152,54 @@ export default async function AdminDashboardPage({
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="border border-airbnb-light-gray rounded-airbnb p-5 bg-white">
-          <p className="text-airbnb-caption text-airbnb-gray">회원 수</p>
-          <p className="text-2xl font-semibold text-airbnb-black mt-1">
+        <div className="border border-minbak-light-gray rounded-minbak p-5 bg-white">
+          <p className="text-minbak-caption text-minbak-gray">회원 수</p>
+          <p className="text-2xl font-semibold text-minbak-black mt-1">
             {userCount}
           </p>
           <Link
             href="/admin/users"
-            className="text-airbnb-caption text-airbnb-red hover:underline mt-2 inline-block"
+            className="text-minbak-caption text-minbak-primary hover:underline mt-2 inline-block"
           >
             전체 보기 →
           </Link>
         </div>
-        <div className="border border-airbnb-light-gray rounded-airbnb p-5 bg-white">
-          <p className="text-airbnb-caption text-airbnb-gray">숙소 수</p>
-          <p className="text-2xl font-semibold text-airbnb-black mt-1">
+        <div className="border border-minbak-light-gray rounded-minbak p-5 bg-white">
+          <p className="text-minbak-caption text-minbak-gray">숙소 수</p>
+          <p className="text-2xl font-semibold text-minbak-black mt-1">
             {listingCount}
           </p>
           <Link
             href="/admin/listings"
-            className="text-airbnb-caption text-airbnb-red hover:underline mt-2 inline-block"
+            className="text-minbak-caption text-minbak-primary hover:underline mt-2 inline-block"
           >
             전체 보기 →
           </Link>
         </div>
-        <div className="border border-airbnb-light-gray rounded-airbnb p-5 bg-white">
-          <p className="text-airbnb-caption text-airbnb-gray">예약 수</p>
-          <p className="text-2xl font-semibold text-airbnb-black mt-1">
+        <div className="border border-minbak-light-gray rounded-minbak p-5 bg-white">
+          <p className="text-minbak-caption text-minbak-gray">예약 수</p>
+          <p className="text-2xl font-semibold text-minbak-black mt-1">
             {totalBookings}
           </p>
-          <p className="text-airbnb-caption text-airbnb-gray mt-1">
+          <p className="text-minbak-caption text-minbak-gray mt-1">
             대기 {byStatus.pending ?? 0} · 확정 {byStatus.confirmed ?? 0} ·
             취소 {byStatus.cancelled ?? 0}
           </p>
           <Link
             href="/admin/bookings"
-            className="text-airbnb-caption text-airbnb-red hover:underline mt-2 inline-block"
+            className="text-minbak-caption text-minbak-primary hover:underline mt-2 inline-block"
           >
             전체 보기 →
           </Link>
         </div>
-        <div className="border border-airbnb-light-gray rounded-airbnb p-5 bg-white">
-          <p className="text-airbnb-caption text-airbnb-gray">블로그 글</p>
-          <p className="text-2xl font-semibold text-airbnb-black mt-1">
+        <div className="border border-minbak-light-gray rounded-minbak p-5 bg-white">
+          <p className="text-minbak-caption text-minbak-gray">블로그 글</p>
+          <p className="text-2xl font-semibold text-minbak-black mt-1">
             {postCount}
           </p>
           <Link
             href="/admin/blog"
-            className="text-airbnb-caption text-minbak-primary hover:underline mt-2 inline-block"
+            className="text-minbak-caption text-minbak-primary hover:underline mt-2 inline-block"
           >
             블로그 관리 →
           </Link>
@@ -207,31 +207,31 @@ export default async function AdminDashboardPage({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div className="border border-airbnb-light-gray rounded-airbnb p-5 bg-white">
-          <h2 className="text-airbnb-body font-semibold text-airbnb-black mb-3">
+        <div className="border border-minbak-light-gray rounded-minbak p-5 bg-white">
+          <h2 className="text-minbak-body font-semibold text-minbak-black mb-3">
             최근 가입 회원
           </h2>
           <ul className="space-y-2">
             {recentUsers.map((u) => (
               <li
                 key={u.id}
-                className="flex justify-between text-airbnb-body text-airbnb-black"
+                className="flex justify-between text-minbak-body text-minbak-black"
               >
                 <span>
                   {u.name || u.email}{" "}
-                  <span className="text-airbnb-caption text-airbnb-gray">
+                  <span className="text-minbak-caption text-minbak-gray">
                     ({u.email}) {u.role === "admin" ? "· 관리자" : ""}
                   </span>
                 </span>
-                <span className="text-airbnb-caption text-airbnb-gray">
+                <span className="text-minbak-caption text-minbak-gray">
                   {u.createdAt.toLocaleDateString("ko-KR")}
                 </span>
               </li>
             ))}
           </ul>
         </div>
-        <div className="border border-airbnb-light-gray rounded-airbnb p-5 bg-white">
-          <h2 className="text-airbnb-body font-semibold text-airbnb-black mb-3">
+        <div className="border border-minbak-light-gray rounded-minbak p-5 bg-white">
+          <h2 className="text-minbak-body font-semibold text-minbak-black mb-3">
             최근 등록 숙소
           </h2>
           <ul className="space-y-2">
@@ -239,11 +239,11 @@ export default async function AdminDashboardPage({
               <li key={l.id} className="flex justify-between items-center">
                 <Link
                   href={`/listing/${l.id}`}
-                  className="text-airbnb-body text-airbnb-black hover:underline truncate"
+                  className="text-minbak-body text-minbak-black hover:underline truncate"
                 >
                   {l.title}
                 </Link>
-                <span className="text-airbnb-caption text-airbnb-gray flex-shrink-0 ml-2">
+                <span className="text-minbak-caption text-minbak-gray flex-shrink-0 ml-2">
                   {l.user.name || l.user.email}
                 </span>
               </li>
@@ -252,14 +252,14 @@ export default async function AdminDashboardPage({
         </div>
       </div>
 
-      <div className="border border-airbnb-light-gray rounded-airbnb p-5 bg-white">
-        <h2 className="text-airbnb-body font-semibold text-airbnb-black mb-3">
+      <div className="border border-minbak-light-gray rounded-minbak p-5 bg-white">
+        <h2 className="text-minbak-body font-semibold text-minbak-black mb-3">
           최근 예약
         </h2>
         <div className="overflow-x-auto">
-          <table className="w-full text-airbnb-body text-airbnb-black">
+          <table className="w-full text-minbak-body text-minbak-black">
             <thead>
-              <tr className="border-b border-airbnb-light-gray text-left">
+              <tr className="border-b border-minbak-light-gray text-left">
                 <th className="py-2 pr-4">게스트</th>
                 <th className="py-2 pr-4">숙소</th>
                 <th className="py-2 pr-4">체크인 ~ 체크아웃</th>
@@ -269,7 +269,7 @@ export default async function AdminDashboardPage({
             </thead>
             <tbody>
               {recentBookings.map((b) => (
-                <tr key={b.id} className="border-b border-airbnb-light-gray">
+                <tr key={b.id} className="border-b border-minbak-light-gray">
                   <td className="py-2 pr-4">
                     {b.user.name || b.user.email}
                   </td>
@@ -281,13 +281,13 @@ export default async function AdminDashboardPage({
                       {b.listing.title}
                     </Link>
                   </td>
-                  <td className="py-2 pr-4 text-airbnb-caption">
+                  <td className="py-2 pr-4 text-minbak-caption">
                     {b.checkIn.toISOString().slice(0, 10)} ~{" "}
                     {b.checkOut.toISOString().slice(0, 10)}
                   </td>
                   <td className="py-2 pr-4">
                     <span
-                      className={`text-airbnb-caption px-2 py-0.5 rounded ${
+                      className={`text-minbak-caption px-2 py-0.5 rounded ${
                         b.status === "confirmed"
                           ? "bg-green-100 text-green-800"
                           : b.status === "cancelled"

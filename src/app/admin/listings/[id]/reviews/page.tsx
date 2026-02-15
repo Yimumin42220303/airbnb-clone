@@ -23,11 +23,11 @@ export default async function AdminListingReviewsPage({ params }: RouteParams) {
       <div className="max-w-[1100px] mx-auto px-6 py-8">
         <Link
           href="/admin/listings"
-          className="text-airbnb-body text-airbnb-gray hover:text-airbnb-black"
+          className="text-minbak-body text-minbak-gray hover:text-minbak-black"
         >
           ← 숙소 목록
         </Link>
-        <h1 className="mt-4 text-airbnb-h2 font-semibold text-airbnb-black">
+        <h1 className="mt-4 text-minbak-h2 font-semibold text-minbak-black">
           숙소를 찾을 수 없습니다.
         </h1>
       </div>
@@ -47,19 +47,19 @@ export default async function AdminListingReviewsPage({ params }: RouteParams) {
       <div className="mb-6 flex items-center gap-4">
         <Link
           href="/admin/listings"
-          className="text-airbnb-body text-airbnb-gray hover:text-airbnb-black"
+          className="text-minbak-body text-minbak-gray hover:text-minbak-black"
         >
           ← 숙소 목록
         </Link>
       </div>
-      <h1 className="text-airbnb-h2 font-semibold text-airbnb-black mb-2">
+      <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-2">
         리뷰 관리
       </h1>
-      <p className="text-airbnb-body text-airbnb-gray mb-6">
+      <p className="text-minbak-body text-minbak-gray mb-6">
         숙소:{" "}
         <Link
           href={`/listing/${listing.id}`}
-          className="font-medium text-airbnb-black hover:underline"
+          className="font-medium text-minbak-black hover:underline"
         >
           {listing.title}
         </Link>
@@ -96,18 +96,18 @@ function AdminListingReviewsClient({
   return (
     <div className="space-y-8">
       <section>
-        <h2 className="text-airbnb-body font-semibold text-airbnb-black mb-3">
+        <h2 className="text-minbak-body font-semibold text-minbak-black mb-3">
           등록된 리뷰 ({reviews.length}개)
         </h2>
         {reviews.length === 0 ? (
-          <p className="text-airbnb-body text-airbnb-gray">
+          <p className="text-minbak-body text-minbak-gray">
             아직 등록된 리뷰가 없습니다. 아래 폼을 사용해 첫 리뷰를 추가해 보세요.
           </p>
         ) : (
-          <div className="overflow-x-auto border border-airbnb-light-gray rounded-airbnb bg-white">
-            <table className="w-full text-airbnb-body text-airbnb-black">
+          <div className="overflow-x-auto border border-minbak-light-gray rounded-minbak bg-white">
+            <table className="w-full text-minbak-body text-minbak-black">
               <thead>
-                <tr className="border-b border-airbnb-light-gray bg-airbnb-bg/50 text-left">
+                <tr className="border-b border-minbak-light-gray bg-minbak-bg/50 text-left">
                   <th className="py-2 px-3">게스트</th>
                   <th className="py-2 px-3">평점</th>
                   <th className="py-2 px-3">내용</th>
@@ -118,7 +118,7 @@ function AdminListingReviewsClient({
                 {reviews.map((r) => (
                   <tr
                     key={r.id}
-                    className="border-b border-airbnb-light-gray last:border-b-0"
+                    className="border-b border-minbak-light-gray last:border-b-0"
                   >
                     <td className="py-2 px-3 whitespace-nowrap">
                       {r.userName}
@@ -127,7 +127,7 @@ function AdminListingReviewsClient({
                     <td className="py-2 px-3 max-w-[420px]">
                       <span className="line-clamp-2">{r.body}</span>
                     </td>
-                    <td className="py-2 px-3 whitespace-nowrap text-airbnb-caption text-airbnb-gray">
+                    <td className="py-2 px-3 whitespace-nowrap text-minbak-caption text-minbak-gray">
                       {formatDateShort(r.createdAt)}
                     </td>
                   </tr>
@@ -139,10 +139,10 @@ function AdminListingReviewsClient({
       </section>
 
       <section>
-        <h2 className="text-airbnb-body font-semibold text-airbnb-black mb-3">
+        <h2 className="text-minbak-body font-semibold text-minbak-black mb-3">
           새 리뷰 등록 (관리자)
         </h2>
-        <p className="text-airbnb-caption text-airbnb-gray mb-2">
+        <p className="text-minbak-caption text-minbak-gray mb-2">
           이 화면에서 등록하는 리뷰는 관리자 계정으로 해당 숙소에 추가됩니다.
         </p>
         {/* 기존 관리자 리뷰 폼 재사용 */}

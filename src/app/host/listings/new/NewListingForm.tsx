@@ -188,34 +188,34 @@ export default function NewListingForm({ amenities, categories: initialCategorie
       <div className="flex items-center gap-4 mb-8 flex-wrap">
         <Link
           href="/admin/listings"
-          className="text-airbnb-body text-airbnb-gray hover:text-airbnb-black hover:underline"
+          className="text-minbak-body text-minbak-gray hover:text-minbak-black hover:underline"
         >
           ← 숙소 목록
         </Link>
         <Link
           href="/admin"
-          className="text-airbnb-body text-airbnb-gray hover:text-airbnb-black hover:underline"
+          className="text-minbak-body text-minbak-gray hover:text-minbak-black hover:underline"
         >
           관리자 대시보드
         </Link>
       </div>
 
-      <h1 className="text-airbnb-h2 font-semibold text-airbnb-black mb-2">
+      <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-2">
         숙소 등록
       </h1>
-      <p className="text-airbnb-body text-airbnb-gray mb-8">
+      <p className="text-minbak-body text-minbak-gray mb-8">
         관리자만 등록할 수 있습니다. 아래 섹션을 순서대로 입력해 주세요.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-10">
         {/* 섹션 1: 기본 정보 — Framer 등 외부 콘텐츠 반영 시 이 블록을 교체 가능 */}
-        <section className="rounded-2xl border border-airbnb-light-gray bg-white p-6 md:p-8">
-          <h2 className="text-lg font-semibold text-airbnb-black mb-4">
+        <section className="rounded-2xl border border-minbak-light-gray bg-white p-6 md:p-8">
+          <h2 className="text-lg font-semibold text-minbak-black mb-4">
             1. 기본 정보
           </h2>
           <div className="space-y-4">
             <label className="block">
-              <span className="text-airbnb-body font-medium text-airbnb-black block mb-1">
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">
                 숙소명 *
               </span>
               <input
@@ -224,12 +224,12 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                 onChange={(e) =>
                   setForm((f) => ({ ...f, title: e.target.value }))
                 }
-                className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 required
               />
             </label>
             <label className="block">
-              <span className="text-airbnb-body font-medium text-airbnb-black block mb-1">
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">
                 위치 *
               </span>
               <input
@@ -239,12 +239,12 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                   setForm((f) => ({ ...f, location: e.target.value }))
                 }
                 placeholder="예: 신주쿠구, 도쿄 / 다카다노바바역 도보 6분"
-                className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 required
               />
             </label>
             <label className="block">
-              <span className="text-airbnb-body font-medium text-airbnb-black block mb-1">
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">
                 구글 지도 링크 (선택)
               </span>
               <input
@@ -254,15 +254,15 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                   setForm((f) => ({ ...f, mapUrl: e.target.value }))
                 }
                 placeholder='예: https://www.google.com/maps/embed?... 또는 &lt;iframe ...&gt; 전체'
-                className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb font-mono text-[13px]"
+                className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak font-mono text-[13px]"
               />
-              <p className="text-airbnb-caption text-airbnb-gray mt-1">
+              <p className="text-minbak-caption text-minbak-gray mt-1">
                 구글 지도에서 &quot;지도 퍼가기&quot; 코드를 복사해 그대로 붙여넣거나, iframe 코드 안의
                 src 주소만 붙여 넣어 주세요.
               </p>
             </label>
             <label className="block">
-              <span className="text-airbnb-body font-medium text-airbnb-black block mb-1">
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">
                 카테고리
               </span>
               <select
@@ -270,7 +270,7 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                 onChange={(e) =>
                   setForm((f) => ({ ...f, categoryId: e.target.value }))
                 }
-                className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
               >
                 <option value="">선택 안 함</option>
                 {categories.map((c) => (
@@ -279,13 +279,13 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                   </option>
                 ))}
               </select>
-              <p className="text-airbnb-caption text-airbnb-gray mt-1">
+              <p className="text-minbak-caption text-minbak-gray mt-1">
                 없으면 아래에서 새 카테고리를 만들 수 있습니다.
               </p>
             </label>
             <div className="flex flex-wrap items-end gap-2">
               <label className="flex-1 min-w-[200px]">
-                <span className="text-airbnb-body font-medium text-airbnb-black block mb-1">
+                <span className="text-minbak-body font-medium text-minbak-black block mb-1">
                   새 카테고리 만들기
                 </span>
                 <input
@@ -293,20 +293,20 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
                   placeholder="예: 도미토리, 개인실, 아파트"
-                  className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 />
               </label>
               <button
                 type="button"
                 onClick={handleAddCategory}
                 disabled={!newCategoryName.trim() || addingCategory}
-                className="px-4 py-2 bg-airbnb-black text-white rounded-airbnb hover:bg-airbnb-gray disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-minbak-black text-white rounded-minbak hover:bg-minbak-gray disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {addingCategory ? "추가 중…" : "추가"}
               </button>
             </div>
             <label className="block">
-              <span className="text-airbnb-body font-medium text-airbnb-black block mb-1">
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">
                 설명
               </span>
               <textarea
@@ -315,7 +315,7 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                   setForm((f) => ({ ...f, description: e.target.value }))
                 }
                 rows={4}
-                className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb resize-y"
+                className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak resize-y"
                 placeholder="숙소 소개, 교통, 주변 정보 등"
               />
             </label>
@@ -323,11 +323,11 @@ export default function NewListingForm({ amenities, categories: initialCategorie
         </section>
 
         {/* 섹션 2: 이미지 — 직접 업로드 (첫 장이 대표 이미지) */}
-        <section className="rounded-2xl border border-airbnb-light-gray bg-white p-6 md:p-8">
-          <h2 className="text-lg font-semibold text-airbnb-black mb-4">
+        <section className="rounded-2xl border border-minbak-light-gray bg-white p-6 md:p-8">
+          <h2 className="text-lg font-semibold text-minbak-black mb-4">
             2. 이미지
           </h2>
-          <p className="text-airbnb-caption text-airbnb-gray mb-4">
+          <p className="text-minbak-caption text-minbak-gray mb-4">
             첫 번째 이미지가 대표 이미지로 사용됩니다. JPEG/PNG/WebP/GIF, 최대 4MB, 최대 100장.
           </p>
           <div className="space-y-3">
@@ -345,7 +345,7 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                   <img
                     src={URL.createObjectURL(file)}
                     alt={`미리보기 ${i + 1}`}
-                    className="w-24 h-24 object-cover rounded-airbnb border border-airbnb-light-gray"
+                    className="w-24 h-24 object-cover rounded-minbak border border-minbak-light-gray"
                   />
                   <button
                     type="button"
@@ -373,7 +373,7 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                     addImageFiles(e.target.files);
                     e.target.value = "";
                   }}
-                  className="block w-full text-airbnb-caption text-airbnb-gray file:mr-3 file:py-2 file:px-3 file:rounded-airbnb file:border file:border-airbnb-light-gray file:bg-white file:text-airbnb-body hover:file:bg-airbnb-bg"
+                  className="block w-full text-minbak-caption text-minbak-gray file:mr-3 file:py-2 file:px-3 file:rounded-minbak file:border file:border-minbak-light-gray file:bg-white file:text-minbak-body hover:file:bg-minbak-bg"
                 />
               </label>
             )}
@@ -381,13 +381,13 @@ export default function NewListingForm({ amenities, categories: initialCategorie
         </section>
 
         {/* 섹션 3: 요금 · 수용 인원 */}
-        <section className="rounded-2xl border border-airbnb-light-gray bg-white p-6 md:p-8">
-          <h2 className="text-lg font-semibold text-airbnb-black mb-4">
+        <section className="rounded-2xl border border-minbak-light-gray bg-white p-6 md:p-8">
+          <h2 className="text-lg font-semibold text-minbak-black mb-4">
             3. 요금 · 수용 인원
           </h2>
           <div className="space-y-4">
             <label className="block">
-              <span className="text-airbnb-body font-medium text-airbnb-black block mb-1">
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">
                 1박 요금 (원) *
               </span>
               <input
@@ -397,12 +397,12 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                 onChange={(e) =>
                   setForm((f) => ({ ...f, pricePerNight: e.target.value }))
                 }
-                className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 required
               />
             </label>
             <label className="block">
-              <span className="text-airbnb-body font-medium text-airbnb-black block mb-1">
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">
                 청소비 (원)
               </span>
               <input
@@ -412,16 +412,16 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                 onChange={(e) =>
                   setForm((f) => ({ ...f, cleaningFee: e.target.value }))
                 }
-                className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 placeholder="0"
               />
-              <span className="text-airbnb-caption text-airbnb-gray block mt-0.5">
+              <span className="text-minbak-caption text-minbak-gray block mt-0.5">
                 1회 예약당 1회 적용됩니다.
               </span>
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <label>
-                <span className="text-airbnb-caption text-airbnb-gray block mb-1">
+                <span className="text-minbak-caption text-minbak-gray block mb-1">
                   기본 숙박 인원 (명)
                 </span>
                 <input
@@ -431,14 +431,14 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                   onChange={(e) =>
                     setForm((f) => ({ ...f, baseGuests: e.target.value }))
                   }
-                  className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 />
-                <span className="text-airbnb-caption text-airbnb-gray block mt-0.5">
+                <span className="text-minbak-caption text-minbak-gray block mt-0.5">
                   이 인원까지는 1박 요금에 포함됩니다.
                 </span>
               </label>
               <label>
-                <span className="text-airbnb-caption text-airbnb-gray block mb-1">
+                <span className="text-minbak-caption text-minbak-gray block mb-1">
                   최대 인원 (명)
                 </span>
                 <input
@@ -448,11 +448,11 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                   onChange={(e) =>
                     setForm((f) => ({ ...f, maxGuests: e.target.value }))
                   }
-                  className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 />
               </label>
               <label>
-                <span className="text-airbnb-caption text-airbnb-gray block mb-1">
+                <span className="text-minbak-caption text-minbak-gray block mb-1">
                   추가 인원 1인당 1박 요금 (원)
                 </span>
                 <input
@@ -462,17 +462,17 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                   onChange={(e) =>
                     setForm((f) => ({ ...f, extraGuestFee: e.target.value }))
                   }
-                  className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                   placeholder="0"
                 />
-                <span className="text-airbnb-caption text-airbnb-gray block mt-0.5">
+                <span className="text-minbak-caption text-minbak-gray block mt-0.5">
                   기본 인원 초과 1인당 1박 기준 추가 요금입니다.
                 </span>
               </label>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <label>
-                <span className="text-airbnb-caption text-airbnb-gray block mb-1">
+                <span className="text-minbak-caption text-minbak-gray block mb-1">
                   침실
                 </span>
                 <input
@@ -482,11 +482,11 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                   onChange={(e) =>
                     setForm((f) => ({ ...f, bedrooms: e.target.value }))
                   }
-                  className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 />
               </label>
               <label>
-                <span className="text-airbnb-caption text-airbnb-gray block mb-1">
+                <span className="text-minbak-caption text-minbak-gray block mb-1">
                   침대
                 </span>
                 <input
@@ -496,11 +496,11 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                   onChange={(e) =>
                     setForm((f) => ({ ...f, beds: e.target.value }))
                   }
-                  className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 />
               </label>
               <label>
-                <span className="text-airbnb-caption text-airbnb-gray block mb-1">
+                <span className="text-minbak-caption text-minbak-gray block mb-1">
                   욕실
                 </span>
                 <input
@@ -510,12 +510,12 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                   onChange={(e) =>
                     setForm((f) => ({ ...f, baths: e.target.value }))
                   }
-                  className="w-full px-3 py-2 border border-airbnb-light-gray rounded-airbnb"
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 />
               </label>
             </div>
             {/* 프로모션대상 토글 (직영숙소) */}
-            <div className="border border-airbnb-light-gray rounded-airbnb p-4 bg-airbnb-bg/50">
+            <div className="border border-minbak-light-gray rounded-minbak p-4 bg-minbak-bg/50">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -524,8 +524,8 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                   className="w-5 h-5 rounded accent-rose-500"
                 />
                 <div>
-                  <span className="text-airbnb-body font-medium text-airbnb-black">프로모션대상 (직영숙소)</span>
-                  <p className="text-airbnb-caption text-airbnb-gray">체크하면 숙소 카드에 &apos;프로모션대상&apos; 배지가 표시됩니다.</p>
+                  <span className="text-minbak-body font-medium text-minbak-black">프로모션대상 (직영숙소)</span>
+                  <p className="text-minbak-caption text-minbak-gray">체크하면 숙소 카드에 &apos;프로모션대상&apos; 배지가 표시됩니다.</p>
                 </div>
               </label>
             </div>
@@ -533,9 +533,9 @@ export default function NewListingForm({ amenities, categories: initialCategorie
         </section>
 
         {/* 취소 정책 */}
-        <section className="border border-airbnb-light-gray rounded-airbnb p-5 space-y-3 bg-airbnb-bg/50">
-          <h3 className="text-airbnb-body font-medium text-airbnb-black">취소 정책</h3>
-          <p className="text-airbnb-caption text-airbnb-gray">
+        <section className="border border-minbak-light-gray rounded-minbak p-5 space-y-3 bg-minbak-bg/50">
+          <h3 className="text-minbak-body font-medium text-minbak-black">취소 정책</h3>
+          <p className="text-minbak-caption text-minbak-gray">
             게스트의 예약 취소 시 적용할 환불 정책을 선택하세요.
           </p>
           <div className="space-y-2">
@@ -549,7 +549,7 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                 className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
                   form.cancellationPolicy === opt.value
                     ? "border-[#E31C23] bg-red-50/50"
-                    : "border-airbnb-light-gray hover:bg-airbnb-bg"
+                    : "border-minbak-light-gray hover:bg-minbak-bg"
                 }`}
               >
                 <input
@@ -561,8 +561,8 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                   className="mt-0.5 w-4 h-4 accent-rose-500"
                 />
                 <div>
-                  <span className="font-medium text-airbnb-body text-airbnb-black">{opt.label}</span>
-                  <p className="text-airbnb-caption text-airbnb-gray mt-0.5">{opt.desc}</p>
+                  <span className="font-medium text-minbak-body text-minbak-black">{opt.label}</span>
+                  <p className="text-minbak-caption text-minbak-gray mt-0.5">{opt.desc}</p>
                 </div>
               </label>
             ))}
@@ -576,7 +576,7 @@ export default function NewListingForm({ amenities, categories: initialCategorie
         />
 
         {error && (
-          <p className="text-airbnb-body text-airbnb-red" role="alert">
+          <p className="text-minbak-body text-minbak-primary" role="alert">
             {error}
           </p>
         )}

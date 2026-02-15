@@ -4,6 +4,8 @@ import "./globals.css";
 import SessionProvider from "@/components/auth/SessionProvider";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import HostLocaleProvider from "@/components/host/HostLocaleProvider";
+import Toaster from "@/components/ui/Toaster";
+import BottomNav from "@/components/layout/BottomNav";
 
 const notoSansKr = Noto_Sans_KR({
   subsets: ["latin"],
@@ -53,6 +55,8 @@ export default function RootLayout({
           <SessionProvider>
             <HostLocaleProvider>
               {children}
+              <BottomNav />
+              <Toaster />
             </HostLocaleProvider>
           </SessionProvider>
         </ErrorBoundary>

@@ -18,19 +18,19 @@ export default async function AdminBookingsPage() {
       <div className="mb-6 flex items-center gap-4">
         <Link
           href="/admin"
-          className="text-airbnb-body text-airbnb-gray hover:text-airbnb-black"
+          className="text-minbak-body text-minbak-gray hover:text-minbak-black"
         >
           ← 대시보드
         </Link>
       </div>
-      <h1 className="text-airbnb-h2 font-semibold text-airbnb-black mb-6">
+      <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
         예약 목록
       </h1>
-      <div className="border border-airbnb-light-gray rounded-airbnb overflow-hidden bg-white">
+      <div className="border border-minbak-light-gray rounded-minbak overflow-hidden bg-white">
         <div className="overflow-x-auto">
-          <table className="w-full text-airbnb-body text-airbnb-black">
+          <table className="w-full text-minbak-body text-minbak-black">
             <thead>
-              <tr className="border-b border-airbnb-light-gray bg-airbnb-bg text-left">
+              <tr className="border-b border-minbak-light-gray bg-minbak-bg text-left">
                 <th className="py-3 px-4">게스트</th>
                 <th className="py-3 px-4">숙소</th>
                 <th className="py-3 px-4">체크인</th>
@@ -53,7 +53,7 @@ export default async function AdminBookingsPage() {
                 return (
                   <tr
                     key={b.id}
-                    className="border-b border-airbnb-light-gray"
+                    className="border-b border-minbak-light-gray"
                   >
                     <td className="py-3 px-4">
                       {b.user.name || b.user.email}
@@ -66,15 +66,15 @@ export default async function AdminBookingsPage() {
                         {b.listing.title}
                       </Link>
                     </td>
-                    <td className="py-3 px-4 text-airbnb-caption">
+                    <td className="py-3 px-4 text-minbak-caption">
                       {b.checkIn.toISOString().slice(0, 10)}
                     </td>
-                    <td className="py-3 px-4 text-airbnb-caption">
+                    <td className="py-3 px-4 text-minbak-caption">
                       {b.checkOut.toISOString().slice(0, 10)}
                     </td>
                     <td className="py-3 px-4">
                       <span
-                        className={`text-airbnb-caption px-2 py-0.5 rounded ${
+                        className={`text-minbak-caption px-2 py-0.5 rounded ${
                           b.status === "confirmed"
                             ? "bg-green-100 text-green-800"
                             : b.status === "cancelled"
@@ -91,7 +91,7 @@ export default async function AdminBookingsPage() {
                     </td>
                     <td className="py-3 px-4">
                       <span
-                        className={`text-airbnb-caption px-2 py-0.5 rounded ${
+                        className={`text-minbak-caption px-2 py-0.5 rounded ${
                           b.paymentStatus === "paid"
                             ? "bg-blue-100 text-blue-800"
                             : "bg-gray-100 text-gray-600"
@@ -100,7 +100,7 @@ export default async function AdminBookingsPage() {
                         {b.paymentStatus === "paid" ? "결제완료" : "대기"}
                       </span>
                       {paidTx?.verifiedAt && (
-                        <p className="text-[11px] text-airbnb-gray mt-0.5">
+                        <p className="text-[11px] text-minbak-gray mt-0.5">
                           {new Date(paidTx.verifiedAt).toLocaleString("ko-KR")}
                         </p>
                       )}
@@ -110,16 +110,16 @@ export default async function AdminBookingsPage() {
                     </td>
                     <td className="py-3 px-4">
                       {refundTx ? (
-                        <span className="text-airbnb-caption px-2 py-0.5 rounded bg-orange-100 text-orange-800">
+                        <span className="text-minbak-caption px-2 py-0.5 rounded bg-orange-100 text-orange-800">
                           ₩{refundTx.amount.toLocaleString()} 환불
                         </span>
                       ) : (
-                        <span className="text-airbnb-caption text-airbnb-gray">
+                        <span className="text-minbak-caption text-minbak-gray">
                           -
                         </span>
                       )}
                     </td>
-                    <td className="py-3 px-4 text-airbnb-caption text-airbnb-gray">
+                    <td className="py-3 px-4 text-minbak-caption text-minbak-gray">
                       {paidTx?.method || "-"}
                       {paidTx?.pgProvider && (
                         <span className="block text-[11px]">

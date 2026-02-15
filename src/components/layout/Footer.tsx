@@ -11,26 +11,26 @@ export default function Footer() {
       <div className="max-w-[1240px] mx-auto px-4 py-8 md:px-8 md:py-8">
         {/* Framer 링크: 모바일에서 2줄 랩 */}
         <nav className="flex flex-wrap items-center justify-center gap-3 md:gap-6 pb-4 md:pb-6 border-b border-white/20">
-          <Link href="/search" className="text-airbnb-body font-bold text-white/95 hover:text-white hover:underline">
+          <Link href="/search" className="text-minbak-body font-bold text-white/95 hover:text-white hover:underline">
             민박집 찾기
           </Link>
-          <Link href="/blog" className="text-airbnb-body text-white/90 hover:text-white hover:underline">
+          <Link href="/blog" className="text-minbak-body text-white/90 hover:text-white hover:underline">
             도쿄여행 가이드
           </Link>
-          <Link href="/about" className="text-airbnb-body text-white/90 hover:text-white hover:underline">
+          <Link href="/about" className="text-minbak-body text-white/90 hover:text-white hover:underline">
             도쿄민박에 대해
           </Link>
-          <Link href="/policy" className="text-airbnb-body text-white/90 hover:text-white hover:underline">
+          <Link href="/policy" className="text-minbak-body text-white/90 hover:text-white hover:underline">
             개인정보 이용방침
           </Link>
-          <Link href="/agreement" className="text-airbnb-body text-white/90 hover:text-white hover:underline">
+          <Link href="/agreement" className="text-minbak-body text-white/90 hover:text-white hover:underline">
             이용약관
           </Link>
         </nav>
 
         {/* Framer 스타일 사업자 정보 그리드 (Noto Sans KR 300 톤) */}
         <div className="pt-4 md:pt-6 flex flex-col md:flex-row md:items-start md:justify-between gap-4 md:gap-6">
-          <div className="space-y-1 text-airbnb-caption md:text-airbnb-body font-light text-white/85">
+          <div className="space-y-1 text-minbak-caption md:text-minbak-body font-light text-white/85">
             <p>© 2025-2026 도쿄민박. All Rights Reserved.</p>
             <p className="pt-2">
               모든 거래에 대한 책임과 환불, 민원 등의 처리는 한일익스프레스에서 진행합니다. 자세한 문의는 문의처로 연락주세요.

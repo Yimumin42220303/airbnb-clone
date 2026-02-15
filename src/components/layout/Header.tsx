@@ -20,7 +20,7 @@ function HomeSearchBarFallback() {
       className="w-full flex items-center gap-2 bg-white rounded-[90px] min-h-[44px] md:min-h-[48px] py-3 md:py-[18px] pl-4 md:pl-10 pr-4 md:pr-6 shadow-[0_1px_2px_rgba(0,0,0,0.08)] no-underline text-inherit"
       aria-label="숙소 검색"
     >
-      <span className="flex-1 min-w-0 text-left text-airbnb-body text-minbak-gray truncate">
+      <span className="flex-1 min-w-0 text-left text-minbak-body text-minbak-gray truncate">
         체크인 · 체크아웃 · 게스트 추가
       </span>
       <span className="flex-shrink-0 w-12 h-12 rounded-full bg-minbak-primary flex items-center justify-center">
@@ -125,7 +125,7 @@ export default function Header() {
                 <HostLocaleSwitcher />
                 <Link
                   href="/"
-                  className="min-h-[44px] flex items-center text-xs sm:text-airbnb-caption md:text-airbnb-body text-minbak-black hover:text-minbak-primary transition-colors px-1"
+                  className="min-h-[44px] flex items-center text-xs sm:text-minbak-caption md:text-minbak-body text-minbak-black hover:text-minbak-primary transition-colors px-1"
                 >
                   {hostT.t("nav.guestMode")}
                 </Link>
@@ -156,13 +156,13 @@ export default function Header() {
             </a>
             <Link
               href="/blog"
-              className="hidden sm:inline text-airbnb-body text-minbak-black hover:text-minbak-primary transition-colors md:inline"
+              className="hidden sm:inline text-minbak-body text-minbak-black hover:text-minbak-primary transition-colors md:inline"
             >
               도쿄여행 가이드
             </Link>
             <Link
               href="/#ai-recommend"
-              className="hidden sm:inline text-airbnb-body text-minbak-black hover:text-minbak-primary transition-colors md:inline flex items-center gap-1"
+              className="hidden sm:inline text-minbak-body text-minbak-black hover:text-minbak-primary transition-colors md:inline flex items-center gap-1"
             >
               <Sparkles className="w-4 h-4" />
               AI 추천
@@ -180,7 +180,7 @@ export default function Header() {
               href={KAKAO_LINK}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:inline text-airbnb-body text-minbak-black hover:text-minbak-primary transition-colors md:inline"
+              className="hidden sm:inline text-minbak-body text-minbak-black hover:text-minbak-primary transition-colors md:inline"
             >
               카톡으로 문의하기
             </a>
