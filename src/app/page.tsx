@@ -12,6 +12,11 @@ const FaqSection = nextDynamic(
   { ssr: false, loading: () => <div className="min-h-[200px] bg-minbak-bg animate-pulse" /> }
 );
 
+const AIRecommendSection = nextDynamic(
+  () => import("@/components/home/AIRecommendSection"),
+  { ssr: false, loading: () => <div className="min-h-[120px] bg-minbak-bg animate-pulse" /> }
+);
+
 export const dynamic = "force-dynamic";
 
 export const metadata = {
@@ -86,6 +91,9 @@ export default async function Home() {
             </ul>
           </div>
         </section>
+
+        {/* AI 맞춤 숙소 추천 - 히어로 바로 아래 눈에 띄는 위치 */}
+        <AIRecommendSection />
 
         {/* Framer 스타일 추천 민박: PC 3열 / 태블릿 2열 / 모바일 1열 */}
         <section className="px-4 py-10 sm:py-12 md:px-6 md:py-16 xl:py-20">

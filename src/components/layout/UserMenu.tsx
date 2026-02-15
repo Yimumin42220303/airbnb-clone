@@ -130,7 +130,7 @@ export default function UserMenu() {
                 <ChevronRight className="w-4 h-4 text-minbak-gray ml-auto" />
               </Link>
               <Link
-                href="/recommend"
+                href="/#ai-recommend"
                 className="flex items-center gap-3 px-3 py-2.5 rounded-airbnb text-airbnb-body text-minbak-black hover:bg-minbak-bg transition-colors"
                 onClick={() => setOpen(false)}
               >
