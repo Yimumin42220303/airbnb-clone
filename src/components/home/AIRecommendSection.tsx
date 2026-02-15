@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ListingCard } from "@/components/ui";
+import { formatDateDisplay } from "@/lib/date-utils";
 import FramerDateRangePicker from "@/components/search/FramerDateRangePicker";
 import FramerGuestPicker, {
   defaultGuestCounts,
@@ -9,12 +10,6 @@ import FramerGuestPicker, {
   type GuestCounts,
 } from "@/components/search/FramerGuestPicker";
 import { Sparkles, Loader2, ChevronDown } from "lucide-react";
-
-function formatDateDisplay(iso: string): string {
-  if (!iso) return "";
-  const d = new Date(iso + "T12:00:00");
-  return `${d.getMonth() + 1}월 ${d.getDate()}일`;
-}
 
 type RecommendItem = {
   id: string;

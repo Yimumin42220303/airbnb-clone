@@ -4,7 +4,10 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getPayment } from "@/lib/portone";
 import { sendEmailAsync, BASE_URL } from "@/lib/email";
-import { paymentConfirmationGuest } from "@/lib/email-templates";
+import {
+  paymentConfirmationGuest,
+  paymentConfirmationHost,
+} from "@/lib/email-templates";
 
 /**
  * POST /api/payments/verify
@@ -140,12 +143,18 @@ export async function POST(request: Request) {
     }),
   ]);
 
-  // Send payment confirmation email
+  // Send payment confirmation emails
   try {
     const fullBooking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
-        listing: { select: { title: true, location: true } },
+        listing: {
+          select: {
+            title: true,
+            location: true,
+            user: { select: { name: true, email: true } },
+          },
+        },
         user: { select: { name: true, email: true } },
       },
     });
@@ -153,7 +162,7 @@ export async function POST(request: Request) {
       const nights = Math.floor(
         (fullBooking.checkOut.getTime() - fullBooking.checkIn.getTime()) / (24 * 60 * 60 * 1000)
       );
-      const mail = paymentConfirmationGuest({
+      const emailInfo = {
         listingTitle: fullBooking.listing.title,
         listingLocation: fullBooking.listing.location,
         checkIn: fullBooking.checkIn.toISOString().slice(0, 10),
@@ -165,8 +174,25 @@ export async function POST(request: Request) {
         guestEmail: fullBooking.user.email,
         bookingId,
         baseUrl: BASE_URL,
-      });
-      sendEmailAsync({ to: fullBooking.user.email, ...mail });
+      };
+
+      const hostEmail = fullBooking.listing.user?.email;
+      const isSameEmail = hostEmail && hostEmail === fullBooking.user.email;
+
+      // 게스트 이메일 (호스트와 같은 이메일이면 생략 — 호스트용 일본어 메일만 발송)
+      if (!isSameEmail) {
+        const guestMail = paymentConfirmationGuest(emailInfo);
+        sendEmailAsync({ to: fullBooking.user.email, ...guestMail });
+      }
+
+      // 호스트 이메일 (일본어)
+      if (hostEmail) {
+        const hostMail = paymentConfirmationHost({
+          ...emailInfo,
+          hostName: fullBooking.listing.user?.name || "Host",
+        });
+        sendEmailAsync({ to: hostEmail, ...hostMail });
+      }
     }
   } catch (emailErr) {
     console.error("[Payment Email] Error:", emailErr);

@@ -12,6 +12,7 @@ import {
   CreditCard,
   Info,
 } from "lucide-react";
+import { formatDateKR } from "@/lib/date-utils";
 
 const PORTONE_STORE_ID = process.env.NEXT_PUBLIC_PORTONE_STORE_ID ?? "";
 const PORTONE_CHANNEL_KEY =
@@ -35,18 +36,6 @@ type Props = {
   userEmail?: string | null;
   cancellationPolicy?: string;
 };
-
-function formatDate(iso: string) {
-  const d = new Date(iso);
-  return d
-    .toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    })
-    .replace(/\. /g, "-")
-    .replace(".", "");
-}
 
 export default function BookingConfirmContent({
   listingId,
@@ -251,14 +240,14 @@ export default function BookingConfirmContent({
                 <div>
                   <p className="text-[12px] text-[#717171] mb-0.5">체크인</p>
                   <p className="text-[15px] font-medium text-[#222]">
-                    {formatDate(checkIn)}
+                    {formatDateKR(checkIn)}
                   </p>
                   <p className="text-[13px] text-[#717171]">오후 4:00시 이후</p>
                 </div>
                 <div>
                   <p className="text-[12px] text-[#717171] mb-0.5">체크아웃</p>
                   <p className="text-[15px] font-medium text-[#222]">
-                    {formatDate(checkOut)}
+                    {formatDateKR(checkOut)}
                   </p>
                   <p className="text-[13px] text-[#717171]">오전 10:00시 이전</p>
                 </div>

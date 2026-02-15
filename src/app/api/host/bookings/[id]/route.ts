@@ -6,7 +6,9 @@ import { cancelPayment } from "@/lib/portone";
 import { sendEmailAsync, BASE_URL } from "@/lib/email";
 import {
   bookingAcceptedGuest,
+  bookingAcceptedHost,
   bookingRejectedGuest,
+  bookingRejectedHost,
 } from "@/lib/email-templates";
 
 /**
@@ -94,12 +96,12 @@ export async function PATCH(
       console.error("자동 메시지 전송 오류:", err);
     }
 
-    // Notify guest: booking accepted
-    if (booking.user?.email) {
+    // Notify guest & host: booking accepted
+    {
       const nights = Math.floor(
         (booking.checkOut.getTime() - booking.checkIn.getTime()) / (24 * 60 * 60 * 1000)
       );
-      const mail = bookingAcceptedGuest({
+      const emailInfo = {
         listingTitle: booking.listing.title,
         listingLocation: booking.listing.location || "",
         checkIn: booking.checkIn.toISOString().slice(0, 10),
@@ -107,12 +109,34 @@ export async function PATCH(
         guests: booking.guests,
         nights,
         totalPrice: booking.totalPrice,
-        guestName: booking.user.name || "Guest",
-        guestEmail: booking.user.email,
+        guestName: booking.user?.name || "Guest",
+        guestEmail: booking.user?.email || "",
         bookingId: id,
         baseUrl: BASE_URL,
+      };
+
+      // 호스트 이메일 조회
+      const host = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true, email: true },
       });
-      sendEmailAsync({ to: booking.user.email, ...mail });
+      const hostEmail = host?.email;
+      const isSameEmail = hostEmail && booking.user?.email && hostEmail === booking.user.email;
+
+      // 게스트 이메일 (호스트와 같은 이메일이면 생략)
+      if (booking.user?.email && !isSameEmail) {
+        const guestMail = bookingAcceptedGuest(emailInfo);
+        sendEmailAsync({ to: booking.user.email, ...guestMail });
+      }
+
+      // 호스트 확인 이메일 (일본어)
+      if (hostEmail) {
+        const hostMail = bookingAcceptedHost({
+          ...emailInfo,
+          hostName: host?.name || "Host",
+        });
+        sendEmailAsync({ to: hostEmail, ...hostMail });
+      }
     }
 
     return NextResponse.json({ ok: true, status: "confirmed", conversationId });
@@ -178,12 +202,12 @@ export async function PATCH(
         ...(refundDone ? { paymentStatus: "refunded" } : {}),
       },
     });
-    // Notify guest: booking rejected/cancelled by host
-    if (booking.user?.email) {
+    // Notify guest & host: booking rejected/cancelled by host
+    {
       const nights = Math.floor(
         (booking.checkOut.getTime() - booking.checkIn.getTime()) / (24 * 60 * 60 * 1000)
       );
-      const mail = bookingRejectedGuest({
+      const emailInfo = {
         listingTitle: booking.listing.title,
         listingLocation: booking.listing.location || "",
         checkIn: booking.checkIn.toISOString().slice(0, 10),
@@ -191,12 +215,34 @@ export async function PATCH(
         guests: booking.guests,
         nights,
         totalPrice: booking.totalPrice,
-        guestName: booking.user.name || "Guest",
-        guestEmail: booking.user.email,
+        guestName: booking.user?.name || "Guest",
+        guestEmail: booking.user?.email || "",
         bookingId: id,
         baseUrl: BASE_URL,
+      };
+
+      // 호스트 이메일 조회
+      const host = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true, email: true },
       });
-      sendEmailAsync({ to: booking.user.email, ...mail });
+      const hostEmail = host?.email;
+      const isSameEmail = hostEmail && booking.user?.email && hostEmail === booking.user.email;
+
+      // 게스트 이메일 (호스트와 같은 이메일이면 생략)
+      if (booking.user?.email && !isSameEmail) {
+        const guestMail = bookingRejectedGuest(emailInfo);
+        sendEmailAsync({ to: booking.user.email, ...guestMail });
+      }
+
+      // 호스트 확인 이메일 (일본어)
+      if (hostEmail) {
+        const hostMail = bookingRejectedHost({
+          ...emailInfo,
+          hostName: host?.name || "Host",
+        });
+        sendEmailAsync({ to: hostEmail, ...hostMail });
+      }
     }
 
     return NextResponse.json({

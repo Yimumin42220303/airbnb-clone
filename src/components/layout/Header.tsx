@@ -9,6 +9,8 @@ import HomeSearchBar from "@/components/home/HomeSearchBar";
 import UserMenu from "./UserMenu";
 import HostLocaleSwitcher from "@/components/host/HostLocaleSwitcher";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
+import { KAKAO_LINK, INSTAGRAM_LINK } from "@/lib/constants";
+import KakaoIcon from "@/components/ui/KakaoIcon";
 
 /** useSearchParams 미사용 폴백: SSR/정적 생성 시 검색 바 스켈레톤 */
 function HomeSearchBarFallback() {
@@ -27,9 +29,6 @@ function HomeSearchBarFallback() {
     </Link>
   );
 }
-
-const KAKAO_LINK = "https://pf.kakao.com/_nxhNjn/chat";
-const INSTAGRAM_LINK = "https://www.instagram.com/tokyominbak/";
 
 /** Framer Navigation: PC(1240) / 모바일(390~640) 스타일. 게스트/호스트 모드 전환(에어비 스타일) */
 export default function Header() {
@@ -192,9 +191,7 @@ export default function Header() {
               className="p-2 rounded-full text-minbak-black hover:bg-white/80 sm:hidden"
               aria-label="카톡으로 문의하기"
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                <path d="M12 3c5.799 0 10.5 3.664 10.5 8.185 0 4.52-4.701 8.184-10.5 8.184a13.5 13.5 0 0 1-1.727-.11l-4.408 2.883c-.501.265-.678.236-.472-.413l.892-3.678c-2.88-1.46-4.785-3.99-4.785-6.866C1.5 6.665 6.201 3 12 3Z" />
-              </svg>
+              <KakaoIcon className="w-5 h-5" />
             </a>
               </>
             )}

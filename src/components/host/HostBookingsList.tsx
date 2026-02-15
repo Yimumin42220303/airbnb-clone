@@ -4,6 +4,7 @@ import Link from "next/link";
 import HostBookingActions from "@/components/host/HostBookingActions";
 import StartMessageLink from "@/components/messages/StartMessageLink";
 import { useHostTranslations } from "./HostLocaleProvider";
+import type { HostTranslationKey } from "@/lib/host-i18n";
 
 type BookingItem = {
   id: string;
@@ -20,7 +21,9 @@ type BookingItem = {
 
 type Props = { bookings: BookingItem[] };
 
-function statusLabel(b: BookingItem, t: (k: string) => string): string {
+type TranslationFn = (key: HostTranslationKey, params?: Record<string, string | number>) => string;
+
+function statusLabel(b: BookingItem, t: TranslationFn): string {
   if (b.status === "confirmed") return t("bookings.confirmed");
   if (b.status === "cancelled" && b.rejectedByHost) return t("bookings.rejected");
   if (b.status === "cancelled") return t("bookings.cancelled");

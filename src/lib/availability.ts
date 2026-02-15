@@ -84,17 +84,19 @@ export async function getNightlyAvailability(
   if (!listing) {
     throw new Error("숙소를 찾을 수 없습니다.");
   }
-  const cleaningFee = listing.cleaningFee ?? 0;
-  const baseGuests = listing.baseGuests ?? 2;
-  const extraGuestFee = listing.extraGuestFee ?? 0;
+  // TypeScript narrowing doesn't propagate into nested functions
+  const l = listing;
+  const cleaningFee = l.cleaningFee ?? 0;
+  const baseGuests = l.baseGuests ?? 2;
+  const extraGuestFee = l.extraGuestFee ?? 0;
 
   const dateKeys = getDateKeysBetween(checkIn, checkOut);
   if (dateKeys.length === 0) {
     return {
-      listingPricePerNight: listing.pricePerNight,
+      listingPricePerNight: l.pricePerNight,
       baseGuests,
       extraGuestFee,
-      cleaningFee: listing.cleaningFee ?? 0,
+      cleaningFee: l.cleaningFee ?? 0,
       nights: [],
       totalPrice: 0,
       allAvailable: true,
@@ -115,29 +117,29 @@ export async function getNightlyAvailability(
     const month = parseInt(dateKey.slice(5, 7), 10);
     switch (month) {
       case 1:
-        return listing.januaryFactor ?? 1.0;
+        return l.januaryFactor ?? 1.0;
       case 2:
-        return listing.februaryFactor ?? 1.0;
+        return l.februaryFactor ?? 1.0;
       case 3:
-        return listing.marchFactor ?? 1.0;
+        return l.marchFactor ?? 1.0;
       case 4:
-        return listing.aprilFactor ?? 1.0;
+        return l.aprilFactor ?? 1.0;
       case 5:
-        return listing.mayFactor ?? 1.0;
+        return l.mayFactor ?? 1.0;
       case 6:
-        return listing.juneFactor ?? 1.0;
+        return l.juneFactor ?? 1.0;
       case 7:
-        return listing.julyFactor ?? 1.0;
+        return l.julyFactor ?? 1.0;
       case 8:
-        return listing.augustFactor ?? 1.0;
+        return l.augustFactor ?? 1.0;
       case 9:
-        return listing.septemberFactor ?? 1.0;
+        return l.septemberFactor ?? 1.0;
       case 10:
-        return listing.octoberFactor ?? 1.0;
+        return l.octoberFactor ?? 1.0;
       case 11:
-        return listing.novemberFactor ?? 1.0;
+        return l.novemberFactor ?? 1.0;
       case 12:
-        return listing.decemberFactor ?? 1.0;
+        return l.decemberFactor ?? 1.0;
       default:
         return 1.0;
     }
@@ -147,7 +149,7 @@ export async function getNightlyAvailability(
     const row = byDate.get(date);
     const available = (row ? row.available : true) && !externalBlocked.has(date);
     const factor = getMonthFactor(date);
-    const basePrice = Math.round(listing.pricePerNight * factor);
+    const basePrice = Math.round(l.pricePerNight * factor);
     const pricePerNight =
       row?.pricePerNight != null ? row.pricePerNight : basePrice;
     return { date, pricePerNight, available };
@@ -158,7 +160,7 @@ export async function getNightlyAvailability(
   const totalPrice = nightsTotal + cleaningFee;
 
   return {
-    listingPricePerNight: listing.pricePerNight,
+    listingPricePerNight: l.pricePerNight,
     baseGuests,
     extraGuestFee,
     cleaningFee,

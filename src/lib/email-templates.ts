@@ -178,6 +178,48 @@ export function bookingCancelledGuest(info: BookingEmailInfo & { refundAmount: n
   };
 }
 
+export function paymentConfirmationHost(info: BookingEmailInfo & { hostName: string }) {
+  const body = `
+    <p>${info.hostName}\u69D8\u3001\u304A\u652F\u6255\u3044\u304C\u5B8C\u4E86\u3057\u307E\u3057\u305F\u3002</p>
+    <p>\u4EE5\u4E0B\u306E\u4E88\u7D04\u306E\u6C7A\u6E08\u304C\u78BA\u8A8D\u3055\u308C\u307E\u3057\u305F\u3002</p>
+    ${bookingTableJa(info)}
+    <p><strong>\u4E88\u7D04\u8005:</strong> ${info.guestName} (${info.guestEmail})</p>
+    ${actionButton(info.baseUrl + "/host/bookings", "\u4E88\u7D04\u7BA1\u7406")}`;
+  return {
+    subject: "[TokyoMinbak] \u6C7A\u6E08\u5B8C\u4E86 - " + info.listingTitle,
+    html: layout("\u6C7A\u6E08\u5B8C\u4E86", body),
+  };
+}
+
+export function bookingAcceptedHost(info: BookingEmailInfo & { hostName: string }) {
+  const body = `
+    <p>${info.hostName}\u69D8\u3001\u4E88\u7D04\u3092\u627F\u8A8D\u3057\u307E\u3057\u305F\u3002</p>
+    <p>\u30B2\u30B9\u30C8\u306B\u78BA\u5B9A\u901A\u77E5\u304C\u9001\u4FE1\u3055\u308C\u307E\u3057\u305F\u3002</p>
+    ${bookingTableJa(info)}
+    <p><strong>\u4E88\u7D04\u8005:</strong> ${info.guestName} (${info.guestEmail})</p>
+    ${actionButton(info.baseUrl + "/host/bookings", "\u4E88\u7D04\u7BA1\u7406")}`;
+  return {
+    subject: "[TokyoMinbak] \u4E88\u7D04\u627F\u8A8D\u6E08\u307F - " + info.listingTitle,
+    html: layout("\u4E88\u7D04\u627F\u8A8D\u6E08\u307F", body),
+  };
+}
+
+export function bookingRejectedHost(info: BookingEmailInfo & { hostName: string; reason?: string }) {
+  const reasonText = info.reason
+    ? `<p><strong>\u7406\u7531:</strong> ${info.reason}</p>`
+    : "";
+  const body = `
+    <p>${info.hostName}\u69D8\u3001\u4E88\u7D04\u3092\u304A\u65AD\u308A\u3057\u307E\u3057\u305F\u3002</p>
+    ${reasonText}
+    ${bookingTableJa(info)}
+    <p><strong>\u4E88\u7D04\u8005:</strong> ${info.guestName} (${info.guestEmail})</p>
+    ${actionButton(info.baseUrl + "/host/bookings", "\u4E88\u7D04\u7BA1\u7406")}`;
+  return {
+    subject: "[TokyoMinbak] \u4E88\u7D04\u62D2\u5426\u6E08\u307F - " + info.listingTitle,
+    html: layout("\u4E88\u7D04\u62D2\u5426\u6E08\u307F", body),
+  };
+}
+
 export function bookingCancelledHost(info: BookingEmailInfo & { hostName: string }) {
   const body = `
     <p>${info.hostName}\u69D8\u3001\u30B2\u30B9\u30C8\u304C\u4E88\u7D04\u3092\u30AD\u30E3\u30F3\u30BB\u30EB\u3057\u307E\u3057\u305F\u3002</p>

@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { toISODateString } from "@/lib/date-utils";
 
 /** Framer CustomRangePicker 스타일: 2달 나란히, 오늘 버튼, 체크인=빨간 원, 체크아웃=흰 원+빨간 테두리, 구간=#F7F7F7 */
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -10,13 +11,6 @@ function toDateOnly(d: Date): Date {
   const out = new Date(d);
   out.setHours(0, 0, 0, 0);
   return out;
-}
-
-function toISO(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
 }
 
 function startOfMonth(d: Date): Date {
@@ -258,7 +252,7 @@ export default function FramerDateRangePicker({
     const isNewCheckIn = !start || (start && end);
 
     if (isNewCheckIn) {
-      onCheckInChange(toISO(day));
+      onCheckInChange(toISODateString(day));
       onCheckOutChange("");
 
       // A안: 체크인 선택 시 자동 이동 — 선택한 날이 오른쪽(2번째) 달에 있으면
@@ -281,8 +275,8 @@ export default function FramerDateRangePicker({
     } else {
       if (isSameDay(day, start)) return;
       const [a, b] = day < start ? [day, start] : [start, day];
-      onCheckInChange(toISO(a));
-      onCheckOutChange(toISO(b));
+      onCheckInChange(toISODateString(a));
+      onCheckOutChange(toISODateString(b));
     }
   };
 

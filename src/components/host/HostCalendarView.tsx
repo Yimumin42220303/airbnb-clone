@@ -8,6 +8,7 @@ import { Header } from "@/components/layout";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import HostCalendarBookingActions from "./HostCalendarBookingActions";
 import { useHostTranslations } from "./HostLocaleProvider";
+import { toISODateString } from "@/lib/date-utils";
 
 const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 
@@ -43,11 +44,11 @@ function MobileMonthGrid({
       const cin = b.checkIn.slice(0, 10);
       const cout = b.checkOut.slice(0, 10);
       if (dateKey < cin || dateKey >= cout) continue;
-      const startIndex = calendarDays.findIndex((d) => toDateKey(d) >= cin);
+      const startIndex = calendarDays.findIndex((d) => toISODateString(d) >= cin);
       if (startIndex < 0) return null;
-      const firstKey = toDateKey(calendarDays[startIndex]);
+      const firstKey = toISODateString(calendarDays[startIndex]);
       if (dateKey !== firstKey) return null;
-      const endIndex = calendarDays.findIndex((d) => toDateKey(d) >= cout);
+      const endIndex = calendarDays.findIndex((d) => toISODateString(d) >= cout);
       const span = endIndex === -1 ? calendarDays.length - startIndex : endIndex - startIndex;
       return { booking: b, startIndex, span };
     }
@@ -56,12 +57,12 @@ function MobileMonthGrid({
 
   /** 해당 날짜가 예약의 2일차 이후인지 (첫날이면 false) */
   function isContinuationOfBooking(dayIndex: number): boolean {
-    const dateKey = toDateKey(calendarDays[dayIndex]);
-    for (const b of listing.bookings) {
+    const dateKey = toISODateString(calendarDays[dayIndex]);
+    for (const b of listing!.bookings) {
       const cin = b.checkIn.slice(0, 10);
       const cout = b.checkOut.slice(0, 10);
       if (dateKey <= cin || dateKey >= cout) continue;
-      const firstIndex = calendarDays.findIndex((d) => toDateKey(d) >= cin);
+      const firstIndex = calendarDays.findIndex((d) => toISODateString(d) >= cin);
       if (dayIndex > firstIndex) return true;
     }
     return false;
@@ -95,7 +96,7 @@ function MobileMonthGrid({
         ))}
         {cells.map(({ index, row, col }) => {
           const d = calendarDays[index];
-          const dateKey = toDateKey(d);
+          const dateKey = toISODateString(d);
           const isCurrentMonth = d.getMonth() === month - 1;
           const isToday = dateKey === todayKey;
           const isBlocked = blockedSet.has(dateKey);
@@ -192,10 +193,6 @@ type ListingWithBookings = {
   blockedDateKeys?: string[];
 };
 
-function toDateKey(d: Date) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
 function getCalendarDays(year: number, month: number): Date[] {
   const first = new Date(year, month, 1);
   const last = new Date(year, month + 1, 0);
@@ -216,9 +213,9 @@ function getBookingStatusLabel(
   status: string,
   checkIn: string,
   checkOut: string,
-  t: (k: string) => string
+  t: ReturnType<typeof useHostTranslations>["t"]
 ): string {
-  const today = toDateKey(new Date());
+  const today = toISODateString(new Date());
   const cin = checkIn.slice(0, 10);
   const cout = checkOut.slice(0, 10);
   if (today >= cin && today <= cout) return t("calendar.hostingNow");
@@ -237,7 +234,7 @@ function getDateKeysBetweenKeys(startKey: string, endKey: string): string[] {
   const cur = new Date(Math.min(start.getTime(), end.getTime()));
   const last = new Date(Math.max(start.getTime(), end.getTime()));
   while (cur <= last) {
-    keys.push(toDateKey(cur));
+    keys.push(toISODateString(cur));
     cur.setDate(cur.getDate() + 1);
   }
   return keys;
@@ -332,7 +329,7 @@ export default function HostCalendarView() {
     [year, month]
   );
   const firstDay = calendarDays[0];
-  const todayKey = toDateKey(new Date());
+  const todayKey = toISODateString(new Date());
 
   const selectionByListing = useMemo(() => {
     const map = new Map<string, Set<string>>();
@@ -574,7 +571,7 @@ export default function HostCalendarView() {
                       key={i}
                       className={`border-b border-r border-airbnb-light-gray p-1 text-center text-airbnb-caption ${
                         d.getMonth() !== month - 1 ? "text-airbnb-gray bg-airbnb-bg/50" : ""
-                      } ${toDateKey(d) === todayKey ? "bg-airbnb-red/10 font-medium" : ""}`}
+                      } ${toISODateString(d) === todayKey ? "bg-airbnb-red/10 font-medium" : ""}`}
                     >
                       {t(`calendar.weekday.${WEEKDAY_KEYS[d.getDay()]}`)} {d.getDate()}
                     </div>
@@ -625,9 +622,9 @@ function CalendarRow({
   selectionDateKeys?: Set<string>;
   onCellMouseDown?: (listingId: string, dateKey: string) => void;
   onCellMouseEnter?: (listingId: string, dateKey: string) => void;
-  t: (key: string, params?: Record<string, string | number>) => string;
+  t: ReturnType<typeof useHostTranslations>["t"];
 }) {
-  const todayKey = toDateKey(new Date());
+  const todayKey = toISODateString(new Date());
   const blockedSet = useMemo(
     () => new Set(listing.blockedDateKeys ?? []),
     [listing.blockedDateKeys]
@@ -647,7 +644,7 @@ function CalendarRow({
         </Link>
       </div>
       {calendarDays.map((d, colIndex) => {
-        const dateKey = toDateKey(d);
+        const dateKey = toISODateString(d);
         const isCurrentMonth = d.getMonth() === month - 1;
         const isToday = dateKey === todayKey;
         const isBlocked = blockedSet.has(dateKey);
@@ -697,10 +694,10 @@ function CalendarRow({
 
         const cin = booking.checkIn.slice(0, 10);
         const cout = booking.checkOut.slice(0, 10);
-        const startCol = calendarDays.findIndex((day) => toDateKey(day) >= cin);
-        const endCol = calendarDays.findIndex((day) => toDateKey(day) >= cout);
+        const startCol = calendarDays.findIndex((day) => toISODateString(day) >= cin);
+        const endCol = calendarDays.findIndex((day) => toISODateString(day) >= cout);
         const span = (endCol === -1 ? calendarDays.length : endCol) - startCol;
-        const isFirstDay = toDateKey(calendarDays[startCol]) === dateKey;
+        const isFirstDay = toISODateString(calendarDays[startCol]) === dateKey;
 
         if (!isFirstDay) return null;
 

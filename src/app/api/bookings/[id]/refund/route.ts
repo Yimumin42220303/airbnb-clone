@@ -161,7 +161,11 @@ export async function POST(
     baseUrl: BASE_URL,
   };
 
-  if (booking.user?.email) {
+  const hostEmail = booking.listing.user?.email;
+  const isSameEmail = hostEmail && booking.user?.email && hostEmail === booking.user.email;
+
+  // 게스트 이메일 (호스트와 같은 이메일이면 생략 — 호스트용 일본어 메일만 발송)
+  if (booking.user?.email && !isSameEmail) {
     const guestMail = bookingCancelledGuest({
       ...emailInfo,
       refundAmount,
@@ -169,12 +173,13 @@ export async function POST(
     });
     sendEmailAsync({ to: booking.user.email, ...guestMail });
   }
-  if (booking.listing.user?.email) {
+  // 호스트 이메일 (일본어)
+  if (hostEmail) {
     const hostMail = bookingCancelledHost({
       ...emailInfo,
-      hostName: booking.listing.user.name || "Host",
+      hostName: booking.listing.user?.name || "Host",
     });
-    sendEmailAsync({ to: booking.listing.user.email, ...hostMail });
+    sendEmailAsync({ to: hostEmail, ...hostMail });
   }
 
   return NextResponse.json({

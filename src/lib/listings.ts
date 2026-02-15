@@ -417,7 +417,10 @@ export async function updateListing(
     const trimmed = input.mapUrl?.trim();
     data.mapUrl = trimmed && trimmed.length > 0 ? trimmed : null;
   }
-  if (input.categoryId !== undefined) data.categoryId = input.categoryId?.trim() || null;
+  if (input.categoryId !== undefined) {
+    const catId = input.categoryId?.trim() || null;
+    data.category = catId ? { connect: { id: catId } } : { disconnect: true };
+  }
   if (options?.isAdmin && input.userId != null && input.userId.trim()) {
     const targetUser = await prisma.user.findUnique({ where: { id: input.userId } });
     if (!targetUser) {
@@ -427,7 +430,7 @@ export async function updateListing(
     if (!isHost) {
       return { ok: false as const, error: "선택한 사용자는 호스트가 아닙니다. (숙소를 1개 이상 보유한 사용자만 선택 가능)" };
     }
-    data.userId = input.userId;
+    data.user = { connect: { id: input.userId } };
   }
   if (input.icalImportUrls !== undefined) {
     const arr = Array.isArray(input.icalImportUrls)

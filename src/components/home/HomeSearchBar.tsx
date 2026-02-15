@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
+import { formatDateDisplay } from "@/lib/date-utils";
 import FramerDateRangePicker from "@/components/search/FramerDateRangePicker";
 import FramerGuestPicker, {
   defaultGuestCounts,
@@ -18,12 +19,6 @@ interface HomeSearchBarProps {
 }
 
 /** Framer 스타일: 흰색 pill에 체크인·체크아웃·인원 클릭 시 오버레이, 검색 버튼으로 /search 이동 */
-function formatDateDisplay(iso: string): string {
-  if (!iso) return "";
-  const d = new Date(iso + "T12:00:00");
-  return `${d.getMonth() + 1}월 ${d.getDate()}일`;
-}
-
 export default function HomeSearchBar({
   variant = "hero",
   className = "",

@@ -50,6 +50,7 @@ type Props = {
     categoryId: string;
     icalImportUrls: string[];
     amenityIds: string[];
+    mapUrl?: string;
   };
 };
 
@@ -424,6 +425,7 @@ export default function EditListingForm({
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={() => handleImageDrop(globalIndex)}
                     >
+                      {/* eslint-disable-next-line @next/next/no-img-element -- blob URL 미리보기 */}
                       <img
                         src={src}
                         alt={isExisting ? `기존 ${thumb.index + 1}` : `새로 추가 ${thumb.index + 1}`}
