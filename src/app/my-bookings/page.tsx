@@ -11,28 +11,36 @@ export default async function MyBookingsPage() {
   const session = await getServerSession(authOptions);
   const userId = (session as { userId?: string } | null)?.userId;
 
-  const bookings = userId
-    ? await prisma.booking.findMany({
-        where: { userId },
-        orderBy: { checkIn: "desc" },
-        include: {
-          listing: {
-            select: {
-              id: true,
-              title: true,
-              location: true,
-              imageUrl: true,
-              cancellationPolicy: true,
+  const [bookings, reviewedListingIds] = userId
+    ? await Promise.all([
+        prisma.booking.findMany({
+          where: { userId },
+          orderBy: { checkIn: "desc" },
+          include: {
+            listing: {
+              select: {
+                id: true,
+                title: true,
+                location: true,
+                imageUrl: true,
+                cancellationPolicy: true,
+              },
+            },
+            transactions: {
+              where: { status: "refunded" },
+              orderBy: { createdAt: "desc" },
+              take: 1,
             },
           },
-          transactions: {
-            where: { status: "refunded" },
-            orderBy: { createdAt: "desc" },
-            take: 1,
-          },
-        },
-      })
-    : [];
+        }),
+        prisma.review
+          .findMany({
+            where: { userId },
+            select: { listingId: true },
+          })
+          .then((reviews) => new Set(reviews.map((r) => r.listingId))),
+      ])
+    : [[], new Set<string>()];
 
   return (
     <>
@@ -176,6 +184,26 @@ export default async function MyBookingsPage() {
                             className="inline-flex items-center min-h-[36px] px-4 py-2 rounded-airbnb text-airbnb-body text-minbak-gray border border-minbak-light-gray hover:bg-minbak-bg transition-colors"
                           />
                         )}
+                        {/* Review link: show for completed stays (checkout passed, confirmed) */}
+                        {b.status === "confirmed" &&
+                          new Date(b.checkOut.toISOString().slice(0, 10)) <
+                            new Date(new Date().toISOString().slice(0, 10)) &&
+                          !reviewedListingIds.has(b.listing.id) && (
+                            <Link
+                              href={`/listing/${b.listing.id}#review`}
+                              className="inline-flex items-center min-h-[36px] px-4 py-2 rounded-airbnb text-airbnb-body font-medium text-minbak-primary border border-minbak-primary hover:bg-red-50 transition-colors"
+                            >
+                              &#9997; 리뷰 작성
+                            </Link>
+                          )}
+                        {reviewedListingIds.has(b.listing.id) &&
+                          b.status === "confirmed" &&
+                          new Date(b.checkOut.toISOString().slice(0, 10)) <
+                            new Date(new Date().toISOString().slice(0, 10)) && (
+                            <span className="inline-flex items-center min-h-[36px] px-4 py-2 rounded-airbnb text-airbnb-body text-minbak-gray bg-gray-50">
+                              &#10003; 리뷰 작성완료
+                            </span>
+                          )}
                       </div>
                     </div>
                   </li>

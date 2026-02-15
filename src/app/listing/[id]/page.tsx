@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { getListingById } from "@/lib/listings";
 import { prisma } from "@/lib/prisma";
 import { getWishlistListingIds } from "@/lib/wishlist";
+import { canUserReview } from "@/lib/reviews";
 import ListingDetailContent from "./ListingDetailContent";
 
 const BASE_URL =
@@ -79,7 +80,21 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
   if (!listing) notFound();
 
   const userId = (session as { userId?: string } | null)?.userId ?? null;
-  const wishlistIds = await getWishlistListingIds(userId);
+  const [wishlistIds, reviewPermission] = await Promise.all([
+    getWishlistListingIds(userId),
+    userId
+      ? canUserReview(id, userId).then(async (perm) => {
+          if (!perm.isAdmin && perm.allowed) {
+            // Check if already reviewed
+            const existing = await prisma.review.findFirst({
+              where: { listingId: id, userId },
+            });
+            return { canReview: true, hasReviewed: !!existing };
+          }
+          return { canReview: perm.allowed && !perm.isAdmin, hasReviewed: false };
+        })
+      : Promise.resolve({ canReview: false, hasReviewed: false }),
+  ]);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -133,6 +148,8 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
         initialCheckIn={initialCheckIn}
         initialCheckOut={initialCheckOut}
         initialGuests={initialGuests > 0 ? initialGuests : undefined}
+        canReview={reviewPermission.canReview}
+        hasReviewed={reviewPermission.hasReviewed}
       />
     </>
   );
