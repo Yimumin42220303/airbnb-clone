@@ -57,6 +57,8 @@ export async function PATCH(
         { status: 403 }
       );
     }
+    // isPromoted(프로모션대상)는 관리자만 설정 가능. 호스트는 변경 불가(undefined로 유지)
+    const isPromoted = isAdmin && body.isPromoted != null ? body.isPromoted : undefined;
     const result = await updateListing(
       id,
       userId,
@@ -87,7 +89,7 @@ export async function PATCH(
         bedrooms: body.bedrooms,
         beds: body.beds,
         baths: body.baths,
-        isPromoted: body.isPromoted,
+        isPromoted,
         houseRules: body.houseRules,
         categoryId: body.categoryId,
         amenityIds: body.amenityIds,

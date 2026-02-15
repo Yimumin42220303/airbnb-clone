@@ -766,7 +766,8 @@ export default function EditListingForm({
                 />
               </label>
             </div>
-            {/* 프로모션대상 토글 (관리자용) */}
+            {/* 프로모션대상 토글 (관리자만 표시·변경 가능) */}
+            {isAdmin && (
             <div className="border border-airbnb-light-gray rounded-airbnb p-4 bg-airbnb-bg/50">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
@@ -781,6 +782,7 @@ export default function EditListingForm({
                 </div>
               </label>
             </div>
+            )}
             {/* 주의사항 편집 */}
             <div className="border border-airbnb-light-gray rounded-airbnb p-4 space-y-3 bg-airbnb-bg/50">
               <h3 className="text-airbnb-body font-medium text-airbnb-black">주의사항</h3>
