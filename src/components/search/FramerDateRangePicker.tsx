@@ -218,9 +218,30 @@ export default function FramerDateRangePicker({
 
   const handleDayClick = (day: Date) => {
     if (isBefore(day, today) || isAfter(day, maxDate)) return;
-    if (!start || (start && end)) {
+
+    const isNewCheckIn = !start || (start && end);
+
+    if (isNewCheckIn) {
       onCheckInChange(toISO(day));
       onCheckOutChange("");
+
+      // A안: 체크인 선택 시 자동 이동 — 선택한 날이 오른쪽(2번째) 달에 있으면
+      // 캘린더를 이동해서 왼쪽에 체크인 달, 오른쪽에 다음 달이 보이도록 함
+      const dayMonth = day.getFullYear() * 12 + day.getMonth();
+      const todayMonth = today.getFullYear() * 12 + today.getMonth();
+      const selectedOffset = dayMonth - todayMonth;
+
+      if (compact) {
+        const rightMonth = mobileMonthOffset * 2 + 1;
+        if (selectedOffset >= rightMonth) {
+          setMobileMonthOffset(Math.floor(selectedOffset / 2));
+        }
+      } else {
+        const rightMonth = monthOffset + 1;
+        if (selectedOffset >= rightMonth) {
+          setMonthOffset(selectedOffset);
+        }
+      }
     } else {
       if (isSameDay(day, start)) return;
       const [a, b] = day < start ? [day, start] : [start, day];
@@ -235,25 +256,49 @@ export default function FramerDateRangePicker({
   };
 
   if (compact) {
+    const canMobilePrev = mobileMonthOffset > 0;
+    const canMobileNext = !isAfter(startOfMonth(addMonths(today, (mobileMonthOffset + 1) * 2)), maxDate);
+
     return (
       <div className="w-full min-w-[320px] max-h-[100vh] flex flex-col bg-white overflow-hidden rounded-none">
-        <div className="flex items-center relative py-3 px-5 border-b border-[#f0f0f0] flex-shrink-0 h-14 bg-white">
+        <div className="flex items-center justify-between py-3 px-5 border-b border-[#f0f0f0] flex-shrink-0 h-14 bg-white">
           <button
             type="button"
             onClick={goToToday}
-            className="text-minbak-primary font-medium text-[15px] bg-transparent border-none cursor-pointer py-2 px-0 z-10 relative"
+            className="text-minbak-primary font-medium text-[15px] bg-transparent border-none cursor-pointer py-2 px-0"
             style={{ fontFamily: "var(--font-noto-sans-kr), 'Noto Sans KR', sans-serif" }}
           >
             오늘
           </button>
-          <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
+          <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={() => setMobileMonthOffset((o) => Math.max(0, o - 1))}
-              disabled={mobileMonthOffset === 0}
-              className="pointer-events-auto p-2.5 flex items-center justify-center disabled:opacity-20 disabled:cursor-not-allowed"
+              disabled={!canMobilePrev}
+              className={`w-10 h-10 flex items-center justify-center rounded-full border transition-colors ${
+                canMobilePrev
+                  ? "border-minbak-light-gray text-minbak-black hover:bg-minbak-bg cursor-pointer"
+                  : "border-transparent text-minbak-light-gray cursor-not-allowed"
+              }`}
+              aria-label="이전 달"
             >
-              <ChevronUp className="w-7 h-7 text-minbak-black" />
+              <ChevronUp className="w-5 h-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (!canMobileNext) return;
+                setMobileMonthOffset((o) => o + 1);
+              }}
+              disabled={!canMobileNext}
+              className={`w-10 h-10 flex items-center justify-center rounded-full border transition-colors ${
+                canMobileNext
+                  ? "border-minbak-light-gray text-minbak-black hover:bg-minbak-bg cursor-pointer"
+                  : "border-transparent text-minbak-light-gray cursor-not-allowed"
+              }`}
+              aria-label="다음 달"
+            >
+              <ChevronDown className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -270,57 +315,58 @@ export default function FramerDateRangePicker({
               isMobile
             />
           ))}
-          <button
-            type="button"
-            onClick={() => {
-              const nextFirst = addMonths(today, (mobileMonthOffset + 1) * 2);
-              if (isAfter(startOfMonth(nextFirst), maxDate)) return;
-              setMobileMonthOffset((o) => o + 1);
-            }}
-            className="w-full py-3 bg-transparent border-none cursor-pointer flex justify-center items-center"
-          >
-            <ChevronDown className="w-7 h-7 text-minbak-black" />
-          </button>
         </div>
       </div>
     );
   }
+
+  const canGoPrev = monthOffset > 0;
+  const canGoNext = !isAfter(startOfMonth(addMonths(today, monthOffset + 2)), maxDate);
 
   return (
     <div
       className="flex flex-col bg-white rounded-[24px] overflow-hidden box-border shadow-[0_10px_40px_rgba(0,0,0,0.15)]"
       style={{ width: 704, minWidth: 704 }}
     >
-      <div className="flex justify-between items-center py-5 px-8 border-b border-[#f0f0f0] flex-shrink-0">
+      {/* 상단 네비게이션: 오늘 버튼 + 이전/다음 화살표 */}
+      <div className="flex justify-between items-center py-4 px-8 border-b border-[#f0f0f0] flex-shrink-0">
         <button
           type="button"
           onClick={goToToday}
-          className="text-minbak-primary font-medium text-[14px] bg-transparent border-none cursor-pointer py-2 px-3"
+          className="text-minbak-primary font-medium text-[14px] bg-transparent border-none cursor-pointer py-2 px-3 hover:underline"
           style={{ fontFamily: "var(--font-noto-sans-kr), 'Noto Sans KR', sans-serif" }}
         >
           오늘
         </button>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={() => setMonthOffset((o) => Math.max(0, o - 1))}
-            disabled={monthOffset === 0}
-            className={`p-2 flex items-center bg-transparent border-none ${
-              monthOffset === 0 ? "opacity-30 cursor-not-allowed" : "opacity-100 cursor-pointer"
+            disabled={!canGoPrev}
+            className={`w-10 h-10 flex items-center justify-center rounded-full border transition-colors ${
+              canGoPrev
+                ? "border-minbak-light-gray text-minbak-black hover:bg-minbak-bg cursor-pointer"
+                : "border-transparent text-minbak-light-gray cursor-not-allowed"
             }`}
+            aria-label="이전 달"
           >
-            <ChevronLeft className="w-6 h-6 text-minbak-black" />
+            <ChevronLeft className="w-5 h-5" />
           </button>
           <button
             type="button"
             onClick={() => {
-              const nextMonth = addMonths(today, monthOffset + 1);
-              if (isAfter(startOfMonth(nextMonth), maxDate)) return;
+              if (!canGoNext) return;
               setMonthOffset((o) => o + 1);
             }}
-            className="bg-transparent border-none cursor-pointer p-2 flex items-center"
+            disabled={!canGoNext}
+            className={`w-10 h-10 flex items-center justify-center rounded-full border transition-colors ${
+              canGoNext
+                ? "border-minbak-light-gray text-minbak-black hover:bg-minbak-bg cursor-pointer"
+                : "border-transparent text-minbak-light-gray cursor-not-allowed"
+            }`}
+            aria-label="다음 달"
           >
-            <ChevronRight className="w-6 h-6 text-minbak-black" />
+            <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </div>
