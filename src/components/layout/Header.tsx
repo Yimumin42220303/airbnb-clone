@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Search } from "lucide-react";
+import { Search, Sparkles } from "lucide-react";
 import HomeSearchBar from "@/components/home/HomeSearchBar";
 import UserMenu from "./UserMenu";
 import HostLocaleSwitcher from "@/components/host/HostLocaleSwitcher";
@@ -152,6 +152,13 @@ export default function Header() {
               className="hidden sm:inline text-airbnb-body text-minbak-black hover:text-minbak-primary transition-colors md:inline"
             >
               도쿄여행 가이드
+            </Link>
+            <Link
+              href="/recommend"
+              className="hidden sm:inline text-airbnb-body text-minbak-black hover:text-minbak-primary transition-colors md:inline flex items-center gap-1"
+            >
+              <Sparkles className="w-4 h-4" />
+              AI 추천
             </Link>
             <Link
               href="/blog"
