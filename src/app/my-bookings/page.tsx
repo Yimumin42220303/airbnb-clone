@@ -144,6 +144,23 @@ export default async function MyBookingsPage() {
                             결제완료
                           </span>
                         )}
+                        {b.paymentMethod === "deferred" &&
+                          b.paymentStatus === "pending" &&
+                          b.status !== "cancelled" && (
+                          <span className="inline-block text-minbak-caption font-medium px-2.5 py-1 rounded-full bg-sky-100 text-sky-800">
+                            카드등록 · {b.scheduledPaymentDate
+                              ? b.scheduledPaymentDate.toLocaleDateString("ko-KR", {
+                                  month: "long",
+                                  day: "numeric",
+                                }) + " 자동결제"
+                              : "자동결제 예정"}
+                          </span>
+                        )}
+                        {b.paymentStatus === "failed" && b.status !== "cancelled" && (
+                          <span className="inline-block text-minbak-caption font-medium px-2.5 py-1 rounded-full bg-red-100 text-red-800">
+                            결제실패
+                          </span>
+                        )}
                         {b.paymentStatus === "refunded" && (
                           <span className="inline-block text-minbak-caption font-medium px-2.5 py-1 rounded-full bg-purple-100 text-purple-800">
                             환불완료
@@ -156,13 +173,14 @@ export default async function MyBookingsPage() {
                         )}
                       </div>
                       <div className="flex flex-wrap gap-2 mt-3">
-                        {b.paymentStatus === "pending" &&
-                          b.status === "confirmed" && (
+                        {((b.paymentStatus === "pending" && b.paymentMethod === "immediate") ||
+                          b.paymentStatus === "failed") &&
+                          b.status !== "cancelled" && (
                             <Link
                               href={`/booking/${b.id}/pay`}
                               className="inline-flex items-center min-h-[36px] px-4 py-2 rounded-minbak text-minbak-body font-medium bg-minbak-primary text-white hover:bg-minbak-primary-hover transition-colors"
                             >
-                              결제하기
+                              {b.paymentStatus === "failed" ? "재결제하기" : "결제하기"}
                             </Link>
                           )}
                         {b.status !== "cancelled" &&

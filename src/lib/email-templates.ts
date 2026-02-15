@@ -220,6 +220,64 @@ export function bookingRejectedHost(info: BookingEmailInfo & { hostName: string;
   };
 }
 
+// ========== 빌링키(카드 등록) 관련 이메일 ==========
+
+export function billingKeyRegisteredGuest(
+  info: BookingEmailInfo & { scheduledPaymentDate: string }
+) {
+  const body = `
+    <p>${info.guestName}님, 카드 등록이 완료되었습니다.</p>
+    <p>예약이 확정되었으며, 아래 예정일에 자동으로 결제됩니다.</p>
+    ${bookingTable(info)}
+    <div style="background:#eff6ff;border-radius:8px;padding:12px 16px;margin:16px 0;">
+      <p style="margin:0;font-size:14px;color:#1d4ed8;font-weight:600;">
+        자동 결제 예정일: ${info.scheduledPaymentDate}
+      </p>
+      <p style="margin:4px 0 0;font-size:13px;color:#1d4ed8;">
+        결제 예정일 전에 취소하시면 수수료 없이 전액 취소됩니다.
+      </p>
+    </div>
+    ${actionButton(info.baseUrl + "/my-bookings", "내 예약 확인")}
+    <p style="font-size:13px;color:${GRAY_COLOR};">등록하신 카드로 체크인 7일 전에 자동 결제됩니다.</p>`;
+  return {
+    subject: "[도쿄민박] 카드 등록 완료 - " + info.listingTitle,
+    html: layout("카드 등록 완료", body),
+  };
+}
+
+export function billingKeyRegisteredHost(
+  info: BookingEmailInfo & { hostName: string; scheduledPaymentDate: string }
+) {
+  const body = `
+    <p>${info.hostName}\u69D8\u3001\u65B0\u3057\u3044\u4E88\u7D04\u304C\u78BA\u5B9A\u3057\u307E\u3057\u305F\u3002</p>
+    <p>\u30B2\u30B9\u30C8\u304C\u30AB\u30FC\u30C9\u3092\u767B\u9332\u3057\u307E\u3057\u305F\u3002\u6C7A\u6E08\u306F${info.scheduledPaymentDate}\u306B\u81EA\u52D5\u7684\u306B\u884C\u308F\u308C\u307E\u3059\u3002</p>
+    ${bookingTableJa(info)}
+    <p><strong>\u4E88\u7D04\u8005:</strong> ${info.guestName} (${info.guestEmail})</p>
+    ${actionButton(info.baseUrl + "/host/bookings", "\u4E88\u7D04\u7BA1\u7406")}`;
+  return {
+    subject: "[TokyoMinbak] \u30AB\u30FC\u30C9\u767B\u9332\u5B8C\u4E86 - " + info.listingTitle,
+    html: layout("\u30AB\u30FC\u30C9\u767B\u9332\u5B8C\u4E86", body),
+  };
+}
+
+export function deferredPaymentFailedGuest(info: BookingEmailInfo) {
+  const body = `
+    <p>${info.guestName}님, 자동 결제에 실패했습니다.</p>
+    <p>등록하신 카드로 결제를 시도했으나 처리되지 않았습니다. 아래 링크에서 결제를 다시 시도해 주세요.</p>
+    ${bookingTable(info)}
+    <div style="background:#fef2f2;border-radius:8px;padding:12px 16px;margin:16px 0;">
+      <p style="margin:0;font-size:14px;color:#dc2626;font-weight:600;">
+        결제가 완료되지 않으면 예약이 취소될 수 있습니다.
+      </p>
+    </div>
+    ${actionButton(info.baseUrl + "/booking/" + info.bookingId + "/pay", "결제하기")}
+    <p style="font-size:13px;color:${GRAY_COLOR};">문제가 지속되면 다른 카드로 결제를 시도해 주세요.</p>`;
+  return {
+    subject: "[도쿄민박] 자동 결제 실패 - " + info.listingTitle,
+    html: layout("자동 결제 실패", body),
+  };
+}
+
 export function bookingCancelledHost(info: BookingEmailInfo & { hostName: string }) {
   const body = `
     <p>${info.hostName}\u69D8\u3001\u30B2\u30B9\u30C8\u304C\u4E88\u7D04\u3092\u30AD\u30E3\u30F3\u30BB\u30EB\u3057\u307E\u3057\u305F\u3002</p>

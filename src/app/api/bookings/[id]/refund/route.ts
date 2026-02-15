@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { cancelPayment } from "@/lib/portone";
+import { cancelPayment, deleteBillingKey } from "@/lib/portone";
 import {
   calculateRefundAmount,
   type CancellationPolicyType,
@@ -85,6 +85,78 @@ export async function POST(
     );
   }
 
+  // === 빌링키 미결제 예약: 빌링키만 삭제 (PG 수수료 0원) ===
+  if (
+    booking.paymentMethod === "deferred" &&
+    (booking.paymentStatus === "pending" || booking.paymentStatus === "failed") &&
+    booking.billingKey
+  ) {
+    try {
+      await deleteBillingKey(booking.billingKey);
+    } catch (err) {
+      console.error("Billing key delete error:", err);
+      // 빌링키 삭제 실패해도 취소는 진행 (이미 만료되었을 수 있음)
+    }
+
+    await prisma.booking.update({
+      where: { id },
+      data: {
+        status: "cancelled",
+        paymentStatus: "refunded",
+        billingKey: null,
+      },
+    });
+
+    // 취소 이메일 발송
+    const nights = Math.floor(
+      (booking.checkOut.getTime() - booking.checkIn.getTime()) / (24 * 60 * 60 * 1000)
+    );
+    const emailInfo = {
+      listingTitle: booking.listing.title || "",
+      listingLocation: booking.listing.location || "",
+      checkIn: booking.checkIn.toISOString().slice(0, 10),
+      checkOut: booking.checkOut.toISOString().slice(0, 10),
+      guests: booking.guests,
+      nights,
+      totalPrice: booking.totalPrice,
+      guestName: booking.user?.name || "Guest",
+      guestEmail: booking.user?.email || "",
+      bookingId: id,
+      baseUrl: BASE_URL,
+    };
+
+    const hostEmail = booking.listing.user?.email;
+    const isSameEmail = hostEmail && booking.user?.email && hostEmail === booking.user.email;
+
+    if (booking.user?.email && !isSameEmail) {
+      const guestMail = bookingCancelledGuest({
+        ...emailInfo,
+        refundAmount: booking.totalPrice,
+        refundPolicy: "카드 미결제 상태: 전액 취소 (수수료 없음)",
+      });
+      sendEmailAsync({ to: booking.user.email, ...guestMail });
+    }
+    if (hostEmail) {
+      const hostMail = bookingCancelledHost({
+        ...emailInfo,
+        hostName: booking.listing.user?.name || "Host",
+      });
+      sendEmailAsync({ to: hostEmail, ...hostMail });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      status: "cancelled",
+      refundPolicy: "카드 미결제 상태: 빌링키 삭제 (PG 수수료 0원)",
+      refundRate: 1,
+      refundAmount: booking.totalPrice,
+      totalPrice: booking.totalPrice,
+      portoneRefund: false,
+      billingKeyCancelled: true,
+    });
+  }
+
+  // === 결제 완료 예약: 기존 환불 로직 ===
   // Calculate refund based on listing's cancellation policy
   // Pass actual current time (not midnight) for accurate 48h grace period calculation
   const policy = (booking.listing.cancellationPolicy || "flexible") as CancellationPolicyType;
@@ -140,6 +212,7 @@ export async function POST(
     data: {
       status: "cancelled",
       ...(portoneRefundDone ? { paymentStatus: "refunded" } : {}),
+      ...(booking.billingKey ? { billingKey: null } : {}),
     },
   });
 

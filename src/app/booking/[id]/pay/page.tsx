@@ -87,6 +87,7 @@ export default async function BookingPayPage({ params }: Props) {
             listingTitle={booking.listing.title}
             userName={session?.user?.name || undefined}
             userEmail={session?.user?.email || undefined}
+            checkIn={booking.checkIn.toISOString().slice(0, 10)}
           />
         </div>
         <Footer />
