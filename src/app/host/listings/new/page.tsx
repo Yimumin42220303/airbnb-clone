@@ -1,17 +1,18 @@
 import { redirect } from "next/navigation";
-import { getAdminUser } from "@/lib/admin";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Header, Footer } from "@/components/layout";
 import NewListingForm from "./NewListingForm";
 
 /**
- * 숙소 등록: 관리자(admin)만 접근 가능.
- * 비관리자 접근 시 /admin으로 리다이렉트.
+ * 숙소 등록: 로그인한 호스트만 접근 가능. 본인 소유 숙소만 등록.
  */
 export default async function NewListingPage() {
-  const admin = await getAdminUser();
-  if (!admin) {
-    redirect("/admin?message=admin-only-listings");
+  const session = await getServerSession(authOptions);
+  const userId = (session as { userId?: string } | null)?.userId;
+  if (!userId) {
+    redirect("/auth/signin?callbackUrl=/host/listings/new");
   }
 
   const [amenities, categories] = await Promise.all([

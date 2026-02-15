@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { isDevSkipAuth } from "@/lib/dev-auth";
-import { getAdminUser } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { getListings, type ListingFilters } from "@/lib/listings";
 import { createListing } from "@/lib/listings";
@@ -53,19 +52,25 @@ export async function GET(request: Request) {
 
 /**
  * POST /api/listings
- * 숙소 등록은 관리자(admin)만 가능. 비관리자 호출 시 403.
+ * 숙소 등록: 로그인한 호스트는 본인 소유로만 등록 가능.
+ * 관리자는 body.userId로 다른 호스트에게 할당 가능 (일괄 등록 등).
  */
 export async function POST(request: Request) {
   try {
-    const admin = await getAdminUser();
-    if (!admin) {
+    const session = await getServerSession(authOptions);
+    const sessionUserId = (session as { userId?: string } | null)?.userId;
+    const role = (session?.user as { role?: string } | undefined)?.role;
+    const isAdmin = role === "admin";
+
+    if (!sessionUserId) {
       return NextResponse.json(
-        { error: "관리자만 숙소를 등록할 수 있습니다." },
-        { status: 403 }
+        { error: "로그인 후 숙소를 등록할 수 있습니다." },
+        { status: 401 }
       );
     }
-    const userId = admin.id;
-    if (userId === "dev-skip-auth" && isDevSkipAuth()) {
+
+    let targetUserId = sessionUserId;
+    if (isDevSkipAuth() && sessionUserId === "dev-skip-auth") {
       const firstUser = await prisma.user.findFirst({
         where: { role: "admin" },
         select: { id: true },
@@ -76,34 +81,26 @@ export async function POST(request: Request) {
           { status: 403 }
         );
       }
-      const body = await request.json();
-      const result = await createListing(firstUser.id, {
-        title: body.title,
-        location: body.location,
-        description: body.description,
-        mapUrl: body.mapUrl,
-        pricePerNight: body.pricePerNight,
-        cleaningFee: body.cleaningFee,
-        baseGuests: body.baseGuests,
-        maxGuests: body.maxGuests,
-        extraGuestFee: body.extraGuestFee,
-        imageUrl: body.imageUrl,
-        imageUrls: body.imageUrls,
-        bedrooms: body.bedrooms,
-        beds: body.beds,
-        baths: body.baths,
-        categoryId: body.categoryId,
-        amenityIds: body.amenityIds,
-        isPromoted: body.isPromoted,
-      });
-      if (!result.ok) {
-        return NextResponse.json({ error: result.error }, { status: 400 });
-      }
-      return NextResponse.json(result.listing, { status: 201 });
+      targetUserId = firstUser.id;
     }
 
     const body = await request.json();
-    const result = await createListing(userId, {
+
+    // 관리자만 다른 호스트에게 숙소 할당 가능
+    if (body.userId != null && body.userId !== targetUserId) {
+      if (!isAdmin) {
+        return NextResponse.json(
+          { error: "본인 소유의 숙소만 등록할 수 있습니다." },
+          { status: 403 }
+        );
+      }
+      targetUserId = body.userId;
+    }
+
+    // isPromoted(프로모션대상)는 관리자만 설정 가능
+    const isPromoted = isAdmin && body.isPromoted === true ? true : false;
+
+    const result = await createListing(targetUserId, {
       title: body.title,
       location: body.location,
       description: body.description,
@@ -120,7 +117,7 @@ export async function POST(request: Request) {
       baths: body.baths,
       categoryId: body.categoryId,
       amenityIds: body.amenityIds,
-      isPromoted: body.isPromoted,
+      isPromoted,
     });
 
     if (!result.ok) {
