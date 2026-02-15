@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 /** Framer CustomRangePicker 스타일: 2달 나란히, 오늘 버튼, 체크인=빨간 원, 체크아웃=흰 원+빨간 테두리, 구간=#F7F7F7 */
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -86,6 +86,10 @@ function MonthBlock({
   end,
   onDayClick,
   isMobile,
+  onPrev,
+  onNext,
+  showPrev,
+  showNext,
 }: {
   month: Date;
   today: Date;
@@ -94,6 +98,10 @@ function MonthBlock({
   end: Date | null;
   onDayClick: (day: Date) => void;
   isMobile: boolean;
+  onPrev?: () => void;
+  onNext?: () => void;
+  showPrev?: boolean;
+  showNext?: boolean;
 }) {
   const year = month.getFullYear();
   const monthIndex = month.getMonth();
@@ -106,12 +114,40 @@ function MonthBlock({
 
   return (
     <div className={isMobile ? "flex-shrink-0" : "flex-1 min-w-0"}>
-      <p
-        className="text-left mb-3 font-bold text-[18px] text-minbak-black"
-        style={{ fontFamily: "var(--font-noto-sans-kr), 'Noto Sans KR', sans-serif" }}
-      >
-        {month.getFullYear()}년 {month.getMonth() + 1}월
-      </p>
+      <div className="flex items-center justify-between mb-3">
+        {/* 왼쪽: 이전 달 버튼 또는 빈 공간 */}
+        {showPrev && onPrev ? (
+          <button
+            type="button"
+            onClick={onPrev}
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f0f0f0] transition-colors cursor-pointer"
+            aria-label="이전 달"
+          >
+            <ChevronLeft className="w-5 h-5 text-minbak-black" />
+          </button>
+        ) : (
+          <div className="w-8 h-8" />
+        )}
+        <p
+          className="font-bold text-[18px] text-minbak-black"
+          style={{ fontFamily: "var(--font-noto-sans-kr), 'Noto Sans KR', sans-serif" }}
+        >
+          {month.getFullYear()}년 {month.getMonth() + 1}월
+        </p>
+        {/* 오른쪽: 다음 달 버튼 또는 빈 공간 */}
+        {showNext && onNext ? (
+          <button
+            type="button"
+            onClick={onNext}
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f0f0f0] transition-colors cursor-pointer"
+            aria-label="다음 달"
+          >
+            <ChevronRight className="w-5 h-5 text-minbak-black" />
+          </button>
+        ) : (
+          <div className="w-8 h-8" />
+        )}
+      </div>
       <div className="grid grid-cols-7 gap-0.5 mb-2">
         {WEEKDAYS.map((day, i) => (
           <div
@@ -261,47 +297,6 @@ export default function FramerDateRangePicker({
 
     return (
       <div className="w-full min-w-[320px] max-h-[100vh] flex flex-col bg-white overflow-hidden rounded-none">
-        <div className="flex items-center justify-between py-3 px-5 border-b border-[#f0f0f0] flex-shrink-0 h-14 bg-white">
-          <button
-            type="button"
-            onClick={goToToday}
-            className="text-minbak-primary font-medium text-[15px] bg-transparent border-none cursor-pointer py-2 px-0"
-            style={{ fontFamily: "var(--font-noto-sans-kr), 'Noto Sans KR', sans-serif" }}
-          >
-            오늘
-          </button>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setMobileMonthOffset((o) => Math.max(0, o - 1))}
-              disabled={!canMobilePrev}
-              className={`w-10 h-10 flex items-center justify-center rounded-full border transition-colors ${
-                canMobilePrev
-                  ? "border-minbak-light-gray text-minbak-black hover:bg-minbak-bg cursor-pointer"
-                  : "border-transparent text-minbak-light-gray cursor-not-allowed"
-              }`}
-              aria-label="이전 달"
-            >
-              <ChevronUp className="w-5 h-5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (!canMobileNext) return;
-                setMobileMonthOffset((o) => o + 1);
-              }}
-              disabled={!canMobileNext}
-              className={`w-10 h-10 flex items-center justify-center rounded-full border transition-colors ${
-                canMobileNext
-                  ? "border-minbak-light-gray text-minbak-black hover:bg-minbak-bg cursor-pointer"
-                  : "border-transparent text-minbak-light-gray cursor-not-allowed"
-              }`}
-              aria-label="다음 달"
-            >
-              <ChevronDown className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
         <div className="flex-1 flex flex-col gap-8 py-4 px-5 pb-6 overflow-y-auto overflow-x-hidden">
           {months.map((mon, idx) => (
             <MonthBlock
@@ -313,6 +308,10 @@ export default function FramerDateRangePicker({
               end={end}
               onDayClick={handleDayClick}
               isMobile
+              showPrev={idx === 0 && canMobilePrev}
+              showNext={idx === 1 && canMobileNext}
+              onPrev={idx === 0 ? () => setMobileMonthOffset((o) => Math.max(0, o - 1)) : undefined}
+              onNext={idx === 1 ? () => { if (canMobileNext) setMobileMonthOffset((o) => o + 1); } : undefined}
             />
           ))}
         </div>
@@ -328,48 +327,6 @@ export default function FramerDateRangePicker({
       className="flex flex-col bg-white rounded-[24px] overflow-hidden box-border shadow-[0_10px_40px_rgba(0,0,0,0.15)]"
       style={{ width: 704, minWidth: 704 }}
     >
-      {/* 상단 네비게이션: 오늘 버튼 + 이전/다음 화살표 */}
-      <div className="flex justify-between items-center py-4 px-8 border-b border-[#f0f0f0] flex-shrink-0">
-        <button
-          type="button"
-          onClick={goToToday}
-          className="text-minbak-primary font-medium text-[14px] bg-transparent border-none cursor-pointer py-2 px-3 hover:underline"
-          style={{ fontFamily: "var(--font-noto-sans-kr), 'Noto Sans KR', sans-serif" }}
-        >
-          오늘
-        </button>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => setMonthOffset((o) => Math.max(0, o - 1))}
-            disabled={!canGoPrev}
-            className={`w-10 h-10 flex items-center justify-center rounded-full border transition-colors ${
-              canGoPrev
-                ? "border-minbak-light-gray text-minbak-black hover:bg-minbak-bg cursor-pointer"
-                : "border-transparent text-minbak-light-gray cursor-not-allowed"
-            }`}
-            aria-label="이전 달"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (!canGoNext) return;
-              setMonthOffset((o) => o + 1);
-            }}
-            disabled={!canGoNext}
-            className={`w-10 h-10 flex items-center justify-center rounded-full border transition-colors ${
-              canGoNext
-                ? "border-minbak-light-gray text-minbak-black hover:bg-minbak-bg cursor-pointer"
-                : "border-transparent text-minbak-light-gray cursor-not-allowed"
-            }`}
-            aria-label="다음 달"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
       <div className="flex flex-row gap-8 p-8 box-border">
         {months.map((mon, idx) => (
           <MonthBlock
@@ -381,6 +338,10 @@ export default function FramerDateRangePicker({
             end={end}
             onDayClick={handleDayClick}
             isMobile={false}
+            showPrev={idx === 0 && canGoPrev}
+            showNext={idx === 1 && canGoNext}
+            onPrev={idx === 0 ? () => setMonthOffset((o) => Math.max(0, o - 1)) : undefined}
+            onNext={idx === 1 ? () => { if (canGoNext) setMonthOffset((o) => o + 1); } : undefined}
           />
         ))}
       </div>
