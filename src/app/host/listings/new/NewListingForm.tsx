@@ -541,7 +541,7 @@ export default function NewListingForm({ amenities, categories: initialCategorie
           <div className="space-y-2">
             {([
               { value: "flexible", label: "유연", desc: "체크인 1일 전까지 취소 시 100% 환불" },
-              { value: "moderate", label: "보통", desc: "체크인 5일 전까지 100% 환불, 1~4일 전 50% 환불" },
+              { value: "moderate", label: "보통", desc: "체크인 7일 전까지 100% 환불, 1~6일 전 50% 환불" },
               { value: "strict", label: "엄격", desc: "예약 후 48시간 이내(체크인 14일 이상) 100% 환불, 7일 전까지 50% 환불" },
             ] as const).map((opt) => (
               <label
