@@ -4,10 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { createBooking } from "@/lib/bookings";
 import { prisma } from "@/lib/prisma";
 import { sendEmailAsync, BASE_URL } from "@/lib/email";
-import {
-  bookingConfirmationGuest,
-  bookingNotificationHost,
-} from "@/lib/email-templates";
+import { bookingConfirmationGuest, bookingNotificationHost } from "@/lib/email-templates";
 
 /**
  * GET /api/bookings
@@ -122,13 +119,13 @@ export async function POST(request: Request) {
         const hostEmail = listing.user?.email;
         const isSameEmail = hostEmail && hostEmail === guestUser.email;
 
-        // Guest email (호스트와 같은 이메일이면 생략 — 호스트용 일본어 메일만 발송)
+        // Guest email (호스트와 같은 이메일이면 생략)
         if (!isSameEmail) {
           const guestMail = bookingConfirmationGuest(emailInfo);
           sendEmailAsync({ to: guestUser.email, ...guestMail });
         }
 
-        // Host email (일본어)
+        // Host email: 예약 요청 알림 (일본어)
         if (hostEmail) {
           const hostMail = bookingNotificationHost({
             ...emailInfo,

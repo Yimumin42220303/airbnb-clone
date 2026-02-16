@@ -121,7 +121,7 @@ export async function POST(request: Request) {
     );
   }
 
-  // Verification success
+  // Verification success: 결제 완료 처리 (status는 호스트 승인 시 이미 confirmed)
   const now = new Date();
   await prisma.$transaction([
     prisma.paymentTransaction.create({
@@ -143,7 +143,8 @@ export async function POST(request: Request) {
     }),
   ]);
 
-  // Send payment confirmation emails
+  // 결제 완료 후 대화방 생성 + 호스트 환영 메시지
+  let conversationId: string | null = null;
   try {
     const fullBooking = await prisma.booking.findUnique({
       where: { id: bookingId },
@@ -152,46 +153,74 @@ export async function POST(request: Request) {
           select: {
             title: true,
             location: true,
+            userId: true,
             user: { select: { name: true, email: true } },
           },
         },
         user: { select: { name: true, email: true } },
       },
     });
-    if (fullBooking?.user?.email) {
-      const nights = Math.floor(
-        (fullBooking.checkOut.getTime() - fullBooking.checkIn.getTime()) / (24 * 60 * 60 * 1000)
-      );
-      const emailInfo = {
-        listingTitle: fullBooking.listing.title,
-        listingLocation: fullBooking.listing.location,
-        checkIn: fullBooking.checkIn.toISOString().slice(0, 10),
-        checkOut: fullBooking.checkOut.toISOString().slice(0, 10),
-        guests: fullBooking.guests,
-        nights,
-        totalPrice: fullBooking.totalPrice,
-        guestName: fullBooking.user.name || "Guest",
-        guestEmail: fullBooking.user.email,
-        bookingId,
-        baseUrl: BASE_URL,
-      };
 
-      const hostEmail = fullBooking.listing.user?.email;
-      const isSameEmail = hostEmail && hostEmail === fullBooking.user.email;
+    if (fullBooking) {
+      // 대화방 생성 + 환영 메시지
+      try {
+        let conversation = await prisma.conversation.findUnique({
+          where: { bookingId },
+        });
+        if (!conversation) {
+          conversation = await prisma.conversation.create({
+            data: { bookingId },
+          });
+        }
+        conversationId = conversation.id;
 
-      // 게스트 이메일 (호스트와 같은 이메일이면 생략 — 호스트용 일본어 메일만 발송)
-      if (!isSameEmail) {
-        const guestMail = paymentConfirmationGuest(emailInfo);
-        sendEmailAsync({ to: fullBooking.user.email, ...guestMail });
+        await prisma.message.create({
+          data: {
+            conversationId: conversation.id,
+            senderId: fullBooking.listing.userId,
+            body: "예약감사합니다. 3일내에 체크인방법에대해 안내드릴예정이니 조금 기다려주세요.",
+          },
+        });
+      } catch (err) {
+        console.error("자동 메시지 전송 오류:", err);
       }
 
-      // 호스트 이메일 (일본어)
-      if (hostEmail) {
-        const hostMail = paymentConfirmationHost({
-          ...emailInfo,
-          hostName: fullBooking.listing.user?.name || "Host",
-        });
-        sendEmailAsync({ to: hostEmail, ...hostMail });
+      // 이메일 발송
+      if (fullBooking.user?.email) {
+        const nights = Math.floor(
+          (fullBooking.checkOut.getTime() - fullBooking.checkIn.getTime()) / (24 * 60 * 60 * 1000)
+        );
+        const emailInfo = {
+          listingTitle: fullBooking.listing.title,
+          listingLocation: fullBooking.listing.location,
+          checkIn: fullBooking.checkIn.toISOString().slice(0, 10),
+          checkOut: fullBooking.checkOut.toISOString().slice(0, 10),
+          guests: fullBooking.guests,
+          nights,
+          totalPrice: fullBooking.totalPrice,
+          guestName: fullBooking.user.name || "Guest",
+          guestEmail: fullBooking.user.email,
+          bookingId,
+          baseUrl: BASE_URL,
+        };
+
+        const hostEmail = fullBooking.listing.user?.email;
+        const isSameEmail = hostEmail && hostEmail === fullBooking.user.email;
+
+        // 게스트 이메일
+        if (!isSameEmail) {
+          const guestMail = paymentConfirmationGuest(emailInfo);
+          sendEmailAsync({ to: fullBooking.user.email, ...guestMail });
+        }
+
+        // 호스트 이메일 (일본어)
+        if (hostEmail) {
+          const hostMail = paymentConfirmationHost({
+            ...emailInfo,
+            hostName: fullBooking.listing.user?.name || "Host",
+          });
+          sendEmailAsync({ to: hostEmail, ...hostMail });
+        }
       }
     }
   } catch (emailErr) {
@@ -202,6 +231,7 @@ export async function POST(request: Request) {
     ok: true,
     paymentStatus: "paid",
     bookingStatus: "confirmed",
+    conversationId,
     verifiedAt: now.toISOString(),
   });
 }
