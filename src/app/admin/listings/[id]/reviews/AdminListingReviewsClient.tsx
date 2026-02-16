@@ -28,7 +28,11 @@ export default function AdminListingReviewsClient({
   const [reviews, setReviews] = useState(initialReviews);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [editingContentId, setEditingContentId] = useState<string | null>(null);
+  const [editBody, setEditBody] = useState("");
+  const [editRating, setEditRating] = useState(5);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const displayName = (r: ReviewItem) => r.authorDisplayName ?? r.userName;
 
@@ -73,6 +77,67 @@ export default function AdminListingReviewsClient({
     }
   };
 
+  const startContentEdit = (r: ReviewItem) => {
+    setEditingContentId(r.id);
+    setEditBody(r.body);
+    setEditRating(r.rating);
+  };
+
+  const cancelContentEdit = () => {
+    setEditingContentId(null);
+    setEditBody("");
+    setEditRating(5);
+  };
+
+  const saveContentAndRating = async (reviewId: string) => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/reviews/${reviewId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: editBody.trim() || "",
+          rating: editRating,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "저장에 실패했습니다.");
+        return;
+      }
+      setReviews((prev) =>
+        prev.map((r) =>
+          r.id === reviewId ? { ...r, body: editBody.trim(), rating: editRating } : r
+        )
+      );
+      setEditingContentId(null);
+      router.refresh();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteReview = async (reviewId: string) => {
+    if (!confirm("이 리뷰를 삭제할까요? 삭제 후 복구할 수 없습니다.")) return;
+    if (deletingId) return;
+    setDeletingId(reviewId);
+    try {
+      const res = await fetch(`/api/admin/reviews/${reviewId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "삭제에 실패했습니다.");
+        return;
+      }
+      setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+      router.refresh();
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <div className="space-y-8">
       <section>
@@ -92,6 +157,7 @@ export default function AdminListingReviewsClient({
                   <th className="py-2 px-3">평점</th>
                   <th className="py-2 px-3">내용</th>
                   <th className="py-2 px-3">작성일</th>
+                  <th className="py-2 px-3 whitespace-nowrap">관리</th>
                 </tr>
               </thead>
               <tbody>
@@ -144,12 +210,78 @@ export default function AdminListingReviewsClient({
                         </span>
                       )}
                     </td>
-                    <td className="py-2 px-3 whitespace-nowrap">★ {r.rating}</td>
-                    <td className="py-2 px-3 max-w-[420px]">
-                      <span className="line-clamp-2">{r.body}</span>
+                    <td className="py-2 px-3 whitespace-nowrap">
+                      {editingContentId === r.id ? (
+                        <select
+                          value={editRating}
+                          onChange={(e) => setEditRating(Number(e.target.value))}
+                          className="border border-minbak-light-gray rounded px-2 py-1 text-minbak-body"
+                        >
+                          {[1, 2, 3, 4, 5].map((n) => (
+                            <option key={n} value={n}>
+                              ★{n}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <>★ {r.rating}</>
+                      )}
                     </td>
-                    <td className="py-2 px-3 whitespace-nowrap text-minbak-caption text-minbak-gray">
+                    <td className="py-2 px-3 max-w-[420px] align-top">
+                      {editingContentId === r.id ? (
+                        <div className="space-y-2">
+                          <textarea
+                            value={editBody}
+                            onChange={(e) => setEditBody(e.target.value)}
+                            rows={4}
+                            className="w-full border border-minbak-light-gray rounded px-2 py-1.5 text-minbak-body"
+                            placeholder="리뷰 내용"
+                          />
+                          <span className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => saveContentAndRating(r.id)}
+                              disabled={saving}
+                              className="text-minbak-caption text-minbak-primary hover:underline disabled:opacity-50"
+                            >
+                              저장
+                            </button>
+                            <button
+                              type="button"
+                              onClick={cancelContentEdit}
+                              className="text-minbak-caption text-minbak-gray hover:underline"
+                            >
+                              취소
+                            </button>
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="line-clamp-2">{r.body}</span>
+                      )}
+                    </td>
+                    <td className="py-2 px-3 whitespace-nowrap text-minbak-caption text-minbak-gray align-top">
                       {formatDateShort(r.createdAt)}
+                    </td>
+                    <td className="py-2 px-3 whitespace-nowrap align-top">
+                      {editingContentId !== r.id && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => startContentEdit(r)}
+                            className="text-minbak-caption text-minbak-gray hover:text-minbak-primary block mb-1"
+                          >
+                            내용 편집
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteReview(r.id)}
+                            disabled={deletingId === r.id}
+                            className="text-minbak-caption text-red-600 hover:underline disabled:opacity-50 block"
+                          >
+                            {deletingId === r.id ? "삭제 중…" : "삭제"}
+                          </button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}
