@@ -258,6 +258,7 @@ export async function getListingById(id: string) {
     bedrooms: listing.bedrooms,
     beds: listing.beds,
     baths: listing.baths,
+    propertyType: listing.propertyType ?? "apartment",
     isPromoted: listing.isPromoted,
     cancellationPolicy: (listing.cancellationPolicy as "flexible" | "moderate" | "strict") || "flexible",
     houseRules: listing.houseRules ?? "",
