@@ -71,6 +71,30 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     );
   }
 
+  // authorDisplayName 수정 시 컬럼이 없을 수 있으므로 먼저 컬럼 추가 시도 (마이그레이션 미적용 DB 대응)
+  if (data.authorDisplayName !== undefined) {
+    try {
+      const isPostgres = process.env.DATABASE_URL?.includes("postgres");
+      if (isPostgres) {
+        await prisma.$executeRawUnsafe(
+          'ALTER TABLE "Review" ADD COLUMN IF NOT EXISTS "authorDisplayName" TEXT'
+        );
+      } else {
+        await prisma.$executeRawUnsafe(
+          'ALTER TABLE "Review" ADD COLUMN "authorDisplayName" TEXT'
+        );
+      }
+    } catch (alterErr: unknown) {
+      const msg = String((alterErr as { message?: string })?.message ?? "");
+      if (
+        !msg.includes("already exists") &&
+        !msg.includes("duplicate column name")
+      ) {
+        console.error("Admin review alter column error:", alterErr);
+      }
+    }
+  }
+
   try {
     await prisma.review.update({
       where: { id },
