@@ -80,6 +80,9 @@ DB 구조(테이블·컬럼)를 바꾸려면 Prisma 스키마를 수정한 뒤 �
 - **SQLite** 사용 시: `db:migrate` 가 로컬에 마이그레이션 파일과 DB를 갱신  
 - **Supabase(PostgreSQL)** 사용 시: 같은 명령으로 원격 DB에 반영 (연결 설정은 `.env`의 `DATABASE_URL`)
 
+**배포 환경 DB에 스키마만 반영할 때** (마이그레이션 없이 `schema.prisma`만 수정한 경우):  
+해당 환경의 `DATABASE_URL`로 `npx prisma db push`를 실행하면 컬럼 추가 등이 반영됩니다. (예: 숙소 타입 `propertyType` 추가 후 프로덕션 DB에 적용)
+
 ---
 
 ## 5. 시드 데이터 (초기 데이터 넣기)
