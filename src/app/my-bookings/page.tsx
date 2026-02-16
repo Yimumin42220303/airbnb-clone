@@ -148,12 +148,12 @@ export default async function MyBookingsPage() {
                           b.paymentStatus === "pending" &&
                           b.status !== "cancelled" && (
                           <span className="inline-block text-minbak-caption font-medium px-2.5 py-1 rounded-full bg-sky-100 text-sky-800">
-                            카드등록 · {b.scheduledPaymentDate
+                            {b.scheduledPaymentDate
                               ? b.scheduledPaymentDate.toLocaleDateString("ko-KR", {
                                   month: "long",
                                   day: "numeric",
-                                }) + " 자동결제"
-                              : "자동결제 예정"}
+                                }) + " 결제 예정"
+                              : "결제 예정"}
                           </span>
                         )}
                         {b.paymentStatus === "failed" && b.status !== "cancelled" && (

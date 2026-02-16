@@ -54,7 +54,7 @@ export default function PayButton({
             },
           });
           if (issueResult && issueResult.code) {
-            setError(issueResult.message || "카드 등록에 실패했습니다.");
+            setError(issueResult.message || "결제 수단 확인에 실패했습니다. 다시 시도해 주세요.");
             return;
           }
           if (issueResult && issueResult.billingKey) {
@@ -72,11 +72,11 @@ export default function PayButton({
               router.refresh();
               return;
             } else {
-              setError(bkData.error || "카드 등록 처리에 실패했습니다.");
+              setError(bkData.error || "예약 처리에 실패했습니다. 다시 시도해 주세요.");
               return;
             }
           }
-          setError("카드 등록이 취소되었거나 완료되지 않았습니다.");
+          setError("예약이 완료되지 않았습니다. 다시 시도해 주세요.");
         } else {
           // === 즉시 결제 방식 (기존 로직) ===
           const PortOne = await import("@portone/browser-sdk/v2");
@@ -136,8 +136,8 @@ export default function PayButton({
         </p>
       )}
       {isDeferred && (
-        <p className="text-[13px] text-blue-700 bg-blue-50 px-3 py-2 rounded-lg">
-          체크인 7일 전에 자동 결제됩니다. 카드만 등록하시면 예약이 확정됩니다.
+        <p className="text-[13px] text-[#717171]">
+          지금은 요금이 청구되지 않습니다. 체크인 7일 전에 결제가 진행됩니다.
         </p>
       )}
       <Button
@@ -150,7 +150,7 @@ export default function PayButton({
         {loading
           ? "처리 중..."
           : isDeferred
-            ? "카드 등록하기"
+            ? "예약 확정하기"
             : `₩${totalPrice.toLocaleString()} 결제하기`}
       </Button>
     </div>

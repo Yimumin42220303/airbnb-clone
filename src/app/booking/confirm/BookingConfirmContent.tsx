@@ -134,7 +134,7 @@ export default function BookingConfirmContent({
               },
             });
             if (issueResult && issueResult.code) {
-              setError(issueResult.message || "카드 등록에 실패했습니다. (" + issueResult.code + ")");
+              setError(issueResult.message || "결제 수단 확인에 실패했습니다. 다시 시도해 주세요.");
               await fetch(`/api/bookings/${data.id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
@@ -156,7 +156,7 @@ export default function BookingConfirmContent({
               if (bkRes.ok && bkData.ok) {
                 billingKeySuccess = true;
               } else {
-                setError(bkData.error || "카드 등록 처리에 실패했습니다.");
+                setError(bkData.error || "예약 처리에 실패했습니다. 다시 시도해 주세요.");
                 return;
               }
             }
@@ -169,7 +169,7 @@ export default function BookingConfirmContent({
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ status: "cancelled" }),
             });
-            setError("카드 등록이 취소되었거나 완료되지 않았습니다. 예약은 진행되지 않았습니다.");
+            setError("예약이 완료되지 않았습니다. 다시 시도해 주세요.");
             return;
           }
         } else {
@@ -490,7 +490,6 @@ export default function BookingConfirmContent({
 
               {/* 결제 수단 (포트원 KG이니시스) */}
               <div className="bg-white rounded-2xl border border-[#ebebeb] shadow-[0_1px_3px_rgba(0,0,0,0.08)] overflow-hidden">
-                {/* 테스트 모드 안내는 관리자에게만 표시 (PG 심사 시 노출 방지) */}
                 <div className="p-6 border-b border-[#ebebeb]">
                   <h2 className="text-[17px] font-semibold text-[#222] flex items-center gap-2">
                     <CreditCard className="w-5 h-5 text-[#717171]" />
@@ -502,20 +501,14 @@ export default function BookingConfirmContent({
                     <CreditCard className="w-5 h-5 text-[#E31C23] mt-0.5 flex-shrink-0" />
                     <div>
                       <span className="font-semibold text-[#222]">
-                        {isDeferred ? "카드 등록 (KG이니시스)" : "신용카드 결제 (KG이니시스)"}
+                        신용카드 결제 (KG이니시스)
                       </span>
                       <p className="mt-1 text-[13px] text-[#717171]">
-                        {isDeferred
-                          ? "카드 정보를 등록하면, 체크인 7일 전에 자동으로 결제됩니다. 그 전에 취소하시면 수수료 없이 전액 취소됩니다."
-                          : "결제하기 버튼 클릭 시 KG이니시스 결제창이 열립니다. 신용카드, 간편결제 등 다양한 결제 수단을 이용할 수 있습니다."}
+                        신용카드, 간편결제 등 다양한 결제 수단을 이용할 수 있습니다.
                       </p>
                       {isDeferred && (
-                        <p className="mt-2 text-[13px] font-medium text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg">
-                          자동 결제 예정일: {(() => {
-                            const d = new Date(checkIn + "T00:00:00");
-                            d.setDate(d.getDate() - 7);
-                            return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
-                          })()}
+                        <p className="mt-1.5 text-[13px] text-[#717171]">
+                          지금은 요금이 청구되지 않습니다. 체크인 7일 전에 결제가 진행됩니다.
                         </p>
                       )}
                       {!PORTONE_READY && (
@@ -542,18 +535,13 @@ export default function BookingConfirmContent({
                 </ul>
               </div>
 
-              {/* 결제하기 / 카드등록 */}
+              {/* 예약하기 / 결제하기 */}
               <div className="bg-white rounded-2xl border border-[#ebebeb] shadow-[0_1px_3px_rgba(0,0,0,0.08)] p-6 space-y-4">
                 {error && (
                   <p className="text-[14px] text-[#E31C23]" role="alert">
                     {error}
                   </p>
                 )}
-                <p className="text-[14px] text-[#222]">
-                  {isDeferred
-                    ? "아래 버튼을 누르면 카드 등록 화면이 열립니다."
-                    : "아래 결제하기를 누르면 KG이니시스 결제창이 열립니다."}
-                </p>
                 <button
                   type="submit"
                   disabled={loading || !PORTONE_READY}
@@ -562,12 +550,12 @@ export default function BookingConfirmContent({
                   {loading
                     ? "처리 중..."
                     : isDeferred
-                      ? "카드 등록하기"
+                      ? "예약하기"
                       : "₩" + totalPrice.toLocaleString() + " 결제하기"}
                 </button>
-                <p className="text-[13px] text-[#717171]">
+                <p className="text-[13px] text-[#717171] text-center">
                   {isDeferred
-                    ? "카드 등록 후 예약이 확정됩니다. 체크인 7일 전 자동 결제되며, 그 전 취소 시 수수료가 발생하지 않습니다."
+                    ? "예약 확정 후 취소 정책에 따라 무료 취소가 가능합니다."
                     : "결제 완료 후 예약이 확정됩니다. 취소 시 취소 정책에 따라 환불됩니다."}
                 </p>
               </div>
