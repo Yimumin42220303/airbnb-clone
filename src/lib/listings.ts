@@ -222,7 +222,7 @@ export async function getListingById(id: string) {
       return {
         rating: r.rating,
         body: r.body,
-        userName: r.user.name,
+        userName: r.authorDisplayName ?? r.user.name,
         createdAt: r.createdAt.toISOString(),
         membershipYears,
       };

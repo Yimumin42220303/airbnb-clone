@@ -29,12 +29,13 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     );
   }
 
-  const { rating, text } = body as {
+  const { rating, text, authorDisplayName } = body as {
     rating?: number;
     text?: string;
+    authorDisplayName?: string;
   };
 
-  const data: { rating?: number; body?: string | null } = {};
+  const data: { rating?: number; body?: string | null; authorDisplayName?: string | null } = {};
 
   if (rating !== undefined) {
     if (typeof rating !== "number" || rating < 1 || rating > 5) {
@@ -54,6 +55,13 @@ export async function PATCH(req: Request, { params }: RouteParams) {
       );
     }
     data.body = text.trim() || null;
+  }
+
+  if (authorDisplayName !== undefined) {
+    data.authorDisplayName =
+      typeof authorDisplayName === "string" && authorDisplayName.trim()
+        ? authorDisplayName.trim()
+        : null;
   }
 
   if (!Object.keys(data).length) {
