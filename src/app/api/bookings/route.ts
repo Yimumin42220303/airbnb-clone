@@ -119,6 +119,13 @@ export async function POST(request: Request) {
         const hostEmail = listing.user?.email;
         const isSameEmail = hostEmail && hostEmail === guestUser.email;
 
+        if (!hostEmail) {
+          console.warn(
+            "[Booking Email] 호스트 이메일이 없어 알림을 보내지 않습니다. listingId:",
+            listingId
+          );
+        }
+
         // Guest email (호스트와 같은 이메일이면 생략)
         if (!isSameEmail) {
           const guestMail = bookingConfirmationGuest(emailInfo);

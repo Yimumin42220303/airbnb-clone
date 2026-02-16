@@ -28,6 +28,12 @@ export type SendEmailParams = {
  */
 export async function sendEmail({ to, subject, html }: SendEmailParams) {
   if (!resend) {
+    console.warn(
+      "[Email] RESEND_API_KEY가 설정되지 않아 메일을 보내지 않습니다. To:",
+      to,
+      "| Subject:",
+      subject
+    );
     if (process.env.NODE_ENV === "development") {
       console.log("[Email Dev] To: " + to + " | Subject: " + subject);
     }
