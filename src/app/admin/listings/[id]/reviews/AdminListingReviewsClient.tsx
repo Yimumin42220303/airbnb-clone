@@ -4,6 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatDateShort } from "@/lib/date-utils";
 import AdminReviewForm from "@/components/listing/AdminReviewForm";
+import BulkReviewImport from "@/components/listing/BulkReviewImport";
+
+const BULK_JSON_EXAMPLE = `[
+  {"authorDisplayName":"김철수","rating":5,"body":"위치 좋고 깨끗해요.","createdAt":"2024-06-15"},
+  {"authorDisplayName":"Mario","rating":5,"body":"Great stay!","createdAt":"2024-07-01"}
+]`;
 
 export type ReviewItem = {
   id: string;
@@ -35,6 +41,9 @@ export default function AdminListingReviewsClient({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingDateId, setEditingDateId] = useState<string | null>(null);
   const [editDateValue, setEditDateValue] = useState("");
+  const [bulkText, setBulkText] = useState("");
+  const [bulkError, setBulkError] = useState("");
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   const displayName = (r: ReviewItem) => r.authorDisplayName ?? r.userName;
 
@@ -179,6 +188,79 @@ export default function AdminListingReviewsClient({
       setDeletingId(null);
     }
   };
+
+  function parseBulkInput(text: string): { authorDisplayName?: string; rating: number; body?: string; createdAt?: string }[] {
+    const trimmed = text.trim();
+    if (!trimmed) return [];
+    if (trimmed.startsWith("[")) {
+      try {
+        const arr = JSON.parse(trimmed) as unknown[];
+        return (arr || []).map((r) => {
+          if (r == null || typeof r !== "object") return null;
+          const o = r as Record<string, unknown>;
+          const rating = typeof o.rating === "number" ? o.rating : parseInt(String(o.rating ?? 0), 10);
+          if (isNaN(rating) || rating < 1 || rating > 5) return null;
+          return {
+            authorDisplayName: typeof o.authorDisplayName === "string" ? o.authorDisplayName.trim() || undefined : undefined,
+            rating,
+            body: typeof o.body === "string" ? o.body.trim() || undefined : undefined,
+            createdAt: typeof o.createdAt === "string" ? o.createdAt.trim() || undefined : undefined,
+          };
+        }).filter((x): x is NonNullable<typeof x> => x != null);
+      } catch {
+        return [];
+      }
+    }
+    const lines = trimmed.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+    const out: { authorDisplayName?: string; rating: number; body?: string; createdAt?: string }[] = [];
+    for (const line of lines) {
+      const parts = line.includes("\t") ? line.split("\t") : line.split("|").map((p) => p.trim());
+      if (parts.length < 2) continue;
+      const name = parts[0];
+      const rating = parseInt(parts[1], 10);
+      if (isNaN(rating) || rating < 1 || rating > 5) continue;
+      const date = parts[2];
+      const body = parts.slice(3).join("|").trim() || undefined;
+      out.push({
+        authorDisplayName: name || undefined,
+        rating,
+        body: body || undefined,
+        createdAt: date || undefined,
+      });
+    }
+    return out;
+  }
+
+  async function handleBulkImport() {
+    const items = parseBulkInput(bulkText);
+    if (items.length === 0) {
+      setBulkError("등록할 리뷰를 찾지 못했습니다. JSON 배열 또는 '이름|평점|날짜(YYYY-MM-DD)|내용' 한 줄당 1개 형식을 확인해 주세요.");
+      return;
+    }
+    setBulkError("");
+    setBulkLoading(true);
+    try {
+      const res = await fetch(`/api/admin/listings/${listingId}/reviews/import`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews: items }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setBulkError(data.error || "가져오기에 실패했습니다.");
+        return;
+      }
+      setBulkText("");
+      router.refresh();
+      alert(`${data.imported ?? items.length}개 리뷰를 등록했습니다.`);
+    } catch {
+      setBulkError("네트워크 오류가 발생했습니다.");
+    } finally {
+      setBulkLoading(false);
+    }
+  }
+
+  const bulkParsedCount = parseBulkInput(bulkText).length;
 
   return (
     <div className="space-y-8">
@@ -366,6 +448,13 @@ export default function AdminListingReviewsClient({
             </table>
           </div>
         )}
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-minbak-body font-semibold text-minbak-black mb-3">
+          리뷰 일괄 가져오기
+        </h2>
+        <BulkReviewImport listingId={listingId} />
       </section>
 
       <section>

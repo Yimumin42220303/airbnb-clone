@@ -115,3 +115,67 @@ export async function createReview(
     },
   };
 }
+
+export type BulkReviewItem = {
+  authorDisplayName?: string | null;
+  rating: number;
+  body?: string | null;
+  createdAt?: string | null;
+};
+
+/**
+ * 관리자 전용: 여러 리뷰를 한 번에 등록 (Airbnb 등 외부에서 복사한 리뷰 일괄 입력용)
+ */
+export async function createReviewsBulk(
+  listingId: string,
+  userId: string,
+  items: BulkReviewItem[]
+) {
+  const listing = await prisma.listing.findUnique({
+    where: { id: listingId },
+  });
+  if (!listing) {
+    return { ok: false as const, error: "숙소를 찾을 수 없습니다." };
+  }
+
+  const { allowed, reason, isAdmin } = await canUserReview(listingId, userId);
+  if (!allowed || !isAdmin) {
+    return { ok: false as const, error: reason ?? "관리자만 일괄 등록할 수 있습니다." };
+  }
+
+  const valid = items.filter(
+    (r) => typeof r.rating === "number" && r.rating >= 1 && r.rating <= 5
+  );
+  if (valid.length === 0) {
+    return { ok: false as const, error: "유효한 리뷰(평점 1~5)가 없습니다." };
+  }
+
+  const created = await prisma.$transaction(
+    valid.map((r) =>
+      prisma.review.create({
+        data: {
+          listingId,
+          userId,
+          rating: r.rating,
+          body: typeof r.body === "string" && r.body.trim() ? r.body.trim() : null,
+          authorDisplayName:
+            typeof r.authorDisplayName === "string" && r.authorDisplayName.trim()
+              ? r.authorDisplayName.trim()
+              : null,
+          createdAt: r.createdAt
+            ? (() => {
+                const d = new Date(r.createdAt);
+                return isNaN(d.getTime()) ? undefined : d;
+              })()
+            : undefined,
+        },
+      })
+    )
+  );
+
+  return {
+    ok: true as const,
+    count: created.length,
+    ids: created.map((r) => r.id),
+  };
+}
