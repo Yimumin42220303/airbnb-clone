@@ -33,8 +33,13 @@ export default function AdminListingReviewsClient({
   const [editRating, setEditRating] = useState(5);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingDateId, setEditingDateId] = useState<string | null>(null);
+  const [editDateValue, setEditDateValue] = useState("");
 
   const displayName = (r: ReviewItem) => r.authorDisplayName ?? r.userName;
+
+  const toDateInputValue = (iso: string) =>
+    new Date(iso).toISOString().slice(0, 10);
 
   const startEdit = (r: ReviewItem) => {
     setEditingId(r.id);
@@ -112,6 +117,43 @@ export default function AdminListingReviewsClient({
         )
       );
       setEditingContentId(null);
+      router.refresh();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const startDateEdit = (r: ReviewItem) => {
+    setEditingDateId(r.id);
+    setEditDateValue(toDateInputValue(r.createdAt));
+  };
+
+  const cancelDateEdit = () => {
+    setEditingDateId(null);
+    setEditDateValue("");
+  };
+
+  const saveDate = async (reviewId: string) => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/reviews/${reviewId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ publishedAt: editDateValue }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "저장에 실패했습니다.");
+        return;
+      }
+      setReviews((prev) =>
+        prev.map((r) =>
+          r.id === reviewId ? { ...r, createdAt: editDateValue + "T12:00:00.000Z" } : r
+        )
+      );
+      setEditingDateId(null);
+      setEditDateValue("");
       router.refresh();
     } finally {
       setSaving(false);
@@ -260,7 +302,42 @@ export default function AdminListingReviewsClient({
                       )}
                     </td>
                     <td className="py-2 px-3 whitespace-nowrap text-minbak-caption text-minbak-gray align-top">
-                      {formatDateShort(r.createdAt)}
+                      {editingDateId === r.id ? (
+                        <span className="flex items-center gap-2">
+                          <input
+                            type="date"
+                            value={editDateValue}
+                            onChange={(e) => setEditDateValue(e.target.value)}
+                            className="border border-minbak-light-gray rounded px-2 py-1 text-minbak-body"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => saveDate(r.id)}
+                            disabled={saving}
+                            className="text-minbak-caption text-minbak-primary hover:underline disabled:opacity-50"
+                          >
+                            저장
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelDateEdit}
+                            className="text-minbak-caption text-minbak-gray hover:underline"
+                          >
+                            취소
+                          </button>
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1.5">
+                          {formatDateShort(r.createdAt)}
+                          <button
+                            type="button"
+                            onClick={() => startDateEdit(r)}
+                            className="text-minbak-caption text-minbak-gray hover:text-minbak-primary"
+                          >
+                            편집
+                          </button>
+                        </span>
+                      )}
                     </td>
                     <td className="py-2 px-3 whitespace-nowrap align-top">
                       {editingContentId !== r.id && (

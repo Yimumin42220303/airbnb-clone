@@ -29,13 +29,19 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     );
   }
 
-  const { rating, text, authorDisplayName } = body as {
+  const { rating, text, authorDisplayName, publishedAt } = body as {
     rating?: number;
     text?: string;
     authorDisplayName?: string;
+    publishedAt?: string;
   };
 
-  const data: { rating?: number; body?: string | null; authorDisplayName?: string | null } = {};
+  const data: {
+    rating?: number;
+    body?: string | null;
+    authorDisplayName?: string | null;
+    createdAt?: Date;
+  } = {};
 
   if (rating !== undefined) {
     if (typeof rating !== "number" || rating < 1 || rating > 5) {
@@ -62,6 +68,18 @@ export async function PATCH(req: Request, { params }: RouteParams) {
       typeof authorDisplayName === "string" && authorDisplayName.trim()
         ? authorDisplayName.trim()
         : null;
+  }
+
+  if (publishedAt !== undefined && typeof publishedAt === "string") {
+    const d = new Date(publishedAt.trim());
+    if (!isNaN(d.getTime())) {
+      data.createdAt = d;
+    } else {
+      return NextResponse.json(
+        { error: "게시일 형식이 올바르지 않습니다. (예: 2026-02-16)" },
+        { status: 400 }
+      );
+    }
   }
 
   if (!Object.keys(data).length) {
