@@ -118,42 +118,52 @@ export default function HostListingsContent({ listings, userId, isAdmin }: Props
                   </li>
                 ))}
               </ul>
-              <div className="hidden md:block border border-minbak-light-gray rounded-minbak bg-white overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left">
+              <div className="hidden md:block border border-minbak-light-gray rounded-minbak bg-white overflow-hidden w-full max-w-full">
+                <div className="w-full max-w-full">
+                  <table className="w-full text-left table-fixed">
+                    <colgroup>
+                      <col style={{ width: "26%" }} />
+                      <col style={{ width: "8%" }} />
+                      <col style={{ width: "22%" }} />
+                      <col style={{ width: "12%" }} />
+                      <col style={{ width: "20%" }} />
+                      <col style={{ width: "12%" }} />
+                    </colgroup>
                     <thead>
                       <tr className="border-b border-minbak-light-gray bg-minbak-bg/50">
-                        <th className="py-3 px-4 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide">{t("listings.listing")}</th>
-                        <th className="py-3 px-4 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide whitespace-nowrap min-w-[4rem]">{t("listings.type")}</th>
-                        <th className="py-3 px-4 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide whitespace-nowrap min-w-[200px]">{t("listings.location")}</th>
-                        <th className="py-3 px-4 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide whitespace-nowrap min-w-[5rem]">{t("listings.status")}</th>
-                        <th className="py-3 px-4 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide whitespace-nowrap min-w-[5.5rem]">{t("listings.syncStatus")}</th>
-                        <th className="py-3 px-4 w-0" aria-label="액션" />
+                        <th className="py-3 px-3 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide">{t("listings.listing")}</th>
+                        <th className="py-3 px-3 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide whitespace-nowrap">{t("listings.type")}</th>
+                        <th className="py-3 px-3 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide">{t("listings.location")}</th>
+                        <th className="py-3 px-3 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide whitespace-nowrap">{t("listings.status")}</th>
+                        <th className="py-3 px-3 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide whitespace-nowrap">{t("listings.syncStatus")}</th>
+                        <th className="py-3 px-3 w-[12%]" aria-label="액션" />
                       </tr>
                     </thead>
                     <tbody>
                       {listings.map((l) => (
                         <tr key={l.id} className="border-b border-minbak-light-gray last:border-b-0 hover:bg-minbak-bg/30 transition-colors">
-                          <td className="py-3 px-4">
-                            <Link href={`/listing/${l.id}`} className="flex items-center gap-3 min-w-0 group">
-                              <div className="relative w-14 h-14 flex-shrink-0 rounded overflow-hidden bg-minbak-light-gray">
-                                <Image src={l.imageUrl} alt="" fill className="object-cover" sizes="56px" />
+                          <td className="py-3 px-3 align-middle">
+                            <Link href={`/listing/${l.id}`} className="flex items-center gap-2 min-w-0 group">
+                              <div className="relative w-12 h-12 flex-shrink-0 rounded overflow-hidden bg-minbak-light-gray">
+                                <Image src={l.imageUrl} alt="" fill className="object-cover" sizes="48px" />
                               </div>
-                              <div className="min-w-0">
-                                <p className="font-medium text-minbak-black truncate group-hover:underline">{l.title}</p>
+                              <div className="min-w-0 flex-1 overflow-hidden">
+                                <p className="font-medium text-minbak-black text-[14px] truncate group-hover:underline">{l.title}</p>
                                 <p className="text-minbak-caption text-minbak-gray truncate">{l.location}</p>
                               </div>
                             </Link>
                           </td>
-                          <td className="py-3 px-4 text-minbak-body text-minbak-black whitespace-nowrap">{t("listings.accommodation")}</td>
-                          <td className="py-3 px-4 text-minbak-body text-minbak-black align-top leading-relaxed min-w-[200px] max-w-[320px]">{l.location}</td>
-                          <td className="py-3 px-4 whitespace-nowrap">
+                          <td className="py-3 px-3 text-minbak-body text-minbak-black whitespace-nowrap align-middle">{t("listings.accommodation")}</td>
+                          <td className="py-3 px-3 text-minbak-body text-minbak-black align-top leading-relaxed overflow-hidden">
+                            <span className="line-clamp-2 break-words">{l.location}</span>
+                          </td>
+                          <td className="py-3 px-3 whitespace-nowrap align-middle">
                             <span className="inline-flex items-center gap-1.5 text-minbak-body text-minbak-black">
                               <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" aria-hidden />
                               {t("listings.published")}
                             </span>
                           </td>
-                          <td className="py-3 px-4 whitespace-nowrap">
+                          <td className="py-3 px-3 whitespace-nowrap align-middle overflow-hidden">
                             {hasIcalSync(l.icalImportUrls) ? (
                               <span className="inline-flex items-center gap-1.5 text-minbak-body text-minbak-black">
                                 <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" aria-hidden />
@@ -163,10 +173,10 @@ export default function HostListingsContent({ listings, userId, isAdmin }: Props
                               <span className="text-minbak-caption text-minbak-gray">—</span>
                             )}
                           </td>
-                          <td className="py-3 px-4">
+                          <td className="py-3 px-3 align-middle">
                             <Link
                               href={`/host/listings/${l.id}/edit`}
-                              className="min-h-[44px] flex items-center px-3 py-2 text-minbak-body text-minbak-black hover:underline border border-minbak-light-gray rounded-minbak hover:bg-minbak-bg transition-colors"
+                              className="inline-flex items-center min-h-[40px] px-3 py-2 text-[14px] text-minbak-black hover:underline border border-minbak-light-gray rounded-minbak hover:bg-minbak-bg transition-colors whitespace-nowrap"
                             >
                               {t("listings.edit")}
                             </Link>
