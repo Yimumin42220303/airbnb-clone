@@ -324,6 +324,9 @@ export default function ListingDetailContent({
                       </span>
                     )}
                   </div>
+                  <p className="mt-1.5 text-[13px] text-[#717171]">
+                    타 플랫폼에서의 리뷰도 같이 표시됩니다
+                  </p>
                 </div>
                 {listing.reviews.length > 0 ? (
                   <ul className="divide-y divide-[#ebebeb]">
