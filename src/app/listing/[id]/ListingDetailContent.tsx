@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { MapPin, ChevronDown, ChevronUp, MessageCircle } from "lucide-react";
+import { MapPin, ChevronDown, ChevronUp } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import BookingForm from "@/components/listing/BookingForm";
 import ListingImageGallery from "@/components/listing/ListingImageGallery";
@@ -303,13 +302,6 @@ export default function ListingDetailContent({
                       <p className="text-[14px] text-[#717171] mt-1 leading-relaxed">
                         궁금한 점이 있으시면 언제든 문의해 주세요. 빠르게 답변드리겠습니다.
                       </p>
-                      <Link
-                        href="/messages"
-                        className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 rounded-full border border-[#222] text-[14px] font-medium text-[#222] hover:bg-[#f7f7f7] active:scale-[0.98] transition-all"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                        호스트에게 연락하기
-                      </Link>
                     </div>
                   </div>
                 </DetailSection>
