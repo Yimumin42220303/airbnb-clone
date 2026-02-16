@@ -29,6 +29,12 @@ export default function HostLocaleProvider({
     if (value === "ja" || value === "ko") setLocaleState(value);
   }, []);
 
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = locale === "ja" ? "ja" : "ko";
+    }
+  }, [locale]);
+
   const setLocale = useCallback((newLocale: HostLocale) => {
     setLocaleState(newLocale);
     document.cookie = `${COOKIE_NAME}=${newLocale}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
