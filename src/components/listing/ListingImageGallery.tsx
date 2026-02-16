@@ -234,9 +234,21 @@ function AllPhotosOverlay({
   title: string;
   onClose: () => void;
 }) {
+  // 이미지별 실제 비율 저장 (로드 후) — 세로 사진은 세로로 길게 표시
+  const [aspects, setAspects] = useState<Record<number, { w: number; h: number }>>({});
+
+  const handleLoad = (index: number, e: React.SyntheticEvent<HTMLImageElement>) => {
+    const target = e.target as HTMLImageElement;
+    const w = target.naturalWidth;
+    const h = target.naturalHeight;
+    if (w && h) {
+      setAspects((prev) => ({ ...prev, [index]: { w, h } }));
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[10000] bg-white flex flex-col">
-      <header className="flex items-center justify-between px-4 md:px-10 py-4 border-b border-minbak-light-gray">
+      <header className="flex items-center justify-between px-4 md:px-10 py-4 border-b border-minbak-light-gray shrink-0">
         <button
           type="button"
           onClick={onClose}
@@ -255,31 +267,34 @@ function AllPhotosOverlay({
         </div>
         <div className="w-8 h-8" aria-hidden />
       </header>
-      <div className="flex-1 overflow-y-auto px-4 md:px-6 lg:px-10 py-4 md:py-6 lg:py-8">
-        <div className="w-full max-w-7xl mx-auto">
-          <div
-            className="grid gap-4 md:gap-5 lg:gap-6"
-            style={{
-              gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 380px), 1fr))",
-            }}
-          >
-            {images.map((img, index) => (
+      <div className="flex-1 overflow-y-auto px-4 md:px-6 lg:px-10 py-4 md:py-6 lg:py-8 min-h-0">
+        <div
+          className="w-full max-w-7xl mx-auto columns-2 md:columns-3 lg:columns-4 [column-gap:1rem] md:[column-gap:1.25rem] lg:[column-gap:1.5rem]"
+          style={{ columnFill: "balance" as const }}
+        >
+          {images.map((img, index) => {
+            const ratio = aspects[index];
+            const aspectStyle = ratio
+              ? { aspectRatio: `${ratio.w} / ${ratio.h}` }
+              : { aspectRatio: "4/3" };
+            return (
               <div
                 key={img.id ?? `${img.url}-${index}`}
-                className="relative w-full overflow-hidden rounded-xl bg-minbak-light-gray"
+                className="break-inside-avoid w-full mb-4 md:mb-5 lg:mb-6 overflow-hidden rounded-xl bg-minbak-light-gray"
               >
-                <div className="relative aspect-[4/3]">
+                <div className="relative w-full" style={aspectStyle}>
                   <Image
                     src={img.url}
                     alt={`${title} 추가 사진 ${index + 1}`}
                     fill
                     className="object-cover"
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, min(380px, 50vw)"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    onLoad={(e) => handleLoad(index, e)}
                   />
                 </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </div>
     </div>
