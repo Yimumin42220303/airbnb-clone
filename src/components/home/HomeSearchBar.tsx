@@ -7,7 +7,6 @@ import { formatDateDisplay } from "@/lib/date-utils";
 import FramerDateRangePicker from "@/components/search/FramerDateRangePicker";
 import FramerGuestPicker, {
   defaultGuestCounts,
-  formatGuestLabel,
   type GuestCounts,
 } from "@/components/search/FramerGuestPicker";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
@@ -114,7 +113,9 @@ export default function HomeSearchBar({
           <span className="text-[11px] md:text-minbak-caption text-minbak-gray block">{t("guest.guests")}</span>
           <span className="text-minbak-body font-medium text-minbak-black truncate w-full">
             {guests.adult + guests.child + guests.infant > 0
-              ? formatGuestLabel(guests)
+              ? (guests.infant > 0
+                  ? t("guest.guestCountWithInfant", { total: String(guests.adult + guests.child), infant: String(guests.infant) })
+                  : t("guest.guestCount", { total: String(guests.adult + guests.child) }))
               : t("guest.addGuests")}
           </span>
         </button>
