@@ -124,10 +124,10 @@ export default function HostListingsContent({ listings, userId, isAdmin }: Props
                     <thead>
                       <tr className="border-b border-minbak-light-gray bg-minbak-bg/50">
                         <th className="py-3 px-4 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide">{t("listings.listing")}</th>
-                        <th className="py-3 px-4 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide whitespace-nowrap">{t("listings.type")}</th>
+                        <th className="py-3 px-4 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide whitespace-nowrap min-w-[4rem]">{t("listings.type")}</th>
                         <th className="py-3 px-4 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide whitespace-nowrap min-w-[200px]">{t("listings.location")}</th>
-                        <th className="py-3 px-4 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide whitespace-nowrap">{t("listings.status")}</th>
-                        <th className="py-3 px-4 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide whitespace-nowrap">{t("listings.syncStatus")}</th>
+                        <th className="py-3 px-4 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide whitespace-nowrap min-w-[5rem]">{t("listings.status")}</th>
+                        <th className="py-3 px-4 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide whitespace-nowrap min-w-[5.5rem]">{t("listings.syncStatus")}</th>
                         <th className="py-3 px-4 w-0" aria-label="액션" />
                       </tr>
                     </thead>
@@ -145,18 +145,18 @@ export default function HostListingsContent({ listings, userId, isAdmin }: Props
                               </div>
                             </Link>
                           </td>
-                          <td className="py-3 px-4 text-minbak-body text-minbak-black">{t("listings.accommodation")}</td>
+                          <td className="py-3 px-4 text-minbak-body text-minbak-black whitespace-nowrap">{t("listings.accommodation")}</td>
                           <td className="py-3 px-4 text-minbak-body text-minbak-black align-top leading-relaxed min-w-[200px] max-w-[320px]">{l.location}</td>
-                          <td className="py-3 px-4">
+                          <td className="py-3 px-4 whitespace-nowrap">
                             <span className="inline-flex items-center gap-1.5 text-minbak-body text-minbak-black">
-                              <span className="w-2 h-2 rounded-full bg-green-500" aria-hidden />
+                              <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" aria-hidden />
                               {t("listings.published")}
                             </span>
                           </td>
-                          <td className="py-3 px-4">
+                          <td className="py-3 px-4 whitespace-nowrap">
                             {hasIcalSync(l.icalImportUrls) ? (
                               <span className="inline-flex items-center gap-1.5 text-minbak-body text-minbak-black">
-                                <span className="w-2 h-2 rounded-full bg-green-500" aria-hidden />
+                                <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" aria-hidden />
                                 {t("listings.syncComplete")}
                               </span>
                             ) : (
