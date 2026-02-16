@@ -33,7 +33,7 @@ export default async function ConversationPage({ params }: Props) {
     return (
       <>
         <Header />
-        <main className="min-h-screen pt-24 px-6">
+        <main className="min-h-screen pt-24 px-4 sm:px-6">
           <div className="max-w-[600px] mx-auto py-8">
             <p className="text-minbak-body text-minbak-gray">
               로그인하면 대화를 볼 수 있습니다.{" "}
@@ -77,7 +77,7 @@ export default async function ConversationPage({ params }: Props) {
   return (
     <>
       <Header />
-      <main className="min-h-screen pt-24 px-6">
+      <main className="min-h-screen pt-24 px-4 sm:px-6">
         <div className="max-w-[600px] mx-auto py-8">
           <div className="mb-4">
             <Link

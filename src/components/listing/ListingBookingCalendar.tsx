@@ -300,24 +300,24 @@ export default function ListingBookingCalendar({
               </p>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-3 shrink-0">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 shrink-0 min-w-0">
             <div
-              className={`flex flex-col gap-1 px-3 py-2 border rounded-lg min-w-[140px] ${
+              className={`flex flex-col gap-1 px-2 sm:px-3 py-2 border rounded-lg min-w-0 ${
                 selectingCheckIn ? "border-[#222]" : "border-[#ebebeb]"
               }`}
             >
-              <span className="text-[12px] text-[#717171]">체크인</span>
-              <span className="text-[14px] text-[#222]">
+              <span className="text-[11px] sm:text-[12px] text-[#717171]">체크인</span>
+              <span className="text-[13px] sm:text-[14px] text-[#222] truncate">
                 {checkIn ? formatDisplayDate(checkIn) : "날짜 추가"}
               </span>
             </div>
             <div
-              className={`flex flex-col gap-1 px-3 py-2 border rounded-lg min-w-[140px] ${
+              className={`flex flex-col gap-1 px-2 sm:px-3 py-2 border rounded-lg min-w-0 ${
                 !selectingCheckIn && start ? "border-[#222]" : "border-[#ebebeb]"
               }`}
             >
-              <span className="text-[12px] text-[#717171]">체크아웃</span>
-              <span className="text-[14px] text-[#222]">
+              <span className="text-[11px] sm:text-[12px] text-[#717171]">체크아웃</span>
+              <span className="text-[13px] sm:text-[14px] text-[#222] truncate">
                 {checkOut ? formatDisplayDate(checkOut) : "날짜 추가"}
               </span>
             </div>
@@ -359,8 +359,9 @@ export default function ListingBookingCalendar({
         </div>
       </div>
 
-      {/* 캘린더 그리드 */}
-      <div className="px-4 pb-4 flex gap-6 min-w-[480px]">
+      {/* 캘린더 그리드 (모바일: 가로 스크롤) */}
+      <div className="px-4 pb-4 overflow-x-auto scrollbar-hide -mx-4 sm:mx-0 sm:overflow-visible">
+        <div className="flex gap-6 min-w-max sm:min-w-0 w-max sm:w-full">
         {months.map((mon, idx) => (
           <MonthBlock
             key={idx}
@@ -375,6 +376,7 @@ export default function ListingBookingCalendar({
             selectingCheckout={!!start && !end}
           />
         ))}
+        </div>
       </div>
 
       {/* 하단 버튼: 날짜 지우기, 닫기 */}

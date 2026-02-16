@@ -47,7 +47,7 @@ export default async function WishlistPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen pt-24 px-6">
+      <main className="min-h-screen pt-24 px-4 sm:px-6">
         <div className="max-w-[1760px] mx-auto py-8">
           <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
             위시리스트

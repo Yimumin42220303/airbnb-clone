@@ -21,6 +21,7 @@ export const viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
@@ -54,7 +55,9 @@ export default function RootLayout({
         <ErrorBoundary>
           <SessionProvider>
             <HostLocaleProvider>
-              {children}
+              <div className="pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-0">
+                {children}
+              </div>
               <BottomNav />
               <Toaster />
             </HostLocaleProvider>
