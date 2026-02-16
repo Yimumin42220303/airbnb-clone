@@ -4,11 +4,35 @@ import AdminListingReviewsClient from "./AdminListingReviewsClient";
 
 type RouteParams = { params: Promise<{ id: string }> | { id: string } };
 
+/** 리뷰 표시이름 컬럼이 없으면 추가 (마이그레이션 미적용 DB에서도 표시이름 조회 가능하도록) */
+async function ensureReviewAuthorDisplayNameColumn() {
+  try {
+    const isPostgres = process.env.DATABASE_URL?.includes("postgres");
+    if (isPostgres) {
+      await prisma.$executeRawUnsafe(
+        'ALTER TABLE "Review" ADD COLUMN IF NOT EXISTS "authorDisplayName" TEXT'
+      );
+    } else {
+      await prisma.$executeRawUnsafe(
+        'ALTER TABLE "Review" ADD COLUMN "authorDisplayName" TEXT'
+      );
+    }
+  } catch (e: unknown) {
+    const msg = String((e as { message?: string })?.message ?? "");
+    if (msg.includes("already exists") || msg.includes("duplicate column name")) {
+      /* 컬럼 이미 있음 */
+    } else {
+      throw e;
+    }
+  }
+}
+
 export default async function AdminListingReviewsPage({ params }: RouteParams) {
   const resolved = await Promise.resolve(params);
   const listingId = resolved.id;
 
-  // Review는 select로 필요한 컬럼만 조회 (authorDisplayName 제외 시 컬럼 미존재 DB에서도 동작)
+  await ensureReviewAuthorDisplayNameColumn();
+
   const listing = await prisma.listing.findUnique({
     where: { id: listingId },
     include: {
@@ -19,6 +43,7 @@ export default async function AdminListingReviewsPage({ params }: RouteParams) {
           rating: true,
           body: true,
           createdAt: true,
+          authorDisplayName: true,
           user: { select: { name: true, email: true } },
         },
       },
@@ -47,7 +72,7 @@ export default async function AdminListingReviewsPage({ params }: RouteParams) {
     body: r.body ?? "",
     createdAt: r.createdAt.toISOString(),
     userName: r.user.name || r.user.email || "게스트",
-    authorDisplayName: (r as { authorDisplayName?: string | null }).authorDisplayName ?? null,
+    authorDisplayName: r.authorDisplayName ?? null,
   }));
 
   return (
