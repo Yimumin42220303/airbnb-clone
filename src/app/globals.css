@@ -65,6 +65,13 @@ textarea:focus-visible {
   display: none;
 }
 
+/* 모바일: fixed 요소 스크롤 시 위치 고정 (GPU 합성 레이어) */
+.fixed-contact-stable {
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
 /* 모바일: input/select/textarea 최소 16px → iOS 포커스 시 자동 줌 방지 */
 @media (max-width: 639px) {
   input,
