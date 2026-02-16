@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { createReview } from "@/lib/reviews";
 
 /**
@@ -26,6 +27,7 @@ export async function POST(
     const body = await request.json();
     const rating = body.rating;
     const reviewBody = body.body;
+    const authorDisplayName = body.authorDisplayName;
 
     if (rating == null || typeof rating !== "number") {
       return NextResponse.json(
@@ -34,11 +36,35 @@ export async function POST(
       );
     }
 
+    if (typeof authorDisplayName === "string" && authorDisplayName.trim()) {
+      try {
+        const isPostgres = process.env.DATABASE_URL?.includes("postgres");
+        if (isPostgres) {
+          await prisma.$executeRawUnsafe(
+            'ALTER TABLE "Review" ADD COLUMN IF NOT EXISTS "authorDisplayName" TEXT'
+          );
+        } else {
+          await prisma.$executeRawUnsafe(
+            'ALTER TABLE "Review" ADD COLUMN "authorDisplayName" TEXT'
+          );
+        }
+      } catch (alterErr: unknown) {
+        const msg = String((alterErr as { message?: string })?.message ?? "");
+        if (
+          !msg.includes("already exists") &&
+          !msg.includes("duplicate column name")
+        ) {
+          console.error("Review authorDisplayName column ensure error:", alterErr);
+        }
+      }
+    }
+
     const result = await createReview(
       listingId,
       userId,
       rating,
-      typeof reviewBody === "string" ? reviewBody : undefined
+      typeof reviewBody === "string" ? reviewBody : undefined,
+      typeof authorDisplayName === "string" ? authorDisplayName : undefined
     );
 
     if (!result.ok) {
