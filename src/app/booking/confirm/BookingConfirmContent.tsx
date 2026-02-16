@@ -310,9 +310,6 @@ export default function BookingConfirmContent({
                     <h2 className="text-[17px] font-semibold text-[#222] flex items-center gap-2">
                       <Shield className="w-5 h-5 text-[#717171]" />
                       취소 정책
-                      <span className={`text-[12px] font-semibold px-2 py-0.5 rounded-full ${info.color}`}>
-                        {info.label}
-                      </span>
                     </h2>
                   </div>
                   <ul className="p-6 space-y-2 text-[14px] text-[#222]">
