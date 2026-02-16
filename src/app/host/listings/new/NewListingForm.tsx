@@ -37,6 +37,7 @@ export default function NewListingForm({ amenities, categories: initialCategorie
     amenityIds: [] as string[],
     isPromoted: false,
     cancellationPolicy: "flexible",
+    propertyType: "apartment" as "apartment" | "detached_house",
   });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -134,6 +135,7 @@ export default function NewListingForm({ amenities, categories: initialCategorie
           amenityIds: form.amenityIds.length > 0 ? form.amenityIds : undefined,
           isPromoted: form.isPromoted,
           cancellationPolicy: form.cancellationPolicy,
+          propertyType: form.propertyType,
         }),
       });
       let data;
@@ -227,6 +229,33 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                 className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 required
               />
+            </label>
+            <label className="block">
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">
+                숙소 타입
+              </span>
+              <div className="flex gap-4 mt-1">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="propertyType"
+                    checked={form.propertyType === "apartment"}
+                    onChange={() => setForm((f) => ({ ...f, propertyType: "apartment" }))}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-minbak-body">아파트</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="propertyType"
+                    checked={form.propertyType === "detached_house"}
+                    onChange={() => setForm((f) => ({ ...f, propertyType: "detached_house" }))}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-minbak-body">단독주택</span>
+                </label>
+              </div>
             </label>
             <label className="block">
               <span className="text-minbak-body font-medium text-minbak-black block mb-1">

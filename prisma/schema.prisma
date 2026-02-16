@@ -127,6 +127,8 @@ model Listing {
   cancellationPolicy String @default("flexible")
   /// 주의사항 (줄바꿈으로 구분, 각 줄이 하나의 항목)
   houseRules  String?  @default("")
+  /// 숙소 타입: "detached_house"(단독주택) | "apartment"(아파트)
+  propertyType String? @default("apartment")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

@@ -99,6 +99,7 @@ export default async function EditListingPage({ params }: Props) {
         isPromoted: listing.isPromoted ?? false,
         cancellationPolicy: listing.cancellationPolicy ?? "flexible",
         houseRules: listing.houseRules ?? "",
+        propertyType: listing.propertyType === "detached_house" ? "detached_house" : "apartment",
       }}
     />
   );
