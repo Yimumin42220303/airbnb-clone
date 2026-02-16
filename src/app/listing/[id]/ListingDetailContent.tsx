@@ -328,13 +328,6 @@ export default function ListingDetailContent({
                   </p>
                 </DetailSection>
 
-                {/* 6. 취소 환불 규정 */}
-                <DetailSection title="취소 환불 규정">
-                  <p className="text-[15px] text-[#222] leading-relaxed">
-                    체크인 30일 전까지 무료 취소, 29~8일 전 50% 환불, 7일 전 30% 환불, 당일·노쇼 시 환불 불가입니다. 자세한 내용은 예약 확정 전 안내를 확인해 주세요.
-                  </p>
-                </DetailSection>
-
                 {/* 호스트 */}
                 <DetailSection title="호스트 소개">
                   <div className="flex items-start gap-5">
