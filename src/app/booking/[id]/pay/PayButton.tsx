@@ -6,10 +6,10 @@ import { Button } from "@/components/ui";
 
 const PORTONE_STORE_ID = process.env.NEXT_PUBLIC_PORTONE_STORE_ID ?? "";
 const PORTONE_CHANNEL_KEY = process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY ?? "";
-const PORTONE_BILLING_CHANNEL_KEY =
-  process.env.NEXT_PUBLIC_PORTONE_BILLING_CHANNEL_KEY ?? "";
 const PORTONE_READY = !!(PORTONE_STORE_ID && PORTONE_CHANNEL_KEY);
-const BILLING_KEY_ENABLED = !!(PORTONE_BILLING_CHANNEL_KEY);
+// 빌링키(후불결제)는 정식 서비스 릴리스 시 도입 예정. 현재는 즉시결제만 지원
+const BILLING_KEY_ENABLED = false;
+const PORTONE_BILLING_CHANNEL_KEY = process.env.NEXT_PUBLIC_PORTONE_BILLING_CHANNEL_KEY ?? "";
 
 export default function PayButton({
   bookingId,

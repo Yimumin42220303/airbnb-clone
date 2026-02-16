@@ -17,13 +17,13 @@ import { formatDateKR } from "@/lib/date-utils";
 const PORTONE_STORE_ID = process.env.NEXT_PUBLIC_PORTONE_STORE_ID ?? "";
 const PORTONE_CHANNEL_KEY =
   process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY ?? "";
-const PORTONE_BILLING_CHANNEL_KEY =
-  process.env.NEXT_PUBLIC_PORTONE_BILLING_CHANNEL_KEY ?? "";
 const PORTONE_READY = !!(
   PORTONE_STORE_ID &&
   PORTONE_CHANNEL_KEY
 );
-const BILLING_KEY_ENABLED = !!(PORTONE_BILLING_CHANNEL_KEY);
+// 빌링키(후불결제)는 정식 서비스 릴리스 시 도입 예정. 현재는 즉시결제만 지원
+const BILLING_KEY_ENABLED = false;
+const PORTONE_BILLING_CHANNEL_KEY = process.env.NEXT_PUBLIC_PORTONE_BILLING_CHANNEL_KEY ?? "";
 
 type Props = {
   listingId: string;
@@ -162,17 +162,24 @@ export default function BookingConfirmContent({
                 setError(bkData.error || "예약 처리에 실패했습니다. 다시 시도해 주세요.");
                 return;
               }
+            } else {
+              // 카드 등록 창을 닫았거나 빌링키가 반환되지 않음
+              setError("카드 등록이 완료되지 않았습니다. 예약하기를 다시 눌러 카드 정보를 입력해 주세요.");
+              return;
             }
-          } catch {
-            billingKeySuccess = false;
-          }
-          if (!billingKeySuccess) {
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            console.error("[Booking] Billing key error:", err);
+            setError(
+              msg.includes("USER") || msg.includes("취소")
+                ? "카드 등록이 취소되었습니다. 예약하기를 다시 눌러 주세요."
+                : "카드 등록 중 오류가 발생했습니다. (" + msg.slice(0, 80) + ")"
+            );
             await fetch(`/api/bookings/${data.id}`, {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ status: "cancelled" }),
             });
-            setError("예약이 완료되지 않았습니다. 다시 시도해 주세요.");
             return;
           }
         } else {
