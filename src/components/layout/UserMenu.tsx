@@ -32,9 +32,10 @@ export default function UserMenu() {
 
   if (!session?.user) {
     return (
-      <Link href="/auth/signin">
-        <Button variant="outline" rounded="full" className="gap-2">
-          로그인 및 회원가입
+      <Link href="/auth/signin" className="flex-shrink-0">
+        <Button variant="outline" rounded="full" className="gap-2 px-3 py-2 text-sm sm:px-5 sm:py-2.5 sm:text-sm whitespace-nowrap">
+          <span className="sm:hidden">로그인</span>
+          <span className="hidden sm:inline">로그인 및 회원가입</span>
         </Button>
       </Link>
     );

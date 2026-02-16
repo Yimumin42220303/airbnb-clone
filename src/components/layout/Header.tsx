@@ -49,18 +49,18 @@ export default function Header() {
   return (
     <>
       <header
-        className="fixed top-0 left-0 right-0 z-[9999] border-b border-minbak-light-gray bg-[#f7f7f7] pt-[env(safe-area-inset-top,0px)]"
+        className="fixed top-0 left-0 right-0 z-[9999] border-b border-minbak-light-gray bg-[#f7f7f7] pt-[env(safe-area-inset-top,0px)] overflow-visible"
         style={{ pointerEvents: "auto" }}
       >
-        <div className="max-w-[1240px] mx-auto px-4 py-3 md:px-6 md:py-5 flex flex-col gap-4 md:gap-6">
+        <div className="max-w-[1240px] mx-auto pl-3 pr-4 py-3 md:px-6 md:py-5 flex flex-col gap-4 md:gap-6 overflow-visible">
         {/* 상단: 로고 | (호스트 시 오늘·달력·리스팅·메시지) | 우측 링크·프로필 */}
-        <div className="flex items-center justify-between gap-2 min-h-[40px] md:min-h-0">
+        <div className="flex items-center justify-between gap-1 sm:gap-2 min-h-[40px] md:min-h-0 min-w-0">
           <Link
             href={isHostMode ? "/host" : "/"}
             className="flex-shrink-0 flex items-center gap-2"
             aria-label={isHostMode ? "호스트 홈" : "도쿄민박 홈"}
           >
-            <span className="block relative h-8 md:h-9 w-auto max-w-[140px] md:max-w-[160px]">
+            <span className="block relative h-8 md:h-9 w-auto max-w-[110px] sm:max-w-[140px] md:max-w-[160px]">
               <Image
                 src="/logo-minbak.png"
                 alt="도쿄민박"
@@ -119,7 +119,7 @@ export default function Header() {
             </nav>
           ) : null}
 
-          <nav className="flex items-center gap-2 sm:gap-4 md:gap-5 flex-shrink-0">
+          <nav className="flex items-center gap-1 sm:gap-2 md:gap-5 flex-shrink-0 min-w-0">
             {isHostMode && (
               <>
                 <HostLocaleSwitcher />
@@ -133,12 +133,14 @@ export default function Header() {
             )}
             {!isHostMode && (
               <>
-            <HostLocaleSwitcher />
+            <div className="hidden sm:block">
+              <HostLocaleSwitcher />
+            </div>
             <a
               href={INSTAGRAM_LINK}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 rounded-full hover:opacity-90 hover:bg-white/80 transition-colors"
+              className="p-1.5 sm:p-2 rounded-full hover:opacity-90 hover:bg-white/80 transition-colors flex-shrink-0"
               aria-label="인스타그램"
             >
               <svg className="w-5 h-5 md:w-6 md:h-6" viewBox="0 0 24 24" aria-hidden>
@@ -169,7 +171,7 @@ export default function Header() {
             </Link>
             <Link
               href="/blog"
-              className="p-2 rounded-full text-minbak-black hover:text-minbak-primary hover:bg-white/80 sm:hidden"
+              className="p-1.5 sm:p-2 rounded-full text-minbak-black hover:text-minbak-primary hover:bg-white/80 sm:hidden flex-shrink-0"
               aria-label="도쿄여행 가이드"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -188,7 +190,7 @@ export default function Header() {
               href={KAKAO_LINK}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 rounded-full text-minbak-black hover:bg-white/80 sm:hidden"
+              className="p-1.5 sm:p-2 rounded-full text-minbak-black hover:bg-white/80 sm:hidden flex-shrink-0"
               aria-label="카톡으로 문의하기"
             >
               <KakaoIcon className="w-5 h-5" />
