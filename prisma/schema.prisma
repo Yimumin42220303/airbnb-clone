@@ -295,6 +295,8 @@ model Review {
   rating   Int      // 1~5
   body     String?
   createdAt DateTime @default(now())
+  /// 어드민이 편집한 게스트 표시 이름 (없으면 user.name 사용)
+  authorDisplayName String?
 
   listingId String
   listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
