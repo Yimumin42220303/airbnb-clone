@@ -195,6 +195,7 @@ export async function getListingByIdForEdit(id: string) {
     mapUrl: listing.mapUrl ?? null,
     amenities: listing.listingAmenities.map((la) => la.amenity.name),
     icalImportUrls: parseIcalImportUrls(listing.icalImportUrls),
+    propertyType: listing.propertyType ?? "apartment",
   };
 }
 
@@ -318,6 +319,8 @@ export type CreateListingInput = {
   houseRules?: string;
   categoryId?: string | null;
   amenityIds?: string[];
+  /** "detached_house" | "apartment" */
+  propertyType?: string | null;
 };
 
 /**
@@ -376,6 +379,7 @@ export async function createListing(
       cancellationPolicy: input.cancellationPolicy ?? "flexible",
       houseRules: input.houseRules?.trim() || null,
       categoryId: input.categoryId?.trim() || null,
+      propertyType: input.propertyType === "detached_house" || input.propertyType === "apartment" ? input.propertyType : "apartment",
     },
   });
 
@@ -476,6 +480,9 @@ export async function updateListing(
   if (input.categoryId !== undefined) {
     const catId = input.categoryId?.trim() || null;
     data.category = catId ? { connect: { id: catId } } : { disconnect: true };
+  }
+  if (input.propertyType !== undefined) {
+    data.propertyType = input.propertyType === "detached_house" || input.propertyType === "apartment" ? input.propertyType : null;
   }
   if (options?.isAdmin && input.userId != null && input.userId.trim()) {
     const targetUser = await prisma.user.findUnique({ where: { id: input.userId } });

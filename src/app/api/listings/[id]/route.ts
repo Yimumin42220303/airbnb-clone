@@ -97,6 +97,7 @@ export async function PATCH(
         amenityIds: body.amenityIds,
         icalImportUrls: body.icalImportUrls,
         userId: body.userId,
+        propertyType: body.propertyType,
       },
       { isAdmin: isAdmin || undefined }
     );

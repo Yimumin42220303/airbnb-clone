@@ -52,6 +52,7 @@ type Props = {
     icalImportUrls: string[];
     amenityIds: string[];
     mapUrl?: string;
+    propertyType: "apartment" | "detached_house";
   };
 };
 
@@ -103,6 +104,7 @@ export default function EditListingForm({
     icalImportUrls: initial.icalImportUrls.join("\n"),
     amenityIds: initial.amenityIds ?? [],
     mapUrl: initial.mapUrl ?? "",
+    propertyType: initial.propertyType ?? "apartment",
   });
   const basePriceNumber =
     parseInt(form.pricePerNight, 10) || initial.pricePerNight;
@@ -265,6 +267,7 @@ export default function EditListingForm({
           .filter(Boolean),
         amenityIds: form.amenityIds,
         mapUrl: mapUrl || undefined,
+        propertyType: form.propertyType,
       };
       if (isAdmin && form.hostId) {
         payload.userId = form.hostId;
@@ -342,6 +345,31 @@ export default function EditListingForm({
                 className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 required
               />
+            </label>
+            <label className="block">
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">숙소 타입</span>
+              <div className="flex gap-4 mt-1">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="propertyType"
+                    checked={form.propertyType === "apartment"}
+                    onChange={() => setForm((f) => ({ ...f, propertyType: "apartment" }))}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-minbak-body">아파트</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="propertyType"
+                    checked={form.propertyType === "detached_house"}
+                    onChange={() => setForm((f) => ({ ...f, propertyType: "detached_house" }))}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-minbak-body">단독주택</span>
+                </label>
+              </div>
             </label>
             <label className="block">
               <span className="text-minbak-body font-medium text-minbak-black block mb-1">위치 *</span>
