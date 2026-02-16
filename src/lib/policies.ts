@@ -3,7 +3,7 @@
  *
  * Three policies modeled after Airbnb:
  * - flexible: Full refund 1 day before check-in
- * - moderate: Full refund 5 days before check-in
+ * - moderate: Full refund 7 days before check-in, 50% refund 1–6 days before
  * - strict:   Full refund within 48h of booking if check-in >= 14 days away,
  *             50% refund if cancelled >= 7 days before check-in, else no refund
  */
@@ -34,11 +34,11 @@ export const CANCELLATION_POLICIES: Record<CancellationPolicyType, PolicyInfo> =
     id: "moderate",
     label: "Moderate",
     description:
-      "Check-in 5 days before: full refund. After that: 50% refund until check-in day.",
-    shortDescription: "Full refund 5 days before check-in",
+      "Check-in 7 days before: full refund. 1–6 days before: 50% refund. Check-in day or after: no refund.",
+    shortDescription: "Full refund 7 days before check-in",
     rules: [
-      "100% refund if cancelled at least 5 days before check-in",
-      "50% refund if cancelled 1-4 days before check-in",
+      "100% refund if cancelled at least 7 days before check-in",
+      "50% refund if cancelled 1–6 days before check-in",
       "No refund for cancellations on check-in day or after",
     ],
   },
@@ -105,12 +105,12 @@ export function calculateRefundAmount(params: {
       break;
 
     case "moderate":
-      if (daysBeforeCheckIn >= 5) {
+      if (daysBeforeCheckIn >= 7) {
         rate = 1.0;
-        description = "체크인 5일 이상 전: 100% 환불";
+        description = "체크인 7일 이상 전: 100% 환불";
       } else if (daysBeforeCheckIn >= 1) {
         rate = 0.5;
-        description = "체크인 1~4일 전: 50% 환불";
+        description = "체크인 1~6일 전: 50% 환불";
       } else {
         rate = 0;
         description = "체크인 당일 이후: 환불 불가";
@@ -167,9 +167,9 @@ export const POLICY_DESCRIPTIONS_KO: Record<CancellationPolicyType, string[]> = 
     "\uccb4\ud06c\uc778 \ub2f9\uc77c \uc774\ud6c4 \ud658\ubd88 \ubd88\uac00",
   ],
   moderate: [
-    "\uccb4\ud06c\uc778 5\uc77c \uc804\uae4c\uc9c0 \ucde8\uc18c \uc2dc 100% \ud658\ubd88",
-    "\uccb4\ud06c\uc778 1~4\uc77c \uc804 \ucde8\uc18c \uc2dc 50% \ud658\ubd88",
-    "\uccb4\ud06c\uc778 \ub2f9\uc77c \uc774\ud6c4 \ud658\ubd88 \ubd88\uac00",
+    "체크인 7일 전까지 취소 시 100% 환불",
+    "체크인 1~6일 전 취소 시 50% 환불",
+    "체크인 당일 이후 환불 불가",
   ],
   strict: [
     "\uc608\uc57d \ud6c4 48\uc2dc\uac04 \uc774\ub0b4 \ucde8\uc18c \uc2dc 100% \ud658\ubd88 (\uccb4\ud06c\uc778 14\uc77c \uc774\uc0c1 \ub0a8\uc740 \uacbd\uc6b0)",
@@ -180,6 +180,6 @@ export const POLICY_DESCRIPTIONS_KO: Record<CancellationPolicyType, string[]> = 
 
 export const POLICY_SHORT_KO: Record<CancellationPolicyType, string> = {
   flexible: "\uccb4\ud06c\uc778 1\uc77c \uc804\uae4c\uc9c0 \uc804\uc561 \ud658\ubd88",
-  moderate: "\uccb4\ud06c\uc778 5\uc77c \uc804\uae4c\uc9c0 \uc804\uc561 \ud658\ubd88",
+  moderate: "체크인 7일 전까지 전액 환불",
   strict: "\uccb4\ud06c\uc778 7\uc77c \uc804\uae4c\uc9c0 50% \ud658\ubd88",
 };

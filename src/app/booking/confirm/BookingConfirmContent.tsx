@@ -288,8 +288,8 @@ export default function BookingConfirmContent({
                   label: "보통",
                   color: "bg-amber-100 text-amber-800",
                   rules: [
-                    `${deadlineDate(5)}까지 취소 시 100% 환불`,
-                    `${deadlineDate(4)} ~ ${deadlineDate(1)} 취소 시 50% 환불`,
+                    `${deadlineDate(7)}까지 취소 시 100% 환불`,
+                    `${deadlineDate(6)} ~ ${deadlineDate(1)} 취소 시 50% 환불`,
                     "체크인 당일 이후 환불 불가",
                   ],
                 },

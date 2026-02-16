@@ -239,8 +239,8 @@ export default function ListingDetailContent({
                     moderate: {
                       label: "보통",
                       rules: [
-                        "체크인 5일 전까지 취소 시 100% 환불",
-                        "체크인 1~4일 전 취소 시 50% 환불",
+                        "체크인 7일 전까지 취소 시 100% 환불",
+                        "체크인 1~6일 전 취소 시 50% 환불",
                         "체크인 당일 이후 환불 불가",
                       ],
                     },
