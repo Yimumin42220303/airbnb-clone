@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
+import type { HostTranslationKey } from "@/lib/host-i18n/translations";
 
 /* ──────────────────────────────────────────────
    Types
@@ -10,6 +12,7 @@ import { ReactNode } from "react";
 interface NavItem {
   icon: (active: boolean) => ReactNode;
   label: string;
+  labelKey: HostTranslationKey;
   path: string;
   isActive: (pathname: string) => boolean;
 }
@@ -184,69 +187,19 @@ const icons = {
    Navigation definitions
    ────────────────────────────────────────────── */
 const guestNav: NavItem[] = [
-  {
-    icon: icons.explore,
-    label: "둘러보기",
-    path: "/",
-    isActive: (p) => p === "/",
-  },
-  {
-    icon: icons.search,
-    label: "검색",
-    path: "/search",
-    isActive: (p) => p.startsWith("/search"),
-  },
-  {
-    icon: icons.heart,
-    label: "위시리스트",
-    path: "/wishlist",
-    isActive: (p) => p.startsWith("/wishlist"),
-  },
-  {
-    icon: icons.chat,
-    label: "메시지",
-    path: "/messages",
-    isActive: (p) => p.startsWith("/messages"),
-  },
-  {
-    icon: icons.user,
-    label: "내 정보",
-    path: "/mypage",
-    isActive: (p) => p.startsWith("/mypage") || p.startsWith("/my-bookings"),
-  },
+  { icon: icons.explore, label: "둘러보기", labelKey: "guest.navExplore", path: "/", isActive: (p) => p === "/" },
+  { icon: icons.search, label: "검색", labelKey: "guest.navSearch", path: "/search", isActive: (p) => p.startsWith("/search") },
+  { icon: icons.heart, label: "위시리스트", labelKey: "guest.navWishlist", path: "/wishlist", isActive: (p) => p.startsWith("/wishlist") },
+  { icon: icons.chat, label: "메시지", labelKey: "guest.navMessages", path: "/messages", isActive: (p) => p.startsWith("/messages") },
+  { icon: icons.user, label: "내 정보", labelKey: "guest.navMyInfo", path: "/mypage", isActive: (p) => p.startsWith("/mypage") || p.startsWith("/my-bookings") },
 ];
 
 const hostNav: NavItem[] = [
-  {
-    icon: icons.home,
-    label: "대시보드",
-    path: "/host",
-    isActive: (p) => p === "/host",
-  },
-  {
-    icon: icons.calendar,
-    label: "캘린더",
-    path: "/host/calendar",
-    isActive: (p) => p.startsWith("/host/calendar"),
-  },
-  {
-    icon: icons.list,
-    label: "숙소관리",
-    path: "/host/listings",
-    isActive: (p) => p.startsWith("/host/listings"),
-  },
-  {
-    icon: icons.inbox,
-    label: "예약",
-    path: "/host/bookings",
-    isActive: (p) => p.startsWith("/host/bookings"),
-  },
-  {
-    icon: icons.chart,
-    label: "수익",
-    path: "/host/revenue",
-    isActive: (p) => p.startsWith("/host/revenue"),
-  },
+  { icon: icons.home, label: "대시보드", labelKey: "guest.navDashboard", path: "/host", isActive: (p) => p === "/host" },
+  { icon: icons.calendar, label: "캘린더", labelKey: "guest.navCalendar", path: "/host/calendar", isActive: (p) => p.startsWith("/host/calendar") },
+  { icon: icons.list, label: "숙소관리", labelKey: "guest.navListings", path: "/host/listings", isActive: (p) => p.startsWith("/host/listings") },
+  { icon: icons.inbox, label: "예약", labelKey: "guest.navBookings", path: "/host/bookings", isActive: (p) => p.startsWith("/host/bookings") },
+  { icon: icons.chart, label: "수익", labelKey: "guest.navRevenue", path: "/host/revenue", isActive: (p) => p.startsWith("/host/revenue") },
 ];
 
 /* ──────────────────────────────────────────────
@@ -259,6 +212,7 @@ const HIDDEN_PREFIXES = ["/auth", "/admin"];
    ────────────────────────────────────────────── */
 export default function BottomNav() {
   const pathname = usePathname();
+  const t = useHostTranslations().t;
 
   // 숨길 페이지 확인
   if (HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
@@ -294,7 +248,7 @@ export default function BottomNav() {
               >
                 {item.icon(active)}
                 <span className="text-[10px] leading-tight font-medium truncate">
-                  {item.label}
+                  {t(item.labelKey)}
                 </span>
               </Link>
             </li>
