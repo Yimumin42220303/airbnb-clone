@@ -23,7 +23,7 @@ export default function HostLocaleSwitcher() {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full text-minbak-black hover:text-minbak-primary hover:bg-white/80 transition-colors"
+        className="min-h-[36px] min-w-[36px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center rounded-full text-minbak-black hover:text-minbak-primary hover:bg-white/80 transition-colors flex-shrink-0"
         aria-label="언어 선택"
         aria-expanded={open}
       >
