@@ -7,6 +7,12 @@ const resend = process.env.RESEND_API_KEY
 const FROM_EMAIL =
   process.env.EMAIL_FROM || "TokyoMinbak <noreply@tokyominbak.net>";
 
+/**
+ * 이메일 안의 링크(결제하기, 예약 관리 등)에 사용하는 공개 URL.
+ * Vercel에 NEXT_PUBLIC_APP_URL을 설정하지 않으면 VERCEL_URL(예: xxx.vercel.app)로
+ * 잡혀서, 배포 보호(비밀번호)가 켜져 있으면 게스트가 링크 클릭 시 Vercel 로그인 화면이 뜹니다.
+ * → Vercel 환경 변수에 NEXT_PUBLIC_APP_URL = 실제 서비스 URL(예: https://tokyominbak.net) 설정 필요.
+ */
 const BASE_URL =
   process.env.NEXT_PUBLIC_APP_URL ||
   (process.env.VERCEL_URL
