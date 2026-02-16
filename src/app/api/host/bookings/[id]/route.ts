@@ -5,8 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { cancelPayment } from "@/lib/portone";
 import { sendEmailAsync, BASE_URL } from "@/lib/email";
 import {
-  bookingAcceptedGuest,
-  bookingAcceptedHost,
+  paymentRequestGuest,
+  paymentRequestHost,
   bookingRejectedGuest,
   bookingRejectedHost,
 } from "@/lib/email-templates";
@@ -72,31 +72,7 @@ export async function PATCH(
       data: { status: "confirmed" },
     });
 
-    // 자동으로 대화방 생성 + 호스트 환영 메시지 전송
-    let conversationId: string | null = null;
-    try {
-      let conversation = await prisma.conversation.findUnique({
-        where: { bookingId: id },
-      });
-      if (!conversation) {
-        conversation = await prisma.conversation.create({
-          data: { bookingId: id },
-        });
-      }
-      conversationId = conversation.id;
-
-      await prisma.message.create({
-        data: {
-          conversationId: conversation.id,
-          senderId: userId,
-          body: "예약감사합니다. 3일내에 체크인방법에대해 안내드릴예정이니 조금 기다려주세요.",
-        },
-      });
-    } catch (err) {
-      console.error("자동 메시지 전송 오류:", err);
-    }
-
-    // Notify guest & host: booking accepted
+    // 호스트 승인 → 게스트에게 결제 요청 이메일 발송 (대화방은 결제 완료 후 생성)
     {
       const nights = Math.floor(
         (booking.checkOut.getTime() - booking.checkIn.getTime()) / (24 * 60 * 60 * 1000)
@@ -115,7 +91,6 @@ export async function PATCH(
         baseUrl: BASE_URL,
       };
 
-      // 호스트 이메일 조회
       const host = await prisma.user.findUnique({
         where: { id: userId },
         select: { name: true, email: true },
@@ -123,15 +98,15 @@ export async function PATCH(
       const hostEmail = host?.email;
       const isSameEmail = hostEmail && booking.user?.email && hostEmail === booking.user.email;
 
-      // 게스트 이메일 (호스트와 같은 이메일이면 생략)
+      // 게스트에게 결제 요청 이메일
       if (booking.user?.email && !isSameEmail) {
-        const guestMail = bookingAcceptedGuest(emailInfo);
+        const guestMail = paymentRequestGuest(emailInfo);
         sendEmailAsync({ to: booking.user.email, ...guestMail });
       }
 
-      // 호스트 확인 이메일 (일본어)
+      // 호스트 확인 이메일 (일본어 - 결제 대기 안내)
       if (hostEmail) {
-        const hostMail = bookingAcceptedHost({
+        const hostMail = paymentRequestHost({
           ...emailInfo,
           hostName: host?.name || "Host",
         });
@@ -139,7 +114,7 @@ export async function PATCH(
       }
     }
 
-    return NextResponse.json({ ok: true, status: "confirmed", conversationId });
+    return NextResponse.json({ ok: true, status: "confirmed" });
   }
 
   if (action === "reject" || action === "cancel") {

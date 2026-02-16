@@ -124,38 +124,26 @@ export default async function MyBookingsPage() {
                         게스트 {b.guests}명 · ₩{b.totalPrice.toLocaleString()}
                       </p>
                       <div className="flex flex-wrap gap-1.5 mt-2">
+                        {/* 예약 상태 배지 */}
                         <span
                           className={`inline-block text-minbak-caption font-medium px-2.5 py-1 rounded-full ${
-                            b.status === "confirmed"
+                            b.status === "confirmed" && b.paymentStatus === "paid"
                               ? "bg-green-100 text-green-800"
-                              : b.status === "cancelled"
-                                ? "bg-gray-100 text-gray-600"
-                                : "bg-amber-100 text-amber-800"
+                              : b.status === "confirmed" && b.paymentStatus !== "paid"
+                                ? "bg-blue-100 text-blue-800"
+                                : b.status === "cancelled"
+                                  ? "bg-gray-100 text-gray-600"
+                                  : "bg-amber-100 text-amber-800"
                           }`}
                         >
-                          {b.status === "confirmed"
-                            ? "확정"
-                            : b.status === "cancelled"
-                              ? "취소됨"
-                              : "대기"}
+                          {b.status === "confirmed" && b.paymentStatus === "paid"
+                            ? "예약 확정"
+                            : b.status === "confirmed" && b.paymentStatus !== "paid"
+                              ? "호스트 승인 · 결제 대기"
+                              : b.status === "cancelled"
+                                ? "취소됨"
+                                : "호스트 응답 대기"}
                         </span>
-                        {b.paymentStatus === "paid" && b.status !== "cancelled" && (
-                          <span className="inline-block text-minbak-caption font-medium px-2.5 py-1 rounded-full bg-blue-100 text-blue-800">
-                            결제완료
-                          </span>
-                        )}
-                        {b.paymentMethod === "deferred" &&
-                          b.paymentStatus === "pending" &&
-                          b.status !== "cancelled" && (
-                          <span className="inline-block text-minbak-caption font-medium px-2.5 py-1 rounded-full bg-sky-100 text-sky-800">
-                            {b.scheduledPaymentDate
-                              ? b.scheduledPaymentDate.toLocaleDateString("ko-KR", {
-                                  month: "long",
-                                  day: "numeric",
-                                }) + " 결제 예정"
-                              : "결제 예정"}
-                          </span>
-                        )}
                         {b.paymentStatus === "failed" && b.status !== "cancelled" && (
                           <span className="inline-block text-minbak-caption font-medium px-2.5 py-1 rounded-full bg-red-100 text-red-800">
                             결제실패
@@ -173,9 +161,9 @@ export default async function MyBookingsPage() {
                         )}
                       </div>
                       <div className="flex flex-wrap gap-2 mt-3">
-                        {((b.paymentStatus === "pending" && b.paymentMethod === "immediate") ||
-                          b.paymentStatus === "failed") &&
-                          b.status !== "cancelled" && (
+                        {/* 호스트 승인 후 결제 대기 → 결제하기 버튼 */}
+                        {b.status === "confirmed" &&
+                          (b.paymentStatus === "pending" || b.paymentStatus === "failed") && (
                             <Link
                               href={`/booking/${b.id}/pay`}
                               className="inline-flex items-center min-h-[36px] px-4 py-2 rounded-minbak text-minbak-body font-medium bg-minbak-primary text-white hover:bg-minbak-primary-hover transition-colors"

@@ -52,6 +52,11 @@ export default async function BookingPayPage({ params }: Props) {
     redirect("/my-bookings");
   }
 
+  // 호스트 승인 전(pending) 또는 취소된 예약은 결제 불가
+  if (booking.status === "pending" || booking.status === "cancelled") {
+    redirect("/my-bookings");
+  }
+
   const nights = Math.floor(
     (booking.checkOut.getTime() - booking.checkIn.getTime()) /
       (24 * 60 * 60 * 1000)
