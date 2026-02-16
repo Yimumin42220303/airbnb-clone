@@ -288,9 +288,12 @@ export default function ListingDetailContent({
                         aria-hidden
                       />
                       <span className="leading-relaxed">
-                        {listing.location}
+                        가장 가까운역
                       </span>
                     </div>
+                    <p className="text-[13px] text-[#717171] leading-relaxed">
+                      ※숙소보안상 상세주소는 예약확정후 알려드립니다
+                    </p>
                     {listing.mapUrl && (
                       isEmbeddableMap ? (
                         <div className="mt-3 rounded-xl overflow-hidden border border-[#ebebeb] bg-[#f7f7f7]">
