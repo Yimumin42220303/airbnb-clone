@@ -13,14 +13,15 @@ import { INSTAGRAM_LINK } from "@/lib/constants";
 
 /** useSearchParams 미사용 폴백: SSR/정적 생성 시 검색 바 스켈레톤 */
 function HomeSearchBarFallback() {
+  const t = useHostTranslations().t;
   return (
     <Link
       href="/search"
       className="w-full flex items-center gap-2 bg-white rounded-[90px] min-h-[44px] md:min-h-[48px] py-3 md:py-[18px] pl-4 md:pl-10 pr-4 md:pr-6 shadow-[0_1px_2px_rgba(0,0,0,0.08)] no-underline text-inherit"
-      aria-label="숙소 검색"
+      aria-label={t("guest.search")}
     >
       <span className="flex-1 min-w-0 text-left text-minbak-body text-minbak-gray truncate">
-        체크인 · 체크아웃 · 게스트 추가
+        {t("guest.searchPlaceholder")}
       </span>
       <span className="flex-shrink-0 w-12 h-12 rounded-full bg-minbak-primary flex items-center justify-center">
         <Search className="w-5 h-5 text-white" />

@@ -10,6 +10,7 @@ import FramerGuestPicker, {
   formatGuestLabel,
   type GuestCounts,
 } from "@/components/search/FramerGuestPicker";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
 type Variant = "hero" | "compact";
 
@@ -32,6 +33,7 @@ export default function HomeSearchBar({
   const [guests, setGuests] = useState<GuestCounts>(defaultGuestCounts);
   const [dateOpen, setDateOpen] = useState(false);
   const [guestOpen, setGuestOpen] = useState(false);
+  const t = useHostTranslations().t;
 
   // URL과 동기화 (검색 페이지 및 숙소 상세 페이지에서 query params 반영)
   useEffect(() => {
@@ -87,9 +89,9 @@ export default function HomeSearchBar({
           onClick={() => setDateOpen(true)}
           className="flex-1 min-w-0 flex flex-col items-start py-0.5 md:py-1 px-2 md:px-4 border-r border-minbak-light-gray cursor-pointer text-left"
         >
-          <span className="text-[11px] md:text-minbak-caption text-minbak-gray block">체크인</span>
+          <span className="text-[11px] md:text-minbak-caption text-minbak-gray block">{t("guest.checkIn")}</span>
           <span className="text-minbak-body font-medium text-minbak-black truncate w-full">
-            {checkIn ? formatDateDisplay(checkIn) : "날짜 추가"}
+            {checkIn ? formatDateDisplay(checkIn) : t("guest.addDate")}
           </span>
         </button>
         {/* 체크아웃 */}
@@ -98,9 +100,9 @@ export default function HomeSearchBar({
           onClick={() => setDateOpen(true)}
           className="flex-1 min-w-0 flex flex-col items-start py-0.5 md:py-1 px-2 md:px-4 border-r border-minbak-light-gray cursor-pointer text-left"
         >
-          <span className="text-[11px] md:text-minbak-caption text-minbak-gray block">체크아웃</span>
+          <span className="text-[11px] md:text-minbak-caption text-minbak-gray block">{t("guest.checkOut")}</span>
           <span className="text-minbak-body font-medium text-minbak-black truncate w-full">
-            {checkOut ? formatDateDisplay(checkOut) : "날짜 추가"}
+            {checkOut ? formatDateDisplay(checkOut) : t("guest.addDate")}
           </span>
         </button>
         {/* 인원 */}
@@ -109,11 +111,11 @@ export default function HomeSearchBar({
           onClick={() => setGuestOpen(true)}
           className="flex-1 min-w-0 flex flex-col items-start py-0.5 md:py-1 px-2 md:px-4 cursor-pointer text-left"
         >
-          <span className="text-[11px] md:text-minbak-caption text-minbak-gray block">인원</span>
+          <span className="text-[11px] md:text-minbak-caption text-minbak-gray block">{t("guest.guests")}</span>
           <span className="text-minbak-body font-medium text-minbak-black truncate w-full">
             {guests.adult + guests.child + guests.infant > 0
               ? formatGuestLabel(guests)
-              : "게스트 추가"}
+              : t("guest.addGuests")}
           </span>
         </button>
         {/* 검색 버튼 */}
@@ -121,7 +123,7 @@ export default function HomeSearchBar({
           type="button"
           onClick={handleSearch}
           className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-minbak-primary flex items-center justify-center text-white hover:bg-minbak-primary-hover transition-colors"
-          aria-label="검색"
+          aria-label={t("guest.search")}
         >
           <Search className="w-5 h-5" />
         </button>
