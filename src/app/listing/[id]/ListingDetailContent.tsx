@@ -9,6 +9,7 @@ import BookingForm from "@/components/listing/BookingForm";
 import ListingImageGallery from "@/components/listing/ListingImageGallery";
 import ReviewCard from "@/components/listing/ReviewCard";
 import ReviewForm from "@/components/listing/ReviewForm";
+import ReviewSummaryAI from "@/components/listing/ReviewSummaryAI";
 import WishlistHeart from "@/components/wishlist/WishlistHeart";
 
 type ReviewItem = {
@@ -328,6 +329,9 @@ export default function ListingDetailContent({
                     타 플랫폼에서의 리뷰도 같이 표시됩니다
                   </p>
                 </div>
+                {listing.reviews.length > 0 && (
+                  <ReviewSummaryAI listingId={listing.id} />
+                )}
                 {listing.reviews.length > 0 ? (
                   <ul className="divide-y divide-[#ebebeb]">
                     {listing.reviews.map((r, i) => (

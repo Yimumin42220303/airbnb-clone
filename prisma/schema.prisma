@@ -291,6 +291,16 @@ model Message {
   @@index([conversationId, createdAt])
 }
 
+// AI 리뷰 요약 캐시 (온디맨드 생성, 24시간 유효)
+model ListingReviewSummary {
+  id                 String   @id @default(cuid())
+  listingId          String   @unique
+  prosJson           String   // JSON array of strings (좋은 점)
+  consJson           String   // JSON array of strings (아쉬운 점)
+  recommendedForJson  String?  // JSON array of strings (이런 분에게 추천해요)
+  generatedAt        DateTime @updatedAt
+}
+
 // ---------- 리뷰 ----------
 model Review {
   id        String   @id @default(cuid())
