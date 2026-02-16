@@ -157,19 +157,19 @@ export default function Header() {
               href="/blog"
               className="hidden sm:inline text-minbak-body text-minbak-black hover:text-minbak-primary transition-colors md:inline"
             >
-              도쿄여행 가이드
+              {hostT.t("guest.guide")}
             </Link>
             <Link
               href="/#ai-recommend"
               className="hidden sm:inline text-minbak-body text-minbak-black hover:text-minbak-primary transition-colors md:inline flex items-center gap-1"
             >
               <Sparkles className="w-4 h-4" />
-              AI 추천
+              {hostT.t("guest.aiRecommend")}
             </Link>
             <Link
               href="/blog"
               className="p-1.5 sm:p-2 rounded-full text-minbak-black hover:text-minbak-primary hover:bg-white/80 sm:hidden flex-shrink-0"
-              aria-label="도쿄여행 가이드"
+              aria-label={hostT.t("guest.guide")}
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />

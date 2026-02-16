@@ -92,6 +92,9 @@ export const hostTranslations = {
     "actions.proceedConfirm": "진행할까요?",
     "actions.processFailed": "처리에 실패했습니다.",
     "actions.deleteFailed": "삭제에 실패했습니다.",
+    "guest.guide": "도쿄여행 가이드",
+    "guest.aiRecommend": "AI 추천",
+    "guest.guestMode": "게스트 모드",
   },
   ja: {
     "nav.calendar": "カレンダー",
@@ -184,6 +187,9 @@ export const hostTranslations = {
     "actions.proceedConfirm": "続行しますか？",
     "actions.processFailed": "処理に失敗しました。",
     "actions.deleteFailed": "削除に失敗しました。",
+    "guest.guide": "東京旅行ガイド",
+    "guest.aiRecommend": "AIおすすめ",
+    "guest.guestMode": "ゲストモード",
   },
 } as const;
 
