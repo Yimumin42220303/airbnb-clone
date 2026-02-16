@@ -94,12 +94,47 @@ DB 구조(테이블·컬럼)를 바꾸려면 Prisma 스키마를 수정한 뒤 �
 
 ---
 
-## 6. 요약
+## 6. 리뷰 게시일 일괄 재설정 (전체 숙소 / 프로덕션)
+
+리뷰의 **게시일(createdAt)** 을 2023-12-01 ~ 2026-02-28 범위 안에서 무작위로 재설정할 때 사용합니다.  
+표시 순서는 **게시일 최신순**(이미 앱에서 적용됨)입니다.
+
+| 명령 | 설명 |
+|------|------|
+| `npm run db:randomize-review-dates` | **전체 숙소**의 모든 리뷰 게시일 재설정 |
+| `node scripts/randomize-review-dates.js <숙소ID>` | 해당 숙소 리뷰만 재설정 |
+
+**로컬 DB에 적용**  
+`.env`의 `DATABASE_URL`이 가리키는 DB가 대상입니다.
+
+```bash
+npm run db:randomize-review-dates
+```
+
+**도쿄민박 실제 서버(프로덕션) DB에 적용**  
+프로덕션용 `DATABASE_URL`을 넣고 같은 스크립트를 실행합니다.
+
+```bash
+# 방법 1: 환경 변수로 프로덕션 URL 지정 후 실행
+DATABASE_URL="postgresql://사용자:비밀번호@호스트:포트/DB명?schema=public" node scripts/randomize-review-dates.js
+
+# 방법 2: .env.production 등에 DATABASE_URL을 프로덕션으로 두고 로드 후 실행
+# (dotenv 등으로 로드하거나, 터미널에서 export DATABASE_URL=... 후)
+npm run db:randomize-review-dates
+```
+
+- Supabase/프로덕션 PostgreSQL URL은 Vercel 환경 변수 또는 Supabase 대시보드에서 확인할 수 있습니다.
+- 실행 시 **해당 DB의 모든 리뷰**가 위 기간 내 무작위 날짜로 변경됩니다.
+
+---
+
+## 7. 요약
 
 - **일반 호스트**: `/host/listings` 계열에서 본인 숙소만 등록·수정·예약가능일 관리  
 - **전체 운영/관리**: admin 계정으로 `/admin` → 숙소·회원·예약·블로그 조회·이동  
 - **직접 DB 조작**: `npm run db:studio` 로 테이블 단위 조회·수정  
 - **구조 변경**: `prisma/schema.prisma` 수정 후 `npm run db:migrate`  
-- **초기/테스트 데이터**: `npm run db:seed` 또는 `node prisma/seed-one-user.js`
+- **초기/테스트 데이터**: `npm run db:seed` 또는 `node prisma/seed-one-user.js`  
+- **리뷰 게시일 재설정**: `npm run db:randomize-review-dates` (프로덕션 적용 시 `DATABASE_URL`만 프로덕션으로 설정 후 동일 명령)
 
 DB 연결 정보는 `.env`의 `DATABASE_URL`(및 필요 시 `DIRECT_URL`)에서 관리합니다.
