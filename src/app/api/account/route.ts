@@ -18,11 +18,12 @@ export async function PATCH(request: Request) {
   }
 
   const body = await request.json();
-  const { name, phone } = body;
+  const { name, phone, image } = body;
 
-  const data: { name?: string; phone?: string } = {};
+  const data: { name?: string; phone?: string; image?: string | null } = {};
   if (typeof name === "string") data.name = name.trim() || undefined;
   if (typeof phone === "string") data.phone = phone.trim() || undefined;
+  if (image !== undefined) data.image = image === "" || image === null ? null : (typeof image === "string" ? image : undefined);
 
   if (Object.keys(data).length === 0) {
     return NextResponse.json(

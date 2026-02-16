@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -19,20 +19,69 @@ type Props = {
 
 export default function ProfileEditForm({ user }: Props) {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(user.name ?? "");
   const [phone, setPhone] = useState(user.phone ?? "");
+  const [displayImage, setDisplayImage] = useState<string | null>(user.image);
+  const [imageToSave, setImageToSave] = useState<string | null | "keep">("keep");
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
+      setError("JPEG, PNG, WebP, GIF 이미지만 업로드할 수 있습니다.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setError("이미지는 최대 2MB까지 업로드할 수 있습니다.");
+      return;
+    }
+    setError("");
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.set("file", file);
+      const res = await fetch("/api/upload/profile", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "사진 업로드에 실패했습니다.");
+        return;
+      }
+      setDisplayImage(data.url);
+      setImageToSave(data.url);
+    } catch {
+      setError("사진 업로드 중 오류가 발생했습니다.");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  }
+
+  function handleRemovePhoto() {
+    setDisplayImage(null);
+    setImageToSave(null);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
+      const body: { name: string; phone: string; image?: string | null } = {
+        name: name.trim(),
+        phone: phone.trim(),
+      };
+      if (imageToSave !== "keep") body.image = imageToSave;
       const res = await fetch("/api/account", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), phone: phone.trim() }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -53,23 +102,54 @@ export default function ProfileEditForm({ user }: Props) {
       <div className="bg-white border border-minbak-light-gray rounded-minbak p-6">
         <div className="flex flex-col sm:flex-row gap-6 items-start">
           <div className="flex flex-col items-center gap-2 shrink-0">
-            <div className="w-24 h-24 rounded-full bg-green-500 flex items-center justify-center overflow-hidden">
-              {user.image ? (
+            <div className="w-24 h-24 rounded-full bg-minbak-primary/20 flex items-center justify-center overflow-hidden">
+              {displayImage ? (
                 <Image
-                  src={user.image}
+                  src={displayImage}
                   alt={user.name ?? "프로필"}
                   width={96}
                   height={96}
                   className="object-cover w-full h-full"
+                  unoptimized={displayImage.startsWith("blob:") || displayImage.startsWith("/uploads/")}
                 />
               ) : (
-                <span className="text-3xl font-bold text-white">
+                <span className="text-3xl font-bold text-minbak-primary">
                   {(user.name ?? user.email ?? "?")[0].toUpperCase()}
                 </span>
               )}
             </div>
-            <p className="text-minbak-caption text-minbak-gray">
-              프로필 사진은 소셜 로그인에서 가져옵니다
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={handleFileChange}
+              disabled={uploading}
+            />
+            <div className="flex flex-wrap gap-2 justify-center">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="text-minbak-caption font-medium text-minbak-primary hover:underline disabled:opacity-50"
+              >
+                {uploading ? "업로드 중..." : "사진 변경"}
+              </button>
+              {displayImage && (
+                <>
+                  <span className="text-minbak-gray">·</span>
+                  <button
+                    type="button"
+                    onClick={handleRemovePhoto}
+                    className="text-minbak-caption font-medium text-minbak-gray hover:underline"
+                  >
+                    사진 제거
+                  </button>
+                </>
+              )}
+            </div>
+            <p className="text-minbak-caption text-minbak-gray text-center">
+              JPEG/PNG/WebP/GIF, 최대 2MB
             </p>
           </div>
           <div className="flex-1 min-w-0 space-y-4 w-full">
