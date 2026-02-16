@@ -11,7 +11,7 @@ export default function FixedContact() {
       href={KAKAO_LINK}
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed right-4 bottom-[7.5rem] md:bottom-6 md:right-6 z-[9998] flex items-center gap-2 pl-4 pr-3 py-2.5 md:pl-5 md:pr-4 md:py-3 rounded-full bg-[#FEE500] text-[#191919] shadow-lg hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] transition-all focus-visible:ring-2 focus-visible:ring-minbak-primary focus-visible:ring-offset-2"
+      className="fixed right-4 bottom-[7.5rem] md:bottom-6 md:right-6 z-[9998] flex items-center gap-2 pl-4 pr-3 py-2.5 md:pl-5 md:pr-4 md:py-3 rounded-full bg-[#FEE500] text-[#191919] shadow-lg hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] transition-all focus-visible:ring-2 focus-visible:ring-minbak-primary focus-visible:ring-offset-2 fixed-contact-stable"
       aria-label="카카오 문의"
     >
       <span className="flex items-center gap-1.5 text-[14px] md:text-[15px] font-semibold">

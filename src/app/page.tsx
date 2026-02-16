@@ -2,7 +2,7 @@ import nextDynamic from "next/dynamic";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { Header, Footer, FixedContact } from "@/components/layout";
+import { Header, Footer } from "@/components/layout";
 import { ListingCard } from "@/components/ui";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getListings } from "@/lib/listings";
@@ -142,7 +142,6 @@ export default async function Home() {
         </section>
 
         <Footer />
-        <FixedContact />
       </main>
     </>
   );

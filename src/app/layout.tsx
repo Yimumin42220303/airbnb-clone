@@ -6,6 +6,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import HostLocaleProvider from "@/components/host/HostLocaleProvider";
 import Toaster from "@/components/ui/Toaster";
 import BottomNav from "@/components/layout/BottomNav";
+import FixedContactWrapper from "@/components/layout/FixedContactWrapper";
 
 const notoSansKr = Noto_Sans_KR({
   subsets: ["latin"],
@@ -59,6 +60,7 @@ export default function RootLayout({
                 {children}
               </div>
               <BottomNav />
+              <FixedContactWrapper />
               <Toaster />
             </HostLocaleProvider>
           </SessionProvider>
