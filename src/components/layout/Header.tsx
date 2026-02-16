@@ -133,9 +133,7 @@ export default function Header() {
             )}
             {!isHostMode && (
               <>
-            <div className="hidden sm:block">
-              <HostLocaleSwitcher />
-            </div>
+            <HostLocaleSwitcher />
             <a
               href={INSTAGRAM_LINK}
               target="_blank"
@@ -190,7 +188,7 @@ export default function Header() {
               href={KAKAO_LINK}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-1.5 sm:p-2 rounded-full text-minbak-black hover:bg-white/80 sm:hidden flex-shrink-0"
+              className="hidden sm:flex p-1.5 sm:p-2 rounded-full text-minbak-black hover:bg-white/80 flex-shrink-0 items-center justify-center"
               aria-label="카톡으로 문의하기"
             >
               <KakaoIcon className="w-5 h-5" />
