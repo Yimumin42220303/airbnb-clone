@@ -9,8 +9,7 @@ import HomeSearchBar from "@/components/home/HomeSearchBar";
 import UserMenu from "./UserMenu";
 import HostLocaleSwitcher from "@/components/host/HostLocaleSwitcher";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
-import { KAKAO_LINK, INSTAGRAM_LINK } from "@/lib/constants";
-import KakaoIcon from "@/components/ui/KakaoIcon";
+import { INSTAGRAM_LINK } from "@/lib/constants";
 
 /** useSearchParams 미사용 폴백: SSR/정적 생성 시 검색 바 스켈레톤 */
 function HomeSearchBarFallback() {
@@ -176,23 +175,6 @@ export default function Header() {
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
               </svg>
             </Link>
-            <a
-              href={KAKAO_LINK}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden sm:inline text-minbak-body text-minbak-black hover:text-minbak-primary transition-colors md:inline"
-            >
-              카톡으로 문의하기
-            </a>
-            <a
-              href={KAKAO_LINK}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden sm:flex p-1.5 sm:p-2 rounded-full text-minbak-black hover:bg-white/80 flex-shrink-0 items-center justify-center"
-              aria-label="카톡으로 문의하기"
-            >
-              <KakaoIcon className="w-5 h-5" />
-            </a>
               </>
             )}
             <UserMenu />
