@@ -11,6 +11,7 @@ export default function AdminReviewForm({ listingId }: Props) {
   const router = useRouter();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
+  const [authorDisplayName, setAuthorDisplayName] = useState("");
   const [body, setBody] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -27,7 +28,11 @@ export default function AdminReviewForm({ listingId }: Props) {
       const res = await fetch(`/api/listings/${listingId}/reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rating, body: body.trim() || undefined }),
+        body: JSON.stringify({
+          rating,
+          body: body.trim() || undefined,
+          authorDisplayName: authorDisplayName.trim() || undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -50,6 +55,18 @@ export default function AdminReviewForm({ listingId }: Props) {
       <p className="text-[13px] text-[#717171] mb-3">
         관리자만 이 숙소에 리뷰를 등록할 수 있습니다.
       </p>
+      <div className="mb-3">
+        <label className="block text-[14px] font-medium text-[#222] mb-1.5">
+          게시자 명 (표시 이름)
+        </label>
+        <input
+          type="text"
+          value={authorDisplayName}
+          onChange={(e) => setAuthorDisplayName(e.target.value)}
+          placeholder="리뷰에 표시할 이름 (선택)"
+          className="w-full px-3 py-2 border border-[#ebebeb] rounded-xl text-[15px] text-[#222] placeholder:text-[#717171] focus:outline-none focus:ring-2 focus:ring-[#222]"
+        />
+      </div>
       <div className="flex items-center gap-1 mb-3">
         {[1, 2, 3, 4, 5].map((value) => (
           <button

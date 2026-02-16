@@ -57,7 +57,8 @@ export async function createReview(
   listingId: string,
   userId: string,
   rating: number,
-  body?: string
+  body?: string,
+  authorDisplayName?: string | null
 ) {
   if (rating < 1 || rating > 5) {
     return { ok: false as const, error: "평점은 1~5 사이로 선택해 주세요." };
@@ -97,6 +98,10 @@ export async function createReview(
       userId,
       rating,
       body: body?.trim() || null,
+      authorDisplayName:
+        typeof authorDisplayName === "string" && authorDisplayName.trim()
+          ? authorDisplayName.trim()
+          : null,
     },
   });
 
