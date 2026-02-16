@@ -1,5 +1,6 @@
 import { Header, Footer } from "@/components/layout";
 import Link from "next/link";
+import Image from "next/image";
 
 export const metadata = {
   title: "도쿄민박에 대해",
@@ -75,9 +76,18 @@ export default function AboutPage() {
                 <h3 className="text-minbak-title font-semibold text-minbak-black mb-1">
                   정식 여행업 허가 사업자
                 </h3>
-                <p className="text-minbak-caption text-minbak-primary font-medium mb-2">
+                <p className="text-minbak-caption text-minbak-primary font-medium mb-4">
                   경남 창원시 제2026-000002호
                 </p>
+                <div className="mb-4">
+                  <Image
+                    src="/tourism-registration-certificate.png"
+                    alt="관광사업등록증 - 한일 익스프레스 제2026-000002호"
+                    width={600}
+                    height={800}
+                    className="w-full max-w-[400px] h-auto rounded-minbak border border-minbak-light-gray"
+                  />
+                </div>
                 <p className="text-minbak-body text-minbak-gray">
                   도쿄민박은 정식 여행업 허가를 받은 사업자로 운영되고 있습니다.
                   단순 중개가 아닌, 여행 서비스로서의 책임을 전제로 숙소를
