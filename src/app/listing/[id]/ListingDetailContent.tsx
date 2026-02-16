@@ -140,16 +140,13 @@ export default function ListingDetailContent({
             />
           </div>
 
-          {/* 숙소 스펙 (갤러리 아래): 숙소 타입 · 최대 인원 · 침실 · 침대 · 욕실, 글씨 크기는 '숙소' 제목과 동일 */}
+          {/* 숙소 스펙 (갤러리 아래): 숙소 형태 · 최대 인원 · 침실 · 침대 · 욕실 */}
           <div className="mb-8">
-            <p className="text-xl sm:text-2xl font-semibold text-[#222] leading-tight tracking-tight">
-              {listing.category?.name
-                ? `${listing.category.name}`
-                : "숙소"}
-            </p>
-            <p className="text-xl sm:text-2xl font-semibold text-[#222] leading-tight tracking-tight mt-2 flex flex-wrap items-center gap-x-1">
+            <p className="text-xl sm:text-2xl font-semibold text-[#222] leading-tight tracking-tight flex flex-wrap items-center gap-x-1">
               <span>
-                {listing.propertyType === "detached_house" ? "단독주택" : "아파트"}
+                {listing.propertyType === "detached_house"
+                  ? "단독주택 독채대실"
+                  : "아파트의 1실독채대실"}
               </span>
               <span className="text-[#d1d1d1] font-normal">·</span>
               <span>최대 인원 {listing.maxGuests}명</span>
