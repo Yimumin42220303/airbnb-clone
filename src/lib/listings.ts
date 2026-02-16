@@ -209,6 +209,7 @@ export async function getListingById(id: string) {
       category: true,
       listingAmenities: { include: { amenity: true } },
       reviews: {
+        orderBy: { createdAt: "desc" },
         include: {
           user: { select: { name: true, createdAt: true } },
         },
