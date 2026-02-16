@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getAdminUser } from "@/lib/admin";
 import { isDevSkipAuth } from "@/lib/dev-auth";
-import { getListingById } from "@/lib/listings";
+import { getListingByIdForEdit } from "@/lib/listings";
 import { prisma } from "@/lib/prisma";
 import EditListingForm from "./EditListingForm";
 
@@ -17,7 +17,7 @@ export default async function EditListingPage({ params }: Props) {
   const admin = await getAdminUser();
   const isAdmin = !!admin;
   const { id } = await params;
-  const listing = await getListingById(id);
+  const listing = await getListingByIdForEdit(id);
   if (!listing) notFound();
 
   const owner = await prisma.listing.findUnique({

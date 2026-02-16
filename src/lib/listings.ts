@@ -144,6 +144,61 @@ export async function getListings(filters?: ListingFilters) {
 }
 
 /**
+ * 숙소 수정 폼용 조회 (리뷰 제외 — Review 테이블 스키마 변경 영향 없음)
+ */
+export async function getListingByIdForEdit(id: string) {
+  const listing = await prisma.listing.findUnique({
+    where: { id },
+    include: {
+      user: { select: { name: true, image: true } },
+      category: true,
+      listingAmenities: { include: { amenity: true } },
+      images: { orderBy: { sortOrder: "asc" } },
+    },
+  });
+  if (!listing) return null;
+  const allImages = listing.images.length > 0
+    ? listing.images.map((i) => ({ id: i.id, url: i.url, sortOrder: i.sortOrder }))
+    : [{ id: "main" as const, url: listing.imageUrl, sortOrder: 0 }];
+  const imageUrl = allImages[0].url;
+  return {
+    id: listing.id,
+    title: listing.title,
+    location: listing.location,
+    description: listing.description,
+    imageUrl,
+    images: allImages,
+    pricePerNight: listing.pricePerNight,
+    cleaningFee: listing.cleaningFee ?? 0,
+    baseGuests: listing.baseGuests ?? 2,
+    maxGuests: listing.maxGuests,
+    extraGuestFee: listing.extraGuestFee ?? 0,
+    januaryFactor: listing.januaryFactor ?? 1,
+    februaryFactor: listing.februaryFactor ?? 1,
+    marchFactor: listing.marchFactor ?? 1,
+    aprilFactor: listing.aprilFactor ?? 1,
+    mayFactor: listing.mayFactor ?? 1,
+    juneFactor: listing.juneFactor ?? 1,
+    julyFactor: listing.julyFactor ?? 1,
+    augustFactor: listing.augustFactor ?? 1,
+    septemberFactor: listing.septemberFactor ?? 1,
+    octoberFactor: listing.octoberFactor ?? 1,
+    novemberFactor: listing.novemberFactor ?? 1,
+    decemberFactor: listing.decemberFactor ?? 1,
+    bedrooms: listing.bedrooms,
+    beds: listing.beds,
+    baths: listing.baths,
+    isPromoted: listing.isPromoted,
+    cancellationPolicy: (listing.cancellationPolicy as "flexible" | "moderate" | "strict") || "flexible",
+    houseRules: listing.houseRules ?? "",
+    category: listing.category ? { id: listing.category.id, name: listing.category.name } : null,
+    mapUrl: listing.mapUrl ?? null,
+    amenities: listing.listingAmenities.map((la) => la.amenity.name),
+    icalImportUrls: parseIcalImportUrls(listing.icalImportUrls),
+  };
+}
+
+/**
  * 숙소 상세 조회 (ID)
  */
 export async function getListingById(id: string) {
