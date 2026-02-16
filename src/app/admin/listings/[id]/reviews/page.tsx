@@ -8,12 +8,19 @@ export default async function AdminListingReviewsPage({ params }: RouteParams) {
   const resolved = await Promise.resolve(params);
   const listingId = resolved.id;
 
+  // Review는 select로 필요한 컬럼만 조회 (authorDisplayName 제외 시 컬럼 미존재 DB에서도 동작)
   const listing = await prisma.listing.findUnique({
     where: { id: listingId },
     include: {
       reviews: {
         orderBy: { createdAt: "desc" },
-        include: { user: { select: { name: true, email: true } } },
+        select: {
+          id: true,
+          rating: true,
+          body: true,
+          createdAt: true,
+          user: { select: { name: true, email: true } },
+        },
       },
     },
   });
@@ -40,7 +47,7 @@ export default async function AdminListingReviewsPage({ params }: RouteParams) {
     body: r.body ?? "",
     createdAt: r.createdAt.toISOString(),
     userName: r.user.name || r.user.email || "게스트",
-    authorDisplayName: r.authorDisplayName ?? null,
+    authorDisplayName: (r as { authorDisplayName?: string | null }).authorDisplayName ?? null,
   }));
 
   return (
