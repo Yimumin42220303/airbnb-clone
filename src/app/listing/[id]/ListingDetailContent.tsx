@@ -225,60 +225,6 @@ export default function ListingDetailContent({
                   );
                 })()}
 
-                {/* 취소 정책 */}
-                {(() => {
-                  const policy = listing.cancellationPolicy || "flexible";
-                  const policyMap: Record<string, { label: string; rules: string[] }> = {
-                    flexible: {
-                      label: "유연",
-                      rules: [
-                        "체크인 1일 전까지 취소 시 100% 환불",
-                        "체크인 당일 이후 환불 불가",
-                      ],
-                    },
-                    moderate: {
-                      label: "보통",
-                      rules: [
-                        "체크인 7일 전까지 취소 시 100% 환불",
-                        "체크인 1~6일 전 취소 시 50% 환불",
-                        "체크인 당일 이후 환불 불가",
-                      ],
-                    },
-                    strict: {
-                      label: "엄격",
-                      rules: [
-                        "예약 후 48시간 이내 취소 시 100% 환불 (체크인 14일 이상 남은 경우)",
-                        "체크인 7일 전까지 취소 시 50% 환불",
-                        "체크인 7일 이내 환불 불가",
-                      ],
-                    },
-                  };
-                  const info = policyMap[policy] || policyMap.flexible;
-                  return (
-                    <DetailSection title="취소 정책">
-                      <div className="space-y-3">
-                        <span className={`inline-block text-[13px] font-semibold px-3 py-1 rounded-full ${
-                          policy === "flexible"
-                            ? "bg-green-100 text-green-800"
-                            : policy === "moderate"
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-red-100 text-red-800"
-                        }`}>
-                          {info.label}
-                        </span>
-                        <ul className="space-y-1.5 text-[15px] text-[#222] leading-relaxed">
-                          {info.rules.map((rule, i) => (
-                            <li key={i} className="flex items-start gap-2">
-                              <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#717171] flex-shrink-0" />
-                              {rule}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </DetailSection>
-                  );
-                })()}
-
                 {/* 4. 위치 / 오시는 방법 */}
                 <DetailSection title="위치 / 오시는 방법">
                   <div className="space-y-3 text-[15px] text-[#222]">
