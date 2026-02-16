@@ -48,7 +48,7 @@ export default function ListingCard({
       )}
       aria-label={`${title} - ${location}, 1박 ₩${price.toLocaleString()}`}
     >
-      <div className="relative w-full h-[180px] sm:h-[220px] overflow-hidden">
+      <div className="relative w-full h-[240px] sm:h-[280px] md:h-[320px] overflow-hidden">
         <Image
           src={imageUrl}
           alt={imageAlt ?? title}
@@ -67,7 +67,7 @@ export default function ListingCard({
           <WishlistHeart listingId={id} initialSaved={initialSaved} />
         </div>
       </div>
-      <div className="p-4 md:p-5 flex flex-col gap-2 min-h-[200px] sm:min-h-[230px]">
+      <div className="p-4 md:p-5 flex flex-col gap-2 min-h-[180px] sm:min-h-[200px]">
         <div className="flex flex-col gap-1">
           <h3 className="font-bold text-minbak-black text-minbak-body leading-snug line-clamp-2">
             {title}
