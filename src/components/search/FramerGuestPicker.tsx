@@ -1,6 +1,7 @@
 "use client";
 
 import { Minus, Plus } from "lucide-react";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
 /** Framer 스타일: 성인/어린이/유아 +/- 로 인원 선택, 표시 "게스트 N명" 또는 "게스트 N명, 유아 M명" */
 export interface GuestCounts {
@@ -46,6 +47,7 @@ export default function FramerGuestPicker({
   onClose,
   panelOnly,
 }: FramerGuestPickerProps) {
+  const t = useHostTranslations().t;
   const setAdult = (n: number) =>
     onChange({ ...counts, adult: Math.max(1, Math.min(20, n)) });
   const setChild = (n: number) =>
@@ -61,11 +63,11 @@ export default function FramerGuestPicker({
     >
       <div className="px-6 pt-2 pb-1">
         <div className={ROW_CLASS}>
-          <span className={LABEL_CLASS}>성인</span>
+          <span className={LABEL_CLASS}>{t("guest.adult")}</span>
           <div className="flex items-center gap-3">
             <button
               type="button"
-              aria-label="성인 1명 줄이기"
+              aria-label={t("guest.adultDecrease")}
               disabled={counts.adult <= 1}
               className={BTN_CLASS}
               onClick={() => setAdult(counts.adult - 1)}
@@ -77,7 +79,7 @@ export default function FramerGuestPicker({
             </span>
             <button
               type="button"
-              aria-label="성인 1명 늘리기"
+              aria-label={t("guest.adultIncrease")}
               className={BTN_CLASS}
               onClick={() => setAdult(counts.adult + 1)}
             >
@@ -86,11 +88,11 @@ export default function FramerGuestPicker({
           </div>
         </div>
         <div className={ROW_CLASS}>
-          <span className={LABEL_CLASS}>어린이</span>
+          <span className={LABEL_CLASS}>{t("guest.child")}</span>
           <div className="flex items-center gap-3">
             <button
               type="button"
-              aria-label="어린이 1명 줄이기"
+              aria-label={t("guest.childDecrease")}
               disabled={counts.child <= 0}
               className={BTN_CLASS}
               onClick={() => setChild(counts.child - 1)}
@@ -102,7 +104,7 @@ export default function FramerGuestPicker({
             </span>
             <button
               type="button"
-              aria-label="어린이 1명 늘리기"
+              aria-label={t("guest.childIncrease")}
               className={BTN_CLASS}
               onClick={() => setChild(counts.child + 1)}
             >
@@ -111,11 +113,11 @@ export default function FramerGuestPicker({
           </div>
         </div>
         <div className={ROW_CLASS}>
-          <span className={LABEL_CLASS}>유아</span>
+          <span className={LABEL_CLASS}>{t("guest.infant")}</span>
           <div className="flex items-center gap-3">
             <button
               type="button"
-              aria-label="유아 1명 줄이기"
+              aria-label={t("guest.infantDecrease")}
               disabled={counts.infant <= 0}
               className={BTN_CLASS}
               onClick={() => setInfant(counts.infant - 1)}
@@ -127,7 +129,7 @@ export default function FramerGuestPicker({
             </span>
             <button
               type="button"
-              aria-label="유아 1명 늘리기"
+              aria-label={t("guest.infantIncrease")}
               className={BTN_CLASS}
               onClick={() => setInfant(counts.infant + 1)}
             >
