@@ -36,6 +36,8 @@ body {
   font-size: 1rem;
   line-height: 1.6;
   letter-spacing: -0.01em;
+  /* 모바일: 터치 시 하이라이트 제거 (선택적) */
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* 게스트 UX: 포커스 링으로 키보드/접근성 개선 */
@@ -52,4 +54,22 @@ select:focus-visible,
 textarea:focus-visible {
   outline: 2px solid var(--minbak-primary);
   outline-offset: 2px;
+}
+
+/* 모바일: 스크롤바 숨김 (가로 스크롤 영역) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* 모바일: input/select/textarea 최소 16px → iOS 포커스 시 자동 줌 방지 */
+@media (max-width: 639px) {
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1rem);
+  }
 }

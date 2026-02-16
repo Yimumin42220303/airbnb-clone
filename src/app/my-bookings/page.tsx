@@ -45,7 +45,7 @@ export default async function MyBookingsPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen pt-24 px-6">
+      <main className="min-h-screen pt-24 px-4 sm:px-6">
         <div className="max-w-[900px] mx-auto py-8">
           <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
             내 예약

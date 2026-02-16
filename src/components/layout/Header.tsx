@@ -49,7 +49,7 @@ export default function Header() {
   return (
     <>
       <header
-        className="fixed top-0 left-0 right-0 z-[9999] border-b border-minbak-light-gray bg-[#f7f7f7]"
+        className="fixed top-0 left-0 right-0 z-[9999] border-b border-minbak-light-gray bg-[#f7f7f7] pt-[env(safe-area-inset-top,0px)]"
         style={{ pointerEvents: "auto" }}
       >
         <div className="max-w-[1240px] mx-auto px-4 py-3 md:px-6 md:py-5 flex flex-col gap-4 md:gap-6">
@@ -73,9 +73,9 @@ export default function Header() {
             </span>
           </Link>
 
-          {/* 에어비 스타일: 호스트일 때 중앙에 달력|리스팅|메시지|매상 */}
+          {/* 에어비 스타일: 호스트일 때 중앙에 달력|리스팅|메시지|매상 (모바일: 가로 스크롤) */}
           {isHostMode ? (
-            <nav className="flex items-center gap-1 sm:gap-2 md:gap-6 flex-shrink-0 min-h-[44px]" aria-label="호스트 메뉴">
+            <nav className="flex items-center gap-1 sm:gap-2 md:gap-6 flex-shrink-0 min-h-[44px] overflow-x-auto scrollbar-hide -mx-2 px-2 md:mx-0 md:px-0" aria-label="호스트 메뉴">
               <Link
                 href="/host/calendar"
                 className={`min-h-[44px] flex items-center px-1.5 sm:px-2 text-xs sm:text-sm font-medium transition-colors ${

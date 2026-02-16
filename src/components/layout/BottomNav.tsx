@@ -275,20 +275,20 @@ export default function BottomNav() {
         fixed bottom-0 inset-x-0 z-50
         md:hidden
         bg-white border-t border-gray-200
-        pb-[env(safe-area-inset-bottom)]
+        pb-[max(0.5rem,env(safe-area-inset-bottom))]
       "
     >
-      <ul className="flex items-center justify-around h-16 px-1">
+      <ul className="flex items-center justify-around min-h-[64px] px-1">
         {items.map((item) => {
           const active = item.isActive(pathname);
           return (
-            <li key={item.path} className="flex-1 min-w-0">
+            <li key={item.path} className="flex-1 min-w-0 min-h-[44px]">
               <Link
                 href={item.path}
                 className={`
                   flex flex-col items-center justify-center gap-0.5
-                  py-1.5
-                  transition-colors duration-200
+                  min-h-[44px] py-2 w-full
+                  transition-colors duration-200 active:opacity-80
                   ${active ? "text-[#D74132]" : "text-[#717171]"}
                 `}
               >

@@ -48,7 +48,7 @@ export default async function BookingCompletePage({ searchParams }: Props) {
   return (
     <>
       <Header />
-      <main className="min-h-screen pt-24 px-6">
+      <main className="min-h-screen pt-24 px-4 sm:px-6">
         <div className="max-w-[560px] mx-auto py-12">
           <div className="text-center mb-8">
             {/* 아이콘 */}
