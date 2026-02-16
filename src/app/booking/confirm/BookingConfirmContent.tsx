@@ -17,10 +17,13 @@ import { formatDateKR } from "@/lib/date-utils";
 const PORTONE_STORE_ID = process.env.NEXT_PUBLIC_PORTONE_STORE_ID ?? "";
 const PORTONE_CHANNEL_KEY =
   process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY ?? "";
+const PORTONE_BILLING_CHANNEL_KEY =
+  process.env.NEXT_PUBLIC_PORTONE_BILLING_CHANNEL_KEY ?? "";
 const PORTONE_READY = !!(
   PORTONE_STORE_ID &&
   PORTONE_CHANNEL_KEY
 );
+const BILLING_KEY_ENABLED = !!(PORTONE_BILLING_CHANNEL_KEY);
 
 type Props = {
   listingId: string;
@@ -62,12 +65,12 @@ export default function BookingConfirmContent({
     specialRequests: "",
   });
 
-  // 체크인까지 남은 일수 계산
+  // 체크인까지 남은 일수 계산 (빌링키 채널이 설정된 경우에만 후불결제 활성화)
   const daysBeforeCheckIn = Math.floor(
     (new Date(checkIn + "T00:00:00").getTime() - new Date().getTime()) /
       (24 * 60 * 60 * 1000)
   );
-  const isDeferred = daysBeforeCheckIn >= 7;
+  const isDeferred = BILLING_KEY_ENABLED && daysBeforeCheckIn >= 7;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -125,7 +128,7 @@ export default function BookingConfirmContent({
             const PortOne = await import("@portone/browser-sdk/v2");
             const issueResult = await PortOne.requestIssueBillingKey({
               storeId: PORTONE_STORE_ID,
-              channelKey: PORTONE_CHANNEL_KEY,
+              channelKey: PORTONE_BILLING_CHANNEL_KEY,
               billingKeyMethod: "CARD",
               customer: {
                 fullName: form.fullName.trim(),

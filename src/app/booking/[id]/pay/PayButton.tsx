@@ -6,7 +6,10 @@ import { Button } from "@/components/ui";
 
 const PORTONE_STORE_ID = process.env.NEXT_PUBLIC_PORTONE_STORE_ID ?? "";
 const PORTONE_CHANNEL_KEY = process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY ?? "";
+const PORTONE_BILLING_CHANNEL_KEY =
+  process.env.NEXT_PUBLIC_PORTONE_BILLING_CHANNEL_KEY ?? "";
 const PORTONE_READY = !!(PORTONE_STORE_ID && PORTONE_CHANNEL_KEY);
+const BILLING_KEY_ENABLED = !!(PORTONE_BILLING_CHANNEL_KEY);
 
 export default function PayButton({
   bookingId,
@@ -34,7 +37,7 @@ export default function PayButton({
           (24 * 60 * 60 * 1000)
       )
     : 0;
-  const isDeferred = daysBeforeCheckIn >= 7;
+  const isDeferred = BILLING_KEY_ENABLED && daysBeforeCheckIn >= 7;
 
   async function handlePay() {
     setLoading(true);
@@ -46,7 +49,7 @@ export default function PayButton({
           const PortOne = await import("@portone/browser-sdk/v2");
           const issueResult = await PortOne.requestIssueBillingKey({
             storeId: PORTONE_STORE_ID,
-            channelKey: PORTONE_CHANNEL_KEY,
+            channelKey: PORTONE_BILLING_CHANNEL_KEY,
             billingKeyMethod: "CARD",
             customer: {
               fullName: userName || undefined,
