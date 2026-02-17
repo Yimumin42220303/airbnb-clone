@@ -107,6 +107,14 @@ export default function MypageContent({ user, bookings }: Props) {
   );
 }
 
+function getBookingStatusLabel(status: string, paymentStatus: string): string {
+  if (status === "cancelled") return "예약취소";
+  if (status === "pending") return "호스트 승인대기중";
+  if (status === "confirmed" && paymentStatus === "paid") return "확정";
+  if (status === "confirmed") return "호스트 승인 · 결제 대기";
+  return "확인 중";
+}
+
 function ReservationsSection({ bookings }: { bookings: BookingData[] }) {
   return (
     <section className="bg-white border border-minbak-light-gray rounded-minbak p-6">
@@ -142,14 +150,33 @@ function ReservationsSection({ bookings }: { bookings: BookingData[] }) {
               (checkOut.getTime() - checkIn.getTime()) /
                 (24 * 60 * 60 * 1000)
             );
+            const statusLabel = getBookingStatusLabel(b.status, b.paymentStatus);
+            const isCancelled = b.status === "cancelled";
+            const isConfirmed = b.status === "confirmed" && b.paymentStatus === "paid";
+            const isPending = b.status === "pending";
             return (
               <li
                 key={b.id}
                 className="border border-minbak-light-gray rounded-minbak p-5 hover:shadow-minbak transition-shadow"
               >
-                <p className="text-minbak-caption text-minbak-gray mb-3">
-                  예약번호 {b.id}
-                </p>
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <p className="text-minbak-caption text-minbak-gray">
+                    예약번호 {b.id}
+                  </p>
+                  <span
+                    className={`inline-block text-[12px] font-medium px-2.5 py-1 rounded-full ${
+                      isCancelled
+                        ? "bg-gray-100 text-gray-600"
+                        : isConfirmed
+                          ? "bg-green-100 text-green-800"
+                          : isPending
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-blue-100 text-blue-800"
+                    }`}
+                  >
+                    {statusLabel}
+                  </span>
+                </div>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Link
                     href={`/listing/${b.listing.id}`}
