@@ -88,11 +88,19 @@ export default function ListingDetailContent({
 }: Props) {
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [priceSummary, setPriceSummary] = useState<{ nights: number; totalPrice: number } | null>(null);
+  const [reviewsExpanded, setReviewsExpanded] = useState(false);
   const description = listing.description?.trim() || "상세 설명이 없습니다.";
   const needsExpand = description.length > DESCRIPTION_PREVIEW_LENGTH;
   const displayDescription = needsExpand && !descriptionExpanded
     ? description.slice(0, DESCRIPTION_PREVIEW_LENGTH) + "..."
     : description;
+  const REVIEWS_INITIAL = 6;
+  const reviewsToShow =
+    listing.reviews.length > REVIEWS_INITIAL && !reviewsExpanded
+      ? listing.reviews.slice(0, REVIEWS_INITIAL)
+      : listing.reviews;
+  const hasMoreReviews = listing.reviews.length > REVIEWS_INITIAL;
+  const remainingCount = listing.reviews.length - REVIEWS_INITIAL;
   const isEmbeddableMap =
     listing.mapUrl != null &&
     listing.mapUrl.includes("/maps/embed");
@@ -328,13 +336,28 @@ export default function ListingDetailContent({
                   <ReviewSummaryAI listingId={listing.id} />
                 )}
                 {listing.reviews.length > 0 ? (
-                  <ul className="divide-y divide-[#ebebeb]">
-                    {listing.reviews.map((r, i) => (
-                      <li key={i} className="p-4 md:p-6">
-                        <ReviewCard review={r} />
-                      </li>
-                    ))}
-                  </ul>
+                  <>
+                    <ul className="divide-y divide-[#ebebeb]">
+                      {reviewsToShow.map((r, i) => (
+                        <li key={i} className="p-4 md:p-6">
+                          <ReviewCard review={r} />
+                        </li>
+                      ))}
+                    </ul>
+                    {hasMoreReviews && (
+                      <div className="p-4 md:p-6 border-t border-[#ebebeb] flex justify-center">
+                        <button
+                          type="button"
+                          onClick={() => setReviewsExpanded((prev) => !prev)}
+                          className="min-h-[44px] px-6 py-2.5 text-[15px] font-medium text-[#222] border border-[#dddddd] rounded-full hover:bg-[#f7f7f7] transition-colors"
+                        >
+                          {reviewsExpanded
+                            ? "접기"
+                            : `리뷰 ${remainingCount}개 더 보기`}
+                        </button>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div className="p-4 md:p-6 text-center py-10">
                     <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center mx-auto mb-3">
