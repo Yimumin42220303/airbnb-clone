@@ -90,10 +90,39 @@ DB 구조(테이블·컬럼)를 바꾸려면 Prisma 스키마를 수정한 뒤 �
 | 명령 | 설명 |
 |------|------|
 | `npm run db:seed` | 전체 시드 (호스트/게스트/관리자 계정, 숙소 6개, 편의시설, 블로그 2편, 리뷰 등) |
+| `npm run db:remove-seed-listings` | 시드 숙소 6개만 삭제 (`host@example.com` 소유. 다른 호스트 숙소는 유지) |
 | `node prisma/seed-one-user.js` | 사용자 1명만 추가 (`dev@example.com` · 개발용) |
 
 시드는 `package.json`의 `"prisma": { "seed": "node prisma/seed.js" }` 에 정의되어 있으며,  
 `npx prisma db seed` 또는 `npm run db:seed` 로 실행됩니다.
+
+### 프로덕션 DB에 최초 데이터 넣기 (배포 후 숙소가 안 보일 때)
+
+배포(Vercel 등)만 하고 **프로덕션 DB에 시드를 한 번도 안 돌렸다면** 홈/검색에 숙소가 0건으로 나옵니다.  
+아래를 **로컬 PC에서 한 번만** 실행하세요.
+
+1. **프로덕션 DB URL 확인**  
+   Vercel 대시보드 → 프로젝트 → Settings → Environment Variables 에서 `DATABASE_URL`, `DIRECT_URL` 복사.  
+   (Neon/Supabase 등 사용 시 해당 대시보드에서도 확인 가능)
+
+2. **스키마 반영 (최초 1회)**  
+   ```bash
+   set DATABASE_URL=프로덕션_URL
+   set DIRECT_URL=프로덕션_DIRECT_URL
+   npx prisma migrate deploy
+   ```  
+   (PowerShell이면 `$env:DATABASE_URL="..."; $env:DIRECT_URL="..."; npx prisma migrate deploy`)
+
+3. **시드 실행**  
+   ```bash
+   set DATABASE_URL=프로덕션_URL
+   set DIRECT_URL=프로덕션_DIRECT_URL
+   npm run db:seed
+   ```  
+   (또는 `.env.production` 에 프로덕션 URL만 넣고, `dotenv -e .env.production -- npm run db:seed`)
+
+실행 후 배포 사이트를 새로고침하면 숙소 6개·호스트/게스트/관리자·공식 계정·블로그 글이 보입니다.  
+**주의**: 현재 시드 스크립트는 기존 숙소·리뷰·예약을 삭제하고 다시 만들므로, 이미 운영 중인 DB에는 사용하지 마세요.
 
 ---
 
