@@ -143,42 +143,57 @@ export default async function MyBookingsPage({ searchParams }: Props) {
           ) : (
             <ul className="space-y-4">
               {bookings.map((b) => {
-                const checkInStr = b.checkIn.toLocaleDateString("ko-KR", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                });
-                const checkOutStr = b.checkOut.toLocaleDateString("ko-KR", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                });
+                const listing = b.listing;
+                const listingId = listing?.id ?? b.listingId;
+                const checkInStr =
+                  b.checkIn instanceof Date && !isNaN(b.checkIn.getTime())
+                    ? b.checkIn.toLocaleDateString("ko-KR", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })
+                    : String(b.checkIn);
+                const checkOutStr =
+                  b.checkOut instanceof Date && !isNaN(b.checkOut.getTime())
+                    ? b.checkOut.toLocaleDateString("ko-KR", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })
+                    : String(b.checkOut);
+                if (!listingId) return null;
                 return (
                   <li
                     key={b.id}
                     className="flex flex-col sm:flex-row gap-4 p-5 bg-white border border-minbak-light-gray rounded-minbak hover:shadow-minbak transition-shadow"
                   >
                     <Link
-                      href={`/listing/${b.listing.id}`}
+                      href={`/listing/${listingId}`}
                       className="relative w-full sm:w-40 h-44 sm:h-28 flex-shrink-0 rounded-minbak overflow-hidden bg-minbak-bg"
                     >
-                      <Image
-                        src={b.listing.imageUrl}
-                        alt={b.listing.title}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 640px) 100vw, 160px"
-                      />
+                      {listing?.imageUrl ? (
+                        <Image
+                          src={listing.imageUrl}
+                          alt={listing.title ?? "숙소"}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 640px) 100vw, 160px"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-minbak-gray text-minbak-caption">
+                          숙소
+                        </div>
+                      )}
                     </Link>
                     <div className="flex-1 min-w-0">
                       <Link
-                        href={`/listing/${b.listing.id}`}
+                        href={`/listing/${listingId}`}
                         className="font-semibold text-minbak-black hover:text-minbak-primary hover:underline block truncate text-minbak-body"
                       >
-                        {b.listing.title}
+                        {listing?.title ?? "숙소"}
                       </Link>
                       <p className="text-minbak-caption text-minbak-gray mt-0.5">
-                        {b.listing.location}
+                        {listing?.location ?? ""}
                       </p>
                       <p className="text-minbak-body text-minbak-black mt-2">
                         {checkInStr} ~ {checkOutStr}
@@ -257,11 +272,15 @@ export default async function MyBookingsPage({ searchParams }: Props) {
                             new Date(new Date().toISOString().slice(0, 10)) && (
                           <CancelBookingButton
                             bookingId={b.id}
-                            listingTitle={b.listing.title}
+                            listingTitle={listing?.title ?? "숙소"}
                             paymentStatus={b.paymentStatus}
-                            checkIn={b.checkIn.toISOString().slice(0, 10)}
+                            checkIn={
+                              b.checkIn instanceof Date
+                                ? b.checkIn.toISOString().slice(0, 10)
+                                : String(b.checkIn).slice(0, 10)
+                            }
                             totalPrice={b.totalPrice}
-                            cancellationPolicy={b.listing.cancellationPolicy}
+                            cancellationPolicy={listing?.cancellationPolicy ?? "flexible"}
                             bookingCreatedAt={b.createdAt.toISOString()}
                           />
                         )}
@@ -273,17 +292,18 @@ export default async function MyBookingsPage({ searchParams }: Props) {
                         )}
                         {/* Review link: show for completed stays (checkout passed, confirmed) */}
                         {b.status === "confirmed" &&
+                          listingId &&
                           new Date(b.checkOut.toISOString().slice(0, 10)) <
                             new Date(new Date().toISOString().slice(0, 10)) &&
-                          !reviewedListingIds.has(b.listing.id) && (
+                          !reviewedListingIds.has(listingId) && (
                             <Link
-                              href={`/listing/${b.listing.id}#review`}
+                              href={`/listing/${listingId}#review`}
                               className="inline-flex items-center min-h-[36px] px-4 py-2 rounded-minbak text-minbak-body font-medium text-minbak-primary border border-minbak-primary hover:bg-red-50 transition-colors"
                             >
                               &#9997; 리뷰 작성
                             </Link>
                           )}
-                        {reviewedListingIds.has(b.listing.id) &&
+                        {listingId && reviewedListingIds.has(listingId) &&
                           b.status === "confirmed" &&
                           new Date(b.checkOut.toISOString().slice(0, 10)) <
                             new Date(new Date().toISOString().slice(0, 10)) && (
