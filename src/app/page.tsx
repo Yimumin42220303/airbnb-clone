@@ -35,7 +35,22 @@ export const metadata = {
   },
 };
 
-export default async function Home() {
+function hasSearchParams(params: { [key: string]: string | string[] | undefined }) {
+  const checkIn = typeof params.checkIn === "string" ? params.checkIn : undefined;
+  const checkOut = typeof params.checkOut === "string" ? params.checkOut : undefined;
+  const guests = params.guests != null ? Number(params.guests) : undefined;
+  const adults = params.adults != null ? Number(params.adults) : undefined;
+  return !!(checkIn && checkOut && (guests != null && !isNaN(guests) || adults != null && !isNaN(adults)));
+}
+
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const params = await searchParams;
+  const showPrice = hasSearchParams(params ?? {});
+
   let listings: Awaited<ReturnType<typeof getListings>> = [];
   let wishlistIds: string[] = [];
   try {
@@ -69,6 +84,7 @@ export default async function Home() {
                 key={listing.id}
                 {...listing}
                 initialSaved={wishlistIds.includes(listing.id)}
+                showPrice={showPrice}
               />
             ))}
           </div>
