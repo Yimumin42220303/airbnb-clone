@@ -25,6 +25,7 @@ export async function GET() {
       { error: "사용자 정보를 찾을 수 없습니다." },
       { status: 404 }
     );
+  }
   return NextResponse.json({
     name: dbUser.name ?? null,
     email: dbUser.email ?? null,
