@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 type Message = {
@@ -13,6 +12,9 @@ type Message = {
   isFromMe: boolean;
   senderName: string;
 };
+
+const POLL_INTERVAL_MS = 6_000;
+const TEMP_ID_PREFIX = "temp-";
 
 /** 호스트 승인·미결제 시 이 메시지 본문 아래에 결제 버튼 노출 */
 const APPROVAL_MESSAGE_MARKERS = [
@@ -39,15 +41,68 @@ export default function MessageThread({
   currentUserId,
   bookingIdForPayment,
 }: Props) {
-  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const knownIdsRef = useRef<Set<string>>(
+    new Set(initialMessages.map((m) => m.id))
+  );
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // 상대방 메시지 수신: 주기적 폴링
+  const fetchNewMessages = useCallback(async () => {
+    try {
+      const res = await fetch(
+        `/api/conversations/${conversationId}/messages?limit=50`
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      const list: Message[] = data.messages ?? [];
+      setMessages((prev) => {
+        const known = new Set(knownIdsRef.current);
+        let hasNew = false;
+        for (const m of list) {
+          if (!known.has(m.id)) {
+            known.add(m.id);
+            hasNew = true;
+          }
+        }
+        if (!hasNew) return prev;
+        const prevIds = new Set(prev.map((p) => p.id));
+        const merged = [...prev];
+        for (const m of list) {
+          if (!prevIds.has(m.id)) {
+            merged.push(m);
+            prevIds.add(m.id);
+          }
+        }
+        merged.sort(
+          (a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+        return merged;
+      });
+      for (const m of list) knownIdsRef.current.add(m.id);
+    } catch {
+      // 폴링 실패는 무시 (다음 주기에 재시도)
+    }
+  }, [conversationId]);
+
+  useEffect(() => {
+    const t = setInterval(fetchNewMessages, POLL_INTERVAL_MS);
+    return () => clearInterval(t);
+  }, [fetchNewMessages]);
+
+  // 탭 포커스 시 한 번 즉시 갱신
+  useEffect(() => {
+    const onFocus = () => fetchNewMessages();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [fetchNewMessages]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -55,6 +110,16 @@ export default function MessageThread({
     if (!text || sending) return;
     setSending(true);
     setInput("");
+    const tempId = `${TEMP_ID_PREFIX}${Date.now()}`;
+    const optimistic: Message = {
+      id: tempId,
+      body: text,
+      createdAt: new Date().toISOString(),
+      senderId: currentUserId,
+      isFromMe: true,
+      senderName: "나",
+    };
+    setMessages((prev) => [...prev, optimistic]);
     try {
       const res = await fetch(`/api/conversations/${conversationId}/messages`, {
         method: "POST",
@@ -64,22 +129,34 @@ export default function MessageThread({
       const data = await res.json();
       if (!res.ok) {
         toast.error(data.error || "전송에 실패했습니다.");
+        setMessages((prev) => prev.filter((m) => m.id !== tempId));
         setInput(text);
         return;
       }
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: data.id,
-          body: data.body,
-          createdAt: data.createdAt,
-          senderId: data.senderId,
-          isFromMe: true,
-          senderName: data.senderName,
-        },
-      ]);
+      if (!data?.id) {
+        toast.error("전송에 실패했습니다.");
+        setMessages((prev) => prev.filter((m) => m.id !== tempId));
+        setInput(text);
+        return;
+      }
+      knownIdsRef.current.add(data.id);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === tempId
+            ? {
+                id: data.id,
+                body: data.body,
+                createdAt: data.createdAt,
+                senderId: data.senderId,
+                isFromMe: true,
+                senderName: data.senderName ?? "나",
+              }
+            : m
+        )
+      );
     } catch {
       toast.error("네트워크 오류가 발생했습니다.");
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
       setInput(text);
     } finally {
       setSending(false);

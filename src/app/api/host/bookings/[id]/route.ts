@@ -104,6 +104,26 @@ export async function PATCH(
       const nights = Math.floor(
         (booking.checkOut.getTime() - booking.checkIn.getTime()) / (24 * 60 * 60 * 1000)
       );
+
+      // 게스트 이메일: booking.user에 없으면 userId로 재조회 (관계 미로딩 등 대비)
+      let guestEmail: string | null =
+        booking.user?.email?.trim() || null;
+      if (!guestEmail && booking.userId) {
+        const guestUser = await prisma.user.findUnique({
+          where: { id: booking.userId },
+          select: { email: true },
+        });
+        guestEmail = guestUser?.email?.trim() || null;
+      }
+      if (!guestEmail) {
+        console.warn(
+          "[Host Accept] 게스트 이메일이 없어 결제 요청 메일을 보내지 않습니다. bookingId:",
+          id,
+          "userId:",
+          booking.userId
+        );
+      }
+
       const emailInfo = {
         listingTitle: booking.listing.title,
         listingLocation: booking.listing.location || "",
@@ -113,7 +133,7 @@ export async function PATCH(
         nights,
         totalPrice: booking.totalPrice,
         guestName: booking.user?.name || "Guest",
-        guestEmail: booking.user?.email || "",
+        guestEmail: guestEmail ?? "",
         bookingId: id,
         baseUrl: BASE_URL,
       };
@@ -122,13 +142,19 @@ export async function PATCH(
         where: { id: userId },
         select: { name: true, email: true },
       });
-      const hostEmail = host?.email;
-      const isSameEmail = hostEmail && booking.user?.email && hostEmail === booking.user.email;
+      const hostEmail = host?.email?.trim() || null;
+      const isSameEmail =
+        !!hostEmail && !!guestEmail && hostEmail === guestEmail;
 
-      // 게스트에게 결제 요청 이메일
-      if (booking.user?.email && !isSameEmail) {
+      // 게스트에게 결제 요청 이메일 (게스트 이메일 있고, 호스트와 다른 경우)
+      if (guestEmail && !isSameEmail) {
         const guestMail = paymentRequestGuest(emailInfo);
-        sendEmailAsync({ to: booking.user.email, ...guestMail });
+        sendEmailAsync({ to: guestEmail, ...guestMail });
+      } else if (guestEmail && isSameEmail) {
+        console.warn(
+          "[Host Accept] 게스트와 호스트 이메일이 같아 게스트용 결제 요청 메일은 생략했습니다. bookingId:",
+          id
+        );
       }
 
       // 호스트 확인 이메일 (일본어 - 결제 대기 안내)

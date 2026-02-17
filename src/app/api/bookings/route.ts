@@ -156,7 +156,9 @@ export async function POST(request: Request) {
         select: { name: true, email: true },
       });
 
-      if (listing && guestUser?.email) {
+      if (!listing) {
+        console.warn("[Booking Email] listing not found, listingId:", listingId);
+      } else {
         const nights = Math.floor(
           (new Date(String(checkOut)).getTime() - new Date(String(checkIn)).getTime()) /
             (24 * 60 * 60 * 1000)
@@ -169,14 +171,15 @@ export async function POST(request: Request) {
           guests: Number(guests),
           nights,
           totalPrice: booking.totalPrice,
-          guestName: guestUser.name || "Guest",
-          guestEmail: guestUser.email,
+          guestName: guestUser?.name || "Guest",
+          guestEmail: guestUser?.email ?? "",
           bookingId: booking.id,
           baseUrl: BASE_URL,
         };
 
-        const hostEmail = listing.user?.email;
-        const isSameEmail = hostEmail && hostEmail === guestUser.email;
+        const hostEmail = listing.user?.email ?? null;
+        const isSameEmail =
+          hostEmail && guestUser?.email && hostEmail === guestUser.email;
 
         if (!hostEmail) {
           console.warn(
@@ -185,13 +188,13 @@ export async function POST(request: Request) {
           );
         }
 
-        // Guest email (호스트와 같은 이메일이면 생략)
-        if (!isSameEmail) {
+        // Guest email (게스트 이메일이 있고, 호스트와 다른 경우만)
+        if (guestUser?.email && !isSameEmail) {
           const guestMail = bookingConfirmationGuest(emailInfo);
           sendEmailAsync({ to: guestUser.email, ...guestMail });
         }
 
-        // Host email: 예약 요청 알림 (일본어)
+        // Host email: 예약 요청 알림 (listing만 있으면 발송, 게스트 이메일 유무와 무관)
         if (hostEmail) {
           const hostMail = bookingNotificationHost({
             ...emailInfo,
