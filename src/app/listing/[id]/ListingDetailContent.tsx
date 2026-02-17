@@ -124,10 +124,6 @@ export default function ListingDetailContent({
                 />
               </div>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px] text-[#717171]">
-                  <span className="flex items-center gap-1.5">
-                    <MapPin className="w-4 h-4 flex-shrink-0" aria-hidden />
-                    {listing.location}
-                  </span>
                   {listing.reviewCount > 0 && listing.rating != null && (
                     <span className="text-[#222] font-medium">
                       ★ {listing.rating.toFixed(1)} · 리뷰 {listing.reviewCount}개
@@ -239,13 +235,13 @@ export default function ListingDetailContent({
                 {/* 4. 위치 / 오시는 방법 */}
                 <DetailSection title="위치 / 오시는 방법">
                   <div className="space-y-3 text-[15px] text-[#222]">
-                    <div className="flex gap-2">
+                    <div className="flex items-start gap-2">
                       <MapPin
                         className="w-5 h-5 flex-shrink-0 text-[#717171] mt-0.5"
                         aria-hidden
                       />
                       <span className="leading-relaxed">
-                        가장 가까운역
+                        가장 가까운역 <span className="font-medium text-[#222]"> {listing.location}</span>
                       </span>
                     </div>
                     <p className="text-[13px] text-[#717171] leading-relaxed">
