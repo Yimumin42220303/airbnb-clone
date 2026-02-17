@@ -126,7 +126,7 @@ export async function POST(request: Request) {
             {
               conversationId: conversation.id,
               senderId: officialUserId,
-              body: "예약 요청이 접수되었습니다. 호스트가 확인할 때까지 잠시만 기다려 주세요.",
+              body: "예약 요청이 접수되었습니다. 호스트가 24시간 이내에 확인 후 안내해 드릴게요. 보통 그보다 빨리 답변이 올 수 있어요.",
             },
             {
               conversationId: conversation.id,
