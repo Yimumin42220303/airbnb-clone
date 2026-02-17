@@ -10,9 +10,15 @@ import BookingStepIndicator, {
   getBookingStepState,
 } from "@/components/booking/BookingStepIndicator";
 
-export default async function MyBookingsPage() {
+type Props = {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+export default async function MyBookingsPage({ searchParams }: Props) {
   const session = await getServerSession(authOptions);
   const userId = (session as { userId?: string } | null)?.userId;
+  const params = searchParams ? await searchParams : {};
+  const requested = params.requested === "1" || params.requested?.[0] === "1";
 
   const [bookings, reviewedListingIds] = userId
     ? await Promise.all([
@@ -53,6 +59,14 @@ export default async function MyBookingsPage() {
           <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
             내 예약
           </h1>
+          {requested && userId && (
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-minbak text-minbak-body text-amber-900">
+              <p className="font-medium">예약 요청이 접수되었습니다.</p>
+              <p className="text-minbak-caption mt-1 text-amber-800">
+                호스트가 24시간 이내에 승인하면 결제 안내 이메일이 발송됩니다. 위 목록에서 상태를 확인할 수 있어요.
+              </p>
+            </div>
+          )}
           {!userId ? (
             <div className="bg-white border border-minbak-light-gray rounded-minbak p-8 text-center max-w-md mx-auto">
               <p className="text-minbak-body text-minbak-gray mb-4">

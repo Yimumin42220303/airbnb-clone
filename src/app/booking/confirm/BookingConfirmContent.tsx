@@ -90,23 +90,8 @@ export default function BookingConfirmContent({
         setError("예약 요청에 실패했습니다. 다시 시도해 주세요.");
         return;
       }
-      const nightsNum =
-        data.nights ??
-        Math.floor(
-          (new Date(checkOut).getTime() - new Date(checkIn).getTime()) /
-            (24 * 60 * 60 * 1000)
-        );
-      const completeParams = new URLSearchParams({
-        id: String(data.id),
-        title: encodeURIComponent(listingTitle),
-        checkIn: data.checkIn ?? checkIn,
-        checkOut: data.checkOut ?? checkOut,
-        guests: String(data.guests ?? guests),
-        total: String(data.totalPrice ?? totalPrice),
-        nights: String(nightsNum),
-      });
-
-      router.push(`/booking/complete?${completeParams.toString()}`);
+      // 완료 페이지 대신 내 예약으로 이동 (완료 페이지에서 발생하던 전역 에러 회피)
+      router.push("/my-bookings?requested=1");
     } catch {
       setError("예약 요청 중 오류가 발생했습니다.");
     } finally {
