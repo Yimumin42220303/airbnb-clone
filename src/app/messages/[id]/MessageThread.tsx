@@ -44,7 +44,15 @@ export default function MessageThread({
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (cooldownUntil == null) return;
+    const ms = Math.max(0, cooldownUntil - Date.now());
+    const t = setTimeout(() => setCooldownUntil(null), ms);
+    return () => clearTimeout(t);
+  }, [cooldownUntil]);
   const knownIdsRef = useRef<Set<string>>(
     new Set(initialMessages.map((m) => m.id))
   );
@@ -154,6 +162,7 @@ export default function MessageThread({
             : m
         )
       );
+      setCooldownUntil(Date.now() + 1_000);
     } catch {
       toast.error("네트워크 오류가 발생했습니다.");
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
@@ -235,10 +244,10 @@ export default function MessageThread({
         />
         <button
           type="submit"
-          disabled={sending || !input.trim()}
+          disabled={sending || cooldownUntil != null || !input.trim()}
           className="px-4 py-2 bg-minbak-primary text-white text-minbak-body font-medium rounded-minbak hover:bg-minbak-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {sending ? "전송 중..." : "전송"}
+          {sending ? "전송 중..." : cooldownUntil != null ? "잠시만요" : "전송"}
         </button>
       </form>
     </>

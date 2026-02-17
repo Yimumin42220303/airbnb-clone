@@ -154,6 +154,26 @@ export async function POST(
     );
   }
 
+  // 채팅 남발 방지: 대화당·사용자당 분당 최대 N건
+  const RATE_LIMIT_WINDOW_MS = 60_000;
+  const RATE_LIMIT_MAX_PER_WINDOW = 10;
+  const since = new Date(Date.now() - RATE_LIMIT_WINDOW_MS);
+  const recentCount = await prisma.message.count({
+    where: {
+      conversationId,
+      senderId: userId,
+      createdAt: { gte: since },
+    },
+  });
+  if (recentCount >= RATE_LIMIT_MAX_PER_WINDOW) {
+    return NextResponse.json(
+      {
+        error: `메시지를 너무 자주 보내고 있어요. 잠시 후에 다시 시도해 주세요. (분당 ${RATE_LIMIT_MAX_PER_WINDOW}건 제한)`,
+      },
+      { status: 429 }
+    );
+  }
+
   const message = await prisma.message.create({
     data: {
       conversationId,
