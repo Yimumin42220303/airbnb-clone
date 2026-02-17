@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
@@ -50,9 +50,16 @@ export default function BookingConfirmContent({
   const [form, setForm] = useState({
     fullName: "",
     email: defaultEmail,
-    phone: "",
+    phonePart1: "",
+    phonePart2: "",
+    phonePart3: "",
     specialRequests: "",
   });
+  const phoneRef1 = useRef<HTMLInputElement>(null);
+  const phoneRef2 = useRef<HTMLInputElement>(null);
+  const phoneRef3 = useRef<HTMLInputElement>(null);
+
+  const digitsOnly = useCallback((v: string) => v.replace(/\D/g, ""), []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -65,8 +72,14 @@ export default function BookingConfirmContent({
       setError("이메일을 입력해 주세요.");
       return;
     }
-    if (!form.phone?.trim()) {
-      setError("긴급연락용 전화번호를 입력해 주세요.");
+    const phone =
+      [form.phonePart1, form.phonePart2, form.phonePart3].join("-");
+    if (
+      form.phonePart1.length !== 3 ||
+      form.phonePart2.length !== 4 ||
+      form.phonePart3.length !== 4
+    ) {
+      setError("긴급연락용 전화번호를 올바르게 입력해 주세요. (010-1234-5678)");
       return;
     }
     setLoading(true);
@@ -79,7 +92,7 @@ export default function BookingConfirmContent({
           checkIn,
           checkOut,
           guests,
-          guestPhone: form.phone.trim(),
+          guestPhone: phone,
         }),
       });
       const data = await res.json();
@@ -224,20 +237,104 @@ export default function BookingConfirmContent({
                     placeholder="example@email.com"
                   />
                 </label>
-                <label className="block flex flex-col gap-1">
+                <div className="block flex flex-col gap-1">
                   <span className="text-[14px] font-medium text-[#222]">
                     긴급연락용 전화번호 *
                   </span>
-                  <input
-                    type="tel"
-                    value={form.phone}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, phone: e.target.value }))
-                    }
-                    className="px-3 py-2.5 border border-[#ebebeb] rounded-lg text-[15px] text-[#222] focus:outline-none focus:ring-2 focus:ring-[#E31C23] focus:border-[#E31C23]"
-                    placeholder="010-1234-5678"
-                  />
-                </label>
+                  <div className="flex items-center gap-1">
+                    <input
+                      ref={phoneRef1}
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={3}
+                      value={form.phonePart1}
+                      onChange={(e) => {
+                        const v = digitsOnly(e.target.value).slice(0, 3);
+                        setForm((f) => ({ ...f, phonePart1: v }));
+                        if (v.length === 3) phoneRef2.current?.focus();
+                      }}
+                      onPaste={(e) => {
+                        e.preventDefault();
+                        const raw = digitsOnly(
+                          e.clipboardData?.getData("text") ?? ""
+                        );
+                        const p1 = raw.slice(0, 3);
+                        const p2 = raw.slice(3, 7);
+                        const p3 = raw.slice(7, 11);
+                        setForm((f) => ({
+                          ...f,
+                          phonePart1: p1,
+                          phonePart2: p2,
+                          phonePart3: p3,
+                        }));
+                        if (p3.length === 4) phoneRef3.current?.focus();
+                        else if (p2.length === 4) phoneRef3.current?.focus();
+                        else if (p1.length === 3) phoneRef2.current?.focus();
+                      }}
+                      onKeyDown={(e) => {
+                        if (
+                          e.key === "Backspace" &&
+                          form.phonePart1.length === 0
+                        ) {
+                          e.preventDefault();
+                          phoneRef1.current?.focus();
+                        }
+                      }}
+                      className="w-[72px] px-2 py-2.5 border border-[#ebebeb] rounded-lg text-[15px] text-center text-[#222] focus:outline-none focus:ring-2 focus:ring-[#E31C23] focus:border-[#E31C23]"
+                      placeholder="010"
+                      aria-label="전화번호 앞 3자리"
+                    />
+                    <span className="text-[#717171] text-[15px]">-</span>
+                    <input
+                      ref={phoneRef2}
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={4}
+                      value={form.phonePart2}
+                      onChange={(e) => {
+                        const v = digitsOnly(e.target.value).slice(0, 4);
+                        setForm((f) => ({ ...f, phonePart2: v }));
+                        if (v.length === 4) phoneRef3.current?.focus();
+                      }}
+                      onKeyDown={(e) => {
+                        if (
+                          e.key === "Backspace" &&
+                          form.phonePart2.length === 0
+                        ) {
+                          e.preventDefault();
+                          phoneRef1.current?.focus();
+                        }
+                      }}
+                      className="w-[72px] px-2 py-2.5 border border-[#ebebeb] rounded-lg text-[15px] text-center text-[#222] focus:outline-none focus:ring-2 focus:ring-[#E31C23] focus:border-[#E31C23]"
+                      placeholder="1234"
+                      aria-label="전화번호 중간 4자리"
+                    />
+                    <span className="text-[#717171] text-[15px]">-</span>
+                    <input
+                      ref={phoneRef3}
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={4}
+                      value={form.phonePart3}
+                      onChange={(e) => {
+                        const v = digitsOnly(e.target.value).slice(0, 4);
+                        setForm((f) => ({ ...f, phonePart3: v }));
+                      }}
+                      onKeyDown={(e) => {
+                        if (
+                          e.key === "Backspace" &&
+                          form.phonePart3.length === 0
+                        ) {
+                          e.preventDefault();
+                          phoneRef2.current?.focus();
+                        }
+                      }}
+                      className="w-[72px] px-2 py-2.5 border border-[#ebebeb] rounded-lg text-[15px] text-center text-[#222] focus:outline-none focus:ring-2 focus:ring-[#E31C23] focus:border-[#E31C23]"
+                      placeholder="5678"
+                      aria-label="전화번호 뒤 4자리"
+                    />
+                  </div>
+                </div>
                 <label className="block flex flex-col gap-1">
                   <span className="text-[14px] font-medium text-[#222]">
                     특별 요청사항
