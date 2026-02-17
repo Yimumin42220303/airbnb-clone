@@ -104,7 +104,7 @@ export default function UserMenu() {
                 게스트 모드
               </Link>
               <Link
-                href="/host"
+                href="/host/listings"
                 className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-[90px] text-sm font-medium transition-colors ${
                   isHostMode ? "bg-minbak-black text-white" : "text-minbak-black hover:bg-white"
                 }`}
@@ -168,57 +168,16 @@ export default function UserMenu() {
               </Link>
             </div>
           )}
-          {/* 호스트 모드일 때만: 호스팅 메뉴 */}
-          {isHostMode && (
-            <>
-              <div className="border-t border-minbak-light-gray px-2 py-1.5">
-                <p className="px-2 py-1 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide">
-                  호스팅
-                </p>
-                <Link
-                  href="/host/listings"
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-minbak text-minbak-body text-minbak-black hover:bg-minbak-bg transition-colors"
-                  onClick={() => setOpen(false)}
-                >
-                  내 숙소
-                  <ChevronRight className="w-4 h-4 text-minbak-gray ml-auto" />
-                </Link>
-                <Link
-                  href="/host/calendar"
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-minbak text-minbak-body text-minbak-black hover:bg-minbak-bg transition-colors"
-                  onClick={() => setOpen(false)}
-                >
-                  예약 현황
-                  <ChevronRight className="w-4 h-4 text-minbak-gray ml-auto" />
-                </Link>
-                <Link
-                  href="/host/bookings"
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-minbak text-minbak-body text-minbak-black hover:bg-minbak-bg transition-colors"
-                  onClick={() => setOpen(false)}
-                >
-                  예약 관리
-                  <ChevronRight className="w-4 h-4 text-minbak-gray ml-auto" />
-                </Link>
-                <Link
-                  href="/host/revenue"
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-minbak text-minbak-body text-minbak-black hover:bg-minbak-bg transition-colors"
-                  onClick={() => setOpen(false)}
-                >
-                  매출·정산
-                  <ChevronRight className="w-4 h-4 text-minbak-gray ml-auto" />
-                </Link>
-              </div>
-              {(user as { role?: string }).role === "admin" && (
-                <Link
-                  href="/admin"
-                  className="flex items-center gap-3 px-3 py-2.5 mx-2 rounded-minbak text-minbak-body text-minbak-black hover:bg-minbak-bg transition-colors border-t border-minbak-light-gray mt-1 pt-1"
-                  onClick={() => setOpen(false)}
-                >
-                  Admin
-                  <ChevronRight className="w-4 h-4 text-minbak-gray ml-auto" />
-                </Link>
-              )}
-            </>
+          {/* 호스트 모드일 때: 관리자만 Admin 링크 */}
+          {isHostMode && (user as { role?: string }).role === "admin" && (
+            <Link
+              href="/admin"
+              className="flex items-center gap-3 px-3 py-2.5 mx-2 rounded-minbak text-minbak-body text-minbak-black hover:bg-minbak-bg transition-colors border-t border-minbak-light-gray mt-1 pt-1"
+              onClick={() => setOpen(false)}
+            >
+              Admin
+              <ChevronRight className="w-4 h-4 text-minbak-gray ml-auto" />
+            </Link>
           )}
           <button
             type="button"
