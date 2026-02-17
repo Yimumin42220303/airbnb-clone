@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createBooking } from "@/lib/bookings";
 import { prisma } from "@/lib/prisma";
+import { getOfficialUserId } from "@/lib/official-account";
 import { sendEmailAsync, BASE_URL } from "@/lib/email";
 import { bookingConfirmationGuest, bookingNotificationHost } from "@/lib/email-templates";
 
@@ -102,6 +103,43 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
 
+    const bookingId = result.booking.id;
+    let conversationId: string | undefined;
+
+    // 예약 직후 대화방 생성 + 도쿄민박 공식 메시지 2건
+    const officialUserId = await getOfficialUserId();
+    if (!officialUserId) {
+      console.warn(
+        "[Booking] Official account not found. Run db:seed to create official@tokyominbak.com"
+      );
+    }
+    if (officialUserId) {
+      try {
+        const conversation = await prisma.conversation.upsert({
+          where: { bookingId },
+          create: { bookingId },
+          update: {},
+        });
+        conversationId = conversation.id;
+        await prisma.message.createMany({
+          data: [
+            {
+              conversationId: conversation.id,
+              senderId: officialUserId,
+              body: "예약 요청이 접수되었습니다. 호스트가 확인할 때까지 잠시만 기다려 주세요.",
+            },
+            {
+              conversationId: conversation.id,
+              senderId: officialUserId,
+              body: "호스트가 승인하시면 결제 방법을 안내해 드릴게요.",
+            },
+          ],
+        });
+      } catch (err) {
+        console.error("[Booking] Conversation/official messages:", err);
+      }
+    }
+
     // Send booking notification emails (fire-and-forget)
     try {
       const booking = result.booking;
@@ -166,7 +204,10 @@ export async function POST(request: Request) {
       console.error("[Booking Email] Error:", emailErr);
     }
 
-    return NextResponse.json(result.booking, { status: 201 });
+    return NextResponse.json(
+      { ...result.booking, conversationId },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("POST /api/bookings", error);
     return NextResponse.json(

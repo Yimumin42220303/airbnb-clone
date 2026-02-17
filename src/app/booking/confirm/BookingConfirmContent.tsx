@@ -91,7 +91,11 @@ export default function BookingConfirmContent({
         setError("예약 요청에 실패했습니다. 다시 시도해 주세요.");
         return;
       }
-      // DB/세션 없는 안내 전용 페이지로 이동 (내 예약 페이지 로딩 실패 회피)
+      // 메시지창으로 직행해 공식 메시지 확인·호스트와 대화 가능
+      if (data.conversationId) {
+        router.push(`/messages/${data.conversationId}`);
+        return;
+      }
       router.push("/booking/requested");
     } catch {
       setError("예약 요청 중 오류가 발생했습니다.");

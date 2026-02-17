@@ -159,6 +159,17 @@ async function main() {
     },
   });
 
+  // 도쿄민박 공식 계정 (예약/승인 시 채팅 자동 메시지 발신자)
+  await prisma.user.upsert({
+    where: { email: "official@tokyominbak.com" },
+    update: { name: "도쿄민박" },
+    create: {
+      email: "official@tokyominbak.com",
+      name: "도쿄민박",
+      role: "user",
+    },
+  });
+
   // 블로그 샘플 글 (관리자 작성, 공개)
   for (const post of blogPostsData) {
     await prisma.post.upsert({

@@ -99,6 +99,21 @@ export default async function ConversationPage({ params }: Props) {
                 숙소 보기
               </Link>
             </div>
+            {isGuest &&
+              conversation.booking.status === "confirmed" &&
+              conversation.booking.paymentStatus !== "paid" && (
+                <div className="px-4 py-3 bg-amber-50 border-b border-amber-200 flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-minbak-body text-amber-800">
+                    호스트가 승인했습니다. 24시간 이내에 결제해 주세요.
+                  </p>
+                  <Link
+                    href={`/booking/${conversation.booking.id}/pay`}
+                    className="inline-flex items-center justify-center px-4 py-2 rounded-lg text-[14px] font-semibold text-white bg-minbak-primary hover:bg-[#c91820] transition-colors"
+                  >
+                    결제하기
+                  </Link>
+                </div>
+              )}
             <MessageThread
               conversationId={conversationId}
               initialMessages={messagesForClient}
