@@ -118,6 +118,13 @@ export default async function ConversationPage({ params }: Props) {
               conversationId={conversationId}
               initialMessages={messagesForClient}
               currentUserId={userId}
+              bookingIdForPayment={
+                isGuest &&
+                conversation.booking.status === "confirmed" &&
+                conversation.booking.paymentStatus !== "paid"
+                  ? conversation.booking.id
+                  : undefined
+              }
             />
           </div>
         </div>
