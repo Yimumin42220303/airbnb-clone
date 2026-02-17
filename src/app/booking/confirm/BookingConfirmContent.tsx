@@ -79,6 +79,7 @@ export default function BookingConfirmContent({
           checkIn,
           checkOut,
           guests,
+          guestPhone: form.phone.trim(),
         }),
       });
       const data = await res.json();

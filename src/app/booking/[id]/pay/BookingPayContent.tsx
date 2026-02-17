@@ -17,6 +17,7 @@ type BookingItem = {
   totalPrice: number;
   status: string;
   paymentStatus: string;
+  guestPhone?: string | null;
   listing: {
     id: string;
     title: string;
@@ -234,7 +235,7 @@ export default function BookingPayContent() {
             listingTitle={booking.listing.title}
             userName={me?.name ?? undefined}
             userEmail={me?.email ?? undefined}
-            userPhoneNumber={me?.phone ?? undefined}
+            userPhoneNumber={booking.guestPhone ?? me?.phone ?? undefined}
             checkIn={booking.checkIn}
           />
         </div>

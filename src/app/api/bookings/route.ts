@@ -62,6 +62,7 @@ export async function GET() {
     listing: b.listing,
     lastRefund: b.transactions[0] ?? null,
     reviewed: reviewedListingIds.includes(b.listingId),
+    guestPhone: b.guestPhone ?? null,
   }));
 
   return NextResponse.json(list);
@@ -79,6 +80,7 @@ export async function POST(request: Request) {
     const checkIn = body.checkIn;
     const checkOut = body.checkOut;
     const guests = body.guests;
+    const guestPhone = body.guestPhone;
 
     if (!listingId || !checkIn || !checkOut || guests == null) {
       return NextResponse.json(
@@ -93,6 +95,7 @@ export async function POST(request: Request) {
       checkOut: String(checkOut),
       guests: Number(guests),
       userId: (session as { userId?: string } | null)?.userId,
+      guestPhone: guestPhone != null ? String(guestPhone).trim() || undefined : undefined,
     });
 
     if (!result.ok) {
