@@ -19,15 +19,13 @@ function safeDecodeTitle(s: string): string {
 }
 
 export default async function BookingCompletePage({ searchParams }: Props) {
-  const params = await searchParams;
-  const id = typeof params.id === "string" ? params.id : "";
-  const title =
-    typeof params.title === "string" ? safeDecodeTitle(params.title) : "숙소";
-  const checkIn = typeof params.checkIn === "string" ? params.checkIn : "";
-  const checkOut = typeof params.checkOut === "string" ? params.checkOut : "";
-  const guests = typeof params.guests === "string" ? params.guests : "";
-  const total = typeof params.total === "string" ? params.total : "";
-  const nights = typeof params.nights === "string" ? params.nights : "";
+  let id = "";
+  let title = "숙소";
+  let checkIn = "";
+  let checkOut = "";
+  let guests = "";
+  let total = "";
+  let nights = "";
 
   let booking: {
     paymentStatus: string;
@@ -38,6 +36,15 @@ export default async function BookingCompletePage({ searchParams }: Props) {
   } | null = null;
 
   try {
+    const params = await searchParams;
+    id = typeof params.id === "string" ? params.id : "";
+    title =
+      typeof params.title === "string" ? safeDecodeTitle(params.title) : "숙소";
+    checkIn = typeof params.checkIn === "string" ? params.checkIn : "";
+    checkOut = typeof params.checkOut === "string" ? params.checkOut : "";
+    guests = typeof params.guests === "string" ? params.guests : "";
+    total = typeof params.total === "string" ? params.total : "";
+    nights = typeof params.nights === "string" ? params.nights : "";
     if (id) {
       const found = await prisma.booking.findUnique({
         where: { id },
@@ -67,6 +74,9 @@ export default async function BookingCompletePage({ searchParams }: Props) {
       }
     }
   } catch (err) {
+    // Next.js redirect()는 예외를 throw하므로 그대로 다시 던짐
+    const d = err && typeof err === "object" && "digest" in err ? (err as { digest?: string }).digest : undefined;
+    if (typeof d === "string" && d.startsWith("NEXT_REDIRECT")) throw err;
     console.error("[BookingCompletePage]", err);
     return (
       <>
