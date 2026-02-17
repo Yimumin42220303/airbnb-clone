@@ -15,13 +15,25 @@ type Props = {
 };
 
 export default async function MyBookingsPage({ searchParams }: Props) {
-  const session = await getServerSession(authOptions);
-  const userId = (session as { userId?: string } | null)?.userId;
-  const params = searchParams ? await searchParams : {};
-  const requested = params.requested === "1" || params.requested?.[0] === "1";
+  let userId: string | undefined;
+  let requested = false;
+  let bookings: Awaited<ReturnType<typeof prisma.booking.findMany>> = [];
+  let reviewedListingIds: Set<string> = new Set();
 
-  const [bookings, reviewedListingIds] = userId
-    ? await Promise.all([
+  try {
+    const session = await getServerSession(authOptions);
+    userId = (session as { userId?: string } | null)?.userId;
+    let params: { [key: string]: string | string[] | undefined } = {};
+    if (searchParams != null) {
+      params =
+        typeof (searchParams as Promise<unknown>).then === "function"
+          ? await (searchParams as Promise<{ [key: string]: string | string[] | undefined }>)
+          : (searchParams as { [key: string]: string | string[] | undefined });
+    }
+    requested = params.requested === "1" || params.requested?.[0] === "1";
+
+    if (userId) {
+      const [bookingsList, reviews] = await Promise.all([
         prisma.booking.findMany({
           where: { userId },
           orderBy: { checkIn: "desc" },
@@ -47,9 +59,33 @@ export default async function MyBookingsPage({ searchParams }: Props) {
             where: { userId },
             select: { listingId: true },
           })
-          .then((reviews) => new Set(reviews.map((r) => r.listingId))),
-      ])
-    : [[], new Set<string>()];
+          .then((r) => new Set(r.map((x) => x.listingId))),
+      ]);
+      bookings = bookingsList;
+      reviewedListingIds = reviews;
+    }
+  } catch (err) {
+    console.error("[MyBookingsPage]", err);
+    return (
+      <>
+        <Header />
+        <main className="min-h-screen pt-24 px-4 sm:px-6">
+          <div className="max-w-[560px] mx-auto py-12 text-center">
+            <p className="text-minbak-body text-minbak-gray mb-6">
+              예약 목록을 불러오는 중 오류가 발생했어요.
+            </p>
+            <Link
+              href="/my-bookings"
+              className="inline-flex items-center justify-center min-h-[48px] px-6 py-3 text-minbak-body font-medium rounded-minbak-full bg-minbak-primary text-white hover:bg-minbak-primary-hover"
+            >
+              다시 시도
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
 
   return (
     <>
