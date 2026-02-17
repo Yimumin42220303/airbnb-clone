@@ -6,6 +6,8 @@ import BookingStepIndicator, {
   getBookingStepState,
 } from "@/components/booking/BookingStepIndicator";
 
+export const dynamic = "force-dynamic";
+
 type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
