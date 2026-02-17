@@ -159,13 +159,13 @@ async function main() {
     },
   });
 
-  // 도쿄민박 공식 계정 (예약/승인 시 채팅 자동 메시지 발신자)
+  // 도쿄민박 공식 계정 (예약/승인 시 채팅 자동 메시지 발신자, 채팅창에 "도쿄민박 운영자"로 표시)
   await prisma.user.upsert({
     where: { email: "official@tokyominbak.com" },
-    update: { name: "도쿄민박" },
+    update: { name: "도쿄민박 운영자" },
     create: {
       email: "official@tokyominbak.com",
-      name: "도쿄민박",
+      name: "도쿄민박 운영자",
       role: "user",
     },
   });
