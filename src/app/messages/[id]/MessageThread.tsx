@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -13,16 +14,30 @@ type Message = {
   senderName: string;
 };
 
+/** 호스트 승인·미결제 시 이 메시지 본문 아래에 결제 버튼 노출 */
+const APPROVAL_MESSAGE_MARKERS = [
+  "호스트승인이 완료되었어요. 결제 안내드릴게요.",
+  "예약이 승인되었습니다. 아래 버튼에서 결제를 완료해 주세요.",
+];
+
+function isApprovalMessage(fromMe: boolean, body: string): boolean {
+  if (fromMe) return false;
+  return APPROVAL_MESSAGE_MARKERS.some((t) => body.trim() === t);
+}
+
 type Props = {
   conversationId: string;
   initialMessages: Message[];
   currentUserId: string;
+  /** 게스트이고 결제 대기일 때만 전달 → 승인 메시지 아래에 결제하기 버튼 표시 */
+  bookingIdForPayment?: string;
 };
 
 export default function MessageThread({
   conversationId,
   initialMessages,
   currentUserId,
+  bookingIdForPayment,
 }: Props) {
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
@@ -80,38 +95,50 @@ export default function MessageThread({
           </p>
         ) : (
           messages.map((m) => (
-            <div
-              key={m.id}
-              className={`flex ${m.isFromMe ? "justify-end" : "justify-start"}`}
-            >
+            <div key={m.id} className="space-y-1">
               <div
-                className={`max-w-[80%] rounded-minbak px-3 py-2 ${
-                  m.isFromMe
-                    ? "bg-minbak-primary text-white"
-                    : "bg-minbak-bg text-minbak-black"
-                }`}
+                className={`flex ${m.isFromMe ? "justify-end" : "justify-start"}`}
               >
-                {!m.isFromMe && (
-                  <p className="text-minbak-caption opacity-80 mb-0.5">
-                    {m.senderName}
-                  </p>
-                )}
-                <p className="text-minbak-body whitespace-pre-wrap break-words">
-                  {m.body}
-                </p>
-                <p
-                  className={`text-minbak-caption mt-0.5 ${
-                    m.isFromMe ? "text-white/80" : "text-minbak-gray"
+                <div
+                  className={`max-w-[80%] rounded-minbak px-3 py-2 ${
+                    m.isFromMe
+                      ? "bg-minbak-primary text-white"
+                      : "bg-minbak-bg text-minbak-black"
                   }`}
                 >
-                  {new Date(m.createdAt).toLocaleString("ko-KR", {
-                    month: "short",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </p>
+                  {!m.isFromMe && (
+                    <p className="text-minbak-caption opacity-80 mb-0.5">
+                      {m.senderName}
+                    </p>
+                  )}
+                  <p className="text-minbak-body whitespace-pre-wrap break-words">
+                    {m.body}
+                  </p>
+                  <p
+                    className={`text-minbak-caption mt-0.5 ${
+                      m.isFromMe ? "text-white/80" : "text-minbak-gray"
+                    }`}
+                  >
+                    {new Date(m.createdAt).toLocaleString("ko-KR", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
               </div>
+              {bookingIdForPayment &&
+                isApprovalMessage(m.isFromMe, m.body) && (
+                  <div className="flex justify-start pl-0">
+                    <Link
+                      href={`/booking/${bookingIdForPayment}/pay`}
+                      className="inline-flex items-center justify-center px-4 py-2 rounded-lg text-[14px] font-semibold text-white bg-minbak-primary hover:bg-[#c91820] transition-colors"
+                    >
+                      결제하기
+                    </Link>
+                  </div>
+                )}
             </div>
           ))
         )}
