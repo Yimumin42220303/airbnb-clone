@@ -50,7 +50,7 @@ function bookingTable(p: {
   ${infoRow("체크아웃", p.checkOut)}
   ${infoRow("게스트", p.guests + "명")}
   ${infoRow("숙박", p.nights + "박")}
-  ${infoRow("결제금액", "\\u20A9" + p.totalPrice.toLocaleString())}
+  ${infoRow("결제금액", "\u20A9" + p.totalPrice.toLocaleString())}
 </table>`;
 }
 
@@ -69,7 +69,7 @@ function bookingTableJa(p: {
   ${infoRow("\u30C1\u30A7\u30C3\u30AF\u30A2\u30A6\u30C8", p.checkOut)}
   ${infoRow("\u30B2\u30B9\u30C8", p.guests + "\u540D")}
   ${infoRow("\u5BBF\u6CCA", p.nights + "\u6CCA")}
-  ${infoRow("\u5408\u8A08\u91D1\u984D", "\\u20A9" + p.totalPrice.toLocaleString())}
+  ${infoRow("\u5408\u8A08\u91D1\u984D", "\u20A9" + p.totalPrice.toLocaleString())}
 </table>`;
 }
 
@@ -125,7 +125,7 @@ export function bookingNotificationHost(info: BookingEmailInfo & { hostName: str
 export function paymentConfirmationGuest(info: BookingEmailInfo) {
   const body = `
     <p>${info.guestName}님, 결제가 완료되었습니다.</p>
-    <p style="font-size:18px;font-weight:700;color:${BRAND_COLOR};">\\u20A9${info.totalPrice.toLocaleString()}</p>
+    <p style="font-size:18px;font-weight:700;color:${BRAND_COLOR};">\u20A9${info.totalPrice.toLocaleString()}</p>
     ${bookingTable(info)}
     ${actionButton(info.baseUrl + "/my-bookings", "예약 상세 보기")}
     <p style="font-size:13px;color:${GRAY_COLOR};">체크인 정보는 예약 확정 후 안내됩니다.</p>`;
@@ -197,7 +197,7 @@ export function bookingRejectedGuest(info: BookingEmailInfo & { reason?: string 
 
 export function bookingCancelledGuest(info: BookingEmailInfo & { refundAmount: number; refundPolicy: string }) {
   const refundText = info.refundAmount > 0
-    ? `<p>환불 금액: <strong>\\u20A9${info.refundAmount.toLocaleString()}</strong> (${info.refundPolicy})</p>`
+    ? `<p>환불 금액: <strong>\u20A9${info.refundAmount.toLocaleString()}</strong> (${info.refundPolicy})</p>`
     : `<p>취소 정책에 따라 환불이 불가합니다. (${info.refundPolicy})</p>`;
   const body = `
     <p>${info.guestName}님, 예약이 취소되었습니다.</p>
