@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
         listing: { userId },
         ...(statusFilter && { status: statusFilter }),
       },
-      orderBy: { checkIn: "desc" },
+      orderBy: { createdAt: "desc" },
       include: {
         listing: { select: { id: true, title: true } },
         user: { select: { name: true, email: true } },
