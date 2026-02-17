@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getOfficialUserId } from "@/lib/official-account";
 import { cancelPayment } from "@/lib/portone";
 import { sendEmailAsync, BASE_URL } from "@/lib/email";
 import {
@@ -72,7 +73,33 @@ export async function PATCH(
       data: { status: "confirmed" },
     });
 
-    // 호스트 승인 → 게스트에게 결제 요청 이메일 발송 (대화방은 결제 완료 후 생성)
+    // 호스트 승인 → 대화방에 결제 안내 메시지 1건 (게스트가 메시지창에서 결제 유도)
+    const officialUserId = await getOfficialUserId();
+    if (!officialUserId) {
+      console.warn(
+        "[Host Accept] Official account not found. Run db:seed to create official@tokyominbak.com"
+      );
+    }
+    if (officialUserId) {
+      try {
+        const conversation = await prisma.conversation.upsert({
+          where: { bookingId: id },
+          create: { bookingId: id },
+          update: {},
+        });
+        await prisma.message.create({
+          data: {
+            conversationId: conversation.id,
+            senderId: officialUserId,
+            body: "예약이 승인되었습니다. 아래 버튼에서 결제를 완료해 주세요.",
+          },
+        });
+      } catch (err) {
+        console.error("[Host Accept] Conversation/official message:", err);
+      }
+    }
+
+    // 호스트 승인 → 게스트에게 결제 요청 이메일 발송
     {
       const nights = Math.floor(
         (booking.checkOut.getTime() - booking.checkIn.getTime()) / (24 * 60 * 60 * 1000)
