@@ -20,20 +20,35 @@ export async function GET() {
     );
   }
 
-  const bookings = await prisma.booking.findMany({
-    where: { userId },
-    orderBy: { checkIn: "desc" },
-    include: {
-      listing: {
-        select: {
-          id: true,
-          title: true,
-          location: true,
-          imageUrl: true,
+  const [bookings, reviewedListingIds] = await Promise.all([
+    prisma.booking.findMany({
+      where: { userId },
+      orderBy: { checkIn: "desc" },
+      include: {
+        listing: {
+          select: {
+            id: true,
+            title: true,
+            location: true,
+            imageUrl: true,
+            cancellationPolicy: true,
+          },
+        },
+        transactions: {
+          where: { status: "refunded" },
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { amount: true },
         },
       },
-    },
-  });
+    }),
+    prisma.review
+      .findMany({
+        where: { userId },
+        select: { listingId: true },
+      })
+      .then((r) => r.map((x) => x.listingId)),
+  ]);
 
   const list = bookings.map((b) => ({
     id: b.id,
@@ -42,8 +57,11 @@ export async function GET() {
     guests: b.guests,
     totalPrice: b.totalPrice,
     status: b.status,
+    paymentStatus: b.paymentStatus,
     createdAt: b.createdAt.toISOString(),
     listing: b.listing,
+    lastRefund: b.transactions[0] ?? null,
+    reviewed: reviewedListingIds.includes(b.listingId),
   }));
 
   return NextResponse.json(list);
