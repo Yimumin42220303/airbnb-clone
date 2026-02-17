@@ -10,8 +10,13 @@ const BASE_URL =
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateStaticParams() {
-  const posts = await getPosts({ publishedOnly: true });
-  return posts.map((p) => ({ slug: p.slug }));
+  try {
+    const posts = await getPosts({ publishedOnly: true });
+    return posts.map((p) => ({ slug: p.slug }));
+  } catch {
+    // DB 연결 불가(로컬/Neon 일시중지 등) 시 빌드만 통과시키고, 블로그 글은 방문 시 서버에서 생성
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: Props) {
