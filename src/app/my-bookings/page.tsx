@@ -6,6 +6,9 @@ import Link from "next/link";
 import Image from "next/image";
 import CancelBookingButton from "@/components/booking/CancelBookingButton";
 import StartMessageLink from "@/components/messages/StartMessageLink";
+import BookingStepIndicator, {
+  getBookingStepState,
+} from "@/components/booking/BookingStepIndicator";
 
 export default async function MyBookingsPage() {
   const session = await getServerSession(authOptions);
@@ -160,6 +163,24 @@ export default async function MyBookingsPage() {
                           </span>
                         )}
                       </div>
+                      {/* 진행 단계 (pending / 결제 대기 시) */}
+                      {(b.status === "pending" ||
+                        (b.status === "confirmed" &&
+                          (b.paymentStatus === "pending" ||
+                            b.paymentStatus === "failed"))) && (
+                        <BookingStepIndicator
+                          {...getBookingStepState(b.status, b.paymentStatus)}
+                          compact
+                          className="mt-1.5"
+                        />
+                      )}
+                      {/* 호스트 승인 · 결제 대기 시 24시간 안내 */}
+                      {b.status === "confirmed" &&
+                        (b.paymentStatus === "pending" || b.paymentStatus === "failed") && (
+                          <p className="text-minbak-caption text-minbak-gray mt-1.5">
+                            24시간 이내 결제 시 예약 확정 · 미결제 시 자동 취소될 수 있어요.
+                          </p>
+                        )}
                       <div className="flex flex-wrap gap-2 mt-3">
                         {/* 호스트 승인 후 결제 대기 → 결제하기 버튼 */}
                         {b.status === "confirmed" &&

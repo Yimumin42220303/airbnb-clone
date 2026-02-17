@@ -150,7 +150,7 @@ export function bookingAcceptedGuest(info: BookingEmailInfo) {
 export function paymentRequestGuest(info: BookingEmailInfo) {
   const body = `
     <p>${info.guestName}님, 호스트가 예약을 승인했습니다! \uD83C\uDF89</p>
-    <p>아래 버튼을 눌러 <strong>24시간 이내에 결제를 완료</strong>해 주세요.</p>
+    <p><strong>내 예약</strong> 페이지에서 <strong>24시간 이내에 결제하기</strong> 버튼을 눌러 결제를 완료해 주세요.</p>
     <p>결제가 완료되면 예약이 최종 확정됩니다.</p>
     ${bookingTable(info)}
     <div style="background:#eff6ff;border-radius:8px;padding:12px 16px;margin:16px 0;">
@@ -158,8 +158,8 @@ export function paymentRequestGuest(info: BookingEmailInfo) {
         24시간 이내에 결제하지 않으면 예약이 자동 취소됩니다.
       </p>
     </div>
-    ${actionButton(info.baseUrl + "/booking/" + info.bookingId + "/pay", "결제하기")}
-    <p style="font-size:13px;color:${GRAY_COLOR};">결제 관련 문의는 메시지로 호스트에게 연락해 주세요.</p>`;
+    ${actionButton(info.baseUrl + "/my-bookings", "내 예약 보기")}
+    <p style="font-size:13px;color:${GRAY_COLOR};">내 예약 페이지에서 해당 예약의 <strong>결제하기</strong> 버튼을 눌러 주세요. 결제 관련 문의는 메시지로 호스트에게 연락해 주세요.</p>`;
   return {
     subject: "[도쿄민박] 호스트 승인 완료 - 결제를 진행해주세요 - " + info.listingTitle,
     html: layout("호스트 승인 완료", body),

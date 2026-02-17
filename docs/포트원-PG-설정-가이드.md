@@ -77,16 +77,20 @@ KG이니시스와 **실계약**을 한 뒤 사용합니다.
 
 ## 5. .env에 넣기
 
-프로젝트 **루트**의 `.env` 파일에 아래 두 줄을 추가합니다. (값은 본인 Store ID / Channel Key로 교체)
+프로젝트 **루트**의 `.env` 파일에 아래 값을 추가합니다. (본인 값으로 교체)
 
 ```env
-# 포트원(KG이니시스) PG - 예약 확인 페이지 카드/간편결제
+# 포트원(KG이니시스) PG - 예약 확인·호스트 승인 후 결제
 NEXT_PUBLIC_PORTONE_STORE_ID="store-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 NEXT_PUBLIC_PORTONE_CHANNEL_KEY="channel-key-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+# 결제 검증용 (서버 전용) - 포트원 콘솔 → API Keys → V2 Secret Key
+PORTONE_API_SECRET="portone-api-secret-xxxxxxxx"
 ```
 
 - `NEXT_PUBLIC_` 접두사가 있어야 브라우저(결제창)에서 사용할 수 있습니다.
+- **PORTONE_API_SECRET**은 결제 완료 후 서버에서 포트원 API로 검증할 때 필요합니다. 없으면 「결제 검증에 실패했습니다」가 날 수 있습니다.
 - 수정 후 **개발 서버를 재시작**해야 반영됩니다. (`npm run dev` 중지 후 다시 실행)
+- **Vercel 배포 시**: 위 세 변수를 모두 **Production** 환경에 설정하고, 포트원 채널에 **실제 서비스 URL**(또는 `*.vercel.app`)을 등록해야 결제가 동작합니다.
 
 ---
 
