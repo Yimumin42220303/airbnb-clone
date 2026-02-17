@@ -21,7 +21,13 @@ export default async function ConversationPage({ params }: Props) {
         include: {
           booking: {
             include: {
-              listing: { select: { id: true, title: true } },
+              listing: {
+                select: {
+                  id: true,
+                  title: true,
+                  user: { select: { name: true, email: true } },
+                },
+              },
               user: { select: { id: true, name: true, email: true } },
             },
           },
@@ -66,6 +72,9 @@ export default async function ConversationPage({ params }: Props) {
   });
 
   const booking = conversation.booking;
+  const hostName =
+    listing.user?.name || listing.user?.email || "호스트";
+  const totalPriceStr = `${booking.totalPrice.toLocaleString("ko-KR")}원`;
   const checkInStr = booking.checkIn.toISOString().slice(0, 10);
   const checkOutStr = booking.checkOut.toISOString().slice(0, 10);
   const statusLabel =
@@ -105,10 +114,18 @@ export default async function ConversationPage({ params }: Props) {
                 {otherName} · {listing.title}
               </h1>
               <dl className="mt-2 text-minbak-caption text-minbak-gray space-y-0.5">
+                <div>
+                  <span className="text-minbak-black font-medium">호스트</span>{" "}
+                  {hostName}
+                </div>
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                   <span>체크인 {checkInStr}</span>
                   <span>체크아웃 {checkOutStr}</span>
                   <span>인원 {booking.guests}명</span>
+                </div>
+                <div>
+                  <span className="text-minbak-black font-medium">총 결제금액</span>{" "}
+                  {totalPriceStr}
                 </div>
                 <div>
                   <span className="text-minbak-black font-medium">예약상황</span>{" "}
