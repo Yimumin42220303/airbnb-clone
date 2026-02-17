@@ -14,7 +14,7 @@ export default async function HostBookingsPage() {
 
   const bookings = await prisma.booking.findMany({
     where: { listing: { userId } },
-    orderBy: { checkIn: "desc" },
+    orderBy: { createdAt: "desc" },
     include: {
       listing: { select: { id: true, title: true } },
       user: { select: { name: true, email: true } },
