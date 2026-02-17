@@ -90,8 +90,8 @@ export default function BookingConfirmContent({
         setError("예약 요청에 실패했습니다. 다시 시도해 주세요.");
         return;
       }
-      // 완료 페이지 대신 내 예약으로 이동 (완료 페이지에서 발생하던 전역 에러 회피)
-      router.push("/my-bookings?requested=1");
+      // DB/세션 없는 안내 전용 페이지로 이동 (내 예약 페이지 로딩 실패 회피)
+      router.push("/booking/requested");
     } catch {
       setError("예약 요청 중 오류가 발생했습니다.");
     } finally {
