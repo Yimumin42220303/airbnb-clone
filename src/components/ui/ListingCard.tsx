@@ -23,6 +23,12 @@ export interface ListingCardProps {
   searchQuery?: string;
   /** 체크인·체크아웃·인원이 모두 있을 때만 true. 미완료 시 가격 숨김 */
   showPrice?: boolean;
+  /** 검색 조건이 있을 때: 숙박+청소+추가인원 반영 총액 */
+  totalPrice?: number;
+  /** 검색 조건이 있을 때: 숙박 박수 */
+  nights?: number;
+  /** 검색 조건이 있을 때: 1인당 요금 (totalPrice / 인원) */
+  perPerson?: number;
 }
 
 export default function ListingCard({
@@ -40,8 +46,17 @@ export default function ListingCard({
   initialSaved = false,
   searchQuery,
   showPrice = true,
+  totalPrice: totalPriceProp,
+  nights,
+  perPerson,
 }: ListingCardProps) {
   const listingHref = searchQuery ? `/listing/${id}?${searchQuery}` : `/listing/${id}`;
+  const showTotalPrice =
+    showPrice &&
+    totalPriceProp != null &&
+    nights != null &&
+    nights > 0 &&
+    perPerson != null;
   return (
     <Link
       href={listingHref}
@@ -49,7 +64,13 @@ export default function ListingCard({
         "group block flex-shrink-0 rounded-lg overflow-hidden bg-white transition-all duration-200 hover:shadow-minbak focus-visible:ring-2 focus-visible:ring-minbak-primary focus-visible:ring-offset-2 focus-visible:outline-none active:opacity-95",
         className
       )}
-      aria-label={showPrice ? `${title} - ${location}, 1박 ₩${price.toLocaleString()}` : `${title} - ${location}`}
+      aria-label={
+        showTotalPrice
+          ? `${title} - ${location}, 총 ₩${totalPriceProp!.toLocaleString()} (${nights}박), 1인당 약 ₩${perPerson!.toLocaleString()}`
+          : showPrice
+            ? `${title} - ${location}, 1박 ₩${price.toLocaleString()}`
+            : `${title} - ${location}`
+      }
     >
       <div className="relative w-full h-[240px] sm:h-[280px] md:h-[320px] overflow-hidden">
         <Image
@@ -94,21 +115,35 @@ export default function ListingCard({
             ))}
           </div>
         )}
-        <div className="mt-auto flex items-center justify-between pt-1">
-          {showPrice ? (
-            <p className="text-minbak-body text-minbak-black">
-              <span className="font-semibold">₩{price.toLocaleString()}</span>
-              <span className="text-minbak-gray"> /박</span>
-            </p>
-          ) : (
-            <p className="text-minbak-body text-minbak-gray">체크인·체크아웃·인원 선택 후 가격 확인</p>
-          )}
-          {rating !== undefined && (
-            <span className="text-minbak-caption text-minbak-gray">
-              ★ {rating.toFixed(1)}
-              {reviewCount !== undefined && reviewCount > 0 && ` (${reviewCount})`}
-            </span>
-          )}
+        <div className="mt-auto flex flex-col gap-0.5 pt-1">
+          <div className="flex items-center justify-between">
+            {showPrice ? (
+              showTotalPrice ? (
+                <div className="flex flex-col gap-0.5">
+                  <p className="text-minbak-body text-minbak-black">
+                    <span className="font-semibold">₩{totalPriceProp!.toLocaleString()}</span>
+                    <span className="text-minbak-gray"> ({nights}박)</span>
+                  </p>
+                  <p className="text-minbak-caption text-minbak-gray">
+                    1인당 약 ₩{perPerson!.toLocaleString()}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-minbak-body text-minbak-black">
+                  <span className="font-semibold">₩{price.toLocaleString()}</span>
+                  <span className="text-minbak-gray"> /박</span>
+                </p>
+              )
+            ) : (
+              <p className="text-minbak-body text-minbak-gray">체크인·체크아웃·인원 선택 후 가격 확인</p>
+            )}
+            {rating !== undefined && (
+              <span className="text-minbak-caption text-minbak-gray">
+                ★ {rating.toFixed(1)}
+                {reviewCount !== undefined && reviewCount > 0 && ` (${reviewCount})`}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </Link>

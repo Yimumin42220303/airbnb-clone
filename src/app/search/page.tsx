@@ -5,6 +5,7 @@ import { Header, Footer } from "@/components/layout";
 import { ListingCard } from "@/components/ui";
 import SearchSort from "@/components/search/SearchSort";
 import { getListings, type ListingFilters } from "@/lib/listings";
+import { getNightlyAvailability } from "@/lib/availability";
 import { getWishlistListingIds } from "@/lib/wishlist";
 
 export const metadata = {
@@ -76,10 +77,57 @@ export default async function SearchPage({
 
   const session = await getServerSession(authOptions);
   const userId = (session as { userId?: string } | null)?.userId ?? null;
-  const [listings, wishlistIds] = await Promise.all([
+  const [listingsBase, wishlistIds] = await Promise.all([
     getListings(Object.keys(filters).length > 0 ? filters : undefined),
     getWishlistListingIds(userId),
   ]);
+
+  const guestsCount =
+    adults != null || children != null
+      ? (adults ?? 1) + (children ?? 0)
+      : getNumber(params.guests) ?? 1;
+
+  let listings = listingsBase;
+  if (showPrice && checkIn && checkOut && guestsCount >= 1) {
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = new Date(checkOut);
+    if (!isNaN(checkInDate.getTime()) && !isNaN(checkOutDate.getTime()) && checkInDate < checkOutDate) {
+      const withTotals = await Promise.all(
+        listingsBase.map(async (listing) => {
+          try {
+            const result = await getNightlyAvailability(
+              listing.id,
+              checkInDate,
+              checkOutDate
+            );
+            const nightsCount = result.nights.length;
+            const nightsTotal = result.nights.reduce(
+              (sum, n) => sum + n.pricePerNight,
+              0
+            );
+            const cleaningFee = result.cleaningFee ?? 0;
+            const baseGuests = result.baseGuests ?? 2;
+            const extraGuestFee = result.extraGuestFee ?? 0;
+            const extraGuests = Math.max(0, guestsCount - baseGuests);
+            const extraTotal =
+              nightsCount > 0 ? extraGuests * extraGuestFee * nightsCount : 0;
+            const totalPrice = nightsTotal + cleaningFee + extraTotal;
+            const perPerson =
+              guestsCount > 0 ? Math.round(totalPrice / guestsCount) : totalPrice;
+            return {
+              ...listing,
+              totalPrice,
+              nights: nightsCount,
+              perPerson,
+            };
+          } catch {
+            return listing;
+          }
+        })
+      );
+      listings = withTotals;
+    }
+  }
 
   return (
     <>
