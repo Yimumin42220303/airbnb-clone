@@ -17,7 +17,17 @@ type Props = {
 export default async function MyBookingsPage({ searchParams }: Props) {
   let userId: string | undefined;
   let requested = false;
-  let bookings: Awaited<ReturnType<typeof prisma.booking.findMany>> = [];
+  type BookingWithListing = Awaited<
+    ReturnType<
+      typeof prisma.booking.findMany<{
+        include: {
+          listing: { select: { id: true; title: true; location: true; imageUrl: true; cancellationPolicy: true } };
+          transactions: { where: { status: "refunded" }; orderBy: { createdAt: "desc" }; take: 1 };
+        };
+      }>
+    >
+  >;
+  let bookings: BookingWithListing = [];
   let reviewedListingIds: Set<string> = new Set();
 
   try {
@@ -28,7 +38,7 @@ export default async function MyBookingsPage({ searchParams }: Props) {
       params =
         typeof (searchParams as Promise<unknown>).then === "function"
           ? await (searchParams as Promise<{ [key: string]: string | string[] | undefined }>)
-          : (searchParams as { [key: string]: string | string[] | undefined });
+          : (searchParams as unknown as { [key: string]: string | string[] | undefined });
     }
     requested = params.requested === "1" || params.requested?.[0] === "1";
 
