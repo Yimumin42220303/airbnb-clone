@@ -91,7 +91,7 @@ export async function PATCH(
           data: {
             conversationId: conversation.id,
             senderId: officialUserId,
-            body: "예약이 승인되었습니다. 아래 버튼에서 결제를 완료해 주세요.",
+            body: "호스트승인이 완료되었어요. 결제 안내드릴게요.",
           },
         });
       } catch (err) {
