@@ -415,9 +415,10 @@ export default function BookingConfirmContent({
                 >
                   {loading ? "처리 중..." : "예약 요청하기"}
                 </button>
-                <p className="text-[13px] text-[#717171] text-center">
-                  호스트가 승인하기 전까지 요금이 청구되지 않습니다.
-                </p>
+                <div className="text-[13px] text-[#717171] text-center space-y-1">
+                  <p className="mb-0">호스트가 승인하기 전까지 요금이 청구되지 않습니다.</p>
+                  <p className="mb-0">승인 후 이메일로 받은 결제 링크에서 결제하면 예약이 확정됩니다.</p>
+                </div>
               </div>
             </div>
           </div>

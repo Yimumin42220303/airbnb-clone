@@ -82,7 +82,16 @@ export default function PayButton({
           setError("예약이 완료되지 않았습니다. 다시 시도해 주세요.");
         } else {
           // === 즉시 결제 방식 (기존 로직) ===
-          const PortOne = await import("@portone/browser-sdk/v2");
+          let PortOne: typeof import("@portone/browser-sdk/v2");
+          try {
+            PortOne = await import("@portone/browser-sdk/v2");
+          } catch (e) {
+            console.error("[PayButton] Portone SDK 로드 실패:", e);
+            setError(
+              "결제 모듈을 불러올 수 없습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해 주세요."
+            );
+            return;
+          }
           const generatedPaymentId = `b${bookingId}${Date.now()}`;
           const result = await PortOne.requestPayment({
             storeId: PORTONE_STORE_ID,
@@ -107,7 +116,15 @@ export default function PayButton({
                 bookingId,
               }),
             });
-            const verifyData = await verifyRes.json();
+            let verifyData: { ok?: boolean; error?: string };
+            try {
+              verifyData = await verifyRes.json();
+            } catch {
+              setError(
+                "결제 검증 응답을 확인할 수 없습니다. 예약 목록에서 결제 상태를 확인해 주세요."
+              );
+              return;
+            }
             if (verifyRes.ok && verifyData.ok) {
               router.push("/my-bookings");
               router.refresh();
@@ -124,8 +141,11 @@ export default function PayButton({
       } else {
         setError("온라인 결제가 설정되지 않았습니다. 가상계좌 입금 후 관리자에게 문의해 주세요.");
       }
-    } catch {
-      setError("결제 처리 중 오류가 발생했습니다.");
+    } catch (err) {
+      console.error("[PayButton] 결제 오류:", err);
+      setError(
+        "결제 처리 중 오류가 발생했습니다. 결제 수단을 확인하거나 잠시 후 다시 시도해 주세요."
+      );
     } finally {
       setLoading(false);
     }

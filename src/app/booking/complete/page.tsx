@@ -2,6 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Header, Footer } from "@/components/layout";
 import { prisma } from "@/lib/prisma";
+import BookingStepIndicator, {
+  getBookingStepState,
+} from "@/components/booking/BookingStepIndicator";
 
 type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -50,6 +53,14 @@ export default async function BookingCompletePage({ searchParams }: Props) {
       <Header />
       <main className="min-h-screen pt-24 px-4 sm:px-6">
         <div className="max-w-[560px] mx-auto py-12">
+          {/* 진행 스텝: 예약이 있고 pending/confirmed일 때만 */}
+          {booking && (isPending || isConfirmed) && (
+            <div className="mb-8 p-4 bg-white border border-minbak-light-gray rounded-minbak">
+              <BookingStepIndicator
+                {...getBookingStepState(booking.status, booking.paymentStatus)}
+              />
+            </div>
+          )}
           <div className="text-center mb-8">
             {/* 아이콘 */}
             <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 ${
@@ -149,12 +160,27 @@ export default async function BookingCompletePage({ searchParams }: Props) {
                   결제를 완료하면 예약이 최종 확정됩니다
                 </li>
               </ol>
+              <p className="text-[13px] text-amber-700 mt-3">
+                <strong>내 예약</strong>에서 승인·결제 상태를 확인할 수 있어요.
+              </p>
+            </div>
+          )}
+
+          {/* 호스트 승인 후 결제 대기: 24시간 안내 */}
+          {isConfirmed && !isPaid && (
+            <div className="bg-blue-50 border border-blue-200 rounded-minbak p-5 mb-6">
+              <p className="text-[14px] font-medium text-blue-900 mb-1">
+                24시간 이내에 결제를 완료해 주세요.
+              </p>
+              <p className="text-[13px] text-blue-800">
+                결제하지 않으면 예약이 자동 취소될 수 있습니다.
+              </p>
             </div>
           )}
 
           {/* 버튼 */}
           <div className="flex flex-col gap-3">
-            {/* 호스트 승인 완료 + 미결제 → 결제하기 버튼 */}
+            {/* 호스트 승인 완료 + 미결제 → 결제하기 버튼 (최상단 강조) */}
             {isConfirmed && !isPaid && id && (
               <Link
                 href={`/booking/${id}/pay`}
