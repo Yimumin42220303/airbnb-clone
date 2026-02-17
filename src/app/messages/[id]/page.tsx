@@ -65,6 +65,18 @@ export default async function ConversationPage({ params }: Props) {
     },
   });
 
+  const booking = conversation.booking;
+  const checkInStr = booking.checkIn.toISOString().slice(0, 10);
+  const checkOutStr = booking.checkOut.toISOString().slice(0, 10);
+  const statusLabel =
+    booking.status === "pending"
+      ? "승인대기중"
+      : booking.status === "confirmed"
+        ? "확정"
+        : booking.status === "cancelled"
+          ? "취소완료"
+          : booking.status;
+
   const messagesForClient = initialMessages.map((m) => ({
     id: m.id,
     body: m.body,
@@ -92,22 +104,33 @@ export default async function ConversationPage({ params }: Props) {
               <h1 className="text-minbak-body font-semibold text-minbak-black">
                 {otherName} · {listing.title}
               </h1>
+              <dl className="mt-2 text-minbak-caption text-minbak-gray space-y-0.5">
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                  <span>체크인 {checkInStr}</span>
+                  <span>체크아웃 {checkOutStr}</span>
+                  <span>인원 {booking.guests}명</span>
+                </div>
+                <div>
+                  <span className="text-minbak-black font-medium">예약상황</span>{" "}
+                  {statusLabel}
+                </div>
+              </dl>
               <Link
                 href={`/listing/${listing.id}`}
-                className="text-minbak-caption text-minbak-gray hover:underline"
+                className="mt-2 inline-block text-minbak-caption text-minbak-primary hover:underline"
               >
                 숙소 보기
               </Link>
             </div>
             {isGuest &&
-              conversation.booking.status === "confirmed" &&
-              conversation.booking.paymentStatus !== "paid" && (
+              booking.status === "confirmed" &&
+              booking.paymentStatus !== "paid" && (
                 <div className="px-4 py-3 bg-amber-50 border-b border-amber-200 flex flex-wrap items-center justify-between gap-2">
                   <p className="text-minbak-body text-amber-800">
                     호스트가 승인했습니다. 24시간 이내에 결제해 주세요.
                   </p>
                   <Link
-                    href={`/booking/${conversation.booking.id}/pay`}
+                    href={`/booking/${booking.id}/pay`}
                     className="inline-flex items-center justify-center px-4 py-2 rounded-lg text-[14px] font-semibold text-white bg-minbak-primary hover:bg-[#c91820] transition-colors"
                   >
                     결제하기
@@ -120,9 +143,9 @@ export default async function ConversationPage({ params }: Props) {
               currentUserId={userId}
               bookingIdForPayment={
                 isGuest &&
-                conversation.booking.status === "confirmed" &&
-                conversation.booking.paymentStatus !== "paid"
-                  ? conversation.booking.id
+                booking.status === "confirmed" &&
+                booking.paymentStatus !== "paid"
+                  ? booking.id
                   : undefined
               }
             />
