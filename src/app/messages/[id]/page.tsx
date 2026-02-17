@@ -86,6 +86,30 @@ export default async function ConversationPage({ params }: Props) {
           ? "취소완료"
           : booking.status;
 
+  const approvalMessage = initialMessages.find(
+    (m) =>
+      m.body.includes("호스트승인이 완료되었어요") ||
+      m.body.includes("예약이 승인되었습니다")
+  );
+  const PAYMENT_DEADLINE_HOURS = 24;
+  const now = new Date();
+  let paymentDeadlineText: string | null = null;
+  if (approvalMessage) {
+    const approvedAt = approvalMessage.createdAt;
+    const deadline = new Date(
+      approvedAt.getTime() + PAYMENT_DEADLINE_HOURS * 60 * 60 * 1000
+    );
+    if (deadline > now) {
+      paymentDeadlineText = deadline.toLocaleString("ko-KR", {
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      }) + "까지";
+    }
+  }
+
   const messagesForClient = initialMessages.map((m) => ({
     id: m.id,
     body: m.body,
@@ -143,9 +167,16 @@ export default async function ConversationPage({ params }: Props) {
               booking.status === "confirmed" &&
               booking.paymentStatus !== "paid" && (
                 <div className="px-4 py-3 bg-amber-50 border-b border-amber-200 flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-minbak-body text-amber-800">
-                    호스트가 승인했습니다. 24시간 이내에 결제해 주세요.
-                  </p>
+                  <div>
+                    <p className="text-minbak-body text-amber-800">
+                      호스트가 승인했습니다. 24시간 이내에 결제해 주세요.
+                    </p>
+                    {paymentDeadlineText && (
+                      <p className="text-minbak-caption text-amber-700 mt-1">
+                        결제 기한: {paymentDeadlineText}
+                      </p>
+                    )}
+                  </div>
                   <Link
                     href={`/booking/${booking.id}/pay`}
                     className="inline-flex items-center justify-center px-4 py-2 rounded-lg text-[14px] font-semibold text-white bg-minbak-primary hover:bg-[#c91820] transition-colors"
