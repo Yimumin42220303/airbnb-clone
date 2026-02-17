@@ -8,6 +8,7 @@ export type CreateBookingInput = {
   checkOut: string; // ISO date
   guests: number;
   userId?: string; // 없으면 기본 게스트 사용
+  guestPhone?: string; // 예약 확인 페이지 긴급연락용 전화번호 (PG 결제 시 사용)
 };
 
 /**
@@ -134,6 +135,7 @@ export async function createBooking(input: CreateBookingInput) {
       guests: input.guests,
       totalPrice,
       status: "pending",
+      guestPhone: input.guestPhone?.trim() || null,
     },
     include: {
       listing: { select: { title: true, location: true } },
