@@ -81,7 +81,7 @@ export default function PayButton({
           }
           setError("예약이 완료되지 않았습니다. 다시 시도해 주세요.");
         } else {
-          // === 즉시 결제 방식 (기존 로직) ===
+          // === 즉시 결제 방식 ===
           let PortOne: typeof import("@portone/browser-sdk/v2");
           try {
             PortOne = await import("@portone/browser-sdk/v2");
@@ -92,30 +92,74 @@ export default function PayButton({
             );
             return;
           }
+
           const generatedPaymentId = `b${bookingId}${Date.now()}`;
-          const result = await PortOne.requestPayment({
-            storeId: PORTONE_STORE_ID,
-            channelKey: PORTONE_CHANNEL_KEY,
-            paymentId: generatedPaymentId,
-            orderName: (listingTitle || "숙소 예약").slice(0, 50),
-            totalAmount: totalPrice,
-            currency: "CURRENCY_KRW",
-            payMethod: "CARD",
-            customer: {
-              fullName: userName || undefined,
-              email: userEmail || undefined,
-            },
-          });
+          let result: Awaited<ReturnType<typeof PortOne.requestPayment>>;
+          try {
+            result = await PortOne.requestPayment({
+              storeId: PORTONE_STORE_ID,
+              channelKey: PORTONE_CHANNEL_KEY,
+              paymentId: generatedPaymentId,
+              orderName: (listingTitle || "숙소 예약").slice(0, 50),
+              totalAmount: totalPrice,
+              currency: "CURRENCY_KRW",
+              payMethod: "CARD",
+              customer: {
+                fullName: userName || undefined,
+                email: userEmail || undefined,
+              },
+            });
+          } catch (payErr) {
+            const obj = payErr && typeof payErr === "object" ? payErr as Record<string, unknown> : null;
+            const raw =
+              payErr instanceof Error
+                ? payErr.message
+                : obj?.message != null
+                  ? String(obj.message)
+                  : String(payErr);
+            const msg = raw === "[object Object]" ? "" : raw;
+            const pgMsg = obj?.pgMessage != null ? String(obj.pgMessage) : "";
+            const code = obj?.code != null ? String(obj.code) : "";
+            console.error("[PayButton] requestPayment 오류:", payErr);
+            if (/cancel|취소|popup|closed|abort|사용자/i.test(msg || pgMsg)) {
+              setError("결제가 취소되었습니다.");
+            } else if (/fetch|network|Failed to fetch/i.test(msg)) {
+              setError("네트워크 연결을 확인하고 다시 시도해 주세요.");
+            } else {
+              const part = (msg || pgMsg).trim();
+              const display =
+                part.length > 0
+                  ? part.length <= 250
+                    ? part
+                    : part.slice(0, 247) + "…"
+                  : code
+                    ? `결제 오류 (코드: ${code})`
+                    : "결제 창에서 오류가 발생했습니다. 결제 수단을 확인하거나 잠시 후 다시 시도해 주세요.";
+              setError(display);
+            }
+            return;
+          }
 
           if (result && result.transactionType === "PAYMENT" && !result.code) {
-            const verifyRes = await fetch("/api/payments/verify", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                paymentId: generatedPaymentId,
-                bookingId,
-              }),
-            });
+            const paymentIdToVerify = result.paymentId || generatedPaymentId;
+            let verifyRes: Response;
+            try {
+              verifyRes = await fetch("/api/payments/verify", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  paymentId: paymentIdToVerify,
+                  bookingId,
+                }),
+              });
+            } catch (fetchErr) {
+              console.error("[PayButton] verify fetch 오류:", fetchErr);
+              setError(
+                "결제 검증 요청에 실패했습니다. 네트워크를 확인하고 다시 시도해 주세요."
+              );
+              return;
+            }
+
             let verifyData: { ok?: boolean; error?: string };
             try {
               verifyData = await verifyRes.json();
@@ -130,11 +174,25 @@ export default function PayButton({
               router.refresh();
               return;
             } else {
-              setError(verifyData.error || "결제 검증에 실패했습니다.");
+              setError(
+                verifyData.error ||
+                  "결제 검증에 실패했습니다. 예약 목록에서 결제 상태를 확인해 주세요."
+              );
               return;
             }
           } else {
-            setError("결제가 취소되었거나 완료되지 않았습니다.");
+            const code = result?.code;
+            const resultMsg =
+              result && typeof (result as { message?: string }).message === "string"
+                ? (result as { message: string }).message
+                : "";
+            if (code || resultMsg) {
+              setError(
+                resultMsg || (code ? `결제 오류 (${code})` : "결제가 완료되지 않았습니다.")
+              );
+            } else {
+              setError("결제가 취소되었거나 완료되지 않았습니다.");
+            }
             return;
           }
         }
@@ -142,10 +200,26 @@ export default function PayButton({
         setError("온라인 결제가 설정되지 않았습니다. 가상계좌 입금 후 관리자에게 문의해 주세요.");
       }
     } catch (err) {
+      const obj = err && typeof err === "object" ? err as Record<string, unknown> : null;
+      const raw =
+        err instanceof Error
+          ? err.message
+          : obj?.message != null
+            ? String(obj.message)
+            : obj?.error != null
+              ? String(obj.error)
+              : String(err);
+      const message = raw === "[object Object]" ? "" : raw;
       console.error("[PayButton] 결제 오류:", err);
-      setError(
-        "결제 처리 중 오류가 발생했습니다. 결제 수단을 확인하거나 잠시 후 다시 시도해 주세요."
-      );
+      const display =
+        message.length > 0
+          ? message.length <= 250
+            ? message
+            : message.slice(0, 247) + "…"
+          : obj?.code != null
+            ? `결제 오류 (코드: ${String(obj.code)})`
+            : "결제 처리 중 오류가 발생했습니다. 결제 수단을 확인하거나 잠시 후 다시 시도해 주세요.";
+      setError(display);
     } finally {
       setLoading(false);
     }
