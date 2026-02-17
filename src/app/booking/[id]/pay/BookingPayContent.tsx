@@ -30,6 +30,7 @@ export default function BookingPayContent() {
   const id = typeof params?.id === "string" ? params.id : "";
 
   const [booking, setBooking] = useState<BookingItem | null>(null);
+  const [me, setMe] = useState<{ name: string | null; email: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [unauthorized, setUnauthorized] = useState(false);
@@ -44,21 +45,35 @@ export default function BookingPayContent() {
     setLoading(true);
     setError(null);
     setUnauthorized(false);
-    fetch("/api/bookings")
-      .then((res) => {
+    Promise.all([fetch("/api/bookings"), fetch("/api/me")])
+      .then(([bookingsRes, meRes]) => {
         if (cancelled) return;
-        if (res.status === 401) {
+        if (bookingsRes.status === 401) {
           setUnauthorized(true);
+          setBooking(null);
+          setMe(null);
           return;
         }
-        if (!res.ok) throw new Error("Failed to load");
-        return res.json();
+        if (!bookingsRes.ok) throw new Error("Failed to load bookings");
+        return Promise.all([
+          bookingsRes.json(),
+          meRes.ok ? meRes.json() : Promise.resolve(null),
+        ]);
       })
-      .then((data) => {
-        if (cancelled) return;
+      .then((result) => {
+        if (cancelled || result == null) return;
+        const [data, meData] = result as [
+          BookingItem[],
+          { name?: string | null; email?: string | null } | null,
+        ];
         const list = Array.isArray(data) ? data : [];
         const found = list.find((b: BookingItem) => b.id === id);
         setBooking(found ?? null);
+        setMe(
+          meData && (meData.email != null || meData.name != null)
+            ? { name: meData.name ?? null, email: meData.email ?? null }
+            : null
+        );
       })
       .catch(() => {
         if (!cancelled) setError("예약 정보를 불러오는 중 오류가 발생했어요.");
@@ -209,6 +224,8 @@ export default function BookingPayContent() {
             bookingId={id}
             totalPrice={booking.totalPrice}
             listingTitle={booking.listing.title}
+            userName={me?.name ?? undefined}
+            userEmail={me?.email ?? undefined}
             checkIn={booking.checkIn}
           />
         </div>
