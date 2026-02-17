@@ -204,6 +204,28 @@ export async function PATCH(
         ...(refundDone ? { paymentStatus: "refunded" } : {}),
       },
     });
+
+    // 호스트 거절/취소 → 대화방에 취소 안내 메시지 1건 (게스트가 채팅창에서 확인)
+    const officialUserId = await getOfficialUserId();
+    if (officialUserId) {
+      try {
+        const conversation = await prisma.conversation.upsert({
+          where: { bookingId: id },
+          create: { bookingId: id },
+          update: {},
+        });
+        await prisma.message.create({
+          data: {
+            conversationId: conversation.id,
+            senderId: officialUserId,
+            body: "호스트로부터 예약이 취소되었어요.",
+          },
+        });
+      } catch (err) {
+        console.error("[Host Reject/Cancel] Conversation/official message:", err);
+      }
+    }
+
     // Notify guest & host: booking rejected/cancelled by host
     {
       const nights = Math.floor(
