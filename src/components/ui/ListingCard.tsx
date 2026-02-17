@@ -21,6 +21,8 @@ export interface ListingCardProps {
   initialSaved?: boolean;
   /** 검색 파라미터를 상세 페이지로 전달 */
   searchQuery?: string;
+  /** 체크인·체크아웃·인원이 모두 있을 때만 true. 미완료 시 가격 숨김 */
+  showPrice?: boolean;
 }
 
 export default function ListingCard({
@@ -37,6 +39,7 @@ export default function ListingCard({
   className,
   initialSaved = false,
   searchQuery,
+  showPrice = true,
 }: ListingCardProps) {
   const listingHref = searchQuery ? `/listing/${id}?${searchQuery}` : `/listing/${id}`;
   return (
@@ -46,7 +49,7 @@ export default function ListingCard({
         "group block flex-shrink-0 rounded-lg overflow-hidden bg-white transition-all duration-200 hover:shadow-minbak focus-visible:ring-2 focus-visible:ring-minbak-primary focus-visible:ring-offset-2 focus-visible:outline-none active:opacity-95",
         className
       )}
-      aria-label={`${title} - ${location}, 1박 ₩${price.toLocaleString()}`}
+      aria-label={showPrice ? `${title} - ${location}, 1박 ₩${price.toLocaleString()}` : `${title} - ${location}`}
     >
       <div className="relative w-full h-[240px] sm:h-[280px] md:h-[320px] overflow-hidden">
         <Image
@@ -92,10 +95,14 @@ export default function ListingCard({
           </div>
         )}
         <div className="mt-auto flex items-center justify-between pt-1">
-          <p className="text-minbak-body text-minbak-black">
-            <span className="font-semibold">₩{price.toLocaleString()}</span>
-            <span className="text-minbak-gray"> /박</span>
-          </p>
+          {showPrice ? (
+            <p className="text-minbak-body text-minbak-black">
+              <span className="font-semibold">₩{price.toLocaleString()}</span>
+              <span className="text-minbak-gray"> /박</span>
+            </p>
+          ) : (
+            <p className="text-minbak-body text-minbak-gray">체크인·체크아웃·인원 선택 후 가격 확인</p>
+          )}
           {rating !== undefined && (
             <span className="text-minbak-caption text-minbak-gray">
               ★ {rating.toFixed(1)}

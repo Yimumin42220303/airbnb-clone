@@ -68,6 +68,12 @@ export default async function SearchPage({
   if (children != null) searchQuery.set("children", String(children));
   const searchQueryStr = searchQuery.toString();
 
+  const hasGuests =
+    adults != null ||
+    children != null ||
+    getNumber(params.guests) != null;
+  const showPrice = !!(checkIn && checkOut && hasGuests);
+
   const session = await getServerSession(authOptions);
   const userId = (session as { userId?: string } | null)?.userId ?? null;
   const [listings, wishlistIds] = await Promise.all([
@@ -94,6 +100,7 @@ export default async function SearchPage({
                   {...listing}
                   initialSaved={wishlistIds.includes(listing.id)}
                   searchQuery={searchQueryStr || undefined}
+                  showPrice={showPrice}
                 />
               ))}
             </div>
