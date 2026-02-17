@@ -57,6 +57,7 @@ export async function GET(
   }
 
   const cursor = request.nextUrl.searchParams.get("cursor");
+  const orderDesc = request.nextUrl.searchParams.get("order") === "desc";
   const limit = Math.min(
     parseInt(request.nextUrl.searchParams.get("limit") || "50", 10) || 50,
     100
@@ -64,19 +65,17 @@ export async function GET(
 
   const messages = await prisma.message.findMany({
     where: { conversationId },
-    orderBy: { createdAt: "asc" },
-    take: limit + 1,
-    ...(cursor
-      ? { cursor: { id: cursor }, skip: 1 }
-      : {}),
+    orderBy: { createdAt: orderDesc ? "desc" : "asc" },
+    take: orderDesc ? limit : limit + 1,
+    ...(cursor && !orderDesc ? { cursor: { id: cursor }, skip: 1 } : {}),
     include: {
       sender: { select: { id: true, name: true, email: true } },
     },
   });
 
-  const hasMore = messages.length > limit;
-  const list = hasMore ? messages.slice(0, limit) : messages;
-  const nextCursor = hasMore ? list[list.length - 1].id : null;
+  const list = orderDesc ? [...messages].reverse() : messages.slice(0, limit);
+  const hasMore = !orderDesc && messages.length > limit;
+  const nextCursor = hasMore ? (messages[limit - 1]?.id ?? null) : null;
 
   const listing = conversation.booking.listing;
   const guest = conversation.booking.user;

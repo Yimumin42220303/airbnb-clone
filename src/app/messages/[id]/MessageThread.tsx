@@ -57,7 +57,7 @@ export default function MessageThread({
   const fetchNewMessages = useCallback(async () => {
     try {
       const res = await fetch(
-        `/api/conversations/${conversationId}/messages?limit=50`
+        `/api/conversations/${conversationId}/messages?limit=50&order=desc`
       );
       if (!res.ok) return;
       const data = await res.json();
