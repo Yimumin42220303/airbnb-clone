@@ -10,18 +10,36 @@ type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
+function safeDecodeTitle(s: string): string {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return "숙소";
+  }
+}
+
 export default async function BookingCompletePage({ searchParams }: Props) {
   const params = await searchParams;
   const id = typeof params.id === "string" ? params.id : "";
-  const title = typeof params.title === "string" ? decodeURIComponent(params.title) : "숙소";
+  const title =
+    typeof params.title === "string" ? safeDecodeTitle(params.title) : "숙소";
   const checkIn = typeof params.checkIn === "string" ? params.checkIn : "";
   const checkOut = typeof params.checkOut === "string" ? params.checkOut : "";
   const guests = typeof params.guests === "string" ? params.guests : "";
   const total = typeof params.total === "string" ? params.total : "";
   const nights = typeof params.nights === "string" ? params.nights : "";
 
-  const booking = id
-    ? await prisma.booking.findUnique({
+  let booking: {
+    paymentStatus: string;
+    status: string;
+    listingId: string;
+    paymentMethod: string | null;
+    scheduledPaymentDate: Date | null;
+  } | null = null;
+
+  try {
+    if (id) {
+      const found = await prisma.booking.findUnique({
         where: { id },
         select: {
           paymentStatus: true,
@@ -30,23 +48,50 @@ export default async function BookingCompletePage({ searchParams }: Props) {
           paymentMethod: true,
           scheduledPaymentDate: true,
         },
-      })
-    : null;
+      });
+      booking = found;
+    }
+
+    // 결제 완료 + 확정 → 메시지 페이지로 자동 리다이렉트
+    if (
+      booking?.status === "confirmed" &&
+      booking?.paymentStatus === "paid" &&
+      id
+    ) {
+      const conversation = await prisma.conversation.findUnique({
+        where: { bookingId: id },
+        select: { id: true },
+      });
+      if (conversation) {
+        redirect(`/messages/${conversation.id}`);
+      }
+    }
+  } catch (err) {
+    console.error("[BookingCompletePage]", err);
+    return (
+      <>
+        <Header />
+        <main className="min-h-screen pt-24 px-4 sm:px-6">
+          <div className="max-w-[560px] mx-auto py-12 text-center">
+            <p className="text-minbak-body text-minbak-gray mb-6">
+              예약 정보를 불러오는 중 오류가 발생했어요.
+            </p>
+            <Link
+              href="/my-bookings"
+              className="inline-flex items-center justify-center min-h-[48px] px-6 py-3 text-minbak-body font-medium rounded-minbak-full bg-minbak-primary text-white hover:bg-minbak-primary-hover"
+            >
+              내 예약 보기
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
 
   const isPaid = booking?.paymentStatus === "paid";
   const isConfirmed = booking?.status === "confirmed";
   const isPending = booking?.status === "pending";
-
-  // 결제 완료 + 확정 → 메시지 페이지로 자동 리다이렉트
-  if (isConfirmed && isPaid && id) {
-    const conversation = await prisma.conversation.findUnique({
-      where: { bookingId: id },
-      select: { id: true },
-    });
-    if (conversation) {
-      redirect(`/messages/${conversation.id}`);
-    }
-  }
 
   return (
     <>

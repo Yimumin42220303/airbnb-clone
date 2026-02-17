@@ -86,6 +86,10 @@ export default function BookingConfirmContent({
         setError(data.error || "예약 요청에 실패했습니다.");
         return;
       }
+      if (!data?.id) {
+        setError("예약 요청에 실패했습니다. 다시 시도해 주세요.");
+        return;
+      }
       const nightsNum =
         data.nights ??
         Math.floor(
@@ -93,7 +97,7 @@ export default function BookingConfirmContent({
             (24 * 60 * 60 * 1000)
         );
       const completeParams = new URLSearchParams({
-        id: data.id,
+        id: String(data.id),
         title: encodeURIComponent(listingTitle),
         checkIn: data.checkIn ?? checkIn,
         checkOut: data.checkOut ?? checkOut,
