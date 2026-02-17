@@ -11,12 +11,21 @@ const PORTONE_READY = !!(PORTONE_STORE_ID && PORTONE_CHANNEL_KEY);
 const BILLING_KEY_ENABLED = false;
 const PORTONE_BILLING_CHANNEL_KEY = process.env.NEXT_PUBLIC_PORTONE_BILLING_CHANNEL_KEY ?? "";
 
+/** 휴대폰 번호: 하이픈 제거 후 10~11자리만 허용 (이니시스 V2 필수) */
+function normalizePhone(v: string | undefined): string | undefined {
+  if (!v || typeof v !== "string") return undefined;
+  const digits = v.replace(/\D/g, "");
+  if (digits.length >= 10 && digits.length <= 11) return digits;
+  return undefined;
+}
+
 export default function PayButton({
   bookingId,
   totalPrice,
   listingTitle,
   userName,
   userEmail,
+  userPhoneNumber,
   checkIn,
 }: {
   bookingId: string;
@@ -24,6 +33,7 @@ export default function PayButton({
   listingTitle?: string;
   userName?: string;
   userEmail?: string;
+  userPhoneNumber?: string;
   checkIn?: string;
 }) {
   const router = useRouter();
@@ -54,6 +64,7 @@ export default function PayButton({
             customer: {
               fullName: userName || undefined,
               email: userEmail || undefined,
+              phoneNumber: normalizePhone(userPhoneNumber) || undefined,
             },
           });
           if (issueResult && issueResult.code) {
@@ -96,6 +107,13 @@ export default function PayButton({
           const generatedPaymentId = `b${bookingId}${Date.now()}`;
           let result: Awaited<ReturnType<typeof PortOne.requestPayment>>;
           try {
+            const phoneNumber = normalizePhone(userPhoneNumber);
+            if (!phoneNumber) {
+              setError(
+                "이니시스 결제를 위해 휴대폰 번호가 필요합니다. 마이페이지에서 휴대폰 번호를 등록해 주세요."
+              );
+              return;
+            }
             result = await PortOne.requestPayment({
               storeId: PORTONE_STORE_ID,
               channelKey: PORTONE_CHANNEL_KEY,
@@ -107,6 +125,7 @@ export default function PayButton({
               customer: {
                 fullName: userName || undefined,
                 email: userEmail || undefined,
+                phoneNumber,
               },
             });
           } catch (payErr) {

@@ -30,7 +30,11 @@ export default function BookingPayContent() {
   const id = typeof params?.id === "string" ? params.id : "";
 
   const [booking, setBooking] = useState<BookingItem | null>(null);
-  const [me, setMe] = useState<{ name: string | null; email: string | null } | null>(null);
+  const [me, setMe] = useState<{
+    name: string | null;
+    email: string | null;
+    phone: string | null;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [unauthorized, setUnauthorized] = useState(false);
@@ -64,14 +68,18 @@ export default function BookingPayContent() {
         if (cancelled || result == null) return;
         const [data, meData] = result as [
           BookingItem[],
-          { name?: string | null; email?: string | null } | null,
+          { name?: string | null; email?: string | null; phone?: string | null } | null,
         ];
         const list = Array.isArray(data) ? data : [];
         const found = list.find((b: BookingItem) => b.id === id);
         setBooking(found ?? null);
         setMe(
-          meData && (meData.email != null || meData.name != null)
-            ? { name: meData.name ?? null, email: meData.email ?? null }
+          meData
+            ? {
+                name: meData.name ?? null,
+                email: meData.email ?? null,
+                phone: meData.phone ?? null,
+              }
             : null
         );
       })
@@ -226,6 +234,7 @@ export default function BookingPayContent() {
             listingTitle={booking.listing.title}
             userName={me?.name ?? undefined}
             userEmail={me?.email ?? undefined}
+            userPhoneNumber={me?.phone ?? undefined}
             checkIn={booking.checkIn}
           />
         </div>
