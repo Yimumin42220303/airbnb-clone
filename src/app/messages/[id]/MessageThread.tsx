@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -41,11 +42,14 @@ export default function MessageThread({
   currentUserId,
   bookingIdForPayment,
 }: Props) {
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  /** 호스트 승인 메시지를 새로 받았을 때 router.refresh() 한 번만 수행 (상단 결제 배너/버튼 갱신) */
+  const hasRefreshedForApprovalRef = useRef(false);
 
   useEffect(() => {
     if (cooldownUntil == null) return;
@@ -70,15 +74,21 @@ export default function MessageThread({
       if (!res.ok) return;
       const data = await res.json();
       const list: Message[] = data.messages ?? [];
+      const known = new Set(knownIdsRef.current);
+      const newMessages = list.filter((m) => !known.has(m.id));
+      const hasNew = newMessages.length > 0;
+
+      // 호스트 승인 메시지를 새로 수신했으면 페이지 데이터 갱신 → 상단 결제 배너/결제하기 버튼 표시
+      if (
+        hasNew &&
+        !hasRefreshedForApprovalRef.current &&
+        newMessages.some((m) => isApprovalMessage(m.isFromMe, m.body))
+      ) {
+        hasRefreshedForApprovalRef.current = true;
+        router.refresh();
+      }
+
       setMessages((prev) => {
-        const known = new Set(knownIdsRef.current);
-        let hasNew = false;
-        for (const m of list) {
-          if (!known.has(m.id)) {
-            known.add(m.id);
-            hasNew = true;
-          }
-        }
         if (!hasNew) return prev;
         const prevIds = new Set(prev.map((p) => p.id));
         const merged = [...prev];
@@ -98,7 +108,7 @@ export default function MessageThread({
     } catch {
       // 폴링 실패는 무시 (다음 주기에 재시도)
     }
-  }, [conversationId]);
+  }, [conversationId, router]);
 
   useEffect(() => {
     const t = setInterval(fetchNewMessages, POLL_INTERVAL_MS);
