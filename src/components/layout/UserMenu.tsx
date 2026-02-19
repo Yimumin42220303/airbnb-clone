@@ -59,7 +59,7 @@ export default function UserMenu() {
           {user.image ? (
             <Image
               src={user.image}
-              alt={user.name ?? "프로필"}
+              alt={user.name ?? t("mypage.profile")}
               width={32}
               height={32}
               className="w-full h-full object-cover"
@@ -74,7 +74,7 @@ export default function UserMenu() {
         <div className="absolute right-0 top-full mt-2 w-60 bg-white border border-minbak-light-gray rounded-minbak shadow-minbak py-2">
           <div className="px-4 py-3 border-b border-minbak-light-gray">
             <p className="text-minbak-body font-medium text-minbak-black truncate">
-              {user.name ?? "사용자"}
+              {user.name ?? t("guest.userDefault")}
             </p>
             <p className="text-minbak-caption text-minbak-gray truncate">
               {user.email}
@@ -86,13 +86,13 @@ export default function UserMenu() {
             onClick={() => setOpen(false)}
           >
             <User className="w-5 h-5 text-minbak-gray shrink-0" />
-            마이페이지
+            {t("mypage.title")}
             <ChevronRight className="w-4 h-4 text-minbak-gray ml-auto" />
           </Link>
           {/* 게스트 모드 / 호스트 모드 전환 */}
           <div className="px-3 py-3 border-b border-minbak-light-gray">
             <p className="px-1 pb-2 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide">
-              모드 전환
+              {t("guest.modeSwitch")}
             </p>
             <div className="flex rounded-[90px] border border-minbak-light-gray bg-minbak-bg p-1">
               <Link
@@ -103,7 +103,7 @@ export default function UserMenu() {
                 onClick={() => setOpen(false)}
               >
                 <Home className="w-4 h-4 shrink-0" aria-hidden />
-                게스트 모드
+                {t("nav.guestMode")}
               </Link>
               <Link
                 href="/host/listings"
@@ -113,7 +113,7 @@ export default function UserMenu() {
                 onClick={() => setOpen(false)}
               >
                 <Building2 className="w-4 h-4 shrink-0" aria-hidden />
-                호스트 모드
+                {t("nav.hostMode")}
               </Link>
             </div>
           </div>
@@ -121,7 +121,7 @@ export default function UserMenu() {
           {!isHostMode && (
             <div className="px-2 py-1.5">
               <p className="px-2 py-1 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide">
-                여행
+                {t("guest.travel")}
               </p>
               <Link
                 href="/search"
@@ -129,7 +129,7 @@ export default function UserMenu() {
                 onClick={() => setOpen(false)}
               >
                 <Home className="w-4 h-4 text-minbak-gray" />
-                숙소 검색
+                {t("guest.navSearchAccommodation")}
                 <ChevronRight className="w-4 h-4 text-minbak-gray ml-auto" />
               </Link>
               <Link
@@ -138,7 +138,7 @@ export default function UserMenu() {
                 onClick={() => setOpen(false)}
               >
                 <Sparkles className="w-4 h-4 text-minbak-gray" />
-                AI 맞춤 추천
+                {t("guest.menuAiRecommend")}
                 <ChevronRight className="w-4 h-4 text-minbak-gray ml-auto" />
               </Link>
               <Link
@@ -147,7 +147,7 @@ export default function UserMenu() {
                 onClick={() => setOpen(false)}
               >
                 <Calendar className="w-4 h-4 text-minbak-gray" />
-                내 예약
+                {t("mypage.navReservations")}
                 <ChevronRight className="w-4 h-4 text-minbak-gray ml-auto" />
               </Link>
               <Link
@@ -156,7 +156,7 @@ export default function UserMenu() {
                 onClick={() => setOpen(false)}
               >
                 <Heart className="w-4 h-4 text-minbak-gray" />
-                위시리스트
+                {t("guest.navWishlist")}
                 <ChevronRight className="w-4 h-4 text-minbak-gray ml-auto" />
               </Link>
               <Link
@@ -165,7 +165,7 @@ export default function UserMenu() {
                 onClick={() => setOpen(false)}
               >
                 <MessageCircle className="w-4 h-4 text-minbak-gray" />
-                메시지
+                {t("guest.navMessages")}
                 <ChevronRight className="w-4 h-4 text-minbak-gray ml-auto" />
               </Link>
             </div>
@@ -190,7 +190,7 @@ export default function UserMenu() {
             className="w-full flex items-center gap-2 px-4 py-3 mt-1 border-t border-minbak-light-gray text-minbak-body text-minbak-black hover:bg-minbak-bg transition-colors text-left"
           >
             <LogOut className="w-4 h-4" />
-            로그아웃
+            {t("mypage.logout")}
           </button>
         </div>
       )}
