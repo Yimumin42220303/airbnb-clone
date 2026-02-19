@@ -19,9 +19,12 @@ const TRIP_TYPES = [
 ] as const;
 
 const PRIORITIES = [
-  { value: "value", label: "가성비 중시" },
-  { value: "rating", label: "평점 중시" },
-  { value: "location", label: "위치 중시" },
+  { value: "value", label: "가성비" },
+  { value: "rating", label: "평점" },
+  { value: "location", label: "위치" },
+  { value: "space", label: "숙소넓이" },
+  { value: "environment", label: "건전한 주변환경" },
+  { value: "child_friendly", label: "어린이·유아친화 설비" },
 ] as const;
 
 type TripType = (typeof TRIP_TYPES)[number]["value"];
@@ -48,7 +51,8 @@ export default function RecommendPageContent() {
   const [checkOut, setCheckOut] = useState("");
   const [guests, setGuests] = useState<GuestCounts>(defaultGuestCounts);
   const [tripType, setTripType] = useState<TripType | "">("");
-  const [priority, setPriority] = useState<Priority | "">("");
+  const [priorities, setPriorities] = useState<Priority[]>([]);
+  const MAX_PRIORITIES = 3;
   const [preferences, setPreferences] = useState("");
   const [dateOpen, setDateOpen] = useState(false);
   const [guestOpen, setGuestOpen] = useState(false);
@@ -81,7 +85,7 @@ export default function RecommendPageContent() {
           children: guests.child,
           infants: guests.infant,
           tripType: tripType || undefined,
-          priority: priority || undefined,
+          priorities: priorities.slice(0, MAX_PRIORITIES),
           preferences: preferences.trim(),
         }),
       });
@@ -141,27 +145,40 @@ export default function RecommendPageContent() {
           </div>
         </section>
 
-        {/* 우선순위 */}
+        {/* 우선순위 (최대 3개) */}
         <section className="bg-white border border-minbak-light-gray rounded-minbak p-4 md:p-5 shadow-sm">
-          <h2 className="text-minbak-body font-semibold text-minbak-black mb-3 flex items-center gap-2">
+          <h2 className="text-minbak-body font-semibold text-minbak-black mb-1 flex items-center gap-2">
             <Target className="w-5 h-5 text-minbak-primary" />
             무엇을 가장 중요하게 보시나요?
           </h2>
+          <p className="text-minbak-caption text-minbak-gray mb-3">
+            최대 {MAX_PRIORITIES}개 선택 · <span className="font-medium text-minbak-dark-gray">{priorities.length}/{MAX_PRIORITIES} 선택</span>
+          </p>
           <div className="flex flex-wrap gap-2">
-            {PRIORITIES.map(({ value, label }) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setPriority(priority === value ? "" : value)}
-                className={`px-4 py-2.5 rounded-minbak text-minbak-body font-medium border transition-colors ${
-                  priority === value
-                    ? "bg-minbak-primary text-white border-minbak-primary"
-                    : "bg-white text-minbak-black border-minbak-light-gray hover:border-minbak-primary/50"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+            {PRIORITIES.map(({ value, label }) => {
+              const isSelected = priorities.includes(value);
+              const isDisabled = !isSelected && priorities.length >= MAX_PRIORITIES;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => {
+                    if (isSelected) setPriorities((prev) => prev.filter((p) => p !== value));
+                    else if (priorities.length < MAX_PRIORITIES) setPriorities((prev) => [...prev, value]);
+                  }}
+                  disabled={isDisabled}
+                  className={`px-4 py-2.5 rounded-minbak text-minbak-body font-medium border transition-colors ${
+                    isSelected
+                      ? "bg-minbak-primary text-white border-minbak-primary"
+                      : isDisabled
+                        ? "bg-[#f5f5f5] text-minbak-gray border-[#e5e5e5] cursor-not-allowed"
+                        : "bg-white text-minbak-black border-minbak-light-gray hover:border-minbak-primary/50"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </section>
 

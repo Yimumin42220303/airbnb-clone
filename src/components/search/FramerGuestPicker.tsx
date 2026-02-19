@@ -38,6 +38,7 @@ export interface FramerGuestPickerProps {
 const ROW_CLASS =
   "flex items-center justify-between py-4 border-b border-[#f0f0f0] last:border-0";
 const LABEL_CLASS = "text-[16px] text-minbak-black font-medium";
+const AGE_CRITERION_CLASS = "text-[14px] text-minbak-gray mt-0.5";
 const BTN_CLASS =
   "w-9 h-9 rounded-full border border-minbak-light-gray flex items-center justify-center text-minbak-black hover:border-minbak-primary hover:bg-minbak-bg disabled:opacity-20 disabled:cursor-not-allowed disabled:hover:border-minbak-light-gray disabled:hover:bg-transparent transition-colors";
 
@@ -63,7 +64,10 @@ export default function FramerGuestPicker({
     >
       <div className="px-6 pt-2 pb-1">
         <div className={ROW_CLASS}>
-          <span className={LABEL_CLASS}>{t("guest.adult")}</span>
+          <div className="flex flex-col">
+            <span className={LABEL_CLASS}>{t("guest.adult")}</span>
+            <span className={AGE_CRITERION_CLASS}>{t("guest.adultAge")}</span>
+          </div>
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -88,7 +92,10 @@ export default function FramerGuestPicker({
           </div>
         </div>
         <div className={ROW_CLASS}>
-          <span className={LABEL_CLASS}>{t("guest.child")}</span>
+          <div className="flex flex-col">
+            <span className={LABEL_CLASS}>{t("guest.child")}</span>
+            <span className={AGE_CRITERION_CLASS}>{t("guest.childAge")}</span>
+          </div>
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -113,7 +120,10 @@ export default function FramerGuestPicker({
           </div>
         </div>
         <div className={ROW_CLASS}>
-          <span className={LABEL_CLASS}>{t("guest.infant")}</span>
+          <div className="flex flex-col">
+            <span className={LABEL_CLASS}>{t("guest.infant")}</span>
+            <span className={AGE_CRITERION_CLASS}>{t("guest.infantAge")}</span>
+          </div>
           <div className="flex items-center gap-3">
             <button
               type="button"
