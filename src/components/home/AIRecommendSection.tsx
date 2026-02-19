@@ -24,6 +24,8 @@ type RecommendItem = {
   isPromoted?: boolean;
   rank: number;
   reason: string;
+  /** AI 추천 근거(리뷰·위치·가격 등). 게스트에게 "왜 이 숙소인지" 보여줌 */
+  highlights?: string[];
 };
 
 export default function AIRecommendSection() {
@@ -235,9 +237,21 @@ export default function AIRecommendSection() {
                       amenities={item.amenities}
                       isPromoted={item.isPromoted}
                     />
-                    <p className="mt-2 text-minbak-caption text-minbak-dark-gray line-clamp-2">
-                      <span className="font-medium text-minbak-primary">추천 이유:</span> {item.reason}
-                    </p>
+                    <div className="mt-2 space-y-1">
+                      <p className="text-minbak-caption text-minbak-dark-gray">
+                        <span className="font-medium text-minbak-primary">추천 이유:</span> {item.reason}
+                      </p>
+                      {item.highlights && item.highlights.length > 0 && (
+                        <div className="text-minbak-caption text-minbak-gray">
+                          <span className="font-medium text-minbak-dark-gray">추천 근거:</span>
+                          <ul className="mt-0.5 list-disc list-inside space-y-0.5">
+                            {item.highlights.map((h, i) => (
+                              <li key={i}>{h}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
