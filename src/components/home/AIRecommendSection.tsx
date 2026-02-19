@@ -6,11 +6,11 @@ import { formatDateDisplay } from "@/lib/date-utils";
 import FramerDateRangePicker from "@/components/search/FramerDateRangePicker";
 import FramerGuestPicker, {
   defaultGuestCounts,
-  formatGuestLabel,
   type GuestCounts,
 } from "@/components/search/FramerGuestPicker";
 import Link from "next/link";
 import { Sparkles, Loader2, ChevronDown, ArrowRight } from "lucide-react";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
 type RecommendItem = {
   id: string;
@@ -29,6 +29,7 @@ type RecommendItem = {
 };
 
 export default function AIRecommendSection() {
+  const t = useHostTranslations().t;
   const [expanded, setExpanded] = useState(false);
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
@@ -49,7 +50,7 @@ export default function AIRecommendSection() {
 
     if (!checkIn || !checkOut) {
       setDateOpen(true);
-      setError("체크인·체크아웃 날짜를 선택해 주세요.");
+      setError(t("guest.dateRequiredError"));
       return;
     }
 
@@ -71,14 +72,14 @@ export default function AIRecommendSection() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error ?? "추천 요청에 실패했습니다.");
+        setError(data.error ?? t("guest.recommendRequestFailed"));
         return;
       }
 
       setResults(data.listings ?? []);
       setMessage(data.message ?? null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "네트워크 오류가 발생했습니다.");
+      setError(err instanceof Error ? err.message : t("guest.networkError"));
     } finally {
       setLoading(false);
     }
@@ -106,10 +107,10 @@ export default function AIRecommendSection() {
                 </div>
                 <div className="min-w-0">
                   <h2 className="text-minbak-body-lg md:text-minbak-h3 font-bold text-minbak-black">
-                    AI 맞춤 숙소 추천
+                    {t("guest.aiRecommendTitle")}
                   </h2>
                   <p className="text-minbak-caption md:text-minbak-body text-minbak-dark-gray mt-0.5 truncate">
-                    여행 유형·우선순위·일정을 입력하면 AI가 맞춤 숙소를 추천해 드립니다
+                    {t("guest.aiRecommendDesc")}
                   </p>
                 </div>
               </div>
@@ -126,7 +127,7 @@ export default function AIRecommendSection() {
                 href="/recommend"
                 className="inline-flex items-center gap-1 text-minbak-caption font-medium text-minbak-primary hover:underline"
               >
-                세부 조건 입력하고 추천받기
+                {t("guest.aiRecommendCtaDetail")}
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </p>
@@ -136,11 +137,11 @@ export default function AIRecommendSection() {
           {expanded && (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="bg-white border border-minbak-light-gray rounded-minbak p-4 md:p-6 shadow-sm">
-                <h3 className="text-minbak-body font-semibold text-minbak-black mb-4">여행 정보</h3>
+                <h3 className="text-minbak-body font-semibold text-minbak-black mb-4">{t("guest.travelInfo")}</h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label className="block text-minbak-caption text-minbak-gray mb-1">체크인 · 체크아웃</label>
+                    <label className="block text-minbak-caption text-minbak-gray mb-1">{t("guest.checkInCheckOut")}</label>
                     <button
                       type="button"
                       onClick={() => setDateOpen(true)}
@@ -149,12 +150,12 @@ export default function AIRecommendSection() {
                       <span className="text-minbak-black">
                         {checkIn && checkOut
                           ? `${formatDateDisplay(checkIn)} ~ ${formatDateDisplay(checkOut)}`
-                          : "날짜 선택"}
+                          : t("guest.dateSelect")}
                       </span>
                     </button>
                   </div>
                   <div>
-                    <label className="block text-minbak-caption text-minbak-gray mb-1">인원</label>
+                    <label className="block text-minbak-caption text-minbak-gray mb-1">{t("guest.guests")}</label>
                     <button
                       type="button"
                       onClick={() => setGuestOpen(true)}
@@ -162,8 +163,10 @@ export default function AIRecommendSection() {
                     >
                       <span className="text-minbak-black">
                         {guests.adult + guests.child + guests.infant > 0
-                          ? formatGuestLabel(guests)
-                          : "게스트 추가"}
+                          ? (guests.infant > 0
+                            ? t("guest.guestCountWithInfant", { total: guests.adult + guests.child, infant: guests.infant })
+                            : t("guest.guestCount", { total: guests.adult + guests.child }))
+                          : t("guest.addGuests")}
                       </span>
                     </button>
                   </div>
@@ -171,13 +174,13 @@ export default function AIRecommendSection() {
 
                 <div>
                   <label htmlFor="preferences" className="block text-minbak-caption text-minbak-gray mb-1">
-                    선호사항 (자유 입력)
+                    {t("guest.preferencesLabel")}
                   </label>
                   <textarea
                     id="preferences"
                     value={preferences}
                     onChange={(e) => setPreferences(e.target.value)}
-                    placeholder="예: 시부야 근처, 조용한 동네, 주방 필수, 와이파이 빠른 곳"
+                    placeholder={t("guest.preferencesPlaceholder")}
                     className="w-full px-4 py-3 border border-minbak-light-gray rounded-minbak text-minbak-body text-minbak-black placeholder:text-minbak-gray resize-none focus:outline-none focus:ring-2 focus:ring-minbak-primary focus:border-transparent"
                     rows={3}
                   />
@@ -198,12 +201,12 @@ export default function AIRecommendSection() {
                 {loading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    AI가 추천 중...
+                    {t("guest.aiRecommendLoading")}
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-5 h-5" />
-                    AI 추천 받기
+                    {t("guest.aiRecommendCta")}
                   </>
                 )}
               </button>
@@ -213,7 +216,7 @@ export default function AIRecommendSection() {
           {results !== null && results.length > 0 && (
             <div className="mt-8 md:mt-10">
               <h3 className="text-minbak-h3 font-bold text-minbak-black mb-4">
-                AI 추천 숙소 {results.length}곳
+                {t("guest.aiRecommendResultsCount", { count: results.length })}
               </h3>
               {message && (
                 <p className="text-minbak-caption text-minbak-gray mb-4">{message}</p>
