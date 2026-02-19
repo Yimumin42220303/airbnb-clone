@@ -37,6 +37,22 @@ const icons = {
     </svg>
   ),
 
+  events: (active: boolean) => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={active ? 2.2 : 2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-6 w-6"
+    >
+      <path d="m3 11 18-5v12L3 14v-3z" />
+      <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
+    </svg>
+  ),
+
   search: (active: boolean) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -181,15 +197,34 @@ const icons = {
       <line x1="6" x2="6" y1="20" y2="16" />
     </svg>
   ),
+
+  sparkles: (active: boolean) => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      stroke="currentColor"
+      strokeWidth={1.2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-7 w-7"
+    >
+      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 10l5.813 1.912a2 2 0 0 1 1.275 1.275L12 18l1.912-5.813a2 2 0 0 1 1.275-1.275L21 10l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+      <path d="M5 3v4" />
+      <path d="M7 5H3" />
+      <path d="M19 17v2" />
+      <path d="M21 19h-4" />
+    </svg>
+  ),
 };
 
 /* ──────────────────────────────────────────────
    Navigation definitions
    ────────────────────────────────────────────── */
 const guestNav: NavItem[] = [
-  { icon: icons.explore, label: "둘러보기", labelKey: "guest.navExplore", path: "/", isActive: (p) => p === "/" },
+  { icon: icons.events, label: "이벤트정보", labelKey: "guest.navEvents", path: "/blog", isActive: (p) => p.startsWith("/blog") },
   { icon: icons.search, label: "검색", labelKey: "guest.navSearch", path: "/search", isActive: (p) => p.startsWith("/search") },
-  { icon: icons.heart, label: "위시리스트", labelKey: "guest.navWishlist", path: "/wishlist", isActive: (p) => p.startsWith("/wishlist") },
+  { icon: icons.sparkles, label: "AI숙소추천", labelKey: "guest.navAiRecommend", path: "/recommend", isActive: (p) => p === "/recommend" },
   { icon: icons.chat, label: "메시지", labelKey: "guest.navMessages", path: "/messages", isActive: (p) => p.startsWith("/messages") },
   { icon: icons.user, label: "내 정보", labelKey: "guest.navMyInfo", path: "/mypage", isActive: (p) => p.startsWith("/mypage") || p.startsWith("/my-bookings") },
 ];
@@ -235,6 +270,7 @@ export default function BottomNav() {
       <ul className="flex items-center justify-around min-h-[64px] px-1">
         {items.map((item) => {
           const active = item.isActive(pathname);
+          const isAiRecommend = item.path === "/recommend";
           return (
             <li key={item.path} className="flex-1 min-w-0 min-h-[44px]">
               <Link
@@ -243,11 +279,16 @@ export default function BottomNav() {
                   flex flex-col items-center justify-center gap-0.5
                   min-h-[44px] py-2 w-full
                   transition-colors duration-200 active:opacity-80
-                  ${active ? "text-[#D74132]" : "text-[#717171]"}
+                  ${isAiRecommend ? "text-[#D74132] font-semibold" : active ? "text-[#D74132]" : "text-[#717171]"}
+                  ${isAiRecommend && active ? "bg-minbak-primary/10 rounded-lg" : ""}
                 `}
               >
-                {item.icon(active)}
-                <span className="text-[11px] leading-tight font-medium truncate">
+                <span className={isAiRecommend ? "text-[#D74132]" : undefined}>
+                  {item.icon(active)}
+                </span>
+                <span
+                  className={`truncate ${isAiRecommend ? "text-[11px] sm:text-xs font-semibold" : "text-[11px] leading-tight font-medium"}`}
+                >
                   {t(item.labelKey)}
                 </span>
               </Link>

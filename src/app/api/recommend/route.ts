@@ -14,6 +14,10 @@ export type RecommendInput = {
   adults: number;
   children: number;
   infants?: number;
+  /** 여행 유형: friends | couple | family */
+  tripType?: string;
+  /** 우선순위: value(가성비) | rating(평점) | location(위치) */
+  priority?: string;
   preferences: string;
 };
 
@@ -26,7 +30,7 @@ export type RecommendResult = {
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as RecommendInput;
-    const { checkIn, checkOut, adults, children, preferences } = body;
+    const { checkIn, checkOut, adults, children, tripType, priority, preferences } = body;
 
     if (!checkIn || !checkOut) {
       return NextResponse.json(
@@ -80,16 +84,23 @@ export async function POST(req: NextRequest) {
 반드시 JSON 배열만 반환하세요. 다른 텍스트는 포함하지 마세요.
 형식: [{"id": "숙소ID", "rank": 1, "reason": "추천 이유"}]`;
 
+    const tripTypeLabel =
+      tripType === "friends" ? "친구와" : tripType === "couple" ? "커플" : tripType === "family" ? "가족" : null;
+    const priorityLabel =
+      priority === "value" ? "가성비 중시" : priority === "rating" ? "평점 중시" : priority === "location" ? "위치 중시" : null;
+
     const userPrompt = `## 게스트 정보
 - 체크인: ${checkIn}
 - 체크아웃: ${checkOut}
 - 인원: 성인 ${adults ?? 1}명, 어린이 ${children ?? 0}명
-- 선호사항: ${preferences?.trim() || "특별한 선호 없음"}
+${tripTypeLabel ? `- 여행 유형: ${tripTypeLabel}` : ""}
+${priorityLabel ? `- 우선순위: ${priorityLabel} (이에 맞게 순위와 추천 이유를 반영할 것)` : ""}
+- 그 외 선호사항: ${preferences?.trim() || "특별한 선호 없음"}
 
 ## 후보 숙소 (최대 5개만 추천, 순위대로)
 ${JSON.stringify(listingSummaries, null, 2)}
 
-위 숙소 중 게스트 선호에 가장 잘 맞는 순서로 1~5위를 정하고, 각각에 대한 추천 이유를 작성해 JSON 배열로 반환하세요.`;
+위 숙소 중 게스트 정보와 선호에 가장 잘 맞는 순서로 1~5위를 정하고, 각각에 대한 추천 이유를 작성해 JSON 배열로 반환하세요.`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
