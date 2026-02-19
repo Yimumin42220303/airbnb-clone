@@ -28,7 +28,7 @@ export type ListingFilters = {
  * 필터: 지역(부분일치), 인원(maxGuests 이상), 가격 범위, 예약 가능 날짜
  */
 export async function getListings(filters?: ListingFilters) {
-  const where: Prisma.ListingWhereInput = {};
+  const where: Prisma.ListingWhereInput = { status: "approved" };
 
   if (filters?.location?.trim()) {
     where.location = { contains: filters.location.trim() };
@@ -203,11 +203,11 @@ export async function getListingByIdForEdit(id: string) {
 }
 
 /**
- * 숙소 상세 조회 (ID)
+ * 숙소 상세 조회 (ID) — 승인된 숙소만. 게스트용 상세/예약 확인에서 사용.
  */
 export async function getListingById(id: string) {
-  const listing = await prisma.listing.findUnique({
-    where: { id },
+  const listing = await prisma.listing.findFirst({
+    where: { id, status: "approved" },
     include: {
       user: { select: { name: true, image: true } },
       category: true,
@@ -384,6 +384,7 @@ export async function createListing(
       houseRules: input.houseRules?.trim() || null,
       categoryId: input.categoryId?.trim() || null,
       propertyType: input.propertyType === "detached_house" || input.propertyType === "apartment" ? input.propertyType : "apartment",
+      status: "pending", // 어드민 승인 후 게재
     },
   });
 

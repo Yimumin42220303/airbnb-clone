@@ -27,6 +27,8 @@ export async function GET() {
       imageUrl: true,
       pricePerNight: true,
       maxGuests: true,
+      status: true,
+      rejectedReason: true,
       _count: { select: { reviews: true } },
     },
   });

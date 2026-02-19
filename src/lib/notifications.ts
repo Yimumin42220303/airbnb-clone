@@ -11,7 +11,9 @@ export type NotificationType =
   | "new_message"
   | "new_booking_request"
   | "guest_payment_completed"
-  | "booking_cancelled";
+  | "booking_cancelled"
+  | "listing_approved"
+  | "listing_rejected";
 
 export type CreateNotificationInput = {
   userId: string;

@@ -26,6 +26,8 @@ export default async function HostListingsPage() {
       pricePerNight: true,
       maxGuests: true,
       icalImportUrls: true,
+      status: true,
+      rejectedReason: true,
       _count: { select: { reviews: true } },
     },
   });
