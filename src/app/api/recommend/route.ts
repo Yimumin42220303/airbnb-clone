@@ -21,8 +21,10 @@ export type RecommendInput = {
   infants?: number;
   /** 여행 유형: friends | couple | family */
   tripType?: string;
-  /** 우선순위: value(가성비) | rating(평점) | location(위치) */
+  /** 우선순위 단일 (하위 호환) */
   priority?: string;
+  /** 우선순위 최대 3개 */
+  priorities?: string[];
   preferences: string;
 };
 
@@ -37,7 +39,7 @@ export type RecommendResult = {
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as RecommendInput;
-    const { checkIn, checkOut, adults, children, tripType, priority, preferences } = body;
+    const { checkIn, checkOut, adults, children, tripType, priority, priorities: prioritiesInput, preferences } = body;
 
     if (!checkIn || !checkOut) {
       return NextResponse.json(
@@ -97,6 +99,7 @@ export async function POST(req: NextRequest) {
 
     const listingSummaries = listings.map((l) => {
       const reviewList = reviewsGrouped.get(l.id) ?? [];
+      const row = l as typeof l & { bedrooms?: number; maxGuests?: number; beds?: number };
       return {
         id: l.id,
         title: l.title,
@@ -107,20 +110,36 @@ export async function POST(req: NextRequest) {
         amenities: l.amenities ?? [],
         houseRules: (l.houseRules ?? "").slice(0, 300),
         reviews: reviewList.map((r) => `[${r.rating}점] ${r.body}`),
+        bedrooms: row.bedrooms,
+        maxGuests: row.maxGuests,
+        beds: row.beds,
       };
     });
 
     const systemPrompt = `당신은 도쿄 숙소 추천 전문가입니다. 게스트의 선호사항에 맞게 숙소를 순위 매기고, 각 숙소를 추천하는 이유(reason)와 근거(highlights)를 한국어로 작성합니다.
-각 숙소에는 "reviews" 배열(실제 게스트 리뷰 내용)이 포함되어 있습니다. 리뷰 수·평점·리뷰 내용(청결도·위치·가성비 등)을 반영해 순위와 추천 이유를 작성하세요.
+각 숙소에는 "reviews" 배열(실제 게스트 리뷰 내용), "amenities"(편의시설), "bedrooms", "maxGuests", "beds"(침대 수) 등이 포함되어 있습니다.
+우선순위별 반영: 가성비→가격·리뷰, 평점→평점·리뷰 수, 위치→location·리뷰, 숙소넓이→bedrooms·maxGuests·beds, 건전한 주변환경→location·리뷰(조용함·안전함 언급), 어린이·유아친화 설비→amenities(유아용 설비 여부).
 - reason: 추천 이유를 1~2문장으로 간결하게.
-- highlights: 이 숙소를 추천한 구체적 근거 2~4개(예: "리뷰에서 청결도·위치가 자주 언급됨", "가성비 우선에 맞는 가격대"). 게스트가 '왜 이 숙소인지' 알 수 있도록 짧은 문장으로.
+- highlights: 이 숙소를 추천한 구체적 근거 2~4개. 게스트가 '왜 이 숙소인지' 알 수 있도록 짧은 문장으로.
 반드시 JSON 배열만 반환하세요. 다른 텍스트는 포함하지 마세요.
 형식: [{"id": "숙소ID", "rank": 1, "reason": "추천 이유", "highlights": ["근거1", "근거2", ...]}]`;
 
     const tripTypeLabel =
       tripType === "friends" ? "친구와" : tripType === "couple" ? "커플" : tripType === "family" ? "가족" : null;
-    const priorityLabel =
-      priority === "value" ? "가성비 중시" : priority === "rating" ? "평점 중시" : priority === "location" ? "위치 중시" : null;
+    const priorityLabels: Record<string, string> = {
+      value: "가성비",
+      rating: "평점",
+      location: "위치",
+      space: "숙소넓이",
+      environment: "건전한 주변환경",
+      child_friendly: "어린이·유아친화 설비",
+    };
+    const priorityKeys = Array.isArray(prioritiesInput) && prioritiesInput.length > 0
+      ? prioritiesInput.slice(0, 3).filter((p): p is string => typeof p === "string")
+      : priority ? [priority] : [];
+    const priorityLabel = priorityKeys.length > 0
+      ? priorityKeys.map((k) => priorityLabels[k]).filter(Boolean).join(", ")
+      : null;
 
     const userPrompt = `## 게스트 정보
 - 체크인: ${checkIn}

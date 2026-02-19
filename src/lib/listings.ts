@@ -129,6 +129,9 @@ export async function getListings(filters?: ListingFilters) {
       isPromoted: l.isPromoted,
       cancellationPolicy: (l.cancellationPolicy as "flexible" | "moderate" | "strict") || "flexible",
       houseRules: l.houseRules ?? "",
+      bedrooms: l.bedrooms,
+      maxGuests: l.maxGuests,
+      beds: l.beds,
     };
   });
 
