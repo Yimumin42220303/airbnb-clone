@@ -12,6 +12,8 @@ type Message = {
   senderId: string;
   isFromMe: boolean;
   senderName: string;
+  /** 자동 번역 ON일 때 상대방 메시지 번역문 (없으면 body 사용) */
+  bodyDisplay?: string;
 };
 
 const POLL_INTERVAL_MS = 6_000;
@@ -208,7 +210,7 @@ export default function MessageThread({
                     </p>
                   )}
                   <p className="text-minbak-body whitespace-pre-wrap break-words">
-                    {m.body}
+                    {m.bodyDisplay ?? m.body}
                   </p>
                   <p
                     className={`text-minbak-caption mt-0.5 ${
