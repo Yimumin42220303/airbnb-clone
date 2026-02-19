@@ -57,7 +57,7 @@ export default function FramerGuestPicker({
 
   const panel = (
     <div
-      className="bg-white rounded-[24px] overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.15)] min-w-[320px] max-w-[400px]"
+      className="bg-white rounded-[24px] overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.15)] min-w-0 sm:min-w-[320px] max-w-[400px] max-sm:max-w-[calc(100vw-2rem)]"
       style={{ fontFamily: "var(--font-noto-sans-kr), 'Noto Sans KR', sans-serif" }}
       onClick={(e) => e.stopPropagation()}
     >
@@ -145,7 +145,7 @@ export default function FramerGuestPicker({
 
   return (
     <div
-      className="fixed inset-0 z-[10002] flex items-start justify-center pt-[184px] md:pt-[200px] pb-8 px-4 bg-black/40"
+      className="fixed inset-0 z-[10002] flex items-start justify-center pt-[calc(184px+env(safe-area-inset-top,0px))] md:pt-[200px] pb-8 px-4 bg-black/40"
       onClick={onClose}
       role="presentation"
     >

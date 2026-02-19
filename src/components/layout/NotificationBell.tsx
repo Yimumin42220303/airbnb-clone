@@ -132,7 +132,7 @@ export default function NotificationBell() {
 
       {open && (
         <div
-          className="absolute right-0 top-full mt-2 w-[320px] max-h-[70vh] overflow-hidden bg-white border border-minbak-light-gray rounded-minbak shadow-minbak flex flex-col"
+          className="absolute right-0 top-full mt-2 w-[320px] max-w-[calc(100vw-2rem)] max-h-[70vh] overflow-hidden bg-white border border-minbak-light-gray rounded-minbak shadow-minbak flex flex-col"
           role="dialog"
           aria-label="알림 목록"
         >

@@ -247,7 +247,7 @@ export default function BottomNav() {
                 `}
               >
                 {item.icon(active)}
-                <span className="text-[10px] leading-tight font-medium truncate">
+                <span className="text-[11px] leading-tight font-medium truncate">
                   {t(item.labelKey)}
                 </span>
               </Link>
