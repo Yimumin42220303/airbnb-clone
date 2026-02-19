@@ -16,13 +16,12 @@ export default async function MypagePage() {
   const [user, bookings] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
-      select: {
+        select: {
         id: true,
         name: true,
         email: true,
         image: true,
         phone: true,
-        autoTranslateEnabled: true,
         accounts: {
           select: { provider: true },
         },

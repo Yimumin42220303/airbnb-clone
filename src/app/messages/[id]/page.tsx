@@ -6,6 +6,7 @@ import { Header, Footer } from "@/components/layout";
 import Link from "next/link";
 import { translateMessageBody } from "@/lib/translate";
 import MessageThread from "./MessageThread";
+import MessageAutoTranslateToggle from "./MessageAutoTranslateToggle";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -183,6 +184,7 @@ export default async function ConversationPage({ params }: Props) {
               >
                 숙소 보기
               </Link>
+              <MessageAutoTranslateToggle initialEnabled={autoTranslate} />
             </div>
             {isGuest &&
               booking.status === "confirmed" &&
