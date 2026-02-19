@@ -1,8 +1,10 @@
 import { getServerSession } from "next-auth";
+import { cookies } from "next/headers";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { Header, Footer } from "@/components/layout";
+import { getHostLocaleFromCookie, t } from "@/lib/host-i18n";
 import MypageContent from "./MypageContent";
 
 export default async function MypagePage() {
@@ -12,6 +14,12 @@ export default async function MypagePage() {
   if (!userId) {
     redirect("/auth/signin?callbackUrl=/mypage");
   }
+
+  const cookieStore = await cookies();
+  const locale = getHostLocaleFromCookie(
+    cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join("; ")
+  );
+  const pageTitle = t(locale, "mypage.title");
 
   const [user, bookings] = await Promise.all([
     prisma.user.findUnique({
@@ -54,7 +62,7 @@ export default async function MypagePage() {
       <main className="min-h-screen pt-24 px-4 md:px-6 pb-16">
         <div className="max-w-[1000px] mx-auto py-8">
           <h1 className="text-[22px] md:text-[28px] font-semibold text-minbak-black mb-6">
-            마이페이지
+            {pageTitle}
           </h1>
           <MypageContent user={user} bookings={bookings} />
         </div>

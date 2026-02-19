@@ -59,12 +59,12 @@ export default function Header() {
           <Link
             href={isHostMode ? "/host" : "/"}
             className="flex-shrink-0 flex items-center gap-2"
-            aria-label={isHostMode ? "호스트 홈" : "도쿄민박 홈"}
+            aria-label={isHostMode ? "호스트 홈" : `${hostT.t("guest.siteName")} ${hostT.t("guest.home")}`}
           >
             <span className="block relative h-8 md:h-9 w-auto max-w-[110px] sm:max-w-[140px] md:max-w-[160px]">
               <Image
                 src="/logo-minbak.png"
-                alt="도쿄민박"
+                alt={hostT.t("guest.siteName")}
                 width={160}
                 height={36}
                 className="h-full w-auto object-contain object-left"
