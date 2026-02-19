@@ -71,7 +71,7 @@ export default function UserMenu() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-60 bg-white border border-minbak-light-gray rounded-minbak shadow-minbak py-2">
+        <div className="absolute right-0 top-full mt-2 w-60 min-w-[260px] bg-white border border-minbak-light-gray rounded-minbak shadow-minbak py-2">
           <div className="px-4 py-3 border-b border-minbak-light-gray">
             <p className="text-minbak-body font-medium text-minbak-black truncate">
               {user.name ?? t("guest.userDefault")}
@@ -94,26 +94,26 @@ export default function UserMenu() {
             <p className="px-1 pb-2 text-minbak-caption font-semibold text-minbak-gray uppercase tracking-wide">
               {t("guest.modeSwitch")}
             </p>
-            <div className="flex rounded-[90px] border border-minbak-light-gray bg-minbak-bg p-1">
+            <div className="flex rounded-[90px] border border-minbak-light-gray bg-minbak-bg p-1 min-w-0">
               <Link
                 href="/"
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-[90px] text-sm font-medium transition-colors ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-[90px] text-sm font-medium transition-colors whitespace-nowrap min-w-0 ${
                   !isHostMode ? "bg-minbak-black text-white" : "text-minbak-black hover:bg-white"
                 }`}
                 onClick={() => setOpen(false)}
               >
                 <Home className="w-4 h-4 shrink-0" aria-hidden />
-                {t("nav.guestMode")}
+                <span className="whitespace-nowrap">{t("nav.guestMode")}</span>
               </Link>
               <Link
                 href="/host/listings"
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-[90px] text-sm font-medium transition-colors ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-[90px] text-sm font-medium transition-colors min-w-0 ${
                   isHostMode ? "bg-minbak-black text-white" : "text-minbak-black hover:bg-white"
                 }`}
                 onClick={() => setOpen(false)}
               >
                 <Building2 className="w-4 h-4 shrink-0" aria-hidden />
-                {t("nav.hostMode")}
+                <span className="whitespace-nowrap">{t("nav.hostMode")}</span>
               </Link>
             </div>
           </div>

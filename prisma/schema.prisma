@@ -132,6 +132,11 @@ model Listing {
   houseRules  String?  @default("")
   /// 숙소 타입: "detached_house"(단독주택) | "apartment"(아파트)
   propertyType String? @default("apartment")
+  /// 게재 상태: "pending"(승인대기) | "approved"(게재) | "rejected"(거절). 어드민 승인 후에만 검색·상세 노출.
+  status         String    @default("pending")
+  approvedAt     DateTime?
+  rejectedAt     DateTime?
+  rejectedReason String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

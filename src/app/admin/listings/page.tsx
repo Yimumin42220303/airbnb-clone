@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
+import AdminListingActions from "@/components/admin/AdminListingActions";
 
 export default async function AdminListingsPage() {
   const listings = await prisma.listing.findMany({
@@ -45,8 +46,8 @@ export default async function AdminListingsPage() {
             className="flex gap-4 p-4 border border-minbak-light-gray rounded-minbak bg-white"
           >
             <Link
-              href={`/listing/${l.id}`}
-              className="relative w-24 h-20 flex-shrink-0 rounded-minbak overflow-hidden"
+              href={l.status === "approved" ? `/listing/${l.id}` : `/host/listings/${l.id}/edit`}
+              className="relative w-24 h-20 flex-shrink-0 rounded-minbak overflow-hidden block"
             >
               <Image
                 src={l.imageUrl}
@@ -58,7 +59,7 @@ export default async function AdminListingsPage() {
             </Link>
             <div className="flex-1 min-w-0">
               <Link
-                href={`/listing/${l.id}`}
+                href={l.status === "approved" ? `/listing/${l.id}` : `/host/listings/${l.id}/edit`}
                 className="font-semibold text-minbak-black hover:underline block truncate"
               >
                 {l.title}
@@ -74,26 +75,7 @@ export default async function AdminListingsPage() {
                 · 리뷰 {l._count.reviews}개
               </p>
             </div>
-            <div className="flex flex-col gap-2 self-center">
-              <Link
-                href={`/listing/${l.id}`}
-                className="px-3 py-1.5 text-minbak-body border border-minbak-light-gray rounded-minbak hover:bg-minbak-bg text-center"
-              >
-                보기
-              </Link>
-              <Link
-                href={`/host/listings/${l.id}/edit`}
-                className="px-3 py-1.5 text-minbak-body border border-minbak-light-gray rounded-minbak hover:bg-minbak-bg text-center"
-              >
-                수정
-              </Link>
-              <Link
-                href={`/admin/listings/${l.id}/reviews`}
-                className="px-3 py-1.5 text-minbak-body border border-minbak-light-gray rounded-minbak hover:bg-minbak-bg text-center"
-              >
-                리뷰 관리
-              </Link>
-            </div>
+            <AdminListingActions listingId={l.id} status={l.status} />
           </li>
         ))}
       </ul>

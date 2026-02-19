@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Search, LayoutGrid, Plus } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { useHostTranslations } from "./HostLocaleProvider";
+import type { HostTranslationKey } from "@/lib/host-i18n";
 
 function hasIcalSync(icalImportUrls: string | null): boolean {
   if (!icalImportUrls || icalImportUrls === "[]") return false;
@@ -24,8 +25,16 @@ type Listing = {
   pricePerNight: number;
   maxGuests: number;
   icalImportUrls: string | null;
+  status?: string; // "pending" | "approved" | "rejected"
+  rejectedReason?: string | null;
   _count: { reviews: number };
 };
+
+function statusLabel(status: string | undefined, t: (k: HostTranslationKey) => string): string {
+  if (status === "pending") return t("listings.statusPending");
+  if (status === "rejected") return t("listings.statusRejected");
+  return t("listings.statusApproved");
+}
 
 type Props = { listings: Listing[]; userId: string | null; isAdmin?: boolean };
 
@@ -101,13 +110,21 @@ export default function HostListingsContent({ listings, userId, isAdmin }: Props
               <ul className="md:hidden space-y-3">
                 {listings.map((l) => (
                   <li key={l.id} className="border border-minbak-light-gray rounded-minbak bg-white overflow-hidden">
-                    <Link href={`/listing/${l.id}`} className="flex items-center gap-3 p-4 min-h-[72px] active:opacity-95 block">
+                    <Link href={l.status === "approved" ? `/listing/${l.id}` : `/host/listings/${l.id}/edit`} className="flex items-center gap-3 p-4 min-h-[72px] active:opacity-95 block">
                       <div className="relative w-16 h-16 flex-shrink-0 rounded overflow-hidden bg-minbak-light-gray">
                         <Image src={l.imageUrl} alt="" fill className="object-cover" sizes="64px" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="font-medium text-minbak-black text-[15px] line-clamp-2">{l.title}</p>
                         <p className="text-minbak-caption text-minbak-gray truncate mt-0.5">{l.location}</p>
+                        <span className={`inline-block mt-1 text-[11px] font-medium px-1.5 py-0.5 rounded ${l.status === "pending" ? "bg-amber-100 text-amber-800" : l.status === "rejected" ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}`}>
+                          {statusLabel(l.status, t)}
+                        </span>
+                        {l.status === "rejected" && l.rejectedReason && (
+                          <p className="mt-1 text-[11px] text-red-700 line-clamp-2" title={l.rejectedReason}>
+                            {l.rejectedReason}
+                          </p>
+                        )}
                       </div>
                     </Link>
                     <div className="flex flex-wrap items-center gap-2 px-4 pb-4 pt-0 border-t border-minbak-light-gray/50">
@@ -143,7 +160,7 @@ export default function HostListingsContent({ listings, userId, isAdmin }: Props
                       {listings.map((l) => (
                         <tr key={l.id} className="border-b border-minbak-light-gray last:border-b-0 hover:bg-minbak-bg/30 transition-colors">
                           <td className="py-3 px-3 align-middle">
-                            <Link href={`/listing/${l.id}`} className="flex items-center gap-2 min-w-0 group">
+                            <Link href={l.status === "approved" ? `/listing/${l.id}` : `/host/listings/${l.id}/edit`} className="flex items-center gap-2 min-w-0 group">
                               <div className="relative w-12 h-12 flex-shrink-0 rounded overflow-hidden bg-minbak-light-gray">
                                 <Image src={l.imageUrl} alt="" fill className="object-cover" sizes="48px" />
                               </div>
@@ -157,11 +174,18 @@ export default function HostListingsContent({ listings, userId, isAdmin }: Props
                           <td className="py-3 px-3 text-minbak-body text-minbak-black align-top leading-relaxed overflow-hidden">
                             <span className="line-clamp-2 break-words">{l.location}</span>
                           </td>
-                          <td className="py-3 px-3 whitespace-nowrap align-middle">
-                            <span className="inline-flex items-center gap-1.5 text-minbak-body text-minbak-black">
-                              <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" aria-hidden />
-                              {t("listings.published")}
-                            </span>
+                          <td className="py-3 px-3 align-middle">
+                            <div className="flex flex-col gap-0.5">
+                              <span className={`inline-flex items-center gap-1.5 text-minbak-body font-medium px-2 py-0.5 rounded w-fit ${l.status === "pending" ? "bg-amber-100 text-amber-800" : l.status === "rejected" ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}`}>
+                                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${l.status === "pending" ? "bg-amber-500" : l.status === "rejected" ? "bg-red-500" : "bg-green-500"}`} aria-hidden />
+                                {statusLabel(l.status, t)}
+                              </span>
+                              {l.status === "rejected" && l.rejectedReason && (
+                                <span className="text-[11px] text-red-700 line-clamp-2 max-w-[120px]" title={l.rejectedReason}>
+                                  {l.rejectedReason}
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="py-3 px-3 whitespace-nowrap align-middle overflow-hidden">
                             {hasIcalSync(l.icalImportUrls) ? (
