@@ -151,7 +151,7 @@ export default function NewListingForm({ amenities, categories: initialCategorie
         setError(data.error || t("newListing.submitFailed"));
         return;
       }
-      router.push("/admin/listings");
+      router.push("/host/listings");
       router.refresh();
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

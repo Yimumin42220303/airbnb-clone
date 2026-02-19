@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { getAdminUser } from "@/lib/admin";
 import { Header, Footer } from "@/components/layout";
 
@@ -6,7 +7,10 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  await getAdminUser(); // 목업: 로그인 없이 관리자 화면 확인 가능
+  const admin = await getAdminUser();
+  if (!admin) {
+    redirect("/host/listings");
+  }
 
   return (
     <>
