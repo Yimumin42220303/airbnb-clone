@@ -132,16 +132,16 @@ export default function NotificationBell() {
 
       {open && (
         <div
-          className="absolute right-0 top-full mt-2 w-[320px] max-w-[calc(100vw-2rem)] max-h-[70vh] overflow-hidden bg-white border border-minbak-light-gray rounded-minbak shadow-minbak flex flex-col"
+          className="fixed left-4 right-4 top-[calc(5.5rem+env(safe-area-inset-top,0px))] z-[10002] w-auto max-h-[70vh] overflow-hidden bg-white border border-minbak-light-gray rounded-minbak shadow-minbak flex flex-col md:left-auto md:right-0 md:top-full md:mt-2 md:absolute md:w-[320px] md:max-w-[calc(100vw-2rem)]"
           role="dialog"
           aria-label="알림 목록"
         >
-          <div className="px-4 py-3 border-b border-minbak-light-gray">
+          <div className="px-4 py-3 border-b border-minbak-light-gray shrink-0">
             <h2 className="text-minbak-body font-semibold text-minbak-black">
               알림
             </h2>
           </div>
-          <div className="overflow-y-auto min-h-0 flex-1">
+          <div className="overflow-y-auto overflow-x-hidden min-h-0 flex-1">
             {loading ? (
               <div className="px-4 py-8 text-center text-minbak-caption text-minbak-gray">
                 불러오는 중...
@@ -157,14 +157,14 @@ export default function NotificationBell() {
                     <button
                       type="button"
                       onClick={() => handleItemClick(item)}
-                      className={`w-full text-left px-4 py-3 hover:bg-minbak-bg transition-colors border-b border-minbak-light-gray last:border-b-0 ${
+                      className={`w-full min-w-0 text-left px-4 py-3 hover:bg-minbak-bg transition-colors border-b border-minbak-light-gray last:border-b-0 ${
                         item.readAt === null ? "bg-amber-50/50" : ""
                       }`}
                     >
-                      <p className="text-minbak-body text-minbak-black line-clamp-2">
+                      <p className="text-minbak-body text-minbak-black line-clamp-2 break-words">
                         {item.title}
                       </p>
-                      <p className="text-minbak-caption text-minbak-gray mt-0.5">
+                      <p className="text-minbak-caption text-minbak-gray mt-0.5 break-words">
                         {formatRelativeTime(item.createdAt)}
                       </p>
                     </button>
