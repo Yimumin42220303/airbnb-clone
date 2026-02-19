@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Header, Footer } from "@/components/layout";
 import Link from "next/link";
+import { translateMessageBody } from "@/lib/translate";
 import MessageThread from "./MessageThread";
 
 interface Props {
@@ -110,14 +111,34 @@ export default async function ConversationPage({ params }: Props) {
     }
   }
 
-  const messagesForClient = initialMessages.map((m) => ({
-    id: m.id,
-    body: m.body,
-    createdAt: m.createdAt.toISOString(),
-    senderId: m.senderId,
-    isFromMe: m.senderId === userId,
-    senderName: m.sender.name || m.sender.email || "알 수 없음",
-  }));
+  const userPref = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { autoTranslateEnabled: true },
+  });
+  const autoTranslate = userPref?.autoTranslateEnabled ?? false;
+  const targetLang = isGuest ? "ko" : "ja";
+
+  const messagesForClient = await Promise.all(
+    initialMessages.map(async (m) => {
+      const base = {
+        id: m.id,
+        body: m.body,
+        createdAt: m.createdAt.toISOString(),
+        senderId: m.senderId,
+        isFromMe: m.senderId === userId,
+        senderName: m.sender.name || m.sender.email || "알 수 없음",
+      };
+      if (!autoTranslate || m.senderId === userId) {
+        return { ...base, bodyDisplay: m.body };
+      }
+      const translated = await translateMessageBody(
+        m.body,
+        targetLang as "ko" | "ja",
+        m.id
+      );
+      return { ...base, bodyDisplay: translated };
+    })
+  );
 
   return (
     <>

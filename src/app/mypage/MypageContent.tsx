@@ -14,6 +14,7 @@ type UserData = {
   email: string;
   image: string | null;
   phone?: string | null;
+  autoTranslateEnabled?: boolean;
   accounts: { provider: string }[];
 };
 
@@ -270,7 +271,30 @@ function ReservationsSection({ bookings }: { bookings: BookingData[] }) {
 
 function AccountSection({ user }: { user: UserData }) {
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [autoTranslate, setAutoTranslate] = useState(!!user.autoTranslateEnabled);
+  const [autoTranslateSaving, setAutoTranslateSaving] = useState(false);
   const providers = user.accounts.map((a) => a.provider);
+
+  async function handleAutoTranslateToggle(enabled: boolean) {
+    setAutoTranslateSaving(true);
+    try {
+      const res = await fetch("/api/account", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ autoTranslateEnabled: enabled }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAutoTranslate(enabled);
+      } else {
+        toast.error(data.error || "설정 저장에 실패했습니다.");
+      }
+    } catch {
+      toast.error("네트워크 오류가 발생했습니다.");
+    } finally {
+      setAutoTranslateSaving(false);
+    }
+  }
 
   async function handleDeleteAccount() {
     if (!confirm("정말 계정을 삭제하시겠습니까? 모든 예약·리뷰·메시지가 삭제되며 복구할 수 없습니다.")) {
@@ -346,6 +370,28 @@ function AccountSection({ user }: { user: UserData }) {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* 메시지 자동 번역 (한↔일) */}
+      <div className="bg-white border border-minbak-light-gray rounded-minbak p-6">
+        <h3 className="text-[16px] font-semibold text-minbak-black mb-2">
+          메시지 자동 번역
+        </h3>
+        <p className="text-minbak-caption text-minbak-gray mb-4">
+          켜면 메시지창에서 상대방 메시지가 자동으로 번역됩니다. (게스트: 일본어→한국어, 호스트: 한국어→일본어)
+        </p>
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={autoTranslate}
+            disabled={autoTranslateSaving}
+            onChange={(e) => handleAutoTranslateToggle(e.target.checked)}
+            className="w-5 h-5 rounded border-minbak-light-gray text-minbak-primary focus:ring-minbak-primary"
+          />
+          <span className="text-minbak-body text-minbak-black">
+            자동 번역 사용
+          </span>
+        </label>
       </div>
 
       {/* 소셜 어카운트 연동현황 */}

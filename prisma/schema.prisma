@@ -21,6 +21,8 @@ model User {
   image         String?
   phone         String?   // 전화번호 (선택)
   role          String    @default("user") // "user" | "admin"
+  /// 메시지창에서 상대방 메시지 자동 번역 (게스트: 일→한, 호스트: 한→일)
+  autoTranslateEnabled Boolean @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -290,7 +292,22 @@ model Message {
   body           String
   createdAt      DateTime @default(now())
 
+  translationCache TranslationCache[]
+
   @@index([conversationId, createdAt])
+}
+
+/// 메시지 자동 번역 결과 캐시 (동일 메시지·목표언어 재번역 방지)
+model TranslationCache {
+  id             String   @id @default(cuid())
+  messageId      String
+  message        Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  targetLang     String   // "ko" | "ja"
+  translatedText String
+  createdAt      DateTime @default(now())
+
+  @@unique([messageId, targetLang])
+  @@index([messageId])
 }
 
 // ---------- 알림 (앱 내 벨 아이콘·드롭다운) ----------

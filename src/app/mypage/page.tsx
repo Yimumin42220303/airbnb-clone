@@ -22,6 +22,7 @@ export default async function MypagePage() {
         email: true,
         image: true,
         phone: true,
+        autoTranslateEnabled: true,
         accounts: {
           select: { provider: true },
         },

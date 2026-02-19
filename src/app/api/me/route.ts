@@ -18,7 +18,12 @@ export async function GET() {
   }
   const dbUser = await prisma.user.findUnique({
     where: { id: userId },
-    select: { name: true, email: true, phone: true },
+    select: {
+      name: true,
+      email: true,
+      phone: true,
+      autoTranslateEnabled: true,
+    },
   });
   if (!dbUser) {
     return NextResponse.json(
@@ -30,5 +35,6 @@ export async function GET() {
     name: dbUser.name ?? null,
     email: dbUser.email ?? null,
     phone: dbUser.phone ?? null,
+    autoTranslateEnabled: dbUser.autoTranslateEnabled ?? false,
   });
 }

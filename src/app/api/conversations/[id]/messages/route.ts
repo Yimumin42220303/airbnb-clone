@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
+import { translateMessageBody } from "@/lib/translate";
 
 function canAccessConversation(
   userId: string,
@@ -85,20 +86,42 @@ export async function GET(
     ? "호스트"
     : (guest.name || guest.email || "게스트");
 
+  const userPref = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { autoTranslateEnabled: true },
+  });
+  const autoTranslate = userPref?.autoTranslateEnabled ?? false;
+  const targetLang = isGuest ? "ko" : "ja";
+
+  const messagesWithDisplay = await Promise.all(
+    list.map(async (m) => {
+      const base = {
+        id: m.id,
+        body: m.body,
+        createdAt: m.createdAt.toISOString(),
+        senderId: m.senderId,
+        isFromMe: m.senderId === userId,
+        senderName: m.sender.name || m.sender.email || "알 수 없음",
+      };
+      if (!autoTranslate || m.senderId === userId) {
+        return { ...base, bodyDisplay: m.body };
+      }
+      const translated = await translateMessageBody(
+        m.body,
+        targetLang as "ko" | "ja",
+        m.id
+      );
+      return { ...base, bodyDisplay: translated };
+    })
+  );
+
   return NextResponse.json({
     conversationId,
     bookingId: conversation.bookingId,
     listingId: listing.id,
     listingTitle: listing.title,
     otherName,
-    messages: list.map((m) => ({
-      id: m.id,
-      body: m.body,
-      createdAt: m.createdAt.toISOString(),
-      senderId: m.senderId,
-      isFromMe: m.senderId === userId,
-      senderName: m.sender.name || m.sender.email || "알 수 없음",
-    })),
+    messages: messagesWithDisplay,
     nextCursor,
   });
 }

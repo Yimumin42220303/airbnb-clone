@@ -18,12 +18,18 @@ export async function PATCH(request: Request) {
   }
 
   const body = await request.json();
-  const { name, phone, image } = body;
+  const { name, phone, image, autoTranslateEnabled } = body;
 
-  const data: { name?: string; phone?: string; image?: string | null } = {};
+  const data: {
+    name?: string;
+    phone?: string;
+    image?: string | null;
+    autoTranslateEnabled?: boolean;
+  } = {};
   if (typeof name === "string") data.name = name.trim() || undefined;
   if (typeof phone === "string") data.phone = phone.trim() || undefined;
   if (image !== undefined) data.image = image === "" || image === null ? null : (typeof image === "string" ? image : undefined);
+  if (typeof autoTranslateEnabled === "boolean") data.autoTranslateEnabled = autoTranslateEnabled;
 
   if (Object.keys(data).length === 0) {
     return NextResponse.json(
@@ -45,6 +51,7 @@ export async function PATCH(request: Request) {
       email: user.email,
       image: user.image,
       phone: user.phone,
+      autoTranslateEnabled: user.autoTranslateEnabled ?? false,
     },
   });
 }
