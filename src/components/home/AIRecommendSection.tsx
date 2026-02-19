@@ -9,7 +9,8 @@ import FramerGuestPicker, {
   formatGuestLabel,
   type GuestCounts,
 } from "@/components/search/FramerGuestPicker";
-import { Sparkles, Loader2, ChevronDown } from "lucide-react";
+import Link from "next/link";
+import { Sparkles, Loader2, ChevronDown, ArrowRight } from "lucide-react";
 
 type RecommendItem = {
   id: string;
@@ -106,7 +107,7 @@ export default function AIRecommendSection() {
                     AI 맞춤 숙소 추천
                   </h2>
                   <p className="text-minbak-caption md:text-minbak-body text-minbak-dark-gray mt-0.5 truncate">
-                    여행 일정·인원·선호사항 입력 후 AI가 맞춤 숙소를 추천해 드립니다
+                    여행 유형·우선순위·일정을 입력하면 AI가 맞춤 숙소를 추천해 드립니다
                   </p>
                 </div>
               </div>
@@ -117,6 +118,17 @@ export default function AIRecommendSection() {
               />
             </div>
           </button>
+          {!expanded && (
+            <p className="mt-3 text-center">
+              <Link
+                href="/recommend"
+                className="inline-flex items-center gap-1 text-minbak-caption font-medium text-minbak-primary hover:underline"
+              >
+                세부 조건 입력하고 추천받기
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </p>
+          )}
 
           {/* 펼쳐진 상태: 폼 */}
           {expanded && (

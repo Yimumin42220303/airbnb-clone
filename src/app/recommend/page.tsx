@@ -1,6 +1,15 @@
-import { redirect } from "next/navigation";
+import { Header, Footer } from "@/components/layout";
+import RecommendPageContent from "./RecommendPageContent";
 
-/** AI 추천 기능은 메인 페이지에 통합됨. /recommend 접근 시 메인으로 리다이렉트 */
+/** AI 맞춤 숙소 추천 전용 페이지: 여행 유형·우선순위·일정·선호사항 입력 */
 export default function RecommendPage() {
-  redirect("/#ai-recommend");
+  return (
+    <>
+      <Header />
+      <main className="min-h-screen pt-24 px-4 md:px-6 pb-16 bg-minbak-bg">
+        <RecommendPageContent />
+      </main>
+      <Footer />
+    </>
+  );
 }
