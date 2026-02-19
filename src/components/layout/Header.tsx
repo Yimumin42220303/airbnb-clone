@@ -74,12 +74,15 @@ export default function Header() {
             </span>
           </Link>
 
-          {/* 에어비 스타일: 호스트일 때 중앙에 달력|리스팅|메시지|매상 (모바일: 가로 스크롤) */}
+          {/* 에어비 스타일: 호스트일 때 중앙에 달력|리스팅|메시지|매상. 모바일: 남는 공간 안에서 가로 스크롤 */}
           {isHostMode ? (
-            <nav className="flex items-center gap-1 sm:gap-2 md:gap-6 flex-shrink-0 min-h-[44px] overflow-x-auto scrollbar-hide -mx-2 px-2 md:mx-0 md:px-0" aria-label="호스트 메뉴">
+            <nav
+              className="flex items-center gap-1 sm:gap-2 md:gap-6 flex-1 min-w-0 min-h-[44px] overflow-x-auto scrollbar-hide -mx-2 px-2 md:mx-0 md:px-0 md:flex-initial"
+              aria-label="호스트 메뉴"
+            >
               <Link
                 href="/host/calendar"
-                className={`min-h-[44px] flex items-center px-1.5 sm:px-2 text-xs sm:text-sm font-medium transition-colors ${
+                className={`min-h-[44px] flex items-center px-1.5 sm:px-2 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 ${
                   pathname === "/host/calendar" ? "text-minbak-black border-b-2 border-minbak-black pb-2 -mb-0.5" : "text-minbak-black hover:underline"
                 }`}
               >
@@ -87,7 +90,7 @@ export default function Header() {
               </Link>
               <Link
                 href="/host/listings"
-                className={`min-h-[44px] flex items-center px-1.5 sm:px-2 text-xs sm:text-sm font-medium transition-colors ${
+                className={`min-h-[44px] flex items-center px-1.5 sm:px-2 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 ${
                   pathname?.startsWith("/host/listings") ? "text-minbak-black border-b-2 border-minbak-black pb-2 -mb-0.5" : "text-minbak-black hover:underline"
                 }`}
               >
@@ -95,7 +98,7 @@ export default function Header() {
               </Link>
               <Link
                 href="/host/bookings"
-                className={`min-h-[44px] flex items-center px-1.5 sm:px-2 text-xs sm:text-sm font-medium transition-colors ${
+                className={`min-h-[44px] flex items-center px-1.5 sm:px-2 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 ${
                   pathname?.startsWith("/host/bookings") ? "text-minbak-black border-b-2 border-minbak-black pb-2 -mb-0.5" : "text-minbak-black hover:underline"
                 }`}
               >
@@ -103,7 +106,7 @@ export default function Header() {
               </Link>
               <Link
                 href="/messages"
-                className={`min-h-[44px] flex items-center px-1.5 sm:px-2 text-xs sm:text-sm font-medium transition-colors ${
+                className={`min-h-[44px] flex items-center px-1.5 sm:px-2 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 ${
                   pathname?.startsWith("/messages") ? "text-minbak-black border-b-2 border-minbak-black pb-2 -mb-0.5" : "text-minbak-black hover:underline"
                 }`}
               >
@@ -111,7 +114,7 @@ export default function Header() {
               </Link>
               <Link
                 href="/host/revenue"
-                className={`min-h-[44px] flex items-center px-1.5 sm:px-2 text-xs sm:text-sm font-medium transition-colors ${
+                className={`min-h-[44px] flex items-center px-1.5 sm:px-2 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 ${
                   pathname?.startsWith("/host/revenue") ? "text-minbak-black border-b-2 border-minbak-black pb-2 -mb-0.5" : "text-minbak-black hover:underline"
                 }`}
               >
@@ -120,7 +123,7 @@ export default function Header() {
             </nav>
           ) : null}
 
-          <nav className="flex items-center gap-1 sm:gap-2 md:gap-5 flex-shrink-0 min-w-0">
+          <nav className="flex items-center gap-1 sm:gap-2 md:gap-5 flex-shrink-0 min-w-0" aria-label="유틸 메뉴">
             {isHostMode && (
               <>
                 <HostLocaleSwitcher />
