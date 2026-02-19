@@ -166,7 +166,7 @@ function Lightbox({
 
   return (
     <div
-      className="fixed inset-0 z-[10001] bg-black/90 flex flex-col items-center justify-center pt-[72px] md:pt-[80px] pb-14"
+      className="fixed inset-0 z-[10001] bg-black/90 flex flex-col items-center justify-center pt-[max(72px,calc(56px+env(safe-area-inset-top,0px)))] md:pt-[80px] pb-14"
       role="dialog"
       aria-modal="true"
       aria-label="사진 갤러리"
@@ -175,7 +175,7 @@ function Lightbox({
       <button
         type="button"
         onClick={onClose}
-        className="absolute top-[72px] md:top-[80px] right-4 p-2 text-white hover:bg-white/10 rounded-minbak-full z-10"
+        className="absolute top-[max(72px,calc(56px+env(safe-area-inset-top,0px)))] md:top-[80px] right-4 p-2 text-white hover:bg-white/10 rounded-minbak-full z-10"
         aria-label="닫기"
       >
         <X className="w-8 h-8" />

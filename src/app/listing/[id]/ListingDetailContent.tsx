@@ -400,7 +400,7 @@ export default function ListingDetailContent({
             </div>
 
             {/* 오른쪽: 예약 모듈(빨간 영역 - 숙소 소개 옆). 헤더와 여유 공간, 스크롤 시 top 192px 아래로 */}
-            <div className="lg:col-span-1 mt-6 lg:mt-0 lg:pt-2">
+            <div className="lg:col-span-1 mt-6 lg:mt-0 lg:pt-2 max-lg:overflow-x-clip">
               <div className="lg:sticky lg:top-[200px] transition-shadow duration-300">
                 {/* overflow-visible 로 변경하여 인원/캘린더 패널이 카드 밖으로 넘쳐도 보이도록 */}
                 <div className="bg-white rounded-2xl border border-[#e8e8e8] shadow-xl overflow-visible">

@@ -290,7 +290,7 @@ export default function FramerDateRangePicker({
     const canMobileNext = !isAfter(startOfMonth(addMonths(today, (mobileMonthOffset + 1) * 2)), maxDate);
 
     return (
-      <div className="w-full min-w-[320px] max-h-[100vh] flex flex-col bg-white overflow-hidden rounded-none">
+      <div className="w-full min-w-0 max-w-[calc(100vw-2rem)] max-h-[100vh] flex flex-col bg-white overflow-hidden rounded-none">
         <div className="flex-1 flex flex-col gap-8 py-4 px-5 pb-6 overflow-y-auto overflow-x-hidden">
           {months.map((mon, idx) => (
             <MonthBlock
