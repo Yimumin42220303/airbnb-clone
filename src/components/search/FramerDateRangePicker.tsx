@@ -144,23 +144,7 @@ function MonthBlock({
           <div className="w-8 h-8" />
         )}
       </div>
-      <div
-        className="grid gap-0.5 mb-2"
-        style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))" }}
-      >
-        {WEEKDAYS.map((day, i) => (
-          <div
-            key={day}
-            className={`py-1.5 text-center font-bold ${isMobile ? "text-[11px]" : "text-[13px]"}`}
-            style={{
-              fontFamily: "var(--font-noto-sans-kr), 'Noto Sans KR', sans-serif",
-              color: i === 0 ? "#D74132" : i === 6 ? "#4A90E2" : "#666",
-            }}
-          >
-            {day}
-          </div>
-        ))}
-      </div>
+      {/* 요일 헤더와 날짜를 하나의 그리드로 묶어 열 정렬 보장 */}
       <div
         className="grid gap-0.5 text-[14px]"
         style={{
@@ -168,6 +152,17 @@ function MonthBlock({
           gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
         }}
       >
+        {WEEKDAYS.map((day, i) => (
+          <div
+            key={day}
+            className={`py-1.5 text-center font-bold ${isMobile ? "text-[11px]" : "text-[13px]"}`}
+            style={{
+              color: i === 0 ? "#D74132" : i === 6 ? "#4A90E2" : "#666",
+            }}
+          >
+            {day}
+          </div>
+        ))}
         {days.map((day, i) => {
           const cellSize = isMobile ? CELL_SIZE_MOBILE : CELL_SIZE;
           const circleSize = isMobile ? CIRCLE_SIZE_MOBILE : CIRCLE_SIZE;
