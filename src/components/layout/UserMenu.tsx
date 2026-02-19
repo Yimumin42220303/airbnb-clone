@@ -8,11 +8,13 @@ import { useSession } from "next-auth/react";
 import { Menu, User, LogOut, Calendar, Heart, MessageCircle, Home, ChevronRight, Building2, Sparkles } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
 export default function UserMenu() {
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const isHostMode = pathname?.startsWith("/host") || pathname === "/messages";
+  const { t } = useHostTranslations();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -34,8 +36,8 @@ export default function UserMenu() {
     return (
       <Link href="/auth/signin" className="flex-shrink-0">
         <Button variant="outline" rounded="full" className="gap-2 px-3 py-2 text-sm sm:px-5 sm:py-2.5 sm:text-sm whitespace-nowrap">
-          <span className="sm:hidden">로그인</span>
-          <span className="hidden sm:inline">로그인 및 회원가입</span>
+          <span className="sm:hidden">{t("guest.login")}</span>
+          <span className="hidden sm:inline">{t("guest.loginAndSignup")}</span>
         </Button>
       </Link>
     );

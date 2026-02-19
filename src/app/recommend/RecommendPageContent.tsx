@@ -11,24 +11,26 @@ import FramerGuestPicker, {
   type GuestCounts,
 } from "@/components/search/FramerGuestPicker";
 import { Sparkles, Loader2, Users, Target, Calendar, MessageSquare } from "lucide-react";
+import type { HostTranslationKey } from "@/lib/host-i18n";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
-const TRIP_TYPES = [
-  { value: "friends", label: "친구" },
-  { value: "couple", label: "커플" },
-  { value: "family", label: "가족" },
-] as const;
+const TRIP_TYPES: { value: "friends" | "couple" | "family"; labelKey: HostTranslationKey }[] = [
+  { value: "friends", labelKey: "guest.tripFriends" },
+  { value: "couple", labelKey: "guest.tripCouple" },
+  { value: "family", labelKey: "guest.tripFamily" },
+];
 
-const PRIORITIES = [
-  { value: "value", label: "가성비" },
-  { value: "rating", label: "평점" },
-  { value: "location", label: "위치" },
-  { value: "space", label: "숙소넓이" },
-  { value: "environment", label: "건전한 주변환경" },
-  { value: "child_friendly", label: "어린이·유아친화 설비" },
-] as const;
+const PRIORITIES: { value: Priority; labelKey: HostTranslationKey }[] = [
+  { value: "value", labelKey: "guest.priorityValue" },
+  { value: "rating", labelKey: "guest.priorityRating" },
+  { value: "location", labelKey: "guest.priorityLocation" },
+  { value: "space", labelKey: "guest.prioritySpace" },
+  { value: "environment", labelKey: "guest.priorityEnvironment" },
+  { value: "child_friendly", labelKey: "guest.priorityChildFriendly" },
+];
 
-type TripType = (typeof TRIP_TYPES)[number]["value"];
-type Priority = (typeof PRIORITIES)[number]["value"];
+type TripType = "friends" | "couple" | "family";
+type Priority = "value" | "rating" | "location" | "space" | "environment" | "child_friendly";
 
 type RecommendItem = {
   id: string;
@@ -47,6 +49,7 @@ type RecommendItem = {
 };
 
 export default function RecommendPageContent() {
+  const t = useHostTranslations().t;
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
   const [guests, setGuests] = useState<GuestCounts>(defaultGuestCounts);
@@ -69,7 +72,7 @@ export default function RecommendPageContent() {
 
     if (!checkIn || !checkOut) {
       setDateOpen(true);
-      setError("체크인·체크아웃 날짜를 선택해 주세요.");
+      setError(t("guest.dateRequiredError"));
       return;
     }
 
@@ -93,14 +96,14 @@ export default function RecommendPageContent() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error ?? "추천 요청에 실패했습니다.");
+        setError(data.error ?? t("guest.recommendRequestFailed"));
         return;
       }
 
       setResults(data.listings ?? []);
       setMessage(data.message ?? null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "네트워크 오류가 발생했습니다.");
+      setError(err instanceof Error ? err.message : t("guest.networkError"));
     } finally {
       setLoading(false);
     }
@@ -113,10 +116,10 @@ export default function RecommendPageContent() {
           <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-minbak-primary to-amber-500 flex items-center justify-center">
             <Sparkles className="w-5 h-5 text-white" />
           </span>
-          AI 맞춤 숙소 추천
+          {t("guest.aiRecommendTitle")}
         </h1>
         <p className="text-minbak-body text-minbak-dark-gray mt-2">
-          여행 유형·우선순위·일정을 입력하면 AI가 맞춤 숙소를 추천해 드립니다.
+          {t("guest.aiRecommendDesc")}
         </p>
       </div>
 
@@ -125,10 +128,10 @@ export default function RecommendPageContent() {
         <section className="bg-white border border-minbak-light-gray rounded-minbak p-4 md:p-5 shadow-sm">
           <h2 className="text-minbak-body font-semibold text-minbak-black mb-3 flex items-center gap-2">
             <Users className="w-5 h-5 text-minbak-primary" />
-            누구와 여행하나요?
+            {t("guest.whoTravelWith")}
           </h2>
           <div className="flex flex-wrap gap-2">
-            {TRIP_TYPES.map(({ value, label }) => (
+            {TRIP_TYPES.map(({ value, labelKey }) => (
               <button
                 key={value}
                 type="button"
@@ -139,7 +142,7 @@ export default function RecommendPageContent() {
                     : "bg-white text-minbak-black border-minbak-light-gray hover:border-minbak-primary/50"
                 }`}
               >
-                {label}
+                {t(labelKey)}
               </button>
             ))}
           </div>
@@ -149,13 +152,13 @@ export default function RecommendPageContent() {
         <section className="bg-white border border-minbak-light-gray rounded-minbak p-4 md:p-5 shadow-sm">
           <h2 className="text-minbak-body font-semibold text-minbak-black mb-1 flex items-center gap-2">
             <Target className="w-5 h-5 text-minbak-primary" />
-            무엇을 가장 중요하게 보시나요?
+            {t("guest.whatMattersMost")}
           </h2>
           <p className="text-minbak-caption text-minbak-gray mb-3">
-            최대 {MAX_PRIORITIES}개 선택 · <span className="font-medium text-minbak-dark-gray">{priorities.length}/{MAX_PRIORITIES} 선택</span>
+            {t("guest.priorityMaxSelect", { max: MAX_PRIORITIES })} · <span className="font-medium text-minbak-dark-gray">{t("guest.prioritySelectCount", { current: priorities.length, max: MAX_PRIORITIES })}</span>
           </p>
           <div className="flex flex-wrap gap-2">
-            {PRIORITIES.map(({ value, label }) => {
+            {PRIORITIES.map(({ value, labelKey }) => {
               const isSelected = priorities.includes(value);
               const isDisabled = !isSelected && priorities.length >= MAX_PRIORITIES;
               return (
@@ -175,7 +178,7 @@ export default function RecommendPageContent() {
                         : "bg-white text-minbak-black border-minbak-light-gray hover:border-minbak-primary/50"
                   }`}
                 >
-                  {label}
+                  {t(labelKey)}
                 </button>
               );
             })}
@@ -186,11 +189,11 @@ export default function RecommendPageContent() {
         <section className="bg-white border border-minbak-light-gray rounded-minbak p-4 md:p-5 shadow-sm">
           <h2 className="text-minbak-body font-semibold text-minbak-black mb-3 flex items-center gap-2">
             <Calendar className="w-5 h-5 text-minbak-primary" />
-            여행 일정
+            {t("guest.travelInfo")}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-minbak-caption text-minbak-gray mb-1">체크인 · 체크아웃</label>
+              <label className="block text-minbak-caption text-minbak-gray mb-1">{t("guest.checkInCheckOut")}</label>
               <button
                 type="button"
                 onClick={() => setDateOpen(true)}
@@ -199,12 +202,12 @@ export default function RecommendPageContent() {
                 <span className="text-minbak-black">
                   {checkIn && checkOut
                     ? `${formatDateDisplay(checkIn)} ~ ${formatDateDisplay(checkOut)}`
-                    : "날짜 선택"}
+                    : t("guest.dateSelect")}
                 </span>
               </button>
             </div>
             <div>
-              <label className="block text-minbak-caption text-minbak-gray mb-1">인원</label>
+              <label className="block text-minbak-caption text-minbak-gray mb-1">{t("guest.guests")}</label>
               <button
                 type="button"
                 onClick={() => setGuestOpen(true)}
@@ -212,8 +215,10 @@ export default function RecommendPageContent() {
               >
                 <span className="text-minbak-black">
                   {guests.adult + guests.child + guests.infant > 0
-                    ? formatGuestLabel(guests)
-                    : "게스트 추가"}
+                    ? (guests.infant > 0
+                      ? t("guest.guestCountWithInfant", { total: guests.adult + guests.child, infant: guests.infant })
+                      : t("guest.guestCount", { total: guests.adult + guests.child }))
+                    : t("guest.addGuests")}
                 </span>
               </button>
             </div>
@@ -224,12 +229,12 @@ export default function RecommendPageContent() {
         <section className="bg-white border border-minbak-light-gray rounded-minbak p-4 md:p-5 shadow-sm">
           <h2 className="text-minbak-body font-semibold text-minbak-black mb-3 flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-minbak-primary" />
-            그 외 선호사항 (선택)
+            {t("guest.preferencesOptional")}
           </h2>
           <textarea
             value={preferences}
             onChange={(e) => setPreferences(e.target.value)}
-            placeholder="예: 시부야 근처, 조용한 동네, 주방 필수, 와이파이 빠른 곳"
+            placeholder={t("guest.preferencesPlaceholder")}
             className="w-full px-4 py-3 border border-minbak-light-gray rounded-minbak text-minbak-body text-minbak-black placeholder:text-minbak-gray resize-none focus:outline-none focus:ring-2 focus:ring-minbak-primary focus:border-transparent"
             rows={3}
           />
@@ -249,12 +254,12 @@ export default function RecommendPageContent() {
           {loading ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" />
-              AI가 추천 중...
+              {t("guest.aiRecommendLoading")}
             </>
           ) : (
             <>
               <Sparkles className="w-5 h-5" />
-              AI 추천 받기
+              {t("guest.aiRecommendCta")}
             </>
           )}
         </button>
@@ -263,7 +268,7 @@ export default function RecommendPageContent() {
       {results !== null && results.length > 0 && (
         <div className="mt-10">
           <h2 className="text-minbak-h3 font-bold text-minbak-black mb-4">
-            AI 추천 숙소 {results.length}곳
+            {t("guest.aiRecommendResultsCount", { count: results.length })}
           </h2>
           {message && (
             <p className="text-minbak-caption text-minbak-gray mb-4">{message}</p>
@@ -289,11 +294,11 @@ export default function RecommendPageContent() {
                 />
                 <div className="mt-2 space-y-1">
                   <p className="text-minbak-caption text-minbak-dark-gray">
-                    <span className="font-medium text-minbak-primary">추천 이유:</span> {item.reason}
+                    <span className="font-medium text-minbak-primary">{t("guest.recommendReason")}:</span> {item.reason}
                   </p>
                   {item.highlights && item.highlights.length > 0 && (
                     <div className="text-minbak-caption text-minbak-gray">
-                      <span className="font-medium text-minbak-dark-gray">추천 근거:</span>
+                      <span className="font-medium text-minbak-dark-gray">{t("guest.recommendGrounds")}:</span>
                       <ul className="mt-0.5 list-disc list-inside space-y-0.5">
                         {item.highlights.map((h, i) => (
                           <li key={i}>{h}</li>
@@ -307,7 +312,7 @@ export default function RecommendPageContent() {
           </div>
           <p className="mt-6 text-minbak-caption text-minbak-gray text-center">
             <Link href="/search" className="text-minbak-primary hover:underline">
-              조건을 바꿔서 검색하기
+              {t("guest.changeConditionsSearch")}
             </Link>
           </p>
         </div>
