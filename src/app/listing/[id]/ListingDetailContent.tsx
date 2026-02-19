@@ -10,6 +10,7 @@ import ReviewCard from "@/components/listing/ReviewCard";
 import ReviewForm from "@/components/listing/ReviewForm";
 import ReviewSummaryAI from "@/components/listing/ReviewSummaryAI";
 import WishlistHeart from "@/components/wishlist/WishlistHeart";
+import ShareListingButton from "@/components/listing/ShareListingButton";
 
 type ReviewItem = {
   rating: number;
@@ -113,15 +114,23 @@ export default function ListingDetailContent({
         <div className="bg-white border-b border-[#ebebeb] pt-6 md:pt-8">
           <div className="max-w-[1240px] mx-auto px-4 md:px-6 pb-6">
             <div className="flex flex-col gap-4">
-              <div className="flex items-start justify-between gap-4">
-                <h1 className="text-2xl sm:text-[28px] md:text-3xl font-bold text-neutral-900 leading-[1.2] min-w-0 flex-1 tracking-tight">
+              <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
+                <h1 className="text-2xl sm:text-[28px] md:text-3xl font-bold text-neutral-900 leading-[1.2] min-w-0 flex-1 tracking-tight break-words">
                   {listing.title}
                 </h1>
-                <WishlistHeart
-                  listingId={listing.id}
-                  initialSaved={isSaved}
-                  className="flex-shrink-0"
-                />
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <ShareListingButton
+                    listingId={listing.id}
+                    title={listing.title}
+                    shareText={`${listing.title} · ${listing.location} · 1박 ₩${listing.pricePerNight.toLocaleString()}`}
+                    className="flex-shrink-0"
+                  />
+                  <WishlistHeart
+                    listingId={listing.id}
+                    initialSaved={isSaved}
+                    className="flex-shrink-0"
+                  />
+                </div>
               </div>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px] text-[#717171]">
                   {listing.reviewCount > 0 && listing.rating != null && (
