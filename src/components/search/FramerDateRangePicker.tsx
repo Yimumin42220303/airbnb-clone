@@ -71,6 +71,8 @@ export interface FramerDateRangePickerProps {
 
 const CELL_SIZE = 40;
 const CIRCLE_SIZE = 36;
+const CELL_SIZE_MOBILE = 32;
+const CIRCLE_SIZE_MOBILE = 28;
 
 function MonthBlock({
   month,
@@ -107,7 +109,7 @@ function MonthBlock({
   const isDisabled = (day: Date) => isBefore(day, today) || isAfter(day, maxDate);
 
   return (
-    <div className={isMobile ? "flex-shrink-0" : "flex-1 min-w-0"}>
+    <div className={isMobile ? "flex-shrink-0 min-w-0 w-full" : "flex-1 min-w-0"}>
       <div className="flex items-center justify-between mb-3">
         {/* 왼쪽: 이전 달 버튼 또는 빈 공간 */}
         {showPrev && onPrev ? (
@@ -142,11 +144,14 @@ function MonthBlock({
           <div className="w-8 h-8" />
         )}
       </div>
-      <div className="grid grid-cols-7 gap-0.5 mb-2">
+      <div
+        className="grid gap-0.5 mb-2"
+        style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))" }}
+      >
         {WEEKDAYS.map((day, i) => (
           <div
             key={day}
-            className="py-1.5 text-center font-bold text-[13px]"
+            className={`py-1.5 text-center font-bold ${isMobile ? "text-[11px]" : "text-[13px]"}`}
             style={{
               fontFamily: "var(--font-noto-sans-kr), 'Noto Sans KR', sans-serif",
               color: i === 0 ? "#D74132" : i === 6 ? "#4A90E2" : "#666",
@@ -156,9 +161,17 @@ function MonthBlock({
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-0.5 text-[14px]" style={{ fontFamily: "var(--font-noto-sans-kr), 'Noto Sans KR', sans-serif" }}>
+      <div
+        className="grid gap-0.5 text-[14px]"
+        style={{
+          fontFamily: "var(--font-noto-sans-kr), 'Noto Sans KR', sans-serif",
+          gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+        }}
+      >
         {days.map((day, i) => {
-          if (!day) return <div key={`e-${i}`} style={{ height: CELL_SIZE }} />;
+          const cellSize = isMobile ? CELL_SIZE_MOBILE : CELL_SIZE;
+          const circleSize = isMobile ? CIRCLE_SIZE_MOBILE : CIRCLE_SIZE;
+          if (!day) return <div key={`e-${i}`} style={{ height: cellSize }} />;
           const disabled = isDisabled(day);
           const isStart = start && isSameDay(day, start);
           const isEnd = end && isSameDay(day, end);
@@ -178,7 +191,7 @@ function MonthBlock({
               }}
               className="relative flex items-center justify-center cursor-pointer select-none box-border"
               style={{
-                height: CELL_SIZE,
+                height: cellSize,
                 opacity: disabled ? 0.3 : 1,
                 cursor: disabled ? "not-allowed" : "pointer",
                 color: isStart ? "#fff" : "inherit",
@@ -199,15 +212,16 @@ function MonthBlock({
               {isEnd && (
                 <div
                   className="absolute rounded-full bg-white z-[1]"
-                  style={{ width: CIRCLE_SIZE, height: CIRCLE_SIZE }}
+                  style={{ width: circleSize, height: circleSize }}
                 />
               )}
               {/* 날짜 원: 체크인=빨간 채움, 체크아웃=빨간 테두리 */}
               <div
                 className="absolute rounded-full flex items-center justify-center z-[2]"
                 style={{
-                  width: CIRCLE_SIZE,
-                  height: CIRCLE_SIZE,
+                  width: circleSize,
+                  height: circleSize,
+                  fontSize: isMobile ? 12 : undefined,
                   background: isStart ? "#D74132" : "transparent",
                   border: isEnd ? "2px solid #D74132" : "none",
                 }}

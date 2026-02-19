@@ -138,7 +138,7 @@ export default function HomeSearchBar({
           role="presentation"
         >
           <div
-            className="flex justify-center"
+            className="flex justify-center w-full max-w-[calc(100vw-2rem)]"
             onClick={(e) => e.stopPropagation()}
           >
             <FramerDateRangePicker
