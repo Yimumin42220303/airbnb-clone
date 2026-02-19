@@ -11,6 +11,7 @@ import {
   bookingRejectedGuest,
   bookingRejectedHost,
 } from "@/lib/email-templates";
+import { createNotification } from "@/lib/notifications";
 
 /**
  * PATCH /api/host/bookings/[id]
@@ -98,6 +99,16 @@ export async function PATCH(
         console.error("[Host Accept] Conversation/official message:", err);
       }
     }
+
+    // 호스트 승인 → 게스트 앱 내 알림
+    createNotification({
+      userId: booking.userId,
+      type: "booking_approved",
+      title: "호스트가 예약을 승인했어요. 24시간 이내에 결제해 주세요.",
+      linkPath: `/booking/${id}/pay`,
+      linkLabel: "결제하기",
+      bookingId: id,
+    }).catch(() => {});
 
     // 호스트 승인 → 게스트에게 결제 요청 이메일 발송
     {
@@ -230,6 +241,15 @@ export async function PATCH(
         ...(refundDone ? { paymentStatus: "refunded" } : {}),
       },
     });
+
+    // 호스트 거절/취소 → 게스트 앱 내 알림
+    createNotification({
+      userId: booking.userId,
+      type: "booking_rejected",
+      title: "호스트가 예약을 거절했어요. 다른 숙소를 찾아보세요.",
+      linkPath: "/my-bookings",
+      bookingId: id,
+    }).catch(() => {});
 
     // 호스트 거절/취소 → 대화방에 취소 안내 메시지 1건 (게스트가 채팅창에서 확인)
     const officialUserId = await getOfficialUserId();

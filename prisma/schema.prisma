@@ -32,6 +32,7 @@ model User {
   messagesSent Message[]
   wishlists Wishlist[]
   posts    Post[]   // 운영자 블로그 (admin 전용)
+  notifications Notification[]
 }
 
 // NextAuth OAuth·이메일 연동
@@ -290,6 +291,25 @@ model Message {
   createdAt      DateTime @default(now())
 
   @@index([conversationId, createdAt])
+}
+
+// ---------- 알림 (앱 내 벨 아이콘·드롭다운) ----------
+model Notification {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            String    // booking_approved, booking_rejected, new_message, new_booking_request, guest_payment_completed, booking_cancelled
+  title           String
+  linkPath        String?
+  linkLabel       String?
+  bookingId       String?
+  conversationId  String?
+  listingId       String?
+  readAt          DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
 }
 
 // AI 리뷰 요약 캐시 (온디맨드 생성, 24시간 유효)

@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { Search, Sparkles } from "lucide-react";
 import HomeSearchBar from "@/components/home/HomeSearchBar";
 import UserMenu from "./UserMenu";
+import NotificationBell from "./NotificationBell";
 import HostLocaleSwitcher from "@/components/host/HostLocaleSwitcher";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 import { INSTAGRAM_LINK } from "@/lib/constants";
@@ -178,6 +179,7 @@ export default function Header() {
             </Link>
               </>
             )}
+            <NotificationBell />
             <UserMenu />
           </nav>
         </div>

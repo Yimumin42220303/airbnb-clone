@@ -12,6 +12,7 @@ import {
   bookingCancelledGuest,
   bookingCancelledHost,
 } from "@/lib/email-templates";
+import { createNotification } from "@/lib/notifications";
 
 /**
  * POST /api/bookings/[id]/refund
@@ -41,6 +42,7 @@ export async function POST(
     include: {
       listing: {
         select: {
+          userId: true,
           cancellationPolicy: true,
           title: true,
           location: true,
@@ -142,6 +144,17 @@ export async function POST(
         hostName: booking.listing.user?.name || "Host",
       });
       sendEmailAsync({ to: hostEmail, ...hostMail });
+    }
+
+    if (booking.listing.userId) {
+      createNotification({
+        userId: booking.listing.userId,
+        type: "booking_cancelled",
+        title: `${booking.user?.name || "게스트"}님의 예약이 취소되었어요.`,
+        linkPath: "/host/bookings",
+        bookingId: id,
+        listingId: booking.listingId,
+      }).catch(() => {});
     }
 
     return NextResponse.json({
@@ -253,6 +266,17 @@ export async function POST(
       hostName: booking.listing.user?.name || "Host",
     });
     sendEmailAsync({ to: hostEmail, ...hostMail });
+  }
+
+  if (booking.listing.userId) {
+    createNotification({
+      userId: booking.listing.userId,
+      type: "booking_cancelled",
+      title: `${booking.user?.name || "게스트"}님의 예약이 취소되었어요.`,
+      linkPath: "/host/bookings",
+      bookingId: id,
+      listingId: booking.listingId,
+    }).catch(() => {});
   }
 
   return NextResponse.json({

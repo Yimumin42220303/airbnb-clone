@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createNotification } from "@/lib/notifications";
 
 function canAccessConversation(
   userId: string,
@@ -138,7 +139,13 @@ export async function POST(
   const conversation = await prisma.conversation.findUnique({
     where: { id: conversationId },
     include: {
-      booking: { include: { listing: { select: { userId: true } } } },
+      booking: {
+        select: {
+          id: true,
+          userId: true,
+          listing: { select: { userId: true } },
+        },
+      },
     },
   });
   if (!conversation) {
@@ -184,6 +191,19 @@ export async function POST(
       sender: { select: { id: true, name: true, email: true } },
     },
   });
+
+  const guestId = conversation.booking.userId;
+  const hostId = conversation.booking.listing.userId;
+  const recipientUserId = userId === guestId ? hostId : guestId;
+  const senderLabel = userId === guestId ? "게스트" : "호스트";
+  createNotification({
+    userId: recipientUserId,
+    type: "new_message",
+    title: `${message.sender.name || message.sender.email || senderLabel}님이 메시지를 보냈어요.`,
+    linkPath: `/messages/${conversationId}`,
+    conversationId,
+    bookingId: conversation.booking.id,
+  }).catch(() => {});
 
   return NextResponse.json({
     id: message.id,

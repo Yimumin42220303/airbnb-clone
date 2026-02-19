@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { createBooking } from "@/lib/bookings";
 import { prisma } from "@/lib/prisma";
 import { getOfficialUserId } from "@/lib/official-account";
+import { createNotification } from "@/lib/notifications";
 import { sendEmailAsync, BASE_URL } from "@/lib/email";
 import { bookingConfirmationGuest, bookingNotificationHost } from "@/lib/email-templates";
 
@@ -140,6 +141,28 @@ export async function POST(request: Request) {
       }
     }
 
+    // 호스트 앱 내 알림 (새 예약 요청)
+    try {
+      const listingForNotif = await prisma.listing.findUnique({
+        where: { id: String(listingId) },
+        select: { userId: true, title: true },
+      });
+      const guestForNotif = await prisma.user.findUnique({
+        where: { id: (session as { userId?: string } | null)?.userId ?? "" },
+        select: { name: true },
+      });
+      if (listingForNotif?.userId) {
+        createNotification({
+          userId: listingForNotif.userId,
+          type: "new_booking_request",
+          title: `${guestForNotif?.name || "게스트"}님이 ${listingForNotif.title}에 예약을 요청했어요. 24시간 이내에 승인/거절해 주세요.`,
+          linkPath: "/host/bookings",
+          bookingId: result.booking.id,
+          listingId: String(listingId),
+        }).catch(() => {});
+      }
+    } catch (_) {}
+
     // Send booking notification emails (fire-and-forget)
     try {
       const booking = result.booking;
@@ -148,6 +171,7 @@ export async function POST(request: Request) {
         select: {
           title: true,
           location: true,
+          userId: true,
           user: { select: { name: true, email: true } },
         },
       });

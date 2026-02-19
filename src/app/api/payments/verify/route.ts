@@ -8,6 +8,7 @@ import {
   paymentConfirmationGuest,
   paymentConfirmationHost,
 } from "@/lib/email-templates";
+import { createNotification } from "@/lib/notifications";
 
 /**
  * POST /api/payments/verify
@@ -156,6 +157,7 @@ export async function POST(request: Request) {
         include: {
           listing: {
             select: {
+              id: true,
               title: true,
               location: true,
               userId: true,
@@ -226,6 +228,16 @@ export async function POST(request: Request) {
             });
             sendEmailAsync({ to: hostEmail, ...hostMail });
           }
+
+          // 호스트 앱 내 알림 (게스트 결제 완료)
+          createNotification({
+            userId: fullBooking.listing.userId,
+            type: "guest_payment_completed",
+            title: `${fullBooking.user?.name || "게스트"}님이 결제를 완료했어요. 예약이 확정되었습니다.`,
+            linkPath: "/host/bookings",
+            bookingId: bookingId,
+            listingId: fullBooking.listing.id,
+          }).catch(() => {});
         }
       }
     } catch (emailErr) {
