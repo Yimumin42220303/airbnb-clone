@@ -71,8 +71,9 @@ export interface FramerDateRangePickerProps {
 
 const CELL_SIZE = 40;
 const CIRCLE_SIZE = 36;
-const CELL_SIZE_MOBILE = 32;
-const CIRCLE_SIZE_MOBILE = 28;
+/** 모바일: 터치 영역·가독성 위해 세로 여유 확보 (44px ≈ 최소 터치 타깃 권장) */
+const CELL_SIZE_MOBILE = 44;
+const CIRCLE_SIZE_MOBILE = 36;
 
 function MonthBlock({
   month,
@@ -144,9 +145,9 @@ function MonthBlock({
           <div className="w-8 h-8" />
         )}
       </div>
-      {/* 요일 헤더와 날짜를 하나의 그리드로 묶어 열 정렬 보장 */}
+      {/* 요일 헤더와 날짜를 하나의 그리드로 묶어 열 정렬 보장. 모바일은 행 간격·셀 높이 넉넉히 */}
       <div
-        className="grid gap-0.5 text-[14px]"
+        className={`grid text-[14px] ${isMobile ? "gap-x-0.5 gap-y-1.5" : "gap-0.5"}`}
         style={{
           fontFamily: "var(--font-noto-sans-kr), 'Noto Sans KR', sans-serif",
           gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
