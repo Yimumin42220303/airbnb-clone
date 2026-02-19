@@ -7,6 +7,8 @@ import { signOut } from "next-auth/react";
 import { toast } from "sonner";
 import { Briefcase, User, LogOut, Home } from "lucide-react";
 import CancelBookingButton from "@/components/booking/CancelBookingButton";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
+import type { HostTranslationKey } from "@/lib/host-i18n";
 
 type UserData = {
   id: string;
@@ -46,8 +48,18 @@ const PROVIDER_LABELS: Record<string, string> = {
   email: "이메일",
 };
 
+function getBookingStatusKey(status: string, paymentStatus: string): HostTranslationKey {
+  if (status === "cancelled") return "mypage.statusCancelled";
+  if (status === "pending") return "mypage.statusPending";
+  if (status === "confirmed" && paymentStatus === "paid") return "mypage.statusConfirmed";
+  if (status === "confirmed") return "mypage.statusPaymentWaiting";
+  return "mypage.statusChecking";
+}
+
 export default function MypageContent({ user, bookings }: Props) {
+  const { t, locale } = useHostTranslations();
   const [tab, setTab] = useState<"reservations" | "account">("reservations");
+  const dateLocale = locale === "ja" ? "ja-JP" : "ko-KR";
 
   return (
     <div className="flex flex-col md:flex-row gap-6">
@@ -67,7 +79,7 @@ export default function MypageContent({ user, bookings }: Props) {
             }`}
           >
             <Briefcase className="w-5 h-5 text-minbak-gray shrink-0" />
-            나의 예약
+            {t("mypage.navReservations")}
           </Link>
           <Link
             href="#"
@@ -82,7 +94,7 @@ export default function MypageContent({ user, bookings }: Props) {
             }`}
           >
             <User className="w-5 h-5 text-minbak-gray shrink-0" />
-            나의 계정관리
+            {t("mypage.navAccount")}
           </Link>
           <button
             type="button"
@@ -90,7 +102,7 @@ export default function MypageContent({ user, bookings }: Props) {
             className="w-full flex items-center gap-3 px-4 py-3.5 text-[15px] font-medium text-minbak-black hover:bg-minbak-bg transition-colors border-t border-minbak-light-gray text-left"
           >
             <LogOut className="w-5 h-5 text-minbak-gray shrink-0" />
-            로그아웃
+            {t("mypage.logout")}
           </button>
         </nav>
       </aside>
@@ -98,39 +110,41 @@ export default function MypageContent({ user, bookings }: Props) {
       {/* 메인 콘텐츠 */}
       <div className="flex-1 min-w-0">
         {tab === "reservations" ? (
-          <ReservationsSection bookings={bookings} />
+          <ReservationsSection bookings={bookings} t={t} dateLocale={dateLocale} />
         ) : (
-          <AccountSection user={user} />
+          <AccountSection user={user} t={t} />
         )}
       </div>
     </div>
   );
 }
 
-function getBookingStatusLabel(status: string, paymentStatus: string): string {
-  if (status === "cancelled") return "예약취소";
-  if (status === "pending") return "호스트 승인대기중";
-  if (status === "confirmed" && paymentStatus === "paid") return "확정";
-  if (status === "confirmed") return "호스트 승인 · 결제 대기";
-  return "확인 중";
-}
+type TFn = (key: HostTranslationKey, params?: Record<string, string | number>) => string;
 
-function ReservationsSection({ bookings }: { bookings: BookingData[] }) {
+function ReservationsSection({
+  bookings,
+  t,
+  dateLocale,
+}: {
+  bookings: BookingData[];
+  t: TFn;
+  dateLocale: string;
+}) {
   return (
     <section className="bg-white border border-minbak-light-gray rounded-minbak p-6">
       <h2 className="text-[18px] font-semibold text-minbak-black mb-4">
-        나의 예약
+        {t("mypage.reservationsTitle")}
       </h2>
       {bookings.length === 0 ? (
         <div className="py-12 text-center">
           <p className="text-minbak-body text-minbak-gray mb-4">
-            예약된 내용은 여기까지입니다.
+            {t("mypage.reservationsEmpty")}
           </p>
           <Link
             href="/search"
             className="inline-flex items-center gap-2 min-h-[44px] px-6 py-2.5 rounded-minbak bg-minbak-primary text-white font-medium hover:bg-minbak-primary-hover transition-colors"
           >
-            숙소 검색하기
+            {t("mypage.searchAccommodation")}
           </Link>
         </div>
       ) : (
@@ -138,11 +152,11 @@ function ReservationsSection({ bookings }: { bookings: BookingData[] }) {
           {bookings.map((b) => {
             const checkIn = typeof b.checkIn === "string" ? new Date(b.checkIn) : b.checkIn;
             const checkOut = typeof b.checkOut === "string" ? new Date(b.checkOut) : b.checkOut;
-            const checkInStr = checkIn.toLocaleDateString("ko-KR", {
+            const checkInStr = checkIn.toLocaleDateString(dateLocale, {
               month: "long",
               day: "numeric",
             });
-            const checkOutStr = checkOut.toLocaleDateString("ko-KR", {
+            const checkOutStr = checkOut.toLocaleDateString(dateLocale, {
               month: "long",
               day: "numeric",
             });
@@ -150,7 +164,7 @@ function ReservationsSection({ bookings }: { bookings: BookingData[] }) {
               (checkOut.getTime() - checkIn.getTime()) /
                 (24 * 60 * 60 * 1000)
             );
-            const statusLabel = getBookingStatusLabel(b.status, b.paymentStatus);
+            const statusKey = getBookingStatusKey(b.status, b.paymentStatus);
             const isCancelled = b.status === "cancelled";
             const isConfirmed = b.status === "confirmed" && b.paymentStatus === "paid";
             const isPending = b.status === "pending";
@@ -161,7 +175,7 @@ function ReservationsSection({ bookings }: { bookings: BookingData[] }) {
               >
                 <div className="flex flex-wrap items-center gap-2 mb-3">
                   <p className="text-minbak-caption text-minbak-gray">
-                    예약번호 {b.id}
+                    {t("mypage.bookingNo")} {b.id}
                   </p>
                   <span
                     className={`inline-block text-[12px] font-medium px-2.5 py-1 rounded-full ${
@@ -174,7 +188,7 @@ function ReservationsSection({ bookings }: { bookings: BookingData[] }) {
                             : "bg-blue-100 text-blue-800"
                     }`}
                   >
-                    {statusLabel}
+                    {t(statusKey)}
                   </span>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4">
@@ -205,13 +219,17 @@ function ReservationsSection({ bookings }: { bookings: BookingData[] }) {
                         {checkInStr} - {checkOutStr}
                       </p>
                       <p className="text-minbak-caption text-minbak-gray">
-                        {nights}박 {nights + 1}일 · 이용인원 {b.guests}명
+                        {t("mypage.nightsDays", {
+                          nights: String(nights),
+                          nightsPlus1: String(nights + 1),
+                          guests: String(b.guests),
+                        })}
                       </p>
                     </div>
                   </Link>
                   <div className="flex flex-col items-end gap-2 shrink-0">
                     <p className="text-minbak-body font-semibold text-minbak-black">
-                      결제금액 {b.totalPrice.toLocaleString()}원
+                      {t("mypage.paymentAmountFormat", { amount: b.totalPrice.toLocaleString("ko-KR") })}
                     </p>
                     <div className="flex flex-wrap gap-2 justify-end">
                       {b.status !== "cancelled" &&
@@ -238,13 +256,13 @@ function ReservationsSection({ bookings }: { bookings: BookingData[] }) {
                             }
                             className="inline-flex min-h-[36px] px-4 py-2 rounded-minbak text-minbak-body font-medium text-minbak-black border border-minbak-light-gray hover:bg-minbak-bg transition-colors"
                           >
-                            상세
+                            {t("mypage.detail")}
                           </Link>
                           <Link
                             href={`/listing/${b.listing.id}`}
                             className="inline-flex min-h-[36px] px-4 py-2 rounded-minbak text-minbak-body font-medium text-white bg-[#4A90E2] hover:bg-[#3a7bc8] transition-colors"
                           >
-                            다시예약
+                            {t("mypage.rebook")}
                           </Link>
                         </>
                       )}
@@ -258,9 +276,9 @@ function ReservationsSection({ bookings }: { bookings: BookingData[] }) {
       )}
       {bookings.length > 0 && (
         <p className="mt-6 text-minbak-caption text-minbak-gray">
-          예약된 내용은 여기까지입니다.{" "}
+          {t("mypage.reservationsEmpty")}{" "}
           <Link href="/search" className="text-minbak-primary hover:underline">
-            혹시 예약된 내용이 표시되지 않고 있나요?
+            {t("mypage.reservationsEmptyLink")}
           </Link>
         </p>
       )}
@@ -268,12 +286,12 @@ function ReservationsSection({ bookings }: { bookings: BookingData[] }) {
   );
 }
 
-function AccountSection({ user }: { user: UserData }) {
+function AccountSection({ user, t }: { user: UserData; t: TFn }) {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const providers = user.accounts.map((a) => a.provider);
 
   async function handleDeleteAccount() {
-    if (!confirm("정말 계정을 삭제하시겠습니까? 모든 예약·리뷰·메시지가 삭제되며 복구할 수 없습니다.")) {
+    if (!confirm(t("mypage.deleteConfirm"))) {
       return;
     }
     setDeleteLoading(true);
@@ -281,12 +299,12 @@ function AccountSection({ user }: { user: UserData }) {
       const res = await fetch("/api/account", { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || "탈퇴에 실패했습니다.");
+        toast.error(data.error || t("mypage.deleteFailed"));
         return;
       }
       await signOut({ callbackUrl: "/" });
     } catch {
-      toast.error("네트워크 오류가 발생했습니다.");
+      toast.error(t("mypage.networkError"));
     } finally {
       setDeleteLoading(false);
     }
@@ -297,7 +315,7 @@ function AccountSection({ user }: { user: UserData }) {
       {/* 기본 개인정보 */}
       <div className="bg-white border border-minbak-light-gray rounded-minbak p-6">
         <h2 className="text-[18px] font-semibold text-minbak-black mb-4">
-          나의 계정관리
+          {t("mypage.accountTitle")}
         </h2>
         <div className="flex flex-col sm:flex-row gap-6 items-start">
           <div className="flex flex-col items-center gap-2 shrink-0">
@@ -305,7 +323,7 @@ function AccountSection({ user }: { user: UserData }) {
               {user.image ? (
                 <Image
                   src={user.image}
-                  alt={user.name ?? "프로필"}
+                  alt={user.name ?? t("mypage.profile")}
                   width={96}
                   height={96}
                   className="object-cover w-full h-full"
@@ -320,28 +338,28 @@ function AccountSection({ user }: { user: UserData }) {
               href="/mypage/edit"
               className="text-[14px] font-medium text-[#4A90E2] hover:underline"
             >
-              수정하기
+              {t("mypage.editProfile")}
             </Link>
           </div>
           <div className="flex-1 min-w-0 space-y-3">
             <div>
-              <p className="text-minbak-caption text-minbak-gray">이용자 이름</p>
+              <p className="text-minbak-caption text-minbak-gray">{t("mypage.userName")}</p>
               <p className="text-minbak-body font-medium text-minbak-black">
-                {user.name ?? "이름 없음"}
+                {user.name ?? t("mypage.noName")}
               </p>
             </div>
             <div>
               <p className="text-minbak-caption text-minbak-gray">
-                등록된 이메일
+                {t("mypage.registeredEmail")}
               </p>
               <p className="text-minbak-body text-minbak-black">
-                {user.email || "이메일 정보 없음"}
+                {user.email || t("mypage.noEmail")}
               </p>
             </div>
             <div>
-              <p className="text-minbak-caption text-minbak-gray">전화번호</p>
+              <p className="text-minbak-caption text-minbak-gray">{t("mypage.phone")}</p>
               <p className="text-minbak-body text-minbak-black">
-                {user.phone || "전화번호 미등록"}
+                {user.phone || t("mypage.noPhone")}
               </p>
             </div>
           </div>
@@ -351,7 +369,7 @@ function AccountSection({ user }: { user: UserData }) {
       {/* 소셜 어카운트 연동현황 */}
       <div className="bg-white border border-minbak-light-gray rounded-minbak p-6">
         <h3 className="text-[16px] font-semibold text-minbak-black mb-4">
-          소셜 어카운트 연동현황
+          {t("mypage.socialAccounts")}
         </h3>
         <div className="flex flex-wrap gap-4">
           {["kakao", "google"].map((provider) => {
@@ -407,8 +425,7 @@ function AccountSection({ user }: { user: UserData }) {
       {/* 탈퇴하기 */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-minbak-bg/50 rounded-minbak">
         <p className="text-minbak-caption text-minbak-gray">
-          계정을 삭제하시면 모든 계정정보가 삭제되며, 해당 정보는 복구할 수
-          없습니다.
+          {t("mypage.deleteAccountNote")}
         </p>
         <button
           type="button"
@@ -416,7 +433,7 @@ function AccountSection({ user }: { user: UserData }) {
           disabled={deleteLoading}
           className="shrink-0 min-h-[44px] px-6 py-2.5 rounded-minbak text-minbak-body font-medium text-minbak-gray bg-white border border-minbak-light-gray hover:bg-minbak-light-gray/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {deleteLoading ? "처리 중..." : "탈퇴하기"}
+          {deleteLoading ? t("mypage.processing") : t("mypage.deleteAccount")}
         </button>
       </div>
     </section>
