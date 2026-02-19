@@ -302,7 +302,7 @@ export default function RecommendPageContent() {
           onClick={() => setDateOpen(false)}
           role="presentation"
         >
-          <div onClick={(e) => e.stopPropagation()}>
+          <div className="flex justify-center w-full max-w-[calc(100vw-2rem)]" onClick={(e) => e.stopPropagation()}>
             <FramerDateRangePicker
               checkIn={checkIn}
               checkOut={checkOut}
