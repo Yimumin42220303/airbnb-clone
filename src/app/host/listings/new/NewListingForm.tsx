@@ -360,11 +360,11 @@ export default function NewListingForm({ amenities, categories: initialCategorie
             {canUseVideoUpload() && (
               <div className="block">
                 <span className="text-minbak-body font-medium text-minbak-black block mb-1">
-                  숙소 소개 영상 (선택, 50MB 이하, 인스타 릴스 비율 9:16 권장)
+                  {t("newListing.videoLabel")}
                 </span>
                 {videoUploadStatus === "uploading" && (
                   <div className="space-y-2 rounded-minbak border border-minbak-light-gray bg-minbak-bg p-4">
-                    <p className="text-minbak-body text-minbak-black font-medium">영상 업로드 중… {videoUploadProgress}%</p>
+                    <p className="text-minbak-body text-minbak-black font-medium">{t("newListing.videoUploading", { percent: videoUploadProgress })}</p>
                     <div className="h-2 w-full rounded-full bg-minbak-light-gray overflow-hidden">
                       <div
                         className="h-full bg-minbak-primary transition-[width] duration-300"
@@ -385,7 +385,7 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                       />
                       {videoUploadStatus === "done" && (
                         <span className="absolute top-2 left-2 rounded bg-green-600 text-white text-minbak-caption px-2 py-0.5 font-medium">
-                          업로드 완료
+                          {t("newListing.videoUploadDone")}
                         </span>
                       )}
                     </div>
@@ -398,7 +398,7 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                       }}
                       className="text-minbak-caption text-red-600 hover:underline"
                     >
-                      삭제
+                      {t("newListing.videoRemove")}
                     </button>
                   </div>
                 )}
@@ -410,7 +410,7 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                       const file = e.target.files?.[0];
                       if (!file) return;
                       if (file.size > LISTING_VIDEO_MAX_BYTES) {
-                        setError("영상은 50MB 이하로 올려 주세요.");
+                        setError(t("newListing.videoSizeError"));
                         e.target.value = "";
                         return;
                       }
@@ -423,7 +423,7 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                         setVideoUploadStatus("done");
                       } catch (err) {
                         setVideoUploadStatus("error");
-                        setError(err instanceof Error ? err.message : "영상 업로드에 실패했습니다.");
+                        setError(err instanceof Error ? err.message : t("newListing.videoUploadFailed"));
                       }
                       e.target.value = "";
                     }}
@@ -440,7 +440,7 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                         const file = e.target.files?.[0];
                         if (!file) return;
                         if (file.size > LISTING_VIDEO_MAX_BYTES) {
-                          setError("영상은 50MB 이하로 올려 주세요.");
+                          setError(t("newListing.videoSizeError"));
                           e.target.value = "";
                           return;
                         }
@@ -453,7 +453,7 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                           setVideoUploadStatus("done");
                         } catch (err) {
                           setVideoUploadStatus("error");
-                          setError(err instanceof Error ? err.message : "영상 업로드에 실패했습니다.");
+                          setError(err instanceof Error ? err.message : t("newListing.videoUploadFailed"));
                         }
                         e.target.value = "";
                       }}
@@ -731,7 +731,7 @@ export default function NewListingForm({ amenities, categories: initialCategorie
             {loading
               ? t("newListing.submitting")
               : videoUploadStatus === "uploading"
-                ? `영상 업로드 중 ${videoUploadProgress}%`
+                ? t("newListing.videoUploadingButton", { percent: videoUploadProgress })
                 : t("newListing.submitButton")}
           </Button>
           <Link href="/admin/listings">
