@@ -196,6 +196,7 @@ export async function getListingByIdForEdit(id: string) {
     houseRules: listing.houseRules ?? "",
     category: listing.category ? { id: listing.category.id, name: listing.category.name } : null,
     mapUrl: listing.mapUrl ?? null,
+    videoUrl: listing.videoUrl ?? null,
     amenities: listing.listingAmenities.map((la) => la.amenity.name),
     icalImportUrls: parseIcalImportUrls(listing.icalImportUrls),
     propertyType: listing.propertyType ?? "apartment",
@@ -267,6 +268,7 @@ export async function getListingById(id: string) {
     houseRules: listing.houseRules ?? "",
     category: listing.category ? { id: listing.category.id, name: listing.category.name } : null,
     mapUrl: listing.mapUrl ?? null,
+    videoUrl: listing.videoUrl ?? null,
     rating: rating !== null ? Math.round(rating * 100) / 100 : null,
     reviewCount,
     hostName: listing.user.name ?? "호스트",
@@ -296,6 +298,8 @@ export type CreateListingInput = {
   location: string;
   description?: string;
   mapUrl?: string | null;
+  /** 숙소 소개 영상 URL (자체 업로드, 50MB 이하, 9:16 권장) */
+  videoUrl?: string | null;
   pricePerNight: number;
   cleaningFee?: number;
   imageUrl?: string;
@@ -358,6 +362,7 @@ export async function createListing(
       location: input.location.trim(),
       description: input.description?.trim() || null,
       mapUrl: input.mapUrl?.trim() || null,
+      videoUrl: input.videoUrl?.trim() || null,
       pricePerNight: input.pricePerNight,
       cleaningFee: input.cleaningFee ?? 0,
       imageUrl,
@@ -481,6 +486,10 @@ export async function updateListing(
   if (input.mapUrl !== undefined) {
     const trimmed = input.mapUrl?.trim();
     data.mapUrl = trimmed && trimmed.length > 0 ? trimmed : null;
+  }
+  if (input.videoUrl !== undefined) {
+    const trimmed = input.videoUrl?.trim();
+    data.videoUrl = trimmed && trimmed.length > 0 ? trimmed : null;
   }
   if (input.categoryId !== undefined) {
     const catId = input.categoryId?.trim() || null;

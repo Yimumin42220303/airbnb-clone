@@ -37,6 +37,7 @@ type ListingData = {
   propertyType?: string;
   category?: { id: string; name: string } | null;
   mapUrl?: string | null;
+  videoUrl?: string | null;
   rating: number | null;
   reviewCount: number;
   hostName: string;
@@ -176,6 +177,22 @@ export default function ListingDetailContent({
             <div className="lg:col-span-2 space-y-0">
               {/* 상세 정보 카드: 한 덩어리로 (minbak 상세 정보 섹션) */}
               <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] overflow-hidden px-4 md:px-6">
+                {/* 숙소 소개 영상 (인스타 릴스 비율 9:16) */}
+                {listing.videoUrl && (
+                  <div className="py-8 border-b border-[#ebebeb]">
+                    <div className="w-full max-w-[320px] mx-auto aspect-[9/16] rounded-xl overflow-hidden bg-black">
+                      <video
+                        src={listing.videoUrl}
+                        controls
+                        playsInline
+                        className="w-full h-full object-contain"
+                        preload="metadata"
+                      >
+                        영상을 지원하지 않는 브라우저입니다.
+                      </video>
+                    </div>
+                  </div>
+                )}
                 {/* 1. 숙소 소개 (더보기 접기) */}
                 <DetailSection title="숙소 소개">
                   <p className="text-[15px] text-[#222] leading-relaxed whitespace-pre-wrap">

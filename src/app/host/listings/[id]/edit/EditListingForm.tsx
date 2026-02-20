@@ -8,6 +8,7 @@ import Link from "next/link";
 import DeleteListingButton from "@/components/host/DeleteListingButton";
 import AmenitySelector from "@/components/host/AmenitySelector";
 import { uploadListingImages, getUploadErrorMessage } from "@/lib/useListingImageUpload";
+import { uploadVideoClient, canUseVideoUpload, LISTING_VIDEO_MAX_BYTES, LISTING_VIDEO_ACCEPT } from "@/lib/cloudinary-client-upload";
 import { toast } from "sonner";
 import type { Amenity, Category } from "@/types";
 
@@ -52,6 +53,7 @@ type Props = {
     icalImportUrls: string[];
     amenityIds: string[];
     mapUrl?: string;
+    videoUrl?: string | null;
     propertyType: "apartment" | "detached_house";
   };
 };
@@ -104,6 +106,7 @@ export default function EditListingForm({
     icalImportUrls: initial.icalImportUrls.join("\n"),
     amenityIds: initial.amenityIds ?? [],
     mapUrl: initial.mapUrl ?? "",
+    videoUrl: initial.videoUrl ?? "",
     propertyType: initial.propertyType ?? "apartment",
   });
   const basePriceNumber =
@@ -267,6 +270,7 @@ export default function EditListingForm({
           .filter(Boolean),
         amenityIds: form.amenityIds,
         mapUrl: mapUrl || undefined,
+        videoUrl: form.videoUrl?.trim() || undefined,
         propertyType: form.propertyType,
       };
       if (isAdmin && form.hostId) {
@@ -510,6 +514,52 @@ export default function EditListingForm({
                 className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak resize-y"
               />
             </label>
+            {canUseVideoUpload() && (
+              <label className="block">
+                <span className="text-minbak-body font-medium text-minbak-black block mb-1">숙소 소개 영상 (선택, 50MB 이하, 9:16 권장)</span>
+                {form.videoUrl ? (
+                  <div className="flex items-center gap-3">
+                    <video
+                      src={form.videoUrl}
+                      controls
+                      playsInline
+                      className="max-w-[200px] max-h-[360px] rounded-minbak border border-minbak-light-gray object-contain bg-black aspect-[9/16]"
+                      preload="metadata"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, videoUrl: "" }))}
+                      className="text-minbak-caption text-red-600 hover:underline"
+                    >
+                      삭제
+                    </button>
+                  </div>
+                ) : (
+                  <input
+                    type="file"
+                    accept={LISTING_VIDEO_ACCEPT}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > LISTING_VIDEO_MAX_BYTES) {
+                        setError("영상은 50MB 이하로 올려 주세요.");
+                        e.target.value = "";
+                        return;
+                      }
+                      setError("");
+                      try {
+                        const url = await uploadVideoClient(file);
+                        setForm((f) => ({ ...f, videoUrl: url }));
+                      } catch (err) {
+                        setError(err instanceof Error ? err.message : "영상 업로드에 실패했습니다.");
+                      }
+                      e.target.value = "";
+                    }}
+                    className="block w-full text-minbak-caption text-minbak-gray file:mr-3 file:py-2 file:px-3 file:rounded-minbak file:border file:border-minbak-light-gray file:bg-white file:text-minbak-body hover:file:bg-minbak-bg"
+                  />
+                )}
+              </label>
+            )}
             <label className="block">
               <span className="text-minbak-body font-medium text-minbak-black block mb-1">1박 요금 (원) *</span>
               <input
