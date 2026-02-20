@@ -261,6 +261,7 @@ export default function HostCalendarView() {
   const [dragEnd, setDragEnd] = useState<string | null>(null);
   const [selectedRange, setSelectedRange] = useState<{ listingId: string; dateKeys: string[] } | null>(null);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [hoveredListingId, setHoveredListingId] = useState<string | null>(null);
   const dragStartRef = useRef<{ listingId: string; dateKey: string } | null>(null);
   const dragEndRef = useRef<string | null>(null);
 
@@ -406,11 +407,13 @@ export default function HostCalendarView() {
                     onClick={() =>
                       setSelectedListingId((id) => (id === l.id ? null : l.id))
                     }
+                    onMouseEnter={() => setHoveredListingId(l.id)}
+                    onMouseLeave={() => setHoveredListingId(null)}
                     className={`w-full flex gap-3 p-3 min-h-[56px] rounded-minbak text-left transition-colors ${
                       selectedListingId === l.id
                         ? "bg-minbak-bg ring-1 ring-minbak-light-gray"
                         : "hover:bg-minbak-bg"
-                    }`}
+                    } ${hoveredListingId === l.id ? "ring-2 ring-minbak-primary/40 bg-minbak-primary/5" : ""}`}
                   >
                     <div className="relative w-14 h-14 flex-shrink-0 rounded overflow-hidden">
                       <Image
@@ -589,8 +592,11 @@ export default function HostCalendarView() {
                       month={month}
                       year={year}
                       selectionDateKeys={selectionByListing.get(listing.id)}
+                      isRowHighlighted={hoveredListingId === listing.id}
                       onCellMouseDown={handleCellMouseDown}
                       onCellMouseEnter={handleCellMouseEnter}
+                      onRowMouseEnter={() => setHoveredListingId(listing.id)}
+                      onRowMouseLeave={() => setHoveredListingId(null)}
                       t={t}
                     />
                   ))}
@@ -611,8 +617,11 @@ function CalendarRow({
   month,
   year,
   selectionDateKeys,
+  isRowHighlighted,
   onCellMouseDown,
   onCellMouseEnter,
+  onRowMouseEnter,
+  onRowMouseLeave,
   t,
 }: {
   listing: ListingWithBookings;
@@ -620,8 +629,11 @@ function CalendarRow({
   month: number;
   year: number;
   selectionDateKeys?: Set<string>;
+  isRowHighlighted?: boolean;
   onCellMouseDown?: (listingId: string, dateKey: string) => void;
   onCellMouseEnter?: (listingId: string, dateKey: string) => void;
+  onRowMouseEnter?: () => void;
+  onRowMouseLeave?: () => void;
   t: ReturnType<typeof useHostTranslations>["t"];
 }) {
   const todayKey = toISODateString(new Date());
@@ -630,18 +642,35 @@ function CalendarRow({
     [listing.blockedDateKeys]
   );
 
+  const rowHighlightClass = isRowHighlighted ? "bg-minbak-primary/10 ring-1 ring-inset ring-minbak-primary/30" : "";
+
   return (
     <>
-      <div className="border-b border-r border-minbak-light-gray p-2 bg-minbak-bg flex flex-col justify-center">
-        <p className="text-minbak-caption text-minbak-gray">
-          ₩{listing.pricePerNight.toLocaleString()}/박
-        </p>
-        <Link
-          href={`/listing/${listing.id}`}
-          className="text-minbak-body font-medium text-minbak-black hover:underline truncate mt-0.5"
-        >
-          {listing.title}
-        </Link>
+      <div
+        className={`border-b border-r border-minbak-light-gray p-2 bg-minbak-bg flex gap-2 items-center min-h-[52px] ${rowHighlightClass}`}
+        onMouseEnter={onRowMouseEnter}
+        onMouseLeave={onRowMouseLeave}
+      >
+        <div className="relative w-14 h-14 flex-shrink-0 rounded overflow-hidden">
+          <Image
+            src={listing.imageUrl}
+            alt=""
+            fill
+            className="object-cover"
+            sizes="56px"
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-minbak-caption text-minbak-gray">
+            ₩{listing.pricePerNight.toLocaleString()}/박
+          </p>
+          <Link
+            href={`/listing/${listing.id}`}
+            className="text-minbak-body font-medium text-minbak-black hover:underline truncate mt-0.5 block"
+          >
+            {listing.title}
+          </Link>
+        </div>
       </div>
       {calendarDays.map((d, colIndex) => {
         const dateKey = toISODateString(d);
@@ -664,7 +693,7 @@ function CalendarRow({
           return (
             <div
               key={colIndex}
-              className={`border-b border-r border-minbak-light-gray min-w-[56px] min-h-[52px] p-1 cursor-crosshair ${
+              className={`border-b border-r border-minbak-light-gray min-w-[56px] min-h-[52px] p-1 cursor-crosshair ${rowHighlightClass} ${
                 !isCurrentMonth ? "bg-minbak-bg/30" : ""
               } ${isToday ? "bg-minbak-primary/5" : ""} ${
                 isCurrentMonth && isBlocked ? "bg-gray-200/80" : ""
@@ -675,8 +704,10 @@ function CalendarRow({
                 onCellMouseDown?.(listing.id, dateKey);
               }}
               onMouseEnter={() => {
+                onRowMouseEnter?.();
                 onCellMouseEnter?.(listing.id, dateKey);
               }}
+              onMouseLeave={onRowMouseLeave}
             >
               {isCurrentMonth && !isBlocked && (
                 <p className="text-[11px] leading-tight text-minbak-gray whitespace-nowrap overflow-visible">
@@ -704,8 +735,10 @@ function CalendarRow({
         return (
           <div
             key={colIndex}
-            className="border-b border-r border-minbak-light-gray min-h-[52px] p-0.5"
+            className={`border-b border-r border-minbak-light-gray min-h-[52px] p-0.5 ${rowHighlightClass}`}
             style={{ gridColumn: `${gridCol} / span ${span}` }}
+            onMouseEnter={onRowMouseEnter}
+            onMouseLeave={onRowMouseLeave}
           >
             <div className="h-full min-w-0 bg-teal-500/90 hover:bg-teal-600/90 rounded px-2 py-1.5 text-white flex flex-col justify-center overflow-hidden">
               <p className="text-minbak-caption font-medium truncate">
