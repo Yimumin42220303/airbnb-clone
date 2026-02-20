@@ -287,6 +287,7 @@ export default function FramerDateRangePicker({
       const [a, b] = day < start ? [day, start] : [start, day];
       onCheckInChange(toISODateString(a));
       onCheckOutChange(toISODateString(b));
+      onClose?.();
     }
   };
 
