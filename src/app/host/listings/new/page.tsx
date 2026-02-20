@@ -15,22 +15,16 @@ export default async function NewListingPage() {
     redirect("/auth/signin?callbackUrl=/host/listings/new");
   }
 
-  const [amenities, categories] = await Promise.all([
-    prisma.amenity.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
-    prisma.listingCategory.findMany({
-      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      select: { id: true, name: true },
-    }),
-  ]);
+  const amenities = await prisma.amenity.findMany({
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
+  });
 
   return (
     <>
       <Header />
       <main className="min-h-screen pt-4 md:pt-8 px-4 md:px-6 pb-16">
-        <NewListingForm amenities={amenities} categories={categories} />
+        <NewListingForm amenities={amenities} />
       </main>
       <Footer />
     </>
