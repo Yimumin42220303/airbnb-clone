@@ -1,6 +1,8 @@
 "use client";
 
 import type { Amenity } from "@/types";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
+import { getAmenityLabel } from "@/lib/host-i18n";
 
 type Props = {
   amenities: Amenity[];
@@ -19,6 +21,7 @@ export default function AmenitySelector({
   description = "해당하는 항목을 선택해 주세요.",
   variant = "default",
 }: Props) {
+  const { locale } = useHostTranslations();
   if (amenities.length === 0) return null;
 
   const sectionClass =
@@ -52,7 +55,7 @@ export default function AmenitySelector({
                   : "border-minbak-light-gray text-minbak-black hover:bg-minbak-bg"
             }`}
           >
-            {a.name}
+            {getAmenityLabel(locale, a.name)}
           </button>
         ))}
       </div>

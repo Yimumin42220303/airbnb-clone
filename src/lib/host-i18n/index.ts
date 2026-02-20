@@ -23,5 +23,13 @@ export function t(
   return str;
 }
 
+/** 편의시설 이름을 로케일에 맞게 반환. 번역이 없으면 원문(name) 반환 */
+export function getAmenityLabel(locale: HostLocale, name: string): string {
+  const key = "amenity." + name;
+  const ko = hostTranslations.ko as Record<string, string>;
+  const ja = hostTranslations.ja as Record<string, string>;
+  return (locale === "ja" ? ja[key] : ko[key]) ?? ko[key] ?? name;
+}
+
 export { hostTranslations, type HostLocale, type HostTranslationKey };
 export { COOKIE_NAME };
