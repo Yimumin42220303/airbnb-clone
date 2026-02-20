@@ -3,20 +3,19 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
+import type { HostTranslationKey } from "@/lib/host-i18n";
 
-const ERROR_MESSAGES: Record<string, string> = {
-  Configuration:
-    "로그인 설정이 완료되지 않았습니다. NEXTAUTH_SECRET과 OAuth 클라이언트 정보를 확인해 주세요.",
-  AccessDenied: "로그인이 거부되었습니다. 권한을 허용한 뒤 다시 시도해 주세요.",
-  Verification: "인증 링크가 만료되었거나 이미 사용되었습니다.",
-  InvalidToken: "유효하지 않은 인증 링크입니다.",
-  OAuthAccountNotLinked:
-    "이 이메일로 가입된 다른 로그인 방식이 있습니다. 원래 사용하신 방식으로 로그인해 주세요.",
-  OAuthCallback: "구글 로그인 처리 중 오류가 발생했습니다.",
-  OAuthCreateAccount: "계정 생성 중 오류가 발생했습니다.",
-  Callback: "로그인 처리 중 오류가 발생했습니다.",
-  CredentialsSignin: "이메일 또는 비밀번호가 올바르지 않습니다.",
-  Default: "로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+const ERROR_CODE_TO_KEY: Record<string, HostTranslationKey> = {
+  Configuration: "auth.errorConfiguration",
+  AccessDenied: "auth.errorAccessDenied",
+  Verification: "auth.errorVerification",
+  InvalidToken: "auth.errorInvalidToken",
+  OAuthAccountNotLinked: "auth.errorOAuthAccountNotLinked",
+  OAuthCallback: "auth.errorOAuthCallback",
+  OAuthCreateAccount: "auth.errorOAuthCreateAccount",
+  Callback: "auth.errorCallback",
+  CredentialsSignin: "auth.errorCredentialsSignin",
 };
 
 type Mode = "choose" | "signup" | "login";
@@ -44,9 +43,10 @@ export default function SignInButtons({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [signupSuccess, setSignupSuccess] = useState(false);
+  const { t } = useHostTranslations();
 
   const errorMessage = errorCode
-    ? (ERROR_MESSAGES[errorCode] ?? `${ERROR_MESSAGES.Default} (오류: ${errorCode})`)
+    ? (ERROR_CODE_TO_KEY[errorCode] ? t(ERROR_CODE_TO_KEY[errorCode]) : t("auth.errorWithCode", { code: errorCode }))
     : null;
 
   const resetForm = () => {
@@ -62,10 +62,10 @@ export default function SignInButtons({
     <div className="min-h-screen flex items-center justify-center bg-white px-4">
       <div className="w-full max-w-[420px] bg-white rounded-[32px] shadow-minbak p-8 md:p-10">
         <h1 className="text-minbak-h2 font-semibold text-minbak-black text-center mb-2">
-          도쿄민박 로그인
+          {t("auth.signinTitle")}
         </h1>
         <p className="text-minbak-body text-minbak-gray text-center mb-6">
-          카카오톡 또는 구글 계정으로 간편하게 로그인/회원가입하세요.
+          {t("auth.signinSub")}
         </p>
 
         {(errorMessage || verified || signupSuccess) && (
@@ -77,7 +77,7 @@ export default function SignInButtons({
             }`}
             role="alert"
           >
-            {errorMessage || (verified && "이메일 인증이 완료되었습니다. 로그인해 주세요.") || (signupSuccess && "회원가입이 완료되었습니다. 이메일을 확인해 주세요.")}
+            {errorMessage || (verified && t("auth.verified")) || (signupSuccess && t("auth.signupSuccess"))}
           </div>
         )}
 
@@ -100,7 +100,7 @@ export default function SignInButtons({
                 <path d="M12 3.5C7.83 3.5 4.5 6.27 4.5 9.8c0 2.12 1.25 3.94 3.22 5.05L7.5 19.5l3.03-2.03c.47.07.96.1 1.47.1 4.17 0 7.5-2.77 7.5-6.3C19.5 6.27 16.17 3.5 12 3.5z" />
               </svg>
             </span>
-            카카오로 계속하기
+            {t("auth.continueWithKakao")}
           </button>
 
           {/* Google 로그인 */}
@@ -120,13 +120,13 @@ export default function SignInButtons({
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
             </svg>
-            구글로 계속하기
+            {t("auth.continueWithGoogle")}
           </button>
 
           {/* 구분선 */}
           <div className="flex items-center gap-3 py-2">
             <span className="h-px flex-1 bg-minbak-light-gray" />
-            <span className="text-minbak-caption text-minbak-gray">혹은</span>
+            <span className="text-minbak-caption text-minbak-gray">{t("auth.or")}</span>
             <span className="h-px flex-1 bg-minbak-light-gray" />
           </div>
 
@@ -138,14 +138,14 @@ export default function SignInButtons({
                 onClick={() => setMode("signup")}
                 className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-[999px] border border-minbak-light-gray bg-white hover:bg-minbak-bg text-minbak-body font-medium"
               >
-                이메일로 회원가입
+                {t("auth.signupWithEmail")}
               </button>
               <button
                 type="button"
                 onClick={() => setMode("login")}
                 className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-[999px] border border-minbak-light-gray bg-white hover:bg-minbak-bg text-minbak-body font-medium"
               >
-                이메일로 로그인
+                {t("auth.loginWithEmail")}
               </button>
             </div>
           )}
@@ -157,11 +157,11 @@ export default function SignInButtons({
                 e.preventDefault();
                 setError(null);
                 if (password !== passwordConfirm) {
-                  setError("비밀번호가 일치하지 않습니다.");
+                  setError(t("auth.errorPasswordMismatch"));
                   return;
                 }
                 if (password.length < 8) {
-                  setError("비밀번호는 8자 이상이어야 합니다.");
+                  setError(t("auth.errorPasswordLength"));
                   return;
                 }
                 setLoading(true);
@@ -173,14 +173,14 @@ export default function SignInButtons({
                   });
                   const data = await res.json();
                   if (!res.ok) {
-                    setError(data.error || "회원가입에 실패했습니다.");
+                    setError(data.error || t("auth.errorSignupFailed"));
                     setLoading(false);
                     return;
                   }
                   setSignupSuccess(true);
                   resetForm();
                 } catch {
-                  setError("회원가입 중 오류가 발생했습니다.");
+                  setError(t("auth.errorSignupError"));
                 }
                 setLoading(false);
               }}
@@ -191,7 +191,7 @@ export default function SignInButtons({
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="이메일 주소"
+                placeholder={t("auth.emailPlaceholder")}
                 required
                 autoFocus
                 disabled={loading}
@@ -201,7 +201,7 @@ export default function SignInButtons({
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="비밀번호 (8자 이상)"
+                placeholder={t("auth.passwordPlaceholder")}
                 required
                 minLength={8}
                 disabled={loading}
@@ -211,7 +211,7 @@ export default function SignInButtons({
                 type="password"
                 value={passwordConfirm}
                 onChange={(e) => setPasswordConfirm(e.target.value)}
-                placeholder="비밀번호 확인"
+                placeholder={t("auth.passwordConfirmPlaceholder")}
                 required
                 disabled={loading}
                 className="w-full px-4 py-3 border border-minbak-light-gray rounded-[999px] text-minbak-body placeholder:text-minbak-gray focus:outline-none focus:ring-2 focus:ring-minbak-black/20 disabled:opacity-50"
@@ -220,7 +220,7 @@ export default function SignInButtons({
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="이름 (선택)"
+                placeholder={t("auth.namePlaceholder")}
                 disabled={loading}
                 className="w-full px-4 py-3 border border-minbak-light-gray rounded-[999px] text-minbak-body placeholder:text-minbak-gray focus:outline-none focus:ring-2 focus:ring-minbak-black/20 disabled:opacity-50"
               />
@@ -230,7 +230,7 @@ export default function SignInButtons({
                   disabled={loading || !email.trim() || !password || !passwordConfirm}
                   className="flex-1 py-3 rounded-[999px] bg-minbak-black text-white text-minbak-body font-medium hover:bg-minbak-black/90 disabled:opacity-50"
                 >
-                  {loading ? "처리 중..." : "회원가입"}
+                  {loading ? t("auth.processing") : t("auth.signup")}
                 </button>
                 <button
                   type="button"
@@ -238,7 +238,7 @@ export default function SignInButtons({
                   disabled={loading}
                   className="px-4 py-3 rounded-[999px] border border-minbak-light-gray text-minbak-body font-medium hover:bg-minbak-bg disabled:opacity-50"
                 >
-                  취소
+                  {t("auth.cancel")}
                 </button>
               </div>
             </form>
@@ -259,7 +259,7 @@ export default function SignInButtons({
                     redirect: false,
                   });
                   if (result?.error) {
-                    setError(ERROR_MESSAGES[result.error] ?? ERROR_MESSAGES.CredentialsSignin);
+                    setError(ERROR_CODE_TO_KEY[result.error] ? t(ERROR_CODE_TO_KEY[result.error]) : t("auth.errorCredentialsSignin"));
                     setLoading(false);
                     return;
                   }
@@ -269,7 +269,7 @@ export default function SignInButtons({
                     setLoading(false);
                   }
                 } catch {
-                  setError(ERROR_MESSAGES.Default);
+                  setError(t("auth.errorDefault"));
                   setLoading(false);
                 }
               }}
@@ -280,7 +280,7 @@ export default function SignInButtons({
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="이메일 주소"
+                placeholder={t("auth.emailPlaceholder")}
                 required
                 autoFocus
                 disabled={loading}
@@ -290,7 +290,7 @@ export default function SignInButtons({
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="비밀번호"
+                placeholder={t("auth.passwordPlaceholderShort")}
                 required
                 disabled={loading}
                 className="w-full px-4 py-3 border border-minbak-light-gray rounded-[999px] text-minbak-body placeholder:text-minbak-gray focus:outline-none focus:ring-2 focus:ring-minbak-black/20 disabled:opacity-50"
@@ -301,7 +301,7 @@ export default function SignInButtons({
                   disabled={loading || !email.trim() || !password}
                   className="flex-1 py-3 rounded-[999px] bg-minbak-black text-white text-minbak-body font-medium hover:bg-minbak-black/90 disabled:opacity-50"
                 >
-                  {loading ? "로그인 중..." : "로그인"}
+                  {loading ? t("auth.loggingIn") : t("guest.login")}
                 </button>
                 <button
                   type="button"
@@ -309,7 +309,7 @@ export default function SignInButtons({
                   disabled={loading}
                   className="px-4 py-3 rounded-[999px] border border-minbak-light-gray text-minbak-body font-medium hover:bg-minbak-bg disabled:opacity-50"
                 >
-                  취소
+                  {t("auth.cancel")}
                 </button>
               </div>
             </form>
@@ -318,7 +318,7 @@ export default function SignInButtons({
 
         <p className="text-minbak-caption text-minbak-gray text-center mt-6">
           <Link href="/" className="hover:underline">
-            홈으로 돌아가기
+            {t("auth.backHome")}
           </Link>
         </p>
       </div>
