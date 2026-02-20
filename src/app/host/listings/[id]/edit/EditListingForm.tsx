@@ -7,6 +7,7 @@ import { Button } from "@/components/ui";
 import Link from "next/link";
 import DeleteListingButton from "@/components/host/DeleteListingButton";
 import AmenitySelector from "@/components/host/AmenitySelector";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 import { uploadListingImages, getUploadErrorMessage } from "@/lib/useListingImageUpload";
 import { uploadVideoClientWithProgress, canUseVideoUpload, LISTING_VIDEO_MAX_BYTES, LISTING_VIDEO_ACCEPT } from "@/lib/cloudinary-client-upload";
 import { toast } from "sonner";
@@ -68,6 +69,7 @@ export default function EditListingForm({
   initial,
 }: Props) {
   const router = useRouter();
+  const { t } = useHostTranslations();
   const [loading, setLoading] = useState(false);
   const [icalRefreshLoading, setIcalRefreshLoading] = useState(false);
   const [error, setError] = useState("");
@@ -149,7 +151,7 @@ export default function EditListingForm({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "카테고리 추가에 실패했습니다.");
+        setError(data.error || t("newListing.categoryAddFailed"));
         return;
       }
       const newCat = { id: data.id, name: data.name };
@@ -157,7 +159,7 @@ export default function EditListingForm({
       setForm((f) => ({ ...f, categoryId: data.id }));
       setNewCategoryName("");
     } catch {
-      setError("네트워크 오류로 카테고리를 추가하지 못했습니다.");
+      setError(t("newListing.categoryAddNetworkError"));
     } finally {
       setAddingCategory(false);
     }
@@ -211,15 +213,15 @@ export default function EditListingForm({
     const baseGuests = parseInt(form.baseGuests, 10) || 1;
     const maxGuests = parseInt(form.maxGuests, 10) || 2;
     if (!form.title.trim() || !form.location.trim() || totalImages === 0 || isNaN(price) || price < 0) {
-      setError("숙소명, 위치, 이미지 1장 이상, 1박 요금을 입력해 주세요.");
+      setError(t("newListing.validationRequired"));
       return;
     }
     if (baseGuests < 1) {
-      setError("기본 숙박 인원은 1명 이상이어야 합니다.");
+      setError(t("newListing.validationBaseGuests"));
       return;
     }
     if (maxGuests < baseGuests) {
-      setError("최대 인원은 기본 숙박 인원보다 크거나 같아야 합니다.");
+      setError(t("newListing.validationMaxGuests"));
       return;
     }
     setLoading(true);
@@ -230,7 +232,7 @@ export default function EditListingForm({
           const newUrls = await uploadListingImages(newImageFiles);
           finalUrls = [...existingImageUrls, ...newUrls];
         } catch (uploadErr) {
-          setError(`이미지 업로드 실패: ${getUploadErrorMessage(uploadErr)}`);
+          setError(t("newListing.uploadFailedWithMessage", { message: getUploadErrorMessage(uploadErr) }));
           return;
         }
       }
@@ -290,17 +292,17 @@ export default function EditListingForm({
       try {
         data = text ? JSON.parse(text) : {};
       } catch {
-        setError(res.ok ? "응답을 처리하지 못했습니다." : "수정에 실패했습니다. 서버 오류일 수 있습니다.");
+        setError(res.ok ? t("edit.responseError") : t("edit.updateFailed"));
         return;
       }
       if (!res.ok) {
-        setError(data.error || "수정에 실패했습니다.");
+        setError(data.error || t("edit.updateFailedMessage"));
         return;
       }
       router.push("/host/listings");
       router.refresh();
     } catch (e) {
-      setError("네트워크 오류가 발생했습니다. 연결을 확인한 뒤 다시 시도해 주세요.");
+      setError(t("edit.networkError"));
     } finally {
       setLoading(false);
     }
@@ -316,20 +318,20 @@ export default function EditListingForm({
               href="/host/listings"
               className="text-minbak-body text-minbak-gray hover:underline"
             >
-              ← 내 숙소로
+              {t("edit.backToListings")}
             </Link>
           </div>
           <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
-            숙소 수정
+            {t("edit.title")}
           </h1>
           <form onSubmit={handleSubmit} className="space-y-6">
             {isAdmin && hosts.length > 0 && (
               <div className="border border-minbak-light-gray rounded-minbak p-4 bg-minbak-bg/50">
                 <h2 className="text-minbak-body font-semibold text-minbak-black mb-3">
-                  호스트 변경 (관리자 전용)
+                  {t("edit.hostChange")}
                 </h2>
                 <label className="block">
-                  <span className="text-minbak-caption text-minbak-gray block mb-1">호스트</span>
+                  <span className="text-minbak-caption text-minbak-gray block mb-1">{t("edit.host")}</span>
                   <select
                     value={form.hostId}
                     onChange={(e) => setForm((f) => ({ ...f, hostId: e.target.value }))}
@@ -345,7 +347,7 @@ export default function EditListingForm({
               </div>
             )}
             <label className="block">
-              <span className="text-minbak-body font-medium text-minbak-black block mb-1">숙소명 *</span>
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">{t("newListing.titleRequired")}</span>
               <input
                 type="text"
                 value={form.title}
@@ -355,7 +357,7 @@ export default function EditListingForm({
               />
             </label>
             <label className="block">
-              <span className="text-minbak-body font-medium text-minbak-black block mb-1">숙소 타입</span>
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">{t("newListing.propertyType")}</span>
               <div className="flex gap-4 mt-1">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -365,7 +367,7 @@ export default function EditListingForm({
                     onChange={() => setForm((f) => ({ ...f, propertyType: "apartment" }))}
                     className="w-4 h-4"
                   />
-                  <span className="text-minbak-body">아파트</span>
+                  <span className="text-minbak-body">{t("newListing.typeApartment")}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -375,12 +377,12 @@ export default function EditListingForm({
                     onChange={() => setForm((f) => ({ ...f, propertyType: "detached_house" }))}
                     className="w-4 h-4"
                   />
-                  <span className="text-minbak-body">단독주택</span>
+                  <span className="text-minbak-body">{t("newListing.typeDetachedHouse")}</span>
                 </label>
               </div>
             </label>
             <label className="block">
-              <span className="text-minbak-body font-medium text-minbak-black block mb-1">위치 *</span>
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">{t("newListing.locationRequired")}</span>
               <input
                 type="text"
                 value={form.location}
@@ -391,7 +393,7 @@ export default function EditListingForm({
             </label>
             <label className="block">
               <span className="text-minbak-body font-medium text-minbak-black block mb-1">
-                구글 지도 링크 (선택)
+                {t("newListing.mapLinkOptional")}
               </span>
               <input
                 type="text"
@@ -399,18 +401,18 @@ export default function EditListingForm({
                 onChange={(e) =>
                   setForm((f) => ({ ...f, mapUrl: e.target.value }))
                 }
-                placeholder='예: https://www.google.com/maps/embed?... 또는 &lt;iframe ...&gt; 전체'
+                placeholder={t("newListing.mapPlaceholder")}
                 className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak font-mono text-[13px]"
               />
             </label>
             <label className="block">
-              <span className="text-minbak-body font-medium text-minbak-black block mb-1">카테고리</span>
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">{t("newListing.category")}</span>
               <select
                 value={form.categoryId}
                 onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
                 className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
               >
-                <option value="">선택 안 함</option>
+                <option value="">{t("newListing.categoryNone")}</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
@@ -418,12 +420,12 @@ export default function EditListingForm({
             </label>
             <div className="flex flex-wrap items-end gap-2">
               <label className="flex-1 min-w-[180px]">
-                <span className="text-minbak-body font-medium text-minbak-black block mb-1">새 카테고리 만들기</span>
+                <span className="text-minbak-body font-medium text-minbak-black block mb-1">{t("newListing.newCategory")}</span>
                 <input
                   type="text"
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
-                  placeholder="예: 도미토리, 개인실"
+                  placeholder={t("newListing.newCategoryPlaceholder")}
                   className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 />
               </label>
@@ -433,14 +435,14 @@ export default function EditListingForm({
                 disabled={!newCategoryName.trim() || addingCategory}
                 className="px-4 py-2 bg-minbak-black text-white rounded-minbak hover:bg-minbak-gray disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {addingCategory ? "추가 중…" : "추가"}
+                {addingCategory ? t("newListing.adding") : t("newListing.add")}
               </button>
             </div>
             <div className="block">
               <span className="text-minbak-body font-medium text-minbak-black block mb-1">
-                이미지 * (첫 장이 대표, 최대 100장)
+                {t("edit.imagesLabel")}
               </span>
-              <p className="text-minbak-caption text-minbak-gray mb-2">기존 이미지를 유지하거나 새로 업로드할 수 있습니다. JPEG/PNG/WebP/GIF, 최대 4MB.</p>
+              <p className="text-minbak-caption text-minbak-gray mb-2">{t("edit.imagesHint")}</p>
               <div className="flex flex-wrap gap-3 mb-3">
                 {allThumbnails.map((thumb, globalIndex) => {
                   const isExisting = thumb.kind === "existing";
@@ -465,7 +467,7 @@ export default function EditListingForm({
                       {/* eslint-disable-next-line @next/next/no-img-element -- blob URL 미리보기 */}
                       <img
                         src={src}
-                        alt={isExisting ? `기존 ${thumb.index + 1}` : `새로 추가 ${thumb.index + 1}`}
+                        alt={isExisting ? t("edit.existingImageN", { n: thumb.index + 1 }) : t("edit.newImageN", { n: thumb.index + 1 })}
                         className="w-24 h-24 object-cover rounded-minbak border border-minbak-light-gray"
                       />
                       <button
@@ -477,7 +479,7 @@ export default function EditListingForm({
                       </button>
                       {isFirst && allThumbnails.length > 0 && (
                         <span className="absolute bottom-1 left-1 text-[10px] bg-black/70 text-white px-1 rounded">
-                          대표
+                          {t("newListing.coverBadge")}
                         </span>
                       )}
                     </div>
@@ -486,7 +488,7 @@ export default function EditListingForm({
               </div>
               {existingImageUrls.length + newImageFiles.length < 100 && (
                 <label className="block">
-                  <span className="sr-only">이미지 추가</span>
+                  <span className="sr-only">{t("newListing.addImages")}</span>
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/webp,image/gif"
@@ -505,12 +507,12 @@ export default function EditListingForm({
               amenities={amenities}
               selectedIds={form.amenityIds}
               onToggle={toggleAmenity}
-              title="부가시설 및 서비스"
-              description="게스트가 숙소에서 사용할 수 있는 편의시설을 선택해 주세요."
+              title={t("edit.amenitiesTitle")}
+              description={t("edit.amenitiesDescription")}
               variant="compact"
             />
             <label className="block">
-              <span className="text-minbak-body font-medium text-minbak-black block mb-1">설명</span>
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">{t("newListing.description")}</span>
               <textarea
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
@@ -520,10 +522,10 @@ export default function EditListingForm({
             </label>
             {canUseVideoUpload() && (
               <div className="block">
-                <span className="text-minbak-body font-medium text-minbak-black block mb-1">숙소 소개 영상 (선택, 50MB 이하, 9:16 권장)</span>
+                <span className="text-minbak-body font-medium text-minbak-black block mb-1">{t("newListing.videoLabel")}</span>
                 {videoUploadStatus === "uploading" && (
                   <div className="space-y-2 rounded-minbak border border-minbak-light-gray bg-minbak-bg p-4">
-                    <p className="text-minbak-body text-minbak-black font-medium">영상 업로드 중… {videoUploadProgress}%</p>
+                    <p className="text-minbak-body text-minbak-black font-medium">{t("newListing.videoUploading", { percent: videoUploadProgress })}</p>
                     <div className="h-2 w-full rounded-full bg-minbak-light-gray overflow-hidden">
                       <div
                         className="h-full bg-minbak-primary transition-[width] duration-300"
@@ -544,7 +546,7 @@ export default function EditListingForm({
                       />
                       {videoUploadStatus === "done" && (
                         <span className="absolute top-2 left-2 rounded bg-green-600 text-white text-minbak-caption px-2 py-0.5 font-medium">
-                          업로드 완료
+                          {t("newListing.videoUploadDone")}
                         </span>
                       )}
                     </div>
@@ -557,7 +559,7 @@ export default function EditListingForm({
                       }}
                       className="text-minbak-caption text-red-600 hover:underline"
                     >
-                      삭제
+                      {t("newListing.videoRemove")}
                     </button>
                   </div>
                 )}
@@ -569,7 +571,7 @@ export default function EditListingForm({
                       const file = e.target.files?.[0];
                       if (!file) return;
                       if (file.size > LISTING_VIDEO_MAX_BYTES) {
-                        setError("영상은 50MB 이하로 올려 주세요.");
+                        setError(t("newListing.videoSizeError"));
                         e.target.value = "";
                         return;
                       }
@@ -580,11 +582,11 @@ export default function EditListingForm({
                         const url = await uploadVideoClientWithProgress(file, (p) => setVideoUploadProgress(p));
                         setForm((f) => ({ ...f, videoUrl: url }));
                         setVideoUploadStatus("done");
-                        toast.success("영상이 업로드되었습니다. 아래 저장 버튼을 눌러 반영해 주세요.");
+                        toast.success(t("edit.videoUploadSuccess"));
                       } catch (err) {
                         setVideoUploadStatus("error");
-                        setError(err instanceof Error ? err.message : "영상 업로드에 실패했습니다.");
-                        toast.error("영상 업로드에 실패했습니다.");
+                        setError(err instanceof Error ? err.message : t("newListing.videoUploadFailed"));
+                        toast.error(t("newListing.videoUploadFailed"));
                       }
                       e.target.value = "";
                     }}
@@ -601,7 +603,7 @@ export default function EditListingForm({
                         const file = e.target.files?.[0];
                         if (!file) return;
                         if (file.size > LISTING_VIDEO_MAX_BYTES) {
-                          setError("영상은 50MB 이하로 올려 주세요.");
+                          setError(t("newListing.videoSizeError"));
                           e.target.value = "";
                           return;
                         }
@@ -612,11 +614,11 @@ export default function EditListingForm({
                           const url = await uploadVideoClientWithProgress(file, (p) => setVideoUploadProgress(p));
                           setForm((f) => ({ ...f, videoUrl: url }));
                           setVideoUploadStatus("done");
-                          toast.success("영상이 업로드되었습니다. 아래 저장 버튼을 눌러 반영해 주세요.");
+                          toast.success(t("edit.videoUploadSuccess"));
                         } catch (err) {
                           setVideoUploadStatus("error");
-                          setError(err instanceof Error ? err.message : "영상 업로드에 실패했습니다.");
-                          toast.error("영상 업로드에 실패했습니다.");
+                          setError(err instanceof Error ? err.message : t("newListing.videoUploadFailed"));
+                          toast.error(t("newListing.videoUploadFailed"));
                         }
                         e.target.value = "";
                       }}
@@ -627,7 +629,7 @@ export default function EditListingForm({
               </div>
             )}
             <label className="block">
-              <span className="text-minbak-body font-medium text-minbak-black block mb-1">1박 요금 (원) *</span>
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">{t("newListing.pricePerNight")}</span>
               <input
                 type="number"
                 min={0}
@@ -639,7 +641,7 @@ export default function EditListingForm({
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <label>
-                <span className="text-minbak-caption text-minbak-gray block mb-1">기본 숙박 인원 (명)</span>
+                <span className="text-minbak-caption text-minbak-gray block mb-1">{t("newListing.baseGuests")}</span>
                 <input
                   type="number"
                   min={1}
@@ -647,10 +649,10 @@ export default function EditListingForm({
                   onChange={(e) => setForm((f) => ({ ...f, baseGuests: e.target.value }))}
                   className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 />
-                <span className="text-minbak-caption text-minbak-gray block mt-0.5">이 인원까지는 1박 요금에 포함됩니다.</span>
+                <span className="text-minbak-caption text-minbak-gray block mt-0.5">{t("newListing.baseGuestsHint")}</span>
               </label>
               <label>
-                <span className="text-minbak-caption text-minbak-gray block mb-1">최대 인원 (명)</span>
+                <span className="text-minbak-caption text-minbak-gray block mb-1">{t("newListing.maxGuests")}</span>
                 <input
                   type="number"
                   min={1}
@@ -660,7 +662,7 @@ export default function EditListingForm({
                 />
               </label>
               <label>
-                <span className="text-minbak-caption text-minbak-gray block mb-1">추가 인원 1인당 1박 요금 (원)</span>
+                <span className="text-minbak-caption text-minbak-gray block mb-1">{t("newListing.extraGuestFee")}</span>
                 <input
                   type="number"
                   min={0}
@@ -669,11 +671,11 @@ export default function EditListingForm({
                   className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                   placeholder="0"
                 />
-                <span className="text-minbak-caption text-minbak-gray block mt-0.5">기본 인원 초과 1인당 1박 기준 추가 요금입니다.</span>
+                <span className="text-minbak-caption text-minbak-gray block mt-0.5">{t("newListing.extraGuestFeeHint")}</span>
               </label>
             </div>
             <label className="block">
-              <span className="text-minbak-body font-medium text-minbak-black block mb-1">청소비 (원)</span>
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">{t("newListing.cleaningFee")}</span>
               <input
                 type="number"
                 min={0}
@@ -682,18 +684,18 @@ export default function EditListingForm({
                 className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 placeholder="0"
               />
-              <span className="text-minbak-caption text-minbak-gray block mt-0.5">1회 예약당 1회 적용됩니다.</span>
+              <span className="text-minbak-caption text-minbak-gray block mt-0.5">{t("newListing.cleaningFeeHint")}</span>
             </label>
             <section className="border border-minbak-light-gray rounded-minbak bg-white p-4 space-y-3">
               <h3 className="text-minbak-body font-medium text-minbak-black">
-                월별 요금 배수
+                {t("edit.monthlyFactor")}
               </h3>
               <p className="text-minbak-caption text-minbak-gray">
-                기본 1박 요금에 월별 배수를 곱해 적용합니다. 예: 1월=1.1 → 1월은 기본 요금의 110%가 됩니다.
+                {t("edit.monthlyFactorHint")}
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <label className="text-minbak-caption text-minbak-gray">
-                  <span className="block mb-1">1월 배수</span>
+                  <span className="block mb-1">{t("edit.monthFactor", { month: 1 })}</span>
                   <input
                     type="number"
                     step="0.01"
@@ -704,11 +706,11 @@ export default function EditListingForm({
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
-                    ≈ ₩{monthlyPrice(form.januaryFactor).toLocaleString()}/박
+                    ≈ ₩{monthlyPrice(form.januaryFactor).toLocaleString()}{t("edit.perNight")}
                   </span>
                 </label>
                 <label className="text-minbak-caption text-minbak-gray">
-                  <span className="block mb-1">2월 배수</span>
+                  <span className="block mb-1">{t("edit.monthFactor", { month: 2 })}</span>
                   <input
                     type="number"
                     step="0.01"
@@ -719,11 +721,11 @@ export default function EditListingForm({
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
-                    ≈ ₩{monthlyPrice(form.februaryFactor).toLocaleString()}/박
+                    ≈ ₩{monthlyPrice(form.februaryFactor).toLocaleString()}{t("edit.perNight")}
                   </span>
                 </label>
                 <label className="text-minbak-caption text-minbak-gray">
-                  <span className="block mb-1">3월 배수</span>
+                  <span className="block mb-1">{t("edit.monthFactor", { month: 3 })}</span>
                   <input
                     type="number"
                     step="0.01"
@@ -734,11 +736,11 @@ export default function EditListingForm({
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
-                    ≈ ₩{monthlyPrice(form.marchFactor).toLocaleString()}/박
+                    ≈ ₩{monthlyPrice(form.marchFactor).toLocaleString()}{t("edit.perNight")}
                   </span>
                 </label>
                 <label className="text-minbak-caption text-minbak-gray">
-                  <span className="block mb-1">4월 배수</span>
+                  <span className="block mb-1">{t("edit.monthFactor", { month: 4 })}</span>
                   <input
                     type="number"
                     step="0.01"
@@ -749,11 +751,11 @@ export default function EditListingForm({
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
-                    ≈ ₩{monthlyPrice(form.aprilFactor).toLocaleString()}/박
+                    ≈ ₩{monthlyPrice(form.aprilFactor).toLocaleString()}{t("edit.perNight")}
                   </span>
                 </label>
                 <label className="text-minbak-caption text-minbak-gray">
-                  <span className="block mb-1">5월 배수</span>
+                  <span className="block mb-1">{t("edit.monthFactor", { month: 5 })}</span>
                   <input
                     type="number"
                     step="0.01"
@@ -764,11 +766,11 @@ export default function EditListingForm({
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
-                    ≈ ₩{monthlyPrice(form.mayFactor).toLocaleString()}/박
+                    ≈ ₩{monthlyPrice(form.mayFactor).toLocaleString()}{t("edit.perNight")}
                   </span>
                 </label>
                 <label className="text-minbak-caption text-minbak-gray">
-                  <span className="block mb-1">6월 배수</span>
+                  <span className="block mb-1">{t("edit.monthFactor", { month: 6 })}</span>
                   <input
                     type="number"
                     step="0.01"
@@ -779,11 +781,11 @@ export default function EditListingForm({
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
-                    ≈ ₩{monthlyPrice(form.juneFactor).toLocaleString()}/박
+                    ≈ ₩{monthlyPrice(form.juneFactor).toLocaleString()}{t("edit.perNight")}
                   </span>
                 </label>
                 <label className="text-minbak-caption text-minbak-gray">
-                  <span className="block mb-1">7월 배수</span>
+                  <span className="block mb-1">{t("edit.monthFactor", { month: 7 })}</span>
                   <input
                     type="number"
                     step="0.01"
@@ -794,11 +796,11 @@ export default function EditListingForm({
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
-                    ≈ ₩{monthlyPrice(form.julyFactor).toLocaleString()}/박
+                    ≈ ₩{monthlyPrice(form.julyFactor).toLocaleString()}{t("edit.perNight")}
                   </span>
                 </label>
                 <label className="text-minbak-caption text-minbak-gray">
-                  <span className="block mb-1">8월 배수</span>
+                  <span className="block mb-1">{t("edit.monthFactor", { month: 8 })}</span>
                   <input
                     type="number"
                     step="0.01"
@@ -809,11 +811,11 @@ export default function EditListingForm({
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
-                    ≈ ₩{monthlyPrice(form.augustFactor).toLocaleString()}/박
+                    ≈ ₩{monthlyPrice(form.augustFactor).toLocaleString()}{t("edit.perNight")}
                   </span>
                 </label>
                 <label className="text-minbak-caption text-minbak-gray">
-                  <span className="block mb-1">9월 배수</span>
+                  <span className="block mb-1">{t("edit.monthFactor", { month: 9 })}</span>
                   <input
                     type="number"
                     step="0.01"
@@ -824,11 +826,11 @@ export default function EditListingForm({
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
-                    ≈ ₩{monthlyPrice(form.septemberFactor).toLocaleString()}/박
+                    ≈ ₩{monthlyPrice(form.septemberFactor).toLocaleString()}{t("edit.perNight")}
                   </span>
                 </label>
                 <label className="text-minbak-caption text-minbak-gray">
-                  <span className="block mb-1">10월 배수</span>
+                  <span className="block mb-1">{t("edit.monthFactor", { month: 10 })}</span>
                   <input
                     type="number"
                     step="0.01"
@@ -839,11 +841,11 @@ export default function EditListingForm({
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
-                    ≈ ₩{monthlyPrice(form.octoberFactor).toLocaleString()}/박
+                    ≈ ₩{monthlyPrice(form.octoberFactor).toLocaleString()}{t("edit.perNight")}
                   </span>
                 </label>
                 <label className="text-minbak-caption text-minbak-gray">
-                  <span className="block mb-1">11월 배수</span>
+                  <span className="block mb-1">{t("edit.monthFactor", { month: 11 })}</span>
                   <input
                     type="number"
                     step="0.01"
@@ -854,11 +856,11 @@ export default function EditListingForm({
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
-                    ≈ ₩{monthlyPrice(form.novemberFactor).toLocaleString()}/박
+                    ≈ ₩{monthlyPrice(form.novemberFactor).toLocaleString()}{t("edit.perNight")}
                   </span>
                 </label>
                 <label className="text-minbak-caption text-minbak-gray">
-                  <span className="block mb-1">12월 배수</span>
+                  <span className="block mb-1">{t("edit.monthFactor", { month: 12 })}</span>
                   <input
                     type="number"
                     step="0.01"
@@ -869,14 +871,14 @@ export default function EditListingForm({
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
-                    ≈ ₩{monthlyPrice(form.decemberFactor).toLocaleString()}/박
+                    ≈ ₩{monthlyPrice(form.decemberFactor).toLocaleString()}{t("edit.perNight")}
                   </span>
                 </label>
               </div>
             </section>
             <div className="grid grid-cols-3 gap-4">
               <label>
-                <span className="text-minbak-caption text-minbak-gray block mb-1">최대 인원</span>
+                <span className="text-minbak-caption text-minbak-gray block mb-1">{t("edit.maxGuestsShort")}</span>
                 <input
                   type="number"
                   min={1}
@@ -886,7 +888,7 @@ export default function EditListingForm({
                 />
               </label>
               <label>
-                <span className="text-minbak-caption text-minbak-gray block mb-1">침실</span>
+                <span className="text-minbak-caption text-minbak-gray block mb-1">{t("newListing.bedrooms")}</span>
                 <input
                   type="number"
                   min={0}
@@ -896,7 +898,7 @@ export default function EditListingForm({
                 />
               </label>
               <label>
-                <span className="text-minbak-caption text-minbak-gray block mb-1">침대</span>
+                <span className="text-minbak-caption text-minbak-gray block mb-1">{t("newListing.beds")}</span>
                 <input
                   type="number"
                   min={0}
@@ -906,7 +908,7 @@ export default function EditListingForm({
                 />
               </label>
               <label>
-                <span className="text-minbak-caption text-minbak-gray block mb-1">욕실</span>
+                <span className="text-minbak-caption text-minbak-gray block mb-1">{t("newListing.baths")}</span>
                 <input
                   type="number"
                   min={0}
@@ -927,23 +929,23 @@ export default function EditListingForm({
                   className="w-5 h-5 rounded accent-rose-500"
                 />
                 <div>
-                  <span className="text-minbak-body font-medium text-minbak-black">프로모션대상 (직영숙소)</span>
-                  <p className="text-minbak-caption text-minbak-gray">체크하면 숙소 카드에 &apos;프로모션대상&apos; 배지가 표시됩니다.</p>
+                  <span className="text-minbak-body font-medium text-minbak-black">{t("newListing.promoted")}</span>
+                  <p className="text-minbak-caption text-minbak-gray">{t("newListing.promotedHint")}</p>
                 </div>
               </label>
             </div>
             )}
             {/* 취소 정책 */}
             <div className="border border-minbak-light-gray rounded-minbak p-4 space-y-3 bg-minbak-bg/50">
-              <h3 className="text-minbak-body font-medium text-minbak-black">취소 정책</h3>
+              <h3 className="text-minbak-body font-medium text-minbak-black">{t("newListing.cancellationPolicy")}</h3>
               <p className="text-minbak-caption text-minbak-gray">
-                게스트의 예약 취소 시 적용할 환불 정책을 선택하세요.
+                {t("newListing.cancellationHint")}
               </p>
               <div className="space-y-2">
                 {([
-                  { value: "flexible", label: "유연", desc: "체크인 1일 전까지 취소 시 100% 환불" },
-                  { value: "moderate", label: "보통", desc: "체크인 7일 전까지 100% 환불, 1~6일 전 50% 환불" },
-                  { value: "strict", label: "엄격", desc: "예약 후 48시간 이내(체크인 14일 이상) 100% 환불, 7일 전까지 50% 환불" },
+                  { value: "flexible", labelKey: "newListing.policyFlexible", descKey: "newListing.policyFlexibleDesc" },
+                  { value: "moderate", labelKey: "newListing.policyModerate", descKey: "newListing.policyModerateDesc" },
+                  { value: "strict", labelKey: "newListing.policyStrict", descKey: "newListing.policyStrictDesc" },
                 ] as const).map((opt) => (
                   <label
                     key={opt.value}
@@ -962,8 +964,8 @@ export default function EditListingForm({
                       className="mt-0.5 w-4 h-4 accent-rose-500"
                     />
                     <div>
-                      <span className="font-medium text-minbak-body text-minbak-black">{opt.label}</span>
-                      <p className="text-minbak-caption text-minbak-gray mt-0.5">{opt.desc}</p>
+                      <span className="font-medium text-minbak-body text-minbak-black">{t(opt.labelKey)}</span>
+                      <p className="text-minbak-caption text-minbak-gray mt-0.5">{t(opt.descKey)}</p>
                     </div>
                   </label>
                 ))}
@@ -971,31 +973,31 @@ export default function EditListingForm({
             </div>
             {/* 주의사항 편집 */}
             <div className="border border-minbak-light-gray rounded-minbak p-4 space-y-3 bg-minbak-bg/50">
-              <h3 className="text-minbak-body font-medium text-minbak-black">주의사항</h3>
+              <h3 className="text-minbak-body font-medium text-minbak-black">{t("edit.notesSection")}</h3>
               <p className="text-minbak-caption text-minbak-gray">
-                숙소 상세 페이지에 표시되는 주의사항입니다. 한 줄에 하나씩 입력하세요.
+                {t("edit.notesHint")}
               </p>
               <textarea
                 rows={6}
                 value={form.houseRules}
                 onChange={(e) => setForm((f) => ({ ...f, houseRules: e.target.value }))}
-                placeholder={"엘리베이터가 없는 건물인 경우 짐 이동에 유의해 주세요.\n실내에서는 금연입니다.\n밤 10시 이후에는 소음을 줄여 주세요."}
+                placeholder={t("edit.notesPlaceholder")}
                 className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body resize-y"
               />
             </div>
             <div className="border border-minbak-light-gray rounded-minbak p-4 space-y-3 bg-minbak-bg/50">
               <h3 className="text-minbak-body font-medium text-minbak-black">
-                캘린더 연동 (중복 예약 방지)
+                {t("edit.calendarSync")}
               </h3>
               <p className="text-minbak-caption text-minbak-gray">
-                에어비앤비·Beds24 등 다른 채널과 같은 숙소를 올렸을 때, 양쪽 예약이 겹치지 않도록 합니다. (임시: iCal/ICS. 추후 Beds24 API 연동 예정)
+                {t("edit.calendarSyncHint")}
               </p>
               <div>
                 <span className="text-minbak-caption font-medium text-minbak-black block mb-1">
-                  우리 예약 내보내기 (Export)
+                  {t("edit.exportTitle")}
                 </span>
                 <p className="text-minbak-caption text-minbak-gray mb-1">
-                  아래 URL을 Airbnb·Beds24·구글캘린더의 &quot;캘린더 가져오기&quot;에 등록하면, 우리 사이트에서 잡은 예약이 해당 채널에서 막힙니다.
+                  {t("edit.exportHint")}
                 </p>
                 <code className="block text-minbak-caption text-minbak-black break-all bg-white border border-minbak-light-gray rounded px-2 py-1.5">
                   {typeof window !== "undefined"
@@ -1005,16 +1007,16 @@ export default function EditListingForm({
               </div>
               <label className="block">
                 <span className="text-minbak-caption font-medium text-minbak-black block mb-1">
-                  외부 캘린더 가져오기 (Import) — 한 줄에 URL 하나
+                  {t("edit.importTitle")}
                 </span>
                 <p className="text-minbak-caption text-minbak-gray mb-1">
-                  각 채널에서 발급한 &quot;캘린더 내보내기&quot; URL을 넣으면, 그 채널에 예약된 날은 우리 사이트에서 선택할 수 없습니다.
+                  {t("edit.importHint")}
                 </p>
                 <p className="text-minbak-caption text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5 mb-2">
-                  <strong>중요:</strong> Airbnb iCal URL은 Airbnb 예약만 포함합니다. Booking.com 등 외부 예약이 Airbnb에 연동되어 있어도, 우리 사이트에 반영하려면 <strong>Booking.com iCal URL을 별도로 추가</strong>하세요.
+                  {t("edit.importImportant")}
                 </p>
                 <p className="text-minbak-caption text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-1.5 mb-2">
-                  <strong>연동 안 될 때:</strong> URL 입력 후 반드시 <strong>&quot;저장&quot; 버튼</strong>을 눌러야 합니다. 저장 후 숙소 페이지에서 날짜 선택 시 예약된 날이 회색으로 표시됩니다.
+                  {t("edit.importSaveNote")}
                 </p>
                 <textarea
                   value={form.icalImportUrls}
@@ -1040,21 +1042,21 @@ export default function EditListingForm({
                           body: JSON.stringify({ urls: urls.length > 0 ? urls : undefined }),
                         });
                         const data = await res.json();
-                        if (!res.ok) throw new Error(data.error || "새로고침 실패");
-                        toast.success(data.message || "캘린더를 새로고침했습니다.");
+                        if (!res.ok) throw new Error(data.error || t("edit.refreshFailed"));
+                        toast.success(data.message || t("edit.refreshSuccess"));
                         router.refresh();
                       } catch (e) {
-                        toast.error(e instanceof Error ? e.message : "새로고침에 실패했습니다.");
+                        toast.error(e instanceof Error ? e.message : t("edit.refreshFailed"));
                       } finally {
                         setIcalRefreshLoading(false);
                       }
                     }}
                     className="min-h-[44px] flex items-center px-4 py-2 rounded-minbak border border-minbak-light-gray text-minbak-body font-medium text-minbak-black hover:bg-minbak-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    {icalRefreshLoading ? "새로고침 중..." : "새로고침"}
+                    {icalRefreshLoading ? t("edit.refreshing") : t("edit.refresh")}
                   </button>
                   <span className="text-minbak-caption text-minbak-gray">
-                    입력된 URL의 최신 캘린더를 즉시 반영합니다.
+                    {t("edit.refreshButtonHint")}
                   </span>
                 </div>
               </label>
@@ -1067,10 +1069,10 @@ export default function EditListingForm({
             <div className="flex flex-col sm:flex-row items-start gap-4 pt-2">
             <Button type="submit" variant="secondary" disabled={loading || videoUploadStatus === "uploading"}>
               {loading
-                ? "저장 중..."
+                ? t("edit.saving")
                 : videoUploadStatus === "uploading"
-                  ? `영상 업로드 중 ${videoUploadProgress}%`
-                  : "저장"}
+                  ? t("newListing.videoUploadingButton", { percent: videoUploadProgress })
+                  : t("edit.save")}
             </Button>
               <DeleteListingButton listingId={listingId} listingTitle={initial.title} />
             </div>
