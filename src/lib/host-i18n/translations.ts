@@ -230,7 +230,7 @@ export const hostTranslations = {
     "guest.preferencesLabel": "선호사항 (자유 입력)",
     "guest.preferencesPlaceholder": "예: 시부야 근처, 조용한 동네, 주방 필수, 와이파이 빠른 곳",
     "guest.aiRecommendLoading": "AI가 추천 중...",
-    "guest.aiRecommendCta": "AI 추천 받기",
+    "guest.aiRecommendCta": "나에게 딱 맞는 숙소를 추천 받기",
     "guest.aiRecommendResultsCount": "AI 추천 숙소 {count}곳",
     "guest.dateRequiredError": "체크인·체크아웃 날짜를 선택해 주세요.",
     "guest.recommendRequestFailed": "추천 요청에 실패했습니다.",
