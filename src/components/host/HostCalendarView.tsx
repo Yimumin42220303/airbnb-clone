@@ -384,62 +384,35 @@ export default function HostCalendarView() {
     <>
       <Header />
       <main className="min-h-screen pt-4 md:pt-8">
-        <div className="flex flex-col md:flex-row min-h-[calc(100vh-5rem)] md:min-h-[calc(100vh-8rem)]">
-          {/* Left sidebar: 모바일에서 상단 고정 높이, 데스크톱에서 세로 스크롤 */}
-          <aside className="md:w-72 w-full max-h-[220px] md:max-h-none border-b md:border-b-0 md:border-r border-minbak-light-gray bg-white flex-shrink-0 overflow-y-auto">
-            <div className="p-4 border-b border-minbak-light-gray">
-              <h2 className="text-minbak-body font-semibold text-minbak-black">
-                {t("calendar.listingsCount", { count: listings.length })}
-              </h2>
+        <div className="min-h-[calc(100vh-5rem)] md:min-h-[calc(100vh-8rem)]">
+          {/* Calendar area (full width) */}
+          <div className="overflow-x-auto bg-minbak-bg p-4 min-w-0">
+            {/* 검색 + 숙소 필터 (전체 / 개별) */}
+            <div className="flex flex-wrap items-center gap-3 mb-4">
               <input
                 type="text"
                 placeholder={t("calendar.searchPlaceholder")}
                 value={sidebarSearch}
                 onChange={(e) => setSidebarSearch(e.target.value)}
-                className="mt-2 w-full px-3 py-2.5 min-h-[44px] border border-minbak-light-gray rounded-minbak text-minbak-body placeholder:text-minbak-gray focus:outline-none focus:ring-2 focus:ring-minbak-black/20"
+                className="flex-1 min-w-[140px] max-w-[280px] px-3 py-2.5 min-h-[44px] border border-minbak-light-gray rounded-minbak text-minbak-body placeholder:text-minbak-gray focus:outline-none focus:ring-2 focus:ring-minbak-black/20 bg-white"
               />
+              <select
+                value={selectedListingId ?? ""}
+                onChange={(e) => setSelectedListingId(e.target.value || null)}
+                className="min-h-[44px] px-3 py-2.5 border border-minbak-light-gray rounded-minbak text-minbak-body bg-white focus:outline-none focus:ring-2 focus:ring-minbak-black/20"
+              >
+                <option value="">{t("calendar.filterAllListings")}</option>
+                {filteredListings.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.title}
+                  </option>
+                ))}
+              </select>
+              <span className="text-minbak-caption text-minbak-gray whitespace-nowrap">
+                {t("calendar.listingsCount", { count: filteredListings.length })}
+              </span>
             </div>
-            <ul className="p-2">
-              {filteredListings.map((l) => (
-                <li key={l.id}>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSelectedListingId((id) => (id === l.id ? null : l.id))
-                    }
-                    onMouseEnter={() => setHoveredListingId(l.id)}
-                    onMouseLeave={() => setHoveredListingId(null)}
-                    className={`w-full flex gap-3 p-3 min-h-[56px] rounded-minbak text-left transition-colors ${
-                      selectedListingId === l.id
-                        ? "bg-minbak-bg ring-1 ring-minbak-light-gray"
-                        : "hover:bg-minbak-bg"
-                    } ${hoveredListingId === l.id ? "ring-2 ring-minbak-primary/40 bg-minbak-primary/5" : ""}`}
-                  >
-                    <div className="relative w-14 h-14 flex-shrink-0 rounded overflow-hidden">
-                      <Image
-                        src={l.imageUrl}
-                        alt=""
-                        fill
-                        className="object-cover"
-                        sizes="56px"
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-minbak-body font-medium text-minbak-black truncate">
-                        {l.title}
-                      </p>
-                      <p className="text-minbak-caption text-minbak-gray truncate">
-                        {l.location}
-                      </p>
-                    </div>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </aside>
 
-          {/* Calendar area */}
-          <div className="flex-1 overflow-x-auto bg-minbak-bg p-4 min-w-0">
             <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <div className="flex items-center gap-1 sm:gap-2">
                 <button
@@ -479,9 +452,11 @@ export default function HostCalendarView() {
               <>
                 {/* 모바일 전용: 월 그리드 (두 번째 첨부 디자인) */}
                 <MobileMonthGrid
-                  listing={selectedListingId
-                    ? filteredListings.find((l) => l.id === selectedListingId) ?? filteredListings[0]
-                    : filteredListings[0]}
+                  listing={
+                    selectedListingId
+                      ? listings.find((l) => l.id === selectedListingId) ?? filteredListings[0]
+                      : filteredListings[0]
+                  }
                   calendarDays={calendarDays}
                   month={month}
                   year={year}
@@ -580,9 +555,12 @@ export default function HostCalendarView() {
                     </div>
                   ))}
 
-                  {/* Listing rows */}
+                  {/* Listing rows: 전체일 때는 검색 결과, 개별 선택 시 해당 숙소만 (검색에서 빠져도 표시) */}
                   {(selectedListingId
-                    ? filteredListings.filter((l) => l.id === selectedListingId)
+                    ? (() => {
+                        const one = listings.find((l) => l.id === selectedListingId);
+                        return one ? [one] : filteredListings;
+                      })()
                     : filteredListings
                   ).map((listing) => (
                     <CalendarRow
