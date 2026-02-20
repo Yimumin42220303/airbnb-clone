@@ -8,21 +8,17 @@ import AmenitySelector from "@/components/host/AmenitySelector";
 import { uploadListingImages, getUploadErrorMessage } from "@/lib/useListingImageUpload";
 import { uploadVideoClientWithProgress, canUseVideoUpload, LISTING_VIDEO_MAX_BYTES, LISTING_VIDEO_ACCEPT } from "@/lib/cloudinary-client-upload";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
-import type { Amenity, Category } from "@/types";
+import type { Amenity } from "@/types";
 
 type Props = {
   amenities: Amenity[];
-  categories: Category[];
 };
 
-export default function NewListingForm({ amenities, categories: initialCategories }: Props) {
+export default function NewListingForm({ amenities }: Props) {
   const router = useRouter();
   const { t } = useHostTranslations();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const [addingCategory, setAddingCategory] = useState(false);
   const [form, setForm] = useState({
     title: "",
     location: "",
@@ -55,33 +51,6 @@ export default function NewListingForm({ amenities, categories: initialCategorie
         ? f.amenityIds.filter((x) => x !== id)
         : [...f.amenityIds, id],
     }));
-  }
-
-  async function handleAddCategory(e: React.FormEvent) {
-    e.preventDefault();
-    const name = newCategoryName.trim();
-    if (!name) return;
-    setAddingCategory(true);
-    try {
-      const res = await fetch("/api/admin/categories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || t("newListing.categoryAddFailed"));
-        return;
-      }
-      const newCat = { id: data.id, name: data.name };
-      setCategories((prev) => [...prev, newCat]);
-      setForm((f) => ({ ...f, categoryId: data.id }));
-      setNewCategoryName("");
-    } catch {
-      setError(t("newListing.categoryAddNetworkError"));
-    } finally {
-      setAddingCategory(false);
-    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -299,50 +268,6 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                 {t("newListing.mapHint")}
               </p>
             </label>
-            <label className="block">
-              <span className="text-minbak-body font-medium text-minbak-black block mb-1">
-                {t("newListing.category")}
-              </span>
-              <select
-                value={form.categoryId}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, categoryId: e.target.value }))
-                }
-                className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
-              >
-                <option value="">{t("newListing.categoryNone")}</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-              <p className="text-minbak-caption text-minbak-gray mt-1">
-                {t("newListing.categoryHint")}
-              </p>
-            </label>
-            <div className="flex flex-wrap items-end gap-2">
-              <label className="flex-1 min-w-[200px]">
-                <span className="text-minbak-body font-medium text-minbak-black block mb-1">
-                  {t("newListing.newCategory")}
-                </span>
-                <input
-                  type="text"
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  placeholder={t("newListing.newCategoryPlaceholder")}
-                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
-                />
-              </label>
-              <button
-                type="button"
-                onClick={handleAddCategory}
-                disabled={!newCategoryName.trim() || addingCategory}
-                className="px-4 py-2 bg-minbak-black text-white rounded-minbak hover:bg-minbak-gray disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {addingCategory ? t("newListing.adding") : t("newListing.add")}
-              </button>
-            </div>
             <label className="block">
               <span className="text-minbak-body font-medium text-minbak-black block mb-1">
                 {t("newListing.description")}
