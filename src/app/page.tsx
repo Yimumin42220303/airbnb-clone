@@ -21,6 +21,11 @@ const AIRecommendSection = nextDynamic(
   { ssr: false, loading: () => <Skeleton className="min-h-[120px] w-full rounded-xl bg-minbak-bg" /> }
 );
 
+const ProductStatusBanner = nextDynamic(
+  () => import("@/components/home/ProductStatusBanner"),
+  { ssr: false }
+);
+
 export const dynamic = "force-dynamic";
 
 export const metadata = {
@@ -69,6 +74,7 @@ export default async function Home({
   return (
     <>
       <Header />
+      <ProductStatusBanner />
 
       <main className="min-h-screen pt-0">
         <HomeHero />
