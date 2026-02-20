@@ -165,7 +165,7 @@ export default function Header() {
               {hostT.t("guest.guide")}
             </Link>
             <Link
-              href="/#ai-recommend"
+              href="https://tokyominbak.net/recommend"
               className="hidden sm:inline text-minbak-body text-minbak-black hover:text-minbak-primary transition-colors md:inline flex items-center gap-1"
             >
               <Sparkles className="w-4 h-4" />
