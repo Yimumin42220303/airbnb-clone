@@ -6,7 +6,7 @@ import { Button } from "@/components/ui";
 import Link from "next/link";
 import AmenitySelector from "@/components/host/AmenitySelector";
 import { uploadListingImages, getUploadErrorMessage } from "@/lib/useListingImageUpload";
-import { uploadVideoClient, canUseVideoUpload, LISTING_VIDEO_MAX_BYTES, LISTING_VIDEO_ACCEPT } from "@/lib/cloudinary-client-upload";
+import { uploadVideoClientWithProgress, canUseVideoUpload, LISTING_VIDEO_MAX_BYTES, LISTING_VIDEO_ACCEPT } from "@/lib/cloudinary-client-upload";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 import type { Amenity, Category } from "@/types";
 
@@ -45,6 +45,8 @@ export default function NewListingForm({ amenities, categories: initialCategorie
   });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [videoUploadStatus, setVideoUploadStatus] = useState<"idle" | "uploading" | "done" | "error">("idle");
+  const [videoUploadProgress, setVideoUploadProgress] = useState(0);
 
   function toggleAmenity(id: string) {
     setForm((f) => ({
@@ -356,28 +358,51 @@ export default function NewListingForm({ amenities, categories: initialCategorie
               />
             </label>
             {canUseVideoUpload() && (
-              <label className="block">
+              <div className="block">
                 <span className="text-minbak-body font-medium text-minbak-black block mb-1">
                   숙소 소개 영상 (선택, 50MB 이하, 인스타 릴스 비율 9:16 권장)
                 </span>
-                {form.videoUrl ? (
-                  <div className="flex items-center gap-3">
-                    <video
-                      src={form.videoUrl}
-                      controls
-                      playsInline
-                      className="max-w-[200px] max-h-[360px] rounded-minbak border border-minbak-light-gray object-contain bg-black aspect-[9/16]"
-                      preload="metadata"
-                    />
+                {videoUploadStatus === "uploading" && (
+                  <div className="space-y-2 rounded-minbak border border-minbak-light-gray bg-minbak-bg p-4">
+                    <p className="text-minbak-body text-minbak-black font-medium">영상 업로드 중… {videoUploadProgress}%</p>
+                    <div className="h-2 w-full rounded-full bg-minbak-light-gray overflow-hidden">
+                      <div
+                        className="h-full bg-minbak-primary transition-[width] duration-300"
+                        style={{ width: `${videoUploadProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+                {form.videoUrl && (
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="relative">
+                      <video
+                        src={form.videoUrl}
+                        controls
+                        playsInline
+                        className="max-w-[200px] max-h-[360px] rounded-minbak border border-minbak-light-gray object-contain bg-black aspect-[9/16]"
+                        preload="metadata"
+                      />
+                      {videoUploadStatus === "done" && (
+                        <span className="absolute top-2 left-2 rounded bg-green-600 text-white text-minbak-caption px-2 py-0.5 font-medium">
+                          업로드 완료
+                        </span>
+                      )}
+                    </div>
                     <button
                       type="button"
-                      onClick={() => setForm((f) => ({ ...f, videoUrl: "" }))}
+                      onClick={() => {
+                        setForm((f) => ({ ...f, videoUrl: "" }));
+                        setVideoUploadStatus("idle");
+                        setVideoUploadProgress(0);
+                      }}
                       className="text-minbak-caption text-red-600 hover:underline"
                     >
                       삭제
                     </button>
                   </div>
-                ) : (
+                )}
+                {videoUploadStatus === "idle" && !form.videoUrl && (
                   <input
                     type="file"
                     accept={LISTING_VIDEO_ACCEPT}
@@ -390,10 +415,14 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                         return;
                       }
                       setError("");
+                      setVideoUploadStatus("uploading");
+                      setVideoUploadProgress(0);
                       try {
-                        const url = await uploadVideoClient(file);
+                        const url = await uploadVideoClientWithProgress(file, (p) => setVideoUploadProgress(p));
                         setForm((f) => ({ ...f, videoUrl: url }));
+                        setVideoUploadStatus("done");
                       } catch (err) {
+                        setVideoUploadStatus("error");
                         setError(err instanceof Error ? err.message : "영상 업로드에 실패했습니다.");
                       }
                       e.target.value = "";
@@ -401,7 +430,38 @@ export default function NewListingForm({ amenities, categories: initialCategorie
                     className="block w-full text-minbak-caption text-minbak-gray file:mr-3 file:py-2 file:px-3 file:rounded-minbak file:border file:border-minbak-light-gray file:bg-white file:text-minbak-body hover:file:bg-minbak-bg"
                   />
                 )}
-              </label>
+                {videoUploadStatus === "error" && !form.videoUrl && (
+                  <div className="space-y-2">
+                    <p className="text-minbak-caption text-red-600">{error}</p>
+                    <input
+                      type="file"
+                      accept={LISTING_VIDEO_ACCEPT}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (file.size > LISTING_VIDEO_MAX_BYTES) {
+                          setError("영상은 50MB 이하로 올려 주세요.");
+                          e.target.value = "";
+                          return;
+                        }
+                        setError("");
+                        setVideoUploadStatus("uploading");
+                        setVideoUploadProgress(0);
+                        try {
+                          const url = await uploadVideoClientWithProgress(file, (p) => setVideoUploadProgress(p));
+                          setForm((f) => ({ ...f, videoUrl: url }));
+                          setVideoUploadStatus("done");
+                        } catch (err) {
+                          setVideoUploadStatus("error");
+                          setError(err instanceof Error ? err.message : "영상 업로드에 실패했습니다.");
+                        }
+                        e.target.value = "";
+                      }}
+                      className="block w-full text-minbak-caption text-minbak-gray file:mr-3 file:py-2 file:px-3 file:rounded-minbak file:border file:border-minbak-light-gray file:bg-white file:text-minbak-body hover:file:bg-minbak-bg"
+                    />
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </section>
@@ -667,8 +727,12 @@ export default function NewListingForm({ amenities, categories: initialCategorie
         )}
 
         <div className="flex gap-3">
-          <Button type="submit" variant="primary" disabled={loading}>
-            {loading ? t("newListing.submitting") : t("newListing.submitButton")}
+          <Button type="submit" variant="primary" disabled={loading || videoUploadStatus === "uploading"}>
+            {loading
+              ? t("newListing.submitting")
+              : videoUploadStatus === "uploading"
+                ? `영상 업로드 중 ${videoUploadProgress}%`
+                : t("newListing.submitButton")}
           </Button>
           <Link href="/admin/listings">
             <Button type="button" variant="secondary">

@@ -8,6 +8,9 @@ import { getWishlistListingIds } from "@/lib/wishlist";
 import { canUserReview } from "@/lib/reviews";
 import ListingDetailContent from "./ListingDetailContent";
 
+/** 숙소 수정(영상 등) 후 상세 페이지가 최신 데이터로 보이도록 항상 동적 렌더 */
+export const dynamic = "force-dynamic";
+
 const BASE_URL =
   process.env.NEXT_PUBLIC_APP_URL || "https://tokyominbak.example.com";
 
