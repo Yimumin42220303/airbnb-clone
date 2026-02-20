@@ -1,89 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { ListingCard } from "@/components/ui";
-import { formatDateDisplay } from "@/lib/date-utils";
-import FramerDateRangePicker from "@/components/search/FramerDateRangePicker";
-import FramerGuestPicker, {
-  defaultGuestCounts,
-  type GuestCounts,
-} from "@/components/search/FramerGuestPicker";
 import Link from "next/link";
-import { Sparkles, Loader2, ChevronDown, ArrowRight } from "lucide-react";
+import { Sparkles, ChevronDown, ArrowRight } from "lucide-react";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
-type RecommendItem = {
-  id: string;
-  title: string;
-  location: string;
-  imageUrl: string;
-  price: number;
-  rating?: number;
-  reviewCount?: number;
-  amenities?: string[];
-  isPromoted?: boolean;
-  rank: number;
-  reason: string;
-  /** AI 추천 근거(리뷰·위치·가격 등). 게스트에게 "왜 이 숙소인지" 보여줌 */
-  highlights?: string[];
-};
+const RECOMMEND_URL = "https://tokyominbak.net/recommend";
 
 export default function AIRecommendSection() {
   const t = useHostTranslations().t;
   const [expanded, setExpanded] = useState(true);
-  const [checkIn, setCheckIn] = useState("");
-  const [checkOut, setCheckOut] = useState("");
-  const [guests, setGuests] = useState<GuestCounts>(defaultGuestCounts);
-  const [preferences, setPreferences] = useState("");
-  const [dateOpen, setDateOpen] = useState(false);
-  const [guestOpen, setGuestOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [results, setResults] = useState<RecommendItem[] | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setResults(null);
-    setMessage(null);
-
-    if (!checkIn || !checkOut) {
-      setDateOpen(true);
-      setError(t("guest.dateRequiredError"));
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const res = await fetch("/api/recommend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          checkIn,
-          checkOut,
-          adults: guests.adult,
-          children: guests.child,
-          infants: guests.infant,
-          preferences: preferences.trim(),
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error ?? t("guest.recommendRequestFailed"));
-        return;
-      }
-
-      setResults(data.listings ?? []);
-      setMessage(data.message ?? null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("guest.networkError"));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <section id="ai-recommend" className="relative overflow-hidden scroll-mt-24">
@@ -124,7 +50,7 @@ export default function AIRecommendSection() {
           {!expanded && (
             <p className="mt-3 text-center">
               <Link
-                href="/recommend"
+                href={RECOMMEND_URL}
                 className="inline-flex items-center gap-1 text-minbak-caption font-medium text-minbak-primary hover:underline"
               >
                 {t("guest.aiRecommendCtaDetail")}
@@ -133,163 +59,18 @@ export default function AIRecommendSection() {
             </p>
           )}
 
-          {/* 펼쳐진 상태: 폼 */}
+          {/* 펼쳐진 상태: AI 추천 받기 버튼만 */}
           {expanded && (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="bg-white border border-minbak-light-gray rounded-minbak p-4 md:p-6 shadow-sm">
-                <h3 className="text-minbak-body font-semibold text-minbak-black mb-4">{t("guest.travelInfo")}</h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-minbak-caption text-minbak-gray mb-1">{t("guest.checkInCheckOut")}</label>
-                    <button
-                      type="button"
-                      onClick={() => setDateOpen(true)}
-                      className="w-full flex items-center justify-between px-4 py-3 border border-minbak-light-gray rounded-minbak text-left text-minbak-body hover:border-minbak-primary transition-colors"
-                    >
-                      <span className="text-minbak-black">
-                        {checkIn && checkOut
-                          ? `${formatDateDisplay(checkIn)} ~ ${formatDateDisplay(checkOut)}`
-                          : t("guest.dateSelect")}
-                      </span>
-                    </button>
-                  </div>
-                  <div>
-                    <label className="block text-minbak-caption text-minbak-gray mb-1">{t("guest.guests")}</label>
-                    <button
-                      type="button"
-                      onClick={() => setGuestOpen(true)}
-                      className="w-full flex items-center justify-between px-4 py-3 border border-minbak-light-gray rounded-minbak text-left text-minbak-body hover:border-minbak-primary transition-colors"
-                    >
-                      <span className="text-minbak-black">
-                        {guests.adult + guests.child + guests.infant > 0
-                          ? (guests.infant > 0
-                            ? t("guest.guestCountWithInfant", { total: guests.adult + guests.child, infant: guests.infant })
-                            : t("guest.guestCount", { total: guests.adult + guests.child }))
-                          : t("guest.addGuests")}
-                      </span>
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="preferences" className="block text-minbak-caption text-minbak-gray mb-1">
-                    {t("guest.preferencesLabel")}
-                  </label>
-                  <textarea
-                    id="preferences"
-                    value={preferences}
-                    onChange={(e) => setPreferences(e.target.value)}
-                    placeholder={t("guest.preferencesPlaceholder")}
-                    className="w-full px-4 py-3 border border-minbak-light-gray rounded-minbak text-minbak-body text-minbak-black placeholder:text-minbak-gray resize-none focus:outline-none focus:ring-2 focus:ring-minbak-primary focus:border-transparent"
-                    rows={3}
-                  />
-                </div>
-              </div>
-
-              {error && (
-                <div className="p-4 rounded-minbak bg-red-50 border border-red-200 text-red-700 text-minbak-body">
-                  {error}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-4 rounded-minbak bg-minbak-primary hover:bg-minbak-primary-hover disabled:opacity-70 disabled:cursor-not-allowed text-white font-semibold text-minbak-body flex items-center justify-center gap-2 transition-colors shadow-lg shadow-minbak-primary/25"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    {t("guest.aiRecommendLoading")}
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-5 h-5" />
-                    {t("guest.aiRecommendCta")}
-                  </>
-                )}
-              </button>
-            </form>
-          )}
-
-          {results !== null && results.length > 0 && (
-            <div className="mt-8 md:mt-10">
-              <h3 className="text-minbak-h3 font-bold text-minbak-black mb-4">
-                {t("guest.aiRecommendResultsCount", { count: results.length })}
-              </h3>
-              {message && (
-                <p className="text-minbak-caption text-minbak-gray mb-4">{message}</p>
-              )}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                {results.map((item) => (
-                  <div key={item.id} className="relative">
-                    <div className="absolute top-2 left-2 z-10">
-                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-minbak-primary text-white text-sm font-bold shadow-md">
-                        {item.rank}
-                      </span>
-                    </div>
-                    <ListingCard
-                      id={item.id}
-                      title={item.title}
-                      location={item.location}
-                      imageUrl={item.imageUrl}
-                      price={item.price}
-                      rating={item.rating}
-                      reviewCount={item.reviewCount}
-                      amenities={item.amenities}
-                      isPromoted={item.isPromoted}
-                    />
-                    <div className="mt-2 space-y-1">
-                      <p className="text-minbak-caption text-minbak-dark-gray">
-                        <span className="font-medium text-minbak-primary">추천 이유:</span> {item.reason}
-                      </p>
-                      {item.highlights && item.highlights.length > 0 && (
-                        <div className="text-minbak-caption text-minbak-gray">
-                          <span className="font-medium text-minbak-dark-gray">추천 근거:</span>
-                          <ul className="mt-0.5 list-disc list-inside space-y-0.5">
-                            {item.highlights.map((h, i) => (
-                              <li key={i}>{h}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <Link
+              href={RECOMMEND_URL}
+              className="block w-full py-4 rounded-minbak bg-minbak-primary hover:bg-minbak-primary-hover text-white font-semibold text-minbak-body flex items-center justify-center gap-2 transition-colors shadow-lg shadow-minbak-primary/25"
+            >
+              <Sparkles className="w-5 h-5" />
+              {t("guest.aiRecommendCta")}
+            </Link>
           )}
         </div>
       </div>
-
-      {/* 오버레이를 section의 z-10 스태킹 컨텍스트 바깥에 배치 */}
-      {dateOpen && (
-        <div
-          className="fixed inset-0 z-[10001] flex items-start justify-center pt-[calc(184px+env(safe-area-inset-top,0px))] md:pt-[200px] pb-8 px-4 bg-black/40"
-          onClick={() => setDateOpen(false)}
-          role="presentation"
-        >
-          <div className="flex justify-center w-full max-w-[calc(100vw-2rem)]" onClick={(e) => e.stopPropagation()}>
-            <FramerDateRangePicker
-              checkIn={checkIn}
-              checkOut={checkOut}
-              onCheckInChange={setCheckIn}
-              onCheckOutChange={setCheckOut}
-              onClose={() => setDateOpen(false)}
-              compact={typeof window !== "undefined" && window.innerWidth < 768}
-            />
-          </div>
-        </div>
-      )}
-
-      {guestOpen && (
-        <FramerGuestPicker
-          counts={guests}
-          onChange={setGuests}
-          onClose={() => setGuestOpen(false)}
-        />
-      )}
     </section>
   );
 }
