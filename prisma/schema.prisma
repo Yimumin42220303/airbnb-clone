@@ -100,6 +100,8 @@ model Listing {
   description String? @default("")
   /// 구글 지도 등 외부 지도 서비스 링크 (선택)
   mapUrl      String?
+  /// 숙소 소개 영상 URL (자체 업로드, 50MB 이하, 인스타 릴스 비율 9:16)
+  videoUrl    String?
   pricePerNight Int    // 1박 가격 (원)
   cleaningFee   Int    @default(0) // 청소비 (원, 1회)
   imageUrl    String   // 대표 이미지 URL

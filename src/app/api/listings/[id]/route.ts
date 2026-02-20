@@ -68,6 +68,7 @@ export async function PATCH(
         location: body.location,
         description: body.description,
         mapUrl: body.mapUrl,
+        videoUrl: body.videoUrl,
         pricePerNight: body.pricePerNight,
         cleaningFee: body.cleaningFee,
         baseGuests: body.baseGuests,
