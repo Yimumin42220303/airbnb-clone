@@ -185,8 +185,11 @@ export default function ListingDetailContent({
                         src={listing.videoUrl}
                         controls
                         playsInline
+                        autoPlay
+                        muted
+                        loop
                         className="w-full h-full object-contain"
-                        preload="metadata"
+                        preload="auto"
                       >
                         영상을 지원하지 않는 브라우저입니다.
                       </video>
