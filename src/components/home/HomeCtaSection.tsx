@@ -18,7 +18,7 @@ export default function HomeCtaSection() {
           {t("guest.ctaSub2")}
         </p>
         <Link
-          href="/search"
+          href="https://tokyominbak.net/recommend"
           className="inline-flex items-center justify-center gap-2 min-h-[44px] px-6 md:px-8 py-3 md:py-4 rounded-minbak-full bg-white text-minbak-primary font-semibold hover:bg-gray-100 transition-colors text-minbak-body md:text-minbak-body-lg"
         >
           {t("guest.ctaButton")}

@@ -30,7 +30,7 @@ type RecommendItem = {
 
 export default function AIRecommendSection() {
   const t = useHostTranslations().t;
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
   const [guests, setGuests] = useState<GuestCounts>(defaultGuestCounts);
