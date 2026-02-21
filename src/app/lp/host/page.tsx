@@ -92,13 +92,21 @@ export default function HostLpPage() {
                 href="https://x.com/chrisli69864074"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-black text-white text-base font-semibold hover:opacity-90 transition-opacity"
-                aria-label="X (Twitter)プロフィール"
+                className="inline-flex flex-col items-center gap-1 px-8 py-4 rounded-full bg-black text-white text-base font-semibold hover:opacity-90 transition-opacity"
+                aria-label="X (Twitter)プロフィール（OTA運営者の個人アカウント）"
               >
-                <XIcon className="w-5 h-5" />
-                X
+                <span className="flex items-center gap-2">
+                  <XIcon className="w-5 h-5" />
+                  X
+                </span>
+                <span className="text-[11px] font-normal text-white/80">
+                  運営者個人アカウント
+                </span>
               </a>
             </div>
+            <p className="mt-3 text-minbak-caption text-minbak-gray">
+              ※XアカウントはOTA運営者の個人アカウントです
+            </p>
           </div>
         </section>
 
