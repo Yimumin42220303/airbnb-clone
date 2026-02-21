@@ -9,6 +9,15 @@ export const metadata = {
     "韓国人ゲストが中心の民泊OTA。好立地・コスパの良い都内小部屋（1〜4名）を大募集。管理代行会社様向け手数料10%、一般ホスト様20%。",
 };
 
+/** X (Twitter)アイコン */
+function XIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
+
 /** LINEアイコン（簡易SVG） */
 function LineIcon({ className }: { className?: string }) {
   return (
@@ -78,6 +87,16 @@ export default function HostLpPage() {
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-[#E74C3C] text-white text-base font-semibold hover:opacity-90 transition-opacity"
               >
                 どんな感じのOTAか見てみる
+              </a>
+              <a
+                href="https://x.com/chrisli69864074"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-black text-white text-base font-semibold hover:opacity-90 transition-opacity"
+                aria-label="X (Twitter)プロフィール"
+              >
+                <XIcon className="w-5 h-5" />
+                X
               </a>
             </div>
           </div>
