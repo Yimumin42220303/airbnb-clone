@@ -61,15 +61,25 @@ export default function HostLpPage() {
             <p className="text-minbak-body-lg text-minbak-gray mb-8 max-w-[600px] mx-auto">
               韓国人ゲストが中心。好立地・コスパの良い小部屋（1〜4名）を大募集しています。まずはお気軽にLINEでご相談ください。
             </p>
-            <a
-              href={HOST_LP_LINE_ADD_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-[#06C755] text-white text-base font-semibold hover:opacity-90 transition-opacity"
-            >
-              <LineIcon className="w-6 h-6" />
-              LINEで相談する
-            </a>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <a
+                href={HOST_LP_LINE_ADD_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-[#06C755] text-white text-base font-semibold hover:opacity-90 transition-opacity"
+              >
+                <LineIcon className="w-6 h-6" />
+                LINEで相談する
+              </a>
+              <a
+                href="https://tokyominbak.net/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-full border-2 border-minbak-black text-minbak-black text-base font-semibold hover:bg-minbak-black hover:text-white transition-colors"
+              >
+                どんな感じのOTAか見てみる
+              </a>
+            </div>
           </div>
         </section>
 
