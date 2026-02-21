@@ -1004,6 +1004,13 @@ export default function EditListingForm({
                     ? `${window.location.origin}/api/listings/${listingId}/calendar.ics`
                     : `/api/listings/${listingId}/calendar.ics`}
                 </code>
+                <div className="mt-3 p-3 border border-minbak-primary/30 bg-minbak-primary/5 rounded-minbak">
+                  <p className="text-minbak-caption font-medium text-minbak-black mb-1">{t("edit.calendarSyncBeds24Title")}</p>
+                  <p className="text-minbak-caption text-minbak-gray mb-2">{t("edit.calendarSyncBeds24Note")}</p>
+                  <Link href="/help/beds24-calendar" target="_blank" rel="noopener noreferrer" className="text-minbak-caption font-medium text-minbak-primary hover:underline">
+                    {t("edit.calendarSyncBeds24Link")} →
+                  </Link>
+                </div>
               </div>
               <label className="block">
                 <span className="text-minbak-caption font-medium text-minbak-black block mb-1">
@@ -1021,7 +1028,7 @@ export default function EditListingForm({
                 <textarea
                   value={form.icalImportUrls}
                   onChange={(e) => setForm((f) => ({ ...f, icalImportUrls: e.target.value }))}
-                  placeholder="https://www.airbnb.com/calendar/ical/..."
+                  placeholder={t("edit.importPlaceholder")}
                   rows={3}
                   className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak resize-y font-mono text-minbak-caption"
                 />
