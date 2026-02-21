@@ -75,7 +75,7 @@ export default function HostLpPage() {
                 href="https://tokyominbak.net/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-full border-2 border-minbak-black text-minbak-black text-base font-semibold hover:bg-minbak-black hover:text-white transition-colors"
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-[#E74C3C] text-white text-base font-semibold hover:opacity-90 transition-opacity"
               >
                 どんな感じのOTAか見てみる
               </a>
