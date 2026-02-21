@@ -31,6 +31,9 @@ export default function Footer() {
           <Link href="/agreement" className="text-minbak-body text-white/90 hover:text-white hover:underline">
             {t("guest.agreement")}
           </Link>
+          <Link href="/lp/host" className="text-minbak-body text-white/90 hover:text-white hover:underline">
+            {t("guest.hostRecruit")}
+          </Link>
         </nav>
 
         {/* Framer 스타일 사업자 정보 그리드 (Noto Sans KR 300 톤) */}

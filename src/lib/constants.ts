@@ -11,3 +11,6 @@ export const INSTAGRAM_LINK = "https://www.instagram.com/tokyominbak/";
 
 /** 이메일 문의 링크 */
 export const CONTACT_EMAIL = "mailto:minbaktokyo@gmail.com";
+
+/** ホスト募集LP: LINE友達追加URL（QRコードと同じリンク先） */
+export const HOST_LP_LINE_ADD_URL = "https://line.me/ti/p/QdEM_viWKW";
