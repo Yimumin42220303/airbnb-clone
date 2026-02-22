@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { getListings } from "@/lib/listings";
 import { prisma } from "@/lib/prisma";
+import { getNights } from "@/lib/bookings";
 
 /** 숙소당 최근 리뷰 개수, 리뷰 본문 최대 글자 수 (토큰 절약) */
 const MAX_REVIEWS_PER_LISTING = 5;
 const MAX_REVIEW_BODY_LENGTH = 200;
+/** 숙소 설명문 최대 글자 수 (AI 프롬프트 토큰 절약) */
+const MAX_DESCRIPTION_LENGTH = 400;
 
 function getOpenAI() {
   const key = process.env.OPENAI_API_KEY;
@@ -78,12 +81,67 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = new Date(checkOut);
+    const stayNights = getNights(checkInDate, checkOutDate);
+
     const listingIds = listings.map((l) => l.id);
-    const reviewsByListing = await prisma.review.findMany({
-      where: { listingId: { in: listingIds } },
-      select: { listingId: true, body: true, rating: true },
-      orderBy: { createdAt: "desc" },
-    });
+    const [reviewsByListing, listingExtras] = await Promise.all([
+      prisma.review.findMany({
+        where: { listingId: { in: listingIds } },
+        select: { listingId: true, body: true, rating: true },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.listing.findMany({
+        where: { id: { in: listingIds } },
+        select: {
+          id: true,
+          description: true,
+          propertyType: true,
+          cleaningFee: true,
+          baseGuests: true,
+          extraGuestFee: true,
+          pricePerNight: true,
+          januaryFactor: true,
+          februaryFactor: true,
+          marchFactor: true,
+          aprilFactor: true,
+          mayFactor: true,
+          juneFactor: true,
+          julyFactor: true,
+          augustFactor: true,
+          septemberFactor: true,
+          octoberFactor: true,
+          novemberFactor: true,
+          decemberFactor: true,
+        },
+      }),
+    ]);
+
+    const monthFactorKeys = [
+      "januaryFactor", "februaryFactor", "marchFactor", "aprilFactor",
+      "mayFactor", "juneFactor", "julyFactor", "augustFactor",
+      "septemberFactor", "octoberFactor", "novemberFactor", "decemberFactor",
+    ] as const;
+    const checkInMonth = checkInDate.getMonth(); // 0-11
+
+    const extraMap = new Map(listingExtras.map((e) => {
+      const factor = (e[monthFactorKeys[checkInMonth]] ?? 1) as number;
+      const baseGuests = e.baseGuests ?? 2;
+      const extraGuests = Math.max(0, guests - baseGuests);
+      const nightPrice = Math.round((e.pricePerNight ?? 0) * factor);
+      const nightsTotal = stayNights * nightPrice;
+      const extraTotal = stayNights * extraGuests * (e.extraGuestFee ?? 0);
+      const totalEstimatedPrice = nightsTotal + (e.cleaningFee ?? 0) + extraTotal;
+      return [
+        e.id,
+        {
+          description: (e.description ?? "").trim().slice(0, MAX_DESCRIPTION_LENGTH),
+          propertyType: e.propertyType ?? "apartment",
+          totalEstimatedPrice,
+        },
+      ] as const;
+    }));
 
     const reviewsGrouped = new Map<string, { body: string; rating: number }[]>();
     for (const r of reviewsByListing) {
@@ -99,14 +157,24 @@ export async function POST(req: NextRequest) {
 
     const listingSummaries = listings.map((l) => {
       const reviewList = reviewsGrouped.get(l.id) ?? [];
-      const row = l as typeof l & { bedrooms?: number; maxGuests?: number; beds?: number };
+      const extra = extraMap.get(l.id);
+      const row = l as typeof l & {
+        bedrooms?: number;
+        maxGuests?: number;
+        beds?: number;
+        category?: { id: string; name: string };
+      };
       return {
         id: l.id,
         title: l.title,
         location: l.location,
+        description: extra?.description ?? "",
         price: l.price,
+        totalEstimatedPrice: extra?.totalEstimatedPrice,
         rating: l.rating,
         reviewCount: l.reviewCount,
+        category: row.category?.name,
+        propertyType: extra?.propertyType ?? "apartment",
         amenities: l.amenities ?? [],
         houseRules: (l.houseRules ?? "").slice(0, 300),
         reviews: reviewList.map((r) => `[${r.rating}점] ${r.body}`),
@@ -117,10 +185,23 @@ export async function POST(req: NextRequest) {
     });
 
     const systemPrompt = `당신은 도쿄 숙소 추천 전문가입니다. 게스트의 선호사항에 맞게 숙소를 순위 매기고, 각 숙소를 추천하는 이유(reason)와 근거(highlights)를 한국어로 작성합니다.
-각 숙소에는 "reviews" 배열(실제 게스트 리뷰 내용), "amenities"(편의시설), "bedrooms", "maxGuests", "beds"(침대 수) 등이 포함되어 있습니다.
-우선순위별 반영: 가성비→가격·리뷰, 평점→평점·리뷰 수, 위치→location·리뷰, 숙소넓이→bedrooms·maxGuests·beds, 건전한 주변환경→location·리뷰(조용함·안전함 언급), 어린이·유아친화 설비→amenities(유아용 설비 여부).
+
+추천의 근거가 되는 5가지 요소를 반드시 활용하세요:
+1. location (立地): 숙소 위치·역 거리·주변 환경
+2. description (宿の説明文): 호스트가 작성한 숙소 설명
+3. amenities (設備及びサービス): WiFi, 주방, 세탁기 등 편의시설 목록
+4. houseRules (注意事項): 엘리베이터 유무, 흡연 규칙, 소음 주의, 반려동물·파티 등
+5. reviews (レビューデータ): 실제 게스트 리뷰(평점+본문)
+
+추가 고려 요소:
+- stayNights (숙박 일수): 1~2박 단기→위치·편의성, 7박 이상 장기→주방·세탁기·넓이·totalEstimatedPrice 가성비
+- totalEstimatedPrice (총 예상 금액 KRW): 숙박일수·인원·청소비 적용 후 총액. 가성비 우선 시 이 값을 비교하세요.
+- category (카테고리): 도미토리/개인실/아파트 등. 선호에 "개인실만", "아파트" 등 있으면 반영
+- propertyType (숙소 타입): apartment(아파트) | detached_house(단독주택). 프라이버시·넓이 선호와 연관
+
+우선순위별 반영: 가성비→totalEstimatedPrice·리뷰, 평점→평점·리뷰 수, 위치→location·description·리뷰, 숙소넓이→bedrooms·maxGuests·beds·amenities·propertyType, 건전한 주변환경→location·houseRules·리뷰(조용함·안전함 언급), 어린이·유아친화→amenities·houseRules.
 - reason: 추천 이유를 1~2문장으로 간결하게.
-- highlights: 이 숙소를 추천한 구체적 근거 2~4개. 게스트가 '왜 이 숙소인지' 알 수 있도록 짧은 문장으로.
+- highlights: 위 5가지 요소 중 해당하는 구체적 근거 2~4개. 게스트가 '왜 이 숙소인지' 알 수 있도록 짧은 문장으로.
 반드시 JSON 배열만 반환하세요. 다른 텍스트는 포함하지 마세요.
 형식: [{"id": "숙소ID", "rank": 1, "reason": "추천 이유", "highlights": ["근거1", "근거2", ...]}]`;
 
@@ -144,15 +225,16 @@ export async function POST(req: NextRequest) {
     const userPrompt = `## 게스트 정보
 - 체크인: ${checkIn}
 - 체크아웃: ${checkOut}
-- 인원: 성인 ${adults ?? 1}명, 어린이 ${children ?? 0}명
+- 숙박 일수: ${stayNights}박
+- 인원: 성인 ${adults ?? 1}명, 어린이 ${children ?? 0}명 (총 ${guests}명)
 ${tripTypeLabel ? `- 여행 유형: ${tripTypeLabel}` : ""}
 ${priorityLabel ? `- 우선순위: ${priorityLabel} (이에 맞게 순위와 추천 이유를 반영할 것)` : ""}
 - 그 외 선호사항: ${preferences?.trim() || "특별한 선호 없음"}
 
-## 후보 숙소 (각 숙소에 리뷰 내용이 포함됨. 최대 5개만 추천, 순위대로)
+## 후보 숙소 (각 숙소에 location·description·totalEstimatedPrice·category·propertyType·amenities·houseRules·reviews 포함. 최대 5개만 추천, 순위대로)
 ${JSON.stringify(listingSummaries, null, 2)}
 
-위 숙소 중 게스트 정보·선호와 리뷰 내용(실제 이용 후기)을 종합해 가장 잘 맞는 순서로 1~5위를 정하고, 각각 reason과 highlights를 포함해 JSON 배열로 반환하세요.`;
+위 숙소 중 게스트 정보·선호와 立地·宿の説明文·設備·注意事項·レビューデータ를 종합해 가장 잘 맞는 순서로 1~5위를 정하고, 각각 reason과 highlights를 포함해 JSON 배열로 반환하세요.`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",

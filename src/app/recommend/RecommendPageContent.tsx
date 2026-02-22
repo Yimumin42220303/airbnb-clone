@@ -32,6 +32,66 @@ const PRIORITIES: { value: Priority; labelKey: HostTranslationKey }[] = [
 type TripType = "friends" | "couple" | "family";
 type Priority = "value" | "rating" | "location" | "space" | "environment" | "child_friendly";
 
+type ListingFromApi = {
+  id: string;
+  title: string;
+  location: string;
+  imageUrl: string;
+  price: number;
+  rating?: number;
+  reviewCount?: number;
+  amenities?: string[];
+  isPromoted?: boolean;
+  bedrooms?: number;
+  maxGuests?: number;
+  beds?: number;
+};
+
+function ruleBasedSort(
+  listings: ListingFromApi[],
+  priorities: Priority[]
+): ListingFromApi[] {
+  if (listings.length <= 1) return [...listings];
+  const primary = priorities[0];
+  const sorted = [...listings];
+  if (primary === "value") {
+    sorted.sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
+  } else if (primary === "rating") {
+    sorted.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+  } else if (primary === "space") {
+    sorted.sort((a, b) => {
+      const scoreA = (a.bedrooms ?? 0) * 10 + (a.maxGuests ?? 0) + (a.beds ?? 0);
+      const scoreB = (b.bedrooms ?? 0) * 10 + (b.maxGuests ?? 0) + (b.beds ?? 0);
+      return scoreB - scoreA;
+    });
+  } else {
+    sorted.sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
+  }
+  return sorted;
+}
+
+function toRecommendItem(
+  listing: ListingFromApi,
+  rank: number,
+  reason: string,
+  highlights?: string[]
+): RecommendItem {
+  return {
+    id: listing.id,
+    title: listing.title,
+    location: listing.location,
+    imageUrl: listing.imageUrl,
+    price: listing.price,
+    rating: listing.rating,
+    reviewCount: listing.reviewCount,
+    amenities: listing.amenities,
+    isPromoted: listing.isPromoted,
+    rank,
+    reason,
+    highlights,
+  };
+}
+
 type RecommendItem = {
   id: string;
   title: string;
@@ -60,6 +120,7 @@ export default function RecommendPageContent() {
   const [dateOpen, setDateOpen] = useState(false);
   const [guestOpen, setGuestOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [aiRefining, setAiRefining] = useState(false);
   const [error, setError] = useState("");
   const [results, setResults] = useState<RecommendItem[] | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -69,6 +130,7 @@ export default function RecommendPageContent() {
     setError("");
     setResults(null);
     setMessage(null);
+    setAiRefining(false);
 
     if (!checkIn || !checkOut) {
       setDateOpen(true);
@@ -76,37 +138,72 @@ export default function RecommendPageContent() {
       return;
     }
 
+    const guestTotal = guests.adult + guests.child;
+    const params = new URLSearchParams({
+      checkIn,
+      checkOut,
+      guests: String(guestTotal < 1 ? 1 : guestTotal),
+    });
+
     setLoading(true);
-    try {
-      const res = await fetch("/api/recommend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          checkIn,
-          checkOut,
-          adults: guests.adult,
-          children: guests.child,
-          infants: guests.infant,
-          tripType: tripType || undefined,
-          priorities: priorities.slice(0, MAX_PRIORITIES),
-          preferences: preferences.trim(),
-        }),
+    const recommendBody = {
+      checkIn,
+      checkOut,
+      adults: guests.adult,
+      children: guests.child,
+      infants: guests.infant,
+      tripType: tripType || undefined,
+      priorities: priorities.slice(0, MAX_PRIORITIES),
+      preferences: preferences.trim(),
+    };
+
+    const listingsPromise = fetch(`/api/listings?${params}`).then((r) => r.json());
+    const aiPromise = fetch("/api/recommend", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(recommendBody),
+    }).then((r) => r.json());
+
+    listingsPromise
+      .then((listingsData) => {
+        if (!Array.isArray(listingsData)) {
+          setError(listingsData?.error ?? t("guest.recommendRequestFailed"));
+          return;
+        }
+        const listings: ListingFromApi[] = listingsData;
+        if (listings.length > 0) {
+          const sorted = ruleBasedSort(listings, priorities.slice(0, MAX_PRIORITIES));
+          const ruleBasedTop5 = sorted.slice(0, 5).map((l, i) =>
+            toRecommendItem(l, i + 1, t("guest.ruleBasedReason"), undefined)
+          );
+          setResults(ruleBasedTop5);
+          setMessage(null);
+          setAiRefining(true);
+        } else {
+          setResults([]);
+          setMessage(t("guest.noListingsAvailable"));
+        }
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : t("guest.networkError"));
+      })
+      .finally(() => {
+        setLoading(false);
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error ?? t("guest.recommendRequestFailed"));
-        return;
-      }
-
-      setResults(data.listings ?? []);
-      setMessage(data.message ?? null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("guest.networkError"));
-    } finally {
-      setLoading(false);
-    }
+    aiPromise
+      .then((aiData) => {
+        if (aiData?.listings && Array.isArray(aiData.listings) && aiData.listings.length > 0) {
+          setResults(aiData.listings);
+          setMessage(aiData.message ?? null);
+        }
+      })
+      .catch(() => {
+        // 규칙 기반 결과는 이미 표시됨. AI 실패 시 무시
+      })
+      .finally(() => {
+        setAiRefining(false);
+      });
   };
 
   return (
@@ -265,12 +362,21 @@ export default function RecommendPageContent() {
         </button>
       </form>
 
+      {results !== null && results.length === 0 && message && (
+        <p className="mt-10 text-minbak-body text-minbak-dark-gray">{message}</p>
+      )}
       {results !== null && results.length > 0 && (
         <div className="mt-10">
           <h2 className="text-minbak-h3 font-bold text-minbak-black mb-4">
             {t("guest.aiRecommendResultsCount", { count: results.length })}
           </h2>
-          {message && (
+          {aiRefining && (
+            <p className="text-minbak-caption text-minbak-primary mb-4 flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              {t("guest.aiRefining")}
+            </p>
+          )}
+          {message && !aiRefining && (
             <p className="text-minbak-caption text-minbak-gray mb-4">{message}</p>
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
