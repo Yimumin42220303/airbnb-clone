@@ -1007,7 +1007,7 @@ export default function EditListingForm({
                 <div className="mt-3 p-3 border border-minbak-primary/30 bg-minbak-primary/5 rounded-minbak">
                   <p className="text-minbak-caption font-medium text-minbak-black mb-1">{t("edit.calendarSyncBeds24Title")}</p>
                   <p className="text-minbak-caption text-minbak-gray mb-2">{t("edit.calendarSyncBeds24Note")}</p>
-                  <Link href="/help/beds24-calendar" target="_blank" rel="noopener noreferrer" className="text-minbak-caption font-medium text-minbak-primary hover:underline">
+                  <Link href="https://docs.google.com/presentation/d/1lVl_CsZCdUbPXTwBRbH57mskMv3xSC188rxBtkZLRM0/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-minbak-caption font-medium text-minbak-primary hover:underline">
                     {t("edit.calendarSyncBeds24Link")} →
                   </Link>
                 </div>
