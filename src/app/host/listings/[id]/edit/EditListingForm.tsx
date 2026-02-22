@@ -1043,6 +1043,17 @@ export default function EditListingForm({
                           .split("\n")
                           .map((u) => u.trim())
                           .filter(Boolean);
+                        // 1. iCal URLを先に保存（「更新」だけで保存されるように）
+                        const saveRes = await fetch(`/api/listings/${listingId}`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ icalImportUrls: urls }),
+                        });
+                        if (!saveRes.ok) {
+                          const err = await saveRes.json().catch(() => ({}));
+                          throw new Error(err.error || t("edit.refreshFailed"));
+                        }
+                        // 2. キャッシュ無効化
                         const res = await fetch(`/api/listings/${listingId}/ical/refresh`, {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
@@ -1050,7 +1061,7 @@ export default function EditListingForm({
                         });
                         const data = await res.json();
                         if (!res.ok) throw new Error(data.error || t("edit.refreshFailed"));
-                        toast.success(data.message || t("edit.refreshSuccess"));
+                        toast.success(t("edit.refreshSuccess"));
                         router.refresh();
                       } catch (e) {
                         toast.error(e instanceof Error ? e.message : t("edit.refreshFailed"));
@@ -1060,7 +1071,7 @@ export default function EditListingForm({
                     }}
                     className="min-h-[44px] flex items-center px-4 py-2 rounded-minbak border border-minbak-light-gray text-minbak-body font-medium text-minbak-black hover:bg-minbak-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    {icalRefreshLoading ? t("edit.refreshing") : t("edit.refresh")}
+                    {icalRefreshLoading ? t("edit.refreshing") : t("edit.saveAndRefresh")}
                   </button>
                   <span className="text-minbak-caption text-minbak-gray">
                     {t("edit.refreshButtonHint")}
