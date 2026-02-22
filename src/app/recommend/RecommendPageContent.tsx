@@ -158,50 +158,90 @@ export default function RecommendPageContent() {
     };
 
     const listingsPromise = fetch(`/api/listings?${params}`).then((r) => r.json());
-    const aiPromise = fetch("/api/recommend", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(recommendBody),
-    }).then((r) => r.json());
 
     listingsPromise
-      .then((listingsData) => {
+      .then(async (listingsData) => {
         if (!Array.isArray(listingsData)) {
           setError(listingsData?.error ?? t("guest.recommendRequestFailed"));
           return;
         }
         const listings: ListingFromApi[] = listingsData;
-        if (listings.length > 0) {
-          const sorted = ruleBasedSort(listings, priorities.slice(0, MAX_PRIORITIES));
-          const ruleBasedTop5 = sorted.slice(0, 5).map((l, i) =>
-            toRecommendItem(l, i + 1, t("guest.ruleBasedReason"), undefined)
-          );
-          setResults(ruleBasedTop5);
-          setMessage(null);
-          setAiRefining(true);
-        } else {
+        if (listings.length === 0) {
           setResults([]);
           setMessage(t("guest.noListingsAvailable"));
+          return;
+        }
+        const sorted = ruleBasedSort(listings, priorities.slice(0, MAX_PRIORITIES));
+        const ruleBasedTop5 = sorted.slice(0, 5).map((l, i) =>
+          toRecommendItem(l, i + 1, t("guest.ruleBasedReason"), undefined)
+        );
+        setResults(ruleBasedTop5);
+        setMessage(null);
+        setLoading(false);
+        setAiRefining(true);
+
+        try {
+          const res = await fetch("/api/recommend/stream", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(recommendBody),
+          });
+          if (!res.ok || !res.body) return;
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+          let hasReceivedAny = false;
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() ?? "";
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                const raw = line.slice(6).trim();
+                if (raw === "" || raw === "[DONE]") continue;
+                try {
+                  const data = JSON.parse(raw) as { done?: boolean; error?: string } & RecommendItem;
+                  if (data.done || data.error) {
+                    if (data.error) setMessage(data.error);
+                    continue;
+                  }
+                  const item: RecommendItem = {
+                    id: data.id,
+                    title: data.title,
+                    location: data.location,
+                    imageUrl: data.imageUrl,
+                    price: data.price,
+                    rating: data.rating,
+                    reviewCount: data.reviewCount,
+                    amenities: data.amenities,
+                    isPromoted: data.isPromoted,
+                    rank: data.rank,
+                    reason: data.reason,
+                    highlights: data.highlights,
+                  };
+                  if (!hasReceivedAny) {
+                    setResults([item]);
+                    hasReceivedAny = true;
+                  } else {
+                    setResults((prev) => (prev ? [...prev, item] : [item]));
+                  }
+                } catch {
+                  // skip invalid JSON
+                }
+              }
+            }
+          }
+        } catch {
+          // 규칙 기반 결과 유지
+        } finally {
+          setAiRefining(false);
         }
       })
       .catch((err) => {
         setError(err instanceof Error ? err.message : t("guest.networkError"));
-      })
-      .finally(() => {
         setLoading(false);
-      });
-
-    aiPromise
-      .then((aiData) => {
-        if (aiData?.listings && Array.isArray(aiData.listings) && aiData.listings.length > 0) {
-          setResults(aiData.listings);
-          setMessage(aiData.message ?? null);
-        }
-      })
-      .catch(() => {
-        // 규칙 기반 결과는 이미 표시됨. AI 실패 시 무시
-      })
-      .finally(() => {
         setAiRefining(false);
       });
   };
