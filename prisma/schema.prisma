@@ -242,6 +242,12 @@ model Booking {
   billingKey            String?   // 포트원 빌링키 (카드 등록 시 발급)
   paymentMethod         String    @default("immediate") // immediate(즉시결제) | deferred(빌링키 후불결제)
   scheduledPaymentDate  DateTime? // 자동 결제 예정일 (체크인 7일 전)
+  /// 정산 상태: null(미정산) | "completed"(정산완료)
+  settlementStatus  String?
+  /// 정산 완료 시각 (운영자가 완료 체크한 시점)
+  settlementAt      DateTime?
+  /// 정산 처리 메모 (운영자 입력, 선택)
+  settlementNote    String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -257,6 +263,7 @@ model Booking {
   @@index([status, paymentStatus])        // 상태별 조회 최적화
   @@index([userId])                        // 사용자별 예약 조회
   @@index([paymentMethod, paymentStatus, scheduledPaymentDate]) // Cron Job 빌링키 결제 조회용
+  @@index([settlementStatus]) // 정산 관리 조회용
 }
 
 // ---------- 결제 트랜잭션 (포트원 결제 이력) ----------

@@ -204,6 +204,16 @@ export default async function AdminDashboardPage({
             블로그 관리 →
           </Link>
         </div>
+        <div className="border border-minbak-light-gray rounded-minbak p-5 bg-white">
+          <p className="text-minbak-caption text-minbak-gray">정산 관리</p>
+          <p className="text-minbak-body text-minbak-black mt-1">호스트 정산</p>
+          <Link
+            href="/admin/settlement"
+            className="text-minbak-caption text-minbak-primary hover:underline mt-2 inline-block"
+          >
+            정산 관리 →
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

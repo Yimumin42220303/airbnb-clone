@@ -33,6 +33,7 @@
 | **/admin/listings** | 전체 숙소 목록 (보기·수정 링크) |
 | **/admin/users** | 전체 회원 목록 |
 | **/admin/bookings** | 전체 예약 목록 |
+| **/admin/settlement** | 정산 관리 (미정산 예약 조회·정산 완료 체크) |
 | **/admin/blog** | 블로그 글 목록·작성·수정 |
 
 - **Admin 계정**: DB에 `role: "admin"` 인 사용자. 시드에서는 `admin@example.com`  
