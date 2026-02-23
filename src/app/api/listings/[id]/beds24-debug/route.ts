@@ -21,7 +21,7 @@ export async function GET(
   const { id: listingId } = await params;
   const listing = await prisma.listing.findUnique({
     where: { id: listingId },
-    select: { userId: true, beds24Enabled: true, beds24PropId: true, beds24RoomId: true },
+    select: { userId: true, beds24Enabled: true, beds24PropId: true, beds24RoomId: true, beds24OfferIndex: true },
   });
   if (!listing) {
     return NextResponse.json({ error: "숙소를 찾을 수 없습니다." }, { status: 404 });
@@ -49,6 +49,7 @@ export async function GET(
     beds24Enabled: listing.beds24Enabled,
     beds24PropId: listing.beds24PropId,
     beds24RoomId: listing.beds24RoomId,
+    beds24OfferIndex: listing.beds24OfferIndex ?? 1,
     hasToken: !!process.env.BEDS24_REFRESH_TOKEN?.trim(),
     dateRange: { from: fromStr, to: toStr },
   };
@@ -132,6 +133,27 @@ export async function GET(
       sampleKeys.length > 0
         ? Object.fromEntries(sampleKeys.map((k) => [k, raw[k]]))
         : { _note: "empty" };
+
+    // 가격 동기화 테스트: calendar API 호출
+    try {
+      const { getBeds24CalendarPrices } = await import("@/lib/beds24");
+      const offerIdx = listing.beds24OfferIndex ?? 1;
+      const prices = await getBeds24CalendarPrices(
+        listing.beds24PropId!,
+        listing.beds24RoomId!,
+        fromDate,
+        toDate,
+        Math.min(16, Math.max(1, offerIdx))
+      );
+      debug.priceSync = {
+        offerIndex: offerIdx,
+        priceKey: `price${offerIdx}`,
+        fetchedCount: prices.size,
+        sampleDates: Array.from(prices.entries()).slice(0, 10),
+      };
+    } catch (priceErr) {
+      debug.priceSyncError = priceErr instanceof Error ? priceErr.message : String(priceErr);
+    }
 
     return NextResponse.json({
       ok: true,

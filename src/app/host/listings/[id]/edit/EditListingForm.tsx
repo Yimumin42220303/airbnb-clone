@@ -77,6 +77,7 @@ export default function EditListingForm({
   const { t } = useHostTranslations();
   const [loading, setLoading] = useState(false);
   const [icalRefreshLoading, setIcalRefreshLoading] = useState(false);
+  const [beds24PriceSyncLoading, setBeds24PriceSyncLoading] = useState(false);
   const [error, setError] = useState("");
   const { formatForHost } = useCurrency();
   const [categories, setCategories] = useState<Category[]>(initialCategories);
@@ -1096,11 +1097,34 @@ export default function EditListingForm({
                       className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body"
                     />
                   </label>
-                  <p className="text-minbak-caption text-minbak-gray">
-                    <a href={`/api/listings/${listingId}/beds24-debug`} target="_blank" rel="noopener noreferrer" className="text-minbak-primary hover:underline">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={beds24PriceSyncLoading}
+                      onClick={async () => {
+                        setBeds24PriceSyncLoading(true);
+                        try {
+                          const res = await fetch(`/api/listings/${listingId}/beds24-price-sync`, {
+                            method: "POST",
+                          });
+                          const data = await res.json();
+                          if (!res.ok) throw new Error(data.error || "동기화 실패");
+                          toast.success(t("edit.beds24PriceSyncSuccess", { count: data.updated ?? 0 }));
+                          router.refresh();
+                        } catch (e) {
+                          toast.error(e instanceof Error ? e.message : t("edit.beds24PriceSyncFailed"));
+                        } finally {
+                          setBeds24PriceSyncLoading(false);
+                        }
+                      }}
+                      className="px-3 py-1.5 text-minbak-caption font-medium rounded border border-minbak-primary text-minbak-primary hover:bg-minbak-primary/10 disabled:opacity-50"
+                    >
+                      {beds24PriceSyncLoading ? t("edit.beds24PriceSyncing") : t("edit.beds24PriceSyncNow")}
+                    </button>
+                    <a href={`/api/listings/${listingId}/beds24-debug`} target="_blank" rel="noopener noreferrer" className="text-minbak-caption text-minbak-primary hover:underline">
                       {t("edit.beds24DebugLink")} →
                     </a>
-                  </p>
+                  </div>
                 </div>
               )}
               {/* Import — 공통 */}

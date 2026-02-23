@@ -135,22 +135,52 @@ function blockedCacheKey(propId: string, roomId: string, from: string, to: strin
   return `${propId}:${roomId}:${from}:${to}`;
 }
 
-/**
- * yyyymmdd 또는 YYYY-MM-DD → YYYY-MM-DD
- */
-function toDateKey(dateStr: string): string {
-  const s = dateStr.replace(/-/g, "");
-  if (s.length === 8) {
-    return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
-  }
-  return dateStr;
+/** YYYY-MM-DD 형식으로 변환 */
+function toDateKey(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
+/** from~to 기간 내 YYYY-MM-DD 배열 (to 제외) */
+function getDateKeysBetween(fromDate: Date, toDate: Date): string[] {
+  const keys: string[] = [];
+  const cur = new Date(fromDate);
+  cur.setHours(0, 0, 0, 0);
+  const end = new Date(toDate);
+  end.setHours(0, 0, 0, 0);
+  while (cur < end) {
+    keys.push(toDateKey(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+  return keys;
+}
+
+type CalendarRangeItem = {
+  from?: string;
+  to?: string;
+  price1?: number;
+  price2?: number;
+  price3?: number;
+  price4?: number;
+  price5?: number;
+  price6?: number;
+  price7?: number;
+  price8?: number;
+  price9?: number;
+  price10?: number;
+  price11?: number;
+  price12?: number;
+  price13?: number;
+  price14?: number;
+  price15?: number;
+  price16?: number;
+};
 type CalendarDataItem = {
   roomId?: number;
   propertyId?: number;
-  dates?: Record<string, { p1?: number; p2?: number; p3?: number; p4?: number; p5?: number; p6?: number; p7?: number; p8?: number; p9?: number; p10?: number; p11?: number; p12?: number; p13?: number; p14?: number; p15?: number; p16?: number }>;
-  calendar?: Record<string, { p1?: number; p2?: number; p3?: number; p4?: number; p5?: number; p6?: number; p7?: number; p8?: number; p9?: number; p10?: number; p11?: number; p12?: number; p13?: number; p14?: number; p15?: number; p16?: number }>;
+  calendar?: CalendarRangeItem[];
 };
 type CalendarResponse = {
   success?: boolean;
@@ -159,7 +189,8 @@ type CalendarResponse = {
 
 /**
  * Beds24 calendar API에서 일별 가격 조회.
- * offerIndex 1~16 = p1~p16. tokyominbak이 日別料金4면 offerIndex 4.
+ * API V2: startDate/endDate, includePrices=true 필수. calendar는 { from, to, price1..16 }[] 형식.
+ * offerIndex 1~16 = price1~price16. tokyominbak이 日別料金4면 offerIndex 4.
  * @returns Map<YYYY-MM-DD, pricePerNight>
  */
 export async function getBeds24CalendarPrices(
@@ -173,15 +204,14 @@ export async function getBeds24CalendarPrices(
   const result = new Map<string, number>();
   if (!token) return result;
 
-  const from = toBeds24Date(fromDate);
-  const to = toBeds24Date(toDate);
-  const pKey = `p${Math.min(16, Math.max(1, offerIndex))}`;
+  const priceKey = `price${Math.min(16, Math.max(1, offerIndex))}`;
 
   const url = new URL(`${BEDS24_BASE}/inventory/rooms/calendar`);
-  url.searchParams.set("propId", propId);
+  url.searchParams.set("propertyId", propId);
   url.searchParams.set("roomId", roomId);
-  url.searchParams.set("from", from);
-  url.searchParams.set("to", to);
+  url.searchParams.set("startDate", toDateKey(fromDate));
+  url.searchParams.set("endDate", toDateKey(toDate));
+  url.searchParams.set("includePrices", "true");
 
   try {
     const res = await fetch(url.toString(), {
@@ -197,18 +227,22 @@ export async function getBeds24CalendarPrices(
     const items = Array.isArray(raw?.data) ? raw.data : [];
 
     for (const item of items) {
-      const dates = item.dates ?? item.calendar ?? (item as Record<string, unknown>);
-      if (!dates || typeof dates !== "object") continue;
+      const ranges = item.calendar;
+      if (!Array.isArray(ranges)) continue;
 
-      for (const [dateStr, dayData] of Object.entries(dates)) {
-        if (!dayData || typeof dayData !== "object" || Array.isArray(dayData)) continue;
-        if (!/^\d{4}-?\d{2}-?\d{2}$/.test(dateStr.replace(/-/g, ""))) continue;
-        const price = (dayData as Record<string, unknown>)[pKey];
-        if (typeof price === "number" && price > 0) {
-          const dateKey = toDateKey(dateStr);
-          if (/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
-            result.set(dateKey, Math.round(price));
-          }
+      for (const range of ranges) {
+        const fromStr = range.from;
+        const toStr = range.to;
+        const price = (range as Record<string, unknown>)[priceKey];
+        if (typeof price !== "number" || price <= 0 || !fromStr || !toStr) continue;
+
+        const fromD = new Date(fromStr);
+        const toD = new Date(toStr);
+        if (isNaN(fromD.getTime()) || isNaN(toD.getTime())) continue;
+
+        const dateKeys = getDateKeysBetween(fromD, toD);
+        for (const dk of dateKeys) {
+          result.set(dk, Math.round(price));
         }
       }
     }
