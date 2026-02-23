@@ -1127,13 +1127,14 @@ export default function EditListingForm({
                   </div>
                 </div>
               )}
-              {/* Import — 공통 */}
+              {/* Import — iCal만 선택 시에만 (Beds24 API 선택 시에는 불필요) */}
+              {!form.beds24Enabled && (
               <label className="block">
                 <span className="text-minbak-caption font-medium text-minbak-black block mb-1">
                   {t("edit.importTitle")}
                 </span>
                 <p className="text-minbak-caption text-minbak-gray mb-1">
-                  {form.beds24Enabled ? t("edit.importHintBeds24") : t("edit.importHint")}
+                  {t("edit.importHint")}
                 </p>
                 <p className="text-minbak-caption text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5 mb-2">
                   {t("edit.importImportant")}
@@ -1149,7 +1150,7 @@ export default function EditListingForm({
                 <div className="mt-2 flex items-center gap-2">
                   <button
                     type="button"
-                    disabled={icalRefreshLoading || (!form.icalImportUrls.trim() && !form.beds24Enabled)}
+                    disabled={icalRefreshLoading || !form.icalImportUrls.trim()}
                     onClick={async () => {
                       setIcalRefreshLoading(true);
                       try {
@@ -1192,6 +1193,7 @@ export default function EditListingForm({
                   </span>
                 </div>
               </label>
+              )}
             </div>
             {error && (
               <p className="text-minbak-body text-minbak-primary" role="alert">
