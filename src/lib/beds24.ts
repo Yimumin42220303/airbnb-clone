@@ -135,6 +135,89 @@ function blockedCacheKey(propId: string, roomId: string, from: string, to: strin
   return `${propId}:${roomId}:${from}:${to}`;
 }
 
+/**
+ * yyyymmdd 또는 YYYY-MM-DD → YYYY-MM-DD
+ */
+function toDateKey(dateStr: string): string {
+  const s = dateStr.replace(/-/g, "");
+  if (s.length === 8) {
+    return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
+  }
+  return dateStr;
+}
+
+type CalendarDataItem = {
+  roomId?: number;
+  propertyId?: number;
+  dates?: Record<string, { p1?: number; p2?: number; p3?: number; p4?: number; p5?: number; p6?: number; p7?: number; p8?: number; p9?: number; p10?: number; p11?: number; p12?: number; p13?: number; p14?: number; p15?: number; p16?: number }>;
+  calendar?: Record<string, { p1?: number; p2?: number; p3?: number; p4?: number; p5?: number; p6?: number; p7?: number; p8?: number; p9?: number; p10?: number; p11?: number; p12?: number; p13?: number; p14?: number; p15?: number; p16?: number }>;
+};
+type CalendarResponse = {
+  success?: boolean;
+  data?: CalendarDataItem[];
+};
+
+/**
+ * Beds24 calendar API에서 일별 가격 조회.
+ * offerIndex 1~16 = p1~p16. tokyominbak이 日別料金4면 offerIndex 4.
+ * @returns Map<YYYY-MM-DD, pricePerNight>
+ */
+export async function getBeds24CalendarPrices(
+  propId: string,
+  roomId: string,
+  fromDate: Date,
+  toDate: Date,
+  offerIndex: number = 1
+): Promise<Map<string, number>> {
+  const token = await getAccessToken();
+  const result = new Map<string, number>();
+  if (!token) return result;
+
+  const from = toBeds24Date(fromDate);
+  const to = toBeds24Date(toDate);
+  const pKey = `p${Math.min(16, Math.max(1, offerIndex))}`;
+
+  const url = new URL(`${BEDS24_BASE}/inventory/rooms/calendar`);
+  url.searchParams.set("propId", propId);
+  url.searchParams.set("roomId", roomId);
+  url.searchParams.set("from", from);
+  url.searchParams.set("to", to);
+
+  try {
+    const res = await fetch(url.toString(), {
+      headers: { Accept: "application/json", token },
+      signal: AbortSignal.timeout(30000),
+      next: { revalidate: 0 },
+    });
+    if (!res.ok) {
+      console.error("[Beds24] calendar failed:", res.status, await res.text());
+      return result;
+    }
+    const raw = (await res.json()) as CalendarResponse;
+    const items = Array.isArray(raw?.data) ? raw.data : [];
+
+    for (const item of items) {
+      const dates = item.dates ?? item.calendar ?? (item as Record<string, unknown>);
+      if (!dates || typeof dates !== "object") continue;
+
+      for (const [dateStr, dayData] of Object.entries(dates)) {
+        if (!dayData || typeof dayData !== "object" || Array.isArray(dayData)) continue;
+        if (!/^\d{4}-?\d{2}-?\d{2}$/.test(dateStr.replace(/-/g, ""))) continue;
+        const price = (dayData as Record<string, unknown>)[pKey];
+        if (typeof price === "number" && price > 0) {
+          const dateKey = toDateKey(dateStr);
+          if (/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+            result.set(dateKey, Math.round(price));
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error("[Beds24] calendar error:", err instanceof Error ? err.message : err);
+  }
+  return result;
+}
+
 export async function getBeds24BlockedDateKeysCached(
   propId: string,
   roomId: string,

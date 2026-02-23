@@ -100,6 +100,7 @@ export async function PATCH(
         beds24Enabled: body.beds24Enabled,
         beds24PropId: body.beds24PropId,
         beds24RoomId: body.beds24RoomId,
+        beds24OfferIndex: body.beds24OfferIndex != null ? Math.min(16, Math.max(1, Number(body.beds24OfferIndex))) : undefined,
         userId: body.userId,
         propertyType: body.propertyType,
       },

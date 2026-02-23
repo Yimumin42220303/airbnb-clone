@@ -56,6 +56,7 @@ type Props = {
     beds24Enabled?: boolean;
     beds24PropId?: string | null;
     beds24RoomId?: string | null;
+    beds24OfferIndex?: number | null;
     amenityIds: string[];
     mapUrl?: string;
     videoUrl?: string | null;
@@ -114,6 +115,7 @@ export default function EditListingForm({
     beds24Enabled: initial.beds24Enabled ?? false,
     beds24PropId: initial.beds24PropId ?? "",
     beds24RoomId: initial.beds24RoomId ?? "",
+    beds24OfferIndex: initial.beds24OfferIndex != null ? String(initial.beds24OfferIndex) : "",
     amenityIds: initial.amenityIds ?? [],
     mapUrl: initial.mapUrl ?? "",
     videoUrl: initial.videoUrl ?? "",
@@ -285,6 +287,7 @@ export default function EditListingForm({
         beds24Enabled: form.beds24Enabled,
         beds24PropId: form.beds24PropId?.trim() || null,
         beds24RoomId: form.beds24RoomId?.trim() || null,
+        beds24OfferIndex: form.beds24OfferIndex ? Math.min(16, Math.max(1, Number(form.beds24OfferIndex))) || null : null,
         amenityIds: form.amenityIds,
         mapUrl: mapUrl || undefined,
         videoUrl: form.videoUrl != null && String(form.videoUrl).trim() !== "" ? String(form.videoUrl).trim() : null,
@@ -1077,6 +1080,18 @@ export default function EditListingForm({
                       type="text"
                       value={form.beds24RoomId}
                       onChange={(e) => setForm((f) => ({ ...f, beds24RoomId: e.target.value }))}
+                      placeholder="1"
+                      className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-minbak-caption font-medium text-minbak-black block mb-1">{t("edit.beds24OfferIndex")}</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={16}
+                      value={form.beds24OfferIndex}
+                      onChange={(e) => setForm((f) => ({ ...f, beds24OfferIndex: e.target.value }))}
                       placeholder="1"
                       className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body"
                     />

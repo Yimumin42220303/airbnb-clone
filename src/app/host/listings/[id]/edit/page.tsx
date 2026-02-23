@@ -97,6 +97,7 @@ export default async function EditListingPage({ params }: Props) {
         beds24Enabled: listing.beds24Enabled ?? false,
         beds24PropId: listing.beds24PropId ?? null,
         beds24RoomId: listing.beds24RoomId ?? null,
+        beds24OfferIndex: listing.beds24OfferIndex ?? null,
         amenityIds: initialAmenityIds,
         mapUrl: listing.mapUrl ?? undefined,
         videoUrl: listing.videoUrl ?? undefined,

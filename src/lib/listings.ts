@@ -209,6 +209,7 @@ export async function getListingByIdForEdit(id: string) {
     beds24Enabled: listing.beds24Enabled ?? false,
     beds24PropId: listing.beds24PropId ?? null,
     beds24RoomId: listing.beds24RoomId ?? null,
+    beds24OfferIndex: listing.beds24OfferIndex ?? null,
   };
 }
 
@@ -438,6 +439,7 @@ export type UpdateListingInput = Partial<
     beds24Enabled?: boolean;
     beds24PropId?: string | null;
     beds24RoomId?: string | null;
+    beds24OfferIndex?: number | null;
     /** 호스트 변경 (관리자 전용) */
     userId?: string;
   }
@@ -531,6 +533,10 @@ export async function updateListing(
   if (input.beds24Enabled !== undefined) data.beds24Enabled = input.beds24Enabled;
   if (input.beds24PropId !== undefined) data.beds24PropId = input.beds24PropId?.trim() || null;
   if (input.beds24RoomId !== undefined) data.beds24RoomId = input.beds24RoomId?.trim() || null;
+  if (input.beds24OfferIndex !== undefined) {
+    const v = input.beds24OfferIndex;
+    data.beds24OfferIndex = v != null ? Math.min(16, Math.max(1, Number(v))) : null;
+  }
 
   if (input.imageUrls !== undefined) {
     const urls = input.imageUrls.filter((u) => typeof u === "string" && u.trim());

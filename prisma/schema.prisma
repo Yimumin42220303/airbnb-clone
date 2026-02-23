@@ -157,6 +157,8 @@ model Listing {
   beds24PropId  String?
   /// Beds24 룸 ID (roomId)
   beds24RoomId  String?
+  /// Beds24 가격 컬럼 인덱스 (1~16). tokyominbak 레이트가 p1~p16 중 어디인지. null=1(p1)
+  beds24OfferIndex Int?
 
   bookings     Booking[]
   reviews      Review[]
