@@ -113,7 +113,7 @@ export default function EditListingForm({
     houseRules: initial.houseRules ?? "",
     categoryId: initial.categoryId,
     icalImportUrls: initial.icalImportUrls.join("\n"),
-    beds24Enabled: initial.beds24Enabled ?? false,
+    beds24Enabled: initial.beds24Enabled ?? !!(initial.beds24PropId?.trim() && initial.beds24RoomId?.trim()),
     beds24PropId: initial.beds24PropId ?? "",
     beds24RoomId: initial.beds24RoomId ?? "",
     beds24OfferIndex: initial.beds24OfferIndex != null ? String(initial.beds24OfferIndex) : "",

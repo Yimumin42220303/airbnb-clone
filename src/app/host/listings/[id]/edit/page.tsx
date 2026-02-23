@@ -94,7 +94,7 @@ export default async function EditListingPage({ params }: Props) {
         baths: listing.baths,
         categoryId: listing.category?.id ?? "",
         icalImportUrls: listing.icalImportUrls ?? [],
-        beds24Enabled: listing.beds24Enabled ?? false,
+        beds24Enabled: listing.beds24Enabled ?? !!(listing.beds24PropId?.trim() && listing.beds24RoomId?.trim()),
         beds24PropId: listing.beds24PropId ?? null,
         beds24RoomId: listing.beds24RoomId ?? null,
         beds24OfferIndex: listing.beds24OfferIndex ?? null,
