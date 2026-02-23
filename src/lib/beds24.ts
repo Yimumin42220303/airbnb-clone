@@ -66,15 +66,20 @@ function toBeds24Date(d: Date): string {
   return `${y}${m}${day}`;
 }
 
-type AvailabilityRow = { i?: number; o?: number };
-type AvailabilityResponse =
-  | Record<string, AvailabilityRow>
-  | { data?: Record<string, AvailabilityRow> }
-  | Array<{ date?: string; inventory?: number; i?: number; o?: number }>;
+type Beds24DataItem = {
+  roomId?: number;
+  propertyId?: number;
+  availability?: Record<string, boolean>;
+};
+type AvailabilityResponse = {
+  success?: boolean;
+  data?: Beds24DataItem[];
+};
 
 /**
  * Beds24에서 특정 기간의 블록(예약불가) 날짜 키(YYYY-MM-DD) 반환.
- * GET /inventory/rooms/availability 응답에서 inventory(i)=0 또는 override(o)=1(blackout)인 날짜를 블록으로 처리.
+ * 응답: { data: [{ availability: { "2026-02-23": false, "2026-02-26": true, ... } }] }
+ * false = 블록(예약불가), true = 가용
  */
 export async function getBeds24BlockedDateKeys(
   propId: string,
@@ -106,31 +111,13 @@ export async function getBeds24BlockedDateKeys(
     const raw = (await res.json()) as AvailabilityResponse;
     const blocked = new Set<string>();
 
-    if (Array.isArray(raw)) {
-      for (const item of raw) {
-        const inv = item.i ?? item.inventory;
-        const override = item.o;
-        const isBlocked = inv === 0 || inv === undefined || override === 1;
-        if (!isBlocked) continue;
-        const d = item.date;
-        if (typeof d === "string") {
-          const normalized = d.replace(/[^0-9]/g, "");
-          if (normalized.length === 8) {
-            blocked.add(`${normalized.slice(0, 4)}-${normalized.slice(4, 6)}-${normalized.slice(6, 8)}`);
-          }
-        }
-      }
-    } else {
-      const data = raw && typeof raw === "object" && "data" in raw && raw.data
-        ? raw.data
-        : (raw as Record<string, AvailabilityRow>);
-      for (const [dateKey, row] of Object.entries(data)) {
-        if (!row || typeof row !== "object") continue;
-        const inv = row.i;
-        const override = row.o;
-        const isBlocked = inv === 0 || inv === undefined || override === 1;
-        if (isBlocked && /^\d{8}$/.test(dateKey)) {
-          blocked.add(`${dateKey.slice(0, 4)}-${dateKey.slice(4, 6)}-${dateKey.slice(6, 8)}`);
+    const items = Array.isArray(raw?.data) ? raw.data : [];
+    for (const item of items) {
+      const avail = item?.availability;
+      if (!avail || typeof avail !== "object") continue;
+      for (const [dateKey, value] of Object.entries(avail)) {
+        if (value === false && /^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+          blocked.add(dateKey);
         }
       }
     }
