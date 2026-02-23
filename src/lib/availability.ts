@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { getExternalBlockedDateKeys, getExternalCheckoutOnlyDateKeys } from "./ical";
+import { getBeds24CalendarPrices } from "./beds24";
 
 /**
  * 날짜 문자열 YYYY-MM-DD 생성 (로컬 타임존)
@@ -79,6 +80,10 @@ export async function getNightlyAvailability(
       octoberFactor: true,
       novemberFactor: true,
       decemberFactor: true,
+      beds24Enabled: true,
+      beds24PropId: true,
+      beds24RoomId: true,
+      beds24OfferIndex: true,
     },
   });
   if (!listing) {
@@ -110,6 +115,26 @@ export async function getNightlyAvailability(
     },
   });
   const byDate = new Map(availabilityRows.map((r) => [r.date, r]));
+
+  // Beds24 API 연동 시: 도쿄민박 가격 무시, Beds24 가격을 실시간 조회하여 사용
+  const useBeds24Prices =
+    (l.beds24Enabled ?? false) ||
+    !!(l.beds24PropId?.trim() && l.beds24RoomId?.trim());
+  let beds24Prices = new Map<string, number>();
+  if (useBeds24Prices && l.beds24PropId?.trim() && l.beds24RoomId?.trim()) {
+    try {
+      const offerIdx = Math.min(16, Math.max(1, l.beds24OfferIndex ?? 1));
+      beds24Prices = await getBeds24CalendarPrices(
+        l.beds24PropId.trim(),
+        l.beds24RoomId.trim(),
+        checkIn,
+        checkOut,
+        offerIdx
+      );
+    } catch (_) {
+      // API 실패 시 기존 로직(DB + 도쿄민박) fallback
+    }
+  }
 
   const externalBlocked = await getExternalBlockedDateKeys(listingId, checkIn, checkOut);
 
@@ -150,8 +175,14 @@ export async function getNightlyAvailability(
     const available = (row ? row.available : true) && !externalBlocked.has(date);
     const factor = getMonthFactor(date);
     const basePrice = Math.round(l.pricePerNight * factor);
-    const pricePerNight =
-      row?.pricePerNight != null ? row.pricePerNight : basePrice;
+    let pricePerNight: number;
+    if (useBeds24Prices && beds24Prices.has(date)) {
+      pricePerNight = beds24Prices.get(date)!;
+    } else if (row?.pricePerNight != null) {
+      pricePerNight = row.pricePerNight;
+    } else {
+      pricePerNight = basePrice;
+    }
     return { date, pricePerNight, available };
   });
 

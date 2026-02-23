@@ -18,7 +18,6 @@ export async function POST(request: Request) {
 
   const listings = await prisma.listing.findMany({
     where: {
-      beds24Enabled: true,
       beds24PropId: { not: null },
       beds24RoomId: { not: null },
     },

@@ -44,7 +44,11 @@ export async function POST(
     return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
   }
 
-  if (!listing.beds24Enabled || !listing.beds24PropId?.trim() || !listing.beds24RoomId?.trim()) {
+  const hasBeds24Config =
+    (listing.beds24Enabled || (listing.beds24PropId?.trim() && listing.beds24RoomId?.trim())) &&
+    listing.beds24PropId?.trim() &&
+    listing.beds24RoomId?.trim();
+  if (!hasBeds24Config) {
     return NextResponse.json(
       { error: "Beds24 API 연동이 설정되지 않았거나 Prop ID/Room ID가 없습니다." },
       { status: 400 }
