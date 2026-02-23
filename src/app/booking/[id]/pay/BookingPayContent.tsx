@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { Header, Footer } from "@/components/layout";
 import PayButton from "./PayButton";
+import { useCurrency } from "@/components/currency/CurrencyProvider";
 import BookingStepIndicator, {
   getBookingStepState,
 } from "@/components/booking/BookingStepIndicator";
@@ -26,6 +27,7 @@ type BookingItem = {
 };
 
 export default function BookingPayContent() {
+  const { formatForGuest } = useCurrency();
   const params = useParams();
   const router = useRouter();
   const id = typeof params?.id === "string" ? params.id : "";
@@ -226,7 +228,7 @@ export default function BookingPayContent() {
               명
             </p>
             <p className="text-minbak-body font-semibold text-minbak-black pt-1">
-              결제 금액: ₩{booking.totalPrice.toLocaleString()}
+              결제 금액: {formatForGuest(booking.totalPrice)}
             </p>
           </div>
           <PayButton

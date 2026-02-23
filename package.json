@@ -17,6 +17,7 @@
     "db:studio": "prisma studio",
     "db:add-amenities": "node scripts/add-airbnb-amenities.js",
     "db:randomize-review-dates": "node scripts/randomize-review-dates.js",
+    "db:migrate-krw-to-jpy": "node scripts/migrate-krw-to-jpy.js",
     "import:minbak-tokyo": "node scripts/import-from-minbak-tokyo.js",
     "seed:minbak-tokyo": "node scripts/seed-minbak-tokyo.js",
     "deploy:watch": "node scripts/watch-and-deploy.js",

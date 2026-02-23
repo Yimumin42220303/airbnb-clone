@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Header, Footer } from "@/components/layout";
 import Link from "next/link";
 import { translateMessageBody } from "@/lib/translate";
+import { formatForGuest } from "@/lib/currency";
 import MessageThread from "./MessageThread";
 import MessageAutoTranslateToggle from "./MessageAutoTranslateToggle";
 
@@ -76,7 +77,7 @@ export default async function ConversationPage({ params }: Props) {
   const booking = conversation.booking;
   const hostName =
     listing.user?.name || listing.user?.email || "호스트";
-  const totalPriceStr = `${booking.totalPrice.toLocaleString("ko-KR")}원`;
+  const totalPriceStr = formatForGuest(booking.totalPrice);
   const checkInStr = booking.checkIn.toISOString().slice(0, 10);
   const checkOutStr = booking.checkOut.toISOString().slice(0, 10);
   const statusLabel =

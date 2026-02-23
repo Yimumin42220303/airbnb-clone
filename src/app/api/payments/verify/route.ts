@@ -9,6 +9,8 @@ import {
   paymentConfirmationHost,
 } from "@/lib/email-templates";
 import { createNotification } from "@/lib/notifications";
+import { getJpyToKrwRate } from "@/lib/exchange-rate";
+import { STORED_CURRENCY, convertJpyToKrw } from "@/lib/currency";
 
 /**
  * POST /api/payments/verify
@@ -98,7 +100,12 @@ export async function POST(request: Request) {
     }
 
     // Amount verification (critical security check)
-    if (portonePayment.totalAmount !== booking.totalPrice) {
+    const expectedKrw =
+      STORED_CURRENCY === "JPY"
+        ? convertJpyToKrw(booking.totalPrice, await getJpyToKrwRate())
+        : booking.totalPrice;
+    const paidKrw = portonePayment.totalAmount ?? 0;
+    if (Math.abs(paidKrw - expectedKrw) > 1) {
       await prisma.paymentTransaction.create({
         data: {
           bookingId,
@@ -109,17 +116,14 @@ export async function POST(request: Request) {
           method: portonePayment.method?.type || null,
           pgProvider: portonePayment.channel?.pgProvider || null,
           failReason:
-            "Amount mismatch: paid=" +
-            portonePayment.totalAmount +
-            " booking=" +
-            booking.totalPrice,
+            "Amount mismatch: paid=" + paidKrw + " expected=" + expectedKrw,
           rawResponse: JSON.stringify(portonePayment),
         },
       });
       console.error(
         "Payment amount mismatch! paymentId=" + paymentId,
-        "paid=" + portonePayment.totalAmount,
-        "booking=" + booking.totalPrice
+        "paid=" + paidKrw,
+        "expected=" + expectedKrw
       );
       return NextResponse.json(
         { ok: false, error: "결제 금액이 예약 금액과 일치하지 않습니다." },

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useCurrency } from "@/components/currency/CurrencyProvider";
 import Image from "next/image";
 import { MapPin, ChevronDown, ChevronUp } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
@@ -88,6 +89,7 @@ export default function ListingDetailContent({
   initialCheckOut,
   initialGuests,
 }: Props) {
+  const { formatForGuest } = useCurrency();
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [priceSummary, setPriceSummary] = useState<{ nights: number; totalPrice: number } | null>(null);
   const [reviewsExpanded, setReviewsExpanded] = useState(false);
@@ -123,7 +125,7 @@ export default function ListingDetailContent({
                   <ShareListingButton
                     listingId={listing.id}
                     title={listing.title}
-                    shareText={`${listing.title} · ${listing.location} · 1박 ₩${listing.pricePerNight.toLocaleString()}`}
+                    shareText={`${listing.title} · ${listing.location} · 1박 ${formatForGuest(listing.pricePerNight)}`}
                     className="flex-shrink-0"
                   />
                   <WishlistHeart
@@ -416,7 +418,7 @@ export default function ListingDetailContent({
                     );
                     return (
                       <>
-                        ₩{perNight.toLocaleString()}
+                        {formatForGuest(perNight)}
                         <span className="text-[15px] font-normal text-[#717171]">
                           {" "}
                           /박
@@ -443,7 +445,7 @@ export default function ListingDetailContent({
                                 return (
                                   <>
                                     <span className="text-[22px] font-semibold text-[#222]">
-                                      ₩{perNight.toLocaleString()}
+                                      {formatForGuest(perNight)}
                                     </span>
                                     <span className="text-[15px] text-[#717171]">
                                       /박

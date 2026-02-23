@@ -8,6 +8,7 @@ import {
   POLICY_LABELS_KO,
   type CancellationPolicyType,
 } from "@/lib/policies";
+import { useCurrency } from "@/components/currency/CurrencyProvider";
 
 type Props = {
   bookingId: string;
@@ -52,6 +53,7 @@ export default function CancelBookingButton({
   cancellationPolicy,
   bookingCreatedAt,
 }: Props) {
+  const { formatForGuest } = useCurrency();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -70,7 +72,7 @@ export default function CancelBookingButton({
       confirmMsg =
         `"${listingTitle}" 예약을 취소할까요?\n\n` +
         `취소 정책: ${refund.policy}\n` +
-        `환불 금액: ₩${refund.amount.toLocaleString()} (${refund.rate}%)`;
+        `환불 금액: ${formatForGuest(refund.amount)} (${refund.rate}%)`;
       if (refund.rate === 0) {
         confirmMsg += "\n\n⚠️ 환불이 불가능합니다.";
       }
@@ -103,7 +105,7 @@ export default function CancelBookingButton({
       if (isPaid && data.refundAmount !== undefined) {
         if (data.refundAmount > 0) {
           toast.success(
-            `예약이 취소되었습니다. 환불 금액: ₩${data.refundAmount.toLocaleString()} ${data.portoneRefund ? "카드 환불이 진행됩니다." : "환불이 처리됩니다."}`
+            `예약이 취소되었습니다. 환불 금액: ${formatForGuest(data.refundAmount)} ${data.portoneRefund ? "카드 환불이 진행됩니다." : "환불이 처리됩니다."}`
           );
         } else {
           toast.success("예약이 취소되었습니다. (환불 불가 기간)");

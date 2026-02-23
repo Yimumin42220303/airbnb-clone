@@ -4,6 +4,7 @@ import Link from "next/link";
 import HostBookingActions from "@/components/host/HostBookingActions";
 import StartMessageLink from "@/components/messages/StartMessageLink";
 import { useHostTranslations } from "./HostLocaleProvider";
+import { useCurrency } from "@/components/currency/CurrencyProvider";
 import type { HostTranslationKey } from "@/lib/host-i18n";
 
 type BookingItem = {
@@ -38,6 +39,7 @@ function statusClass(b: BookingItem): string {
 }
 
 export default function HostBookingsList({ bookings }: Props) {
+  const { formatForHost } = useCurrency();
   const t = useHostTranslations().t;
   return (
     <ul className="space-y-4">
@@ -62,7 +64,7 @@ export default function HostBookingsList({ bookings }: Props) {
                 {b.checkOut.toISOString().slice(0, 10)}
               </p>
               <p className="text-minbak-body font-medium text-minbak-black">
-                ₩{b.totalPrice.toLocaleString()}
+                {formatForHost(b.totalPrice)}
               </p>
               <span
                 className={`inline-block mt-1 text-minbak-caption px-2 py-0.5 rounded ${statusClass(b)}`}

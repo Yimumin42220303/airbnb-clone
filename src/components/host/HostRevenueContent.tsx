@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Header, Footer } from "@/components/layout";
 import { useHostTranslations } from "./HostLocaleProvider";
+import { useCurrency } from "@/components/currency/CurrencyProvider";
 
 type ListingOption = { id: string; title: string };
 
@@ -63,6 +64,7 @@ function getLastMonthRange(): { start: string; end: string } {
 
 export default function HostRevenueContent({ listings, userId }: Props) {
   const { t, locale } = useHostTranslations();
+  const { formatForHost } = useCurrency();
   const dateLocale = dateLocaleMap[locale];
 
   const [startDate, setStartDate] = useState("");
@@ -305,12 +307,12 @@ export default function HostRevenueContent({ listings, userId }: Props) {
                   <div className="grid gap-4 sm:grid-cols-2 mb-8">
                     <div className="p-5 border border-minbak-light-gray rounded-minbak bg-white">
                       <p className="text-minbak-caption text-minbak-gray">{t("revenue.totalRevenue")}</p>
-                      <p className="text-2xl font-semibold text-minbak-black mt-1">₩{data.totalRevenue.toLocaleString()}</p>
+                      <p className="text-2xl font-semibold text-minbak-black mt-1">{formatForHost(data.totalRevenue)}</p>
                       <p className="text-minbak-caption text-minbak-gray mt-1">{t("revenue.paidCount", { count: data.bookingCount })}</p>
                     </div>
                     <div className="p-5 border border-minbak-light-gray rounded-minbak bg-white">
                       <p className="text-minbak-caption text-minbak-gray">{t("revenue.thisMonth")}</p>
-                      <p className="text-2xl font-semibold text-minbak-black mt-1">₩{data.thisMonthRevenue.toLocaleString()}</p>
+                      <p className="text-2xl font-semibold text-minbak-black mt-1">{formatForHost(data.thisMonthRevenue)}</p>
                       <p className="text-minbak-caption text-minbak-gray mt-1">
                         {new Date(data.thisMonthStart + "T00:00:00").toLocaleDateString(dateLocale, { year: "numeric", month: "long" })} {t("revenue.checkInCount")}
                       </p>
@@ -329,7 +331,7 @@ export default function HostRevenueContent({ listings, userId }: Props) {
                               </Link>
                               <p className="text-minbak-caption text-minbak-gray mt-0.5">{t("revenue.paidCount", { count: row.count })}</p>
                             </div>
-                            <p className="font-semibold text-minbak-black">₩{row.revenue.toLocaleString()}</p>
+                            <p className="font-semibold text-minbak-black">{formatForHost(row.revenue)}</p>
                           </li>
                         ))}
                       </ul>
@@ -373,7 +375,7 @@ export default function HostRevenueContent({ listings, userId }: Props) {
                                 {basis === "payment" && (
                                   <td className="p-3 text-minbak-black">{b.paymentDate ?? "-"}</td>
                                 )}
-                                <td className="p-3 text-right font-medium text-minbak-black">₩{b.totalPrice.toLocaleString()}</td>
+                                <td className="p-3 text-right font-medium text-minbak-black">{formatForHost(b.totalPrice)}</td>
                               </tr>
                             ))}
                           </tbody>

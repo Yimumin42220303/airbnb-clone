@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useCurrency } from "@/components/currency/CurrencyProvider";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
@@ -32,6 +33,7 @@ type BookingItem = {
 };
 
 export default function MyBookingsClient() {
+  const { formatForGuest } = useCurrency();
   const searchParams = useSearchParams();
   const requested = searchParams?.get("requested") === "1";
 
@@ -233,7 +235,7 @@ export default function MyBookingsClient() {
                         {checkInStr(b.checkIn)} ~ {checkInStr(b.checkOut)}
                       </p>
                       <p className="text-minbak-body text-minbak-gray">
-                        게스트 {b.guests}명 · ₩{b.totalPrice.toLocaleString()}
+                        게스트 {b.guests}명 · {formatForGuest(b.totalPrice)}
                       </p>
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         <span
@@ -267,7 +269,7 @@ export default function MyBookingsClient() {
                         )}
                         {b.lastRefund && (
                           <span className="inline-block text-minbak-caption font-medium px-2.5 py-1 rounded-full bg-orange-100 text-orange-800">
-                            ₩{b.lastRefund.amount.toLocaleString()} 환불
+                            {formatForGuest(b.lastRefund.amount)} 환불
                           </span>
                         )}
                       </div>

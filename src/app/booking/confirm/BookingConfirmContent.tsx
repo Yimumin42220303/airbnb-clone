@@ -13,6 +13,7 @@ import {
   Clock,
 } from "lucide-react";
 import { formatDateKR } from "@/lib/date-utils";
+import { useCurrency } from "@/components/currency/CurrencyProvider";
 
 type Props = {
   listingId: string;
@@ -43,6 +44,7 @@ export default function BookingConfirmContent({
   userEmail,
   cancellationPolicy = "flexible",
 }: Props) {
+  const { formatForGuest } = useCurrency();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -429,16 +431,16 @@ export default function BookingConfirmContent({
                 <div className="p-6 space-y-3">
                   <div className="flex justify-between text-[15px] text-[#222]">
                     <span>
-                      ₩{pricePerNight.toLocaleString()} × {nights}박
+                      {formatForGuest(pricePerNight)} × {nights}박
                     </span>
-                    <span>₩{totalPrice.toLocaleString()}</span>
+                    <span>{formatForGuest(totalPrice)}</span>
                   </div>
                   <div className="pt-3 border-t border-[#ebebeb] flex justify-between items-center">
                     <span className="text-[15px] font-medium text-[#222]">
                       총 요금 (수수료,세금 전부포함)
                     </span>
                     <span className="text-[17px] font-bold text-[#222]">
-                      ₩{totalPrice.toLocaleString()}
+                      {formatForGuest(totalPrice)}
                     </span>
                   </div>
                 </div>

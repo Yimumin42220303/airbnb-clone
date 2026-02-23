@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useCurrency } from "@/components/currency/CurrencyProvider";
+import { STORED_CURRENCY, convertJpyToKrw } from "@/lib/currency";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
 
@@ -36,6 +38,7 @@ export default function PayButton({
   userPhoneNumber?: string;
   checkIn?: string;
 }) {
+  const { formatForGuest, jpyToKrw } = useCurrency();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -114,12 +117,16 @@ export default function PayButton({
               );
               return;
             }
+            const amountKrw =
+              STORED_CURRENCY === "JPY"
+                ? convertJpyToKrw(totalPrice, jpyToKrw ?? undefined)
+                : totalPrice;
             result = await PortOne.requestPayment({
               storeId: PORTONE_STORE_ID,
               channelKey: PORTONE_CHANNEL_KEY,
               paymentId: generatedPaymentId,
               orderName: (listingTitle || "숙소 예약").slice(0, 50),
-              totalAmount: totalPrice,
+              totalAmount: amountKrw,
               currency: "CURRENCY_KRW",
               payMethod: "CARD",
               customer: {
@@ -267,7 +274,7 @@ export default function PayButton({
           ? "처리 중..."
           : isDeferred
             ? "예약 확정하기"
-            : `₩${totalPrice.toLocaleString()} 결제하기`}
+            : `${formatForGuest(totalPrice)} 결제하기`}
       </Button>
     </div>
   );

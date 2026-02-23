@@ -188,12 +188,18 @@ export async function POST(
   const paidTransaction = booking.transactions[0];
   let portoneRefundDone = false;
 
-  if (paidTransaction && refundAmount > 0) {
+  // Portone 환불은 KRW 기준. 결제당시 청구액(paidTransaction.amount)의 비율로 환불
+  const refundKrw =
+    paidTransaction && refundRate > 0
+      ? Math.round(paidTransaction.amount * refundRate)
+      : 0;
+
+  if (paidTransaction && refundKrw > 0) {
     try {
       const portoneRefundResult = await cancelPayment(
         paidTransaction.paymentId,
         "Customer cancellation (" + refundPolicy + ")",
-        refundAmount
+        refundKrw
       );
 
       await prisma.paymentTransaction.create({

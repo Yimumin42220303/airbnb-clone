@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
 import ListingBookingCalendar from "@/components/listing/ListingBookingCalendar";
+import { useCurrency } from "@/components/currency/CurrencyProvider";
 
 const CALENDAR_WIDTH = 560;
 const CALENDAR_MARGIN = 8;
@@ -45,6 +46,7 @@ export default function BookingForm({
   initialCheckOut,
   initialGuests,
 }: BookingFormProps) {
+  const { formatForGuest } = useCurrency();
   const router = useRouter();
   const [checkIn, setCheckIn] = useState(initialCheckIn ?? "");
   const [checkOut, setCheckOut] = useState(initialCheckOut ?? "");
@@ -443,15 +445,15 @@ export default function BookingForm({
             return (
               <div className="flex justify-between text-minbak-body text-minbak-black">
                 <span>
-                  ₩{perNight.toLocaleString()} x {nights}박
+                  {formatForGuest(perNight)} x {nights}박
                 </span>
-                <span>₩{totalPrice.toLocaleString()}</span>
+                <span>{formatForGuest(totalPrice)}</span>
               </div>
             );
           })()}
           <div className="flex justify-between text-lg font-semibold text-neutral-900 pt-3 border-t border-neutral-200">
             <span>총 합계</span>
-            <span>₩{totalPrice.toLocaleString()}</span>
+            <span>{formatForGuest(totalPrice)}</span>
           </div>
         </div>
       )}

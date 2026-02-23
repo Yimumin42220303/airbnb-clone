@@ -1,6 +1,7 @@
 import { prisma } from "./prisma";
 import type { Prisma } from "@prisma/client";
 import { getDateKeysBetween, getListingBlockedDateKeys } from "./availability";
+import { STORED_CURRENCY, convertKrwToJpy } from "./currency";
 
 function parseIcalImportUrls(json: string | null): string[] {
   if (!json?.trim()) return [];
@@ -37,8 +38,13 @@ export async function getListings(filters?: ListingFilters) {
     where.maxGuests = { gte: filters.guests };
   }
   const priceCond: { gte?: number; lte?: number } = {};
-  if (filters?.minPrice != null && filters.minPrice >= 0) priceCond.gte = filters.minPrice;
-  if (filters?.maxPrice != null && filters.maxPrice > 0) priceCond.lte = filters.maxPrice;
+  // 가격 필터: 게스트는 KRW로 입력. 저장 통화가 JPY면 KRW→JPY 변환
+  if (filters?.minPrice != null && filters.minPrice >= 0) {
+    priceCond.gte = STORED_CURRENCY === "JPY" ? convertKrwToJpy(filters.minPrice) : filters.minPrice;
+  }
+  if (filters?.maxPrice != null && filters.maxPrice > 0) {
+    priceCond.lte = STORED_CURRENCY === "JPY" ? convertKrwToJpy(filters.maxPrice) : filters.maxPrice;
+  }
   if (Object.keys(priceCond).length > 0) where.pricePerNight = priceCond;
   let checkInDate: Date | null = null;
   let checkOutDate: Date | null = null;

@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import WishlistHeart from "@/components/wishlist/WishlistHeart";
+import { useCurrency } from "@/components/currency/CurrencyProvider";
 
 export interface ListingCardProps {
   id: string;
@@ -50,6 +51,7 @@ export default function ListingCard({
   nights,
   perPerson,
 }: ListingCardProps) {
+  const { formatForGuest } = useCurrency();
   const listingHref = searchQuery ? `/listing/${id}?${searchQuery}` : `/listing/${id}`;
   const showTotalPrice =
     showPrice &&
@@ -66,9 +68,9 @@ export default function ListingCard({
       )}
       aria-label={
         showTotalPrice
-          ? `${title} - ${location}, 총 ₩${totalPriceProp!.toLocaleString()} (${nights}박), 1인당 약 ₩${perPerson!.toLocaleString()}`
+          ? `${title} - ${location}, 총 ${formatForGuest(totalPriceProp!)} (${nights}박), 1인당 약 ${formatForGuest(perPerson!)}`
           : showPrice
-            ? `${title} - ${location}, 1박 ₩${price.toLocaleString()}`
+            ? `${title} - ${location}, 1박 ${formatForGuest(price)}`
             : `${title} - ${location}`
       }
     >
@@ -121,16 +123,16 @@ export default function ListingCard({
               showTotalPrice ? (
                 <div className="flex flex-col gap-0.5">
                   <p className="text-minbak-body text-minbak-black">
-                    <span className="font-semibold">₩{totalPriceProp!.toLocaleString()}</span>
+                    <span className="font-semibold">{formatForGuest(totalPriceProp!)}</span>
                     <span className="text-minbak-gray"> ({nights}박)</span>
                   </p>
                   <p className="text-minbak-caption text-minbak-gray">
-                    1인당 약 ₩{perPerson!.toLocaleString()}
+                    1인당 약 {formatForGuest(perPerson!)}
                   </p>
                 </div>
               ) : (
                 <p className="text-minbak-body text-minbak-black">
-                  <span className="font-semibold">₩{price.toLocaleString()}</span>
+                  <span className="font-semibold">{formatForGuest(price)}</span>
                   <span className="text-minbak-gray"> /박</span>
                 </p>
               )

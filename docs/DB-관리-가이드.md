@@ -140,5 +140,6 @@ npm run db:randomize-review-dates
 - **구조 변경**: `prisma/schema.prisma` 수정 후 `npm run db:migrate`  
 - **초기/테스트 데이터**: `npm run db:seed` 또는 `node prisma/seed-one-user.js`  
 - **리뷰 게시일 재설정**: `npm run db:randomize-review-dates` (프로덕션 적용 시 `DATABASE_URL`만 프로덕션으로 설정 후 동일 명령)
+- **통화 Phase 2 마이그레이션 (KRW→JPY)**: `docs/통화-Phase2-마이그레이션.md` 참고, `npm run db:migrate-krw-to-jpy`
 
 DB 연결 정보는 `.env`의 `DATABASE_URL`(및 필요 시 `DIRECT_URL`)에서 관리합니다.

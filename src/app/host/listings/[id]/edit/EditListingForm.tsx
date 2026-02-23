@@ -8,6 +8,7 @@ import Link from "next/link";
 import DeleteListingButton from "@/components/host/DeleteListingButton";
 import AmenitySelector from "@/components/host/AmenitySelector";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
+import { useCurrency } from "@/components/currency/CurrencyProvider";
 import { uploadListingImages, getUploadErrorMessage } from "@/lib/useListingImageUpload";
 import { uploadVideoClientWithProgress, canUseVideoUpload, LISTING_VIDEO_MAX_BYTES, LISTING_VIDEO_ACCEPT } from "@/lib/cloudinary-client-upload";
 import { toast } from "sonner";
@@ -76,6 +77,7 @@ export default function EditListingForm({
   const [loading, setLoading] = useState(false);
   const [icalRefreshLoading, setIcalRefreshLoading] = useState(false);
   const [error, setError] = useState("");
+  const { formatForHost } = useCurrency();
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [addingCategory, setAddingCategory] = useState(false);
@@ -715,7 +717,7 @@ export default function EditListingForm({
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
-                    ≈ ₩{monthlyPrice(form.januaryFactor).toLocaleString()}{t("edit.perNight")}
+                    ≈ {formatForHost(monthlyPrice(form.januaryFactor))}{t("edit.perNight")}
                   </span>
                 </label>
                 <label className="text-minbak-caption text-minbak-gray">
@@ -730,7 +732,7 @@ export default function EditListingForm({
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
-                    ≈ ₩{monthlyPrice(form.februaryFactor).toLocaleString()}{t("edit.perNight")}
+                    ≈ {formatForHost(monthlyPrice(form.februaryFactor))}{t("edit.perNight")}
                   </span>
                 </label>
                 <label className="text-minbak-caption text-minbak-gray">
@@ -745,7 +747,7 @@ export default function EditListingForm({
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
-                    ≈ ₩{monthlyPrice(form.marchFactor).toLocaleString()}{t("edit.perNight")}
+                    ≈ {formatForHost(monthlyPrice(form.marchFactor))}{t("edit.perNight")}
                   </span>
                 </label>
                 <label className="text-minbak-caption text-minbak-gray">
@@ -760,7 +762,7 @@ export default function EditListingForm({
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
-                    ≈ ₩{monthlyPrice(form.aprilFactor).toLocaleString()}{t("edit.perNight")}
+                    ≈ {formatForHost(monthlyPrice(form.aprilFactor))}{t("edit.perNight")}
                   </span>
                 </label>
                 <label className="text-minbak-caption text-minbak-gray">
@@ -775,7 +777,7 @@ export default function EditListingForm({
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
-                    ≈ ₩{monthlyPrice(form.mayFactor).toLocaleString()}{t("edit.perNight")}
+                    ≈ {formatForHost(monthlyPrice(form.mayFactor))}{t("edit.perNight")}
                   </span>
                 </label>
                 <label className="text-minbak-caption text-minbak-gray">
@@ -790,7 +792,7 @@ export default function EditListingForm({
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
-                    ≈ ₩{monthlyPrice(form.juneFactor).toLocaleString()}{t("edit.perNight")}
+                    ≈ {formatForHost(monthlyPrice(form.juneFactor))}{t("edit.perNight")}
                   </span>
                 </label>
                 <label className="text-minbak-caption text-minbak-gray">
@@ -805,7 +807,7 @@ export default function EditListingForm({
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
-                    ≈ ₩{monthlyPrice(form.julyFactor).toLocaleString()}{t("edit.perNight")}
+                    ≈ {formatForHost(monthlyPrice(form.julyFactor))}{t("edit.perNight")}
                   </span>
                 </label>
                 <label className="text-minbak-caption text-minbak-gray">
@@ -820,7 +822,7 @@ export default function EditListingForm({
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
-                    ≈ ₩{monthlyPrice(form.augustFactor).toLocaleString()}{t("edit.perNight")}
+                    ≈ {formatForHost(monthlyPrice(form.augustFactor))}{t("edit.perNight")}
                   </span>
                 </label>
                 <label className="text-minbak-caption text-minbak-gray">
@@ -835,7 +837,7 @@ export default function EditListingForm({
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
-                    ≈ ₩{monthlyPrice(form.septemberFactor).toLocaleString()}{t("edit.perNight")}
+                    ≈ {formatForHost(monthlyPrice(form.septemberFactor))}{t("edit.perNight")}
                   </span>
                 </label>
                 <label className="text-minbak-caption text-minbak-gray">
@@ -850,7 +852,7 @@ export default function EditListingForm({
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
-                    ≈ ₩{monthlyPrice(form.octoberFactor).toLocaleString()}{t("edit.perNight")}
+                    ≈ {formatForHost(monthlyPrice(form.octoberFactor))}{t("edit.perNight")}
                   </span>
                 </label>
                 <label className="text-minbak-caption text-minbak-gray">
@@ -865,7 +867,7 @@ export default function EditListingForm({
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
-                    ≈ ₩{monthlyPrice(form.novemberFactor).toLocaleString()}{t("edit.perNight")}
+                    ≈ {formatForHost(monthlyPrice(form.novemberFactor))}{t("edit.perNight")}
                   </span>
                 </label>
                 <label className="text-minbak-caption text-minbak-gray">
@@ -880,7 +882,7 @@ export default function EditListingForm({
                     placeholder="1.0"
                   />
                   <span className="block mt-0.5">
-                    ≈ ₩{monthlyPrice(form.decemberFactor).toLocaleString()}{t("edit.perNight")}
+                    ≈ {formatForHost(monthlyPrice(form.decemberFactor))}{t("edit.perNight")}
                   </span>
                 </label>
               </div>

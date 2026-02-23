@@ -7,6 +7,7 @@ import { signOut } from "next-auth/react";
 import { toast } from "sonner";
 import { Briefcase, User, LogOut, Home } from "lucide-react";
 import CancelBookingButton from "@/components/booking/CancelBookingButton";
+import { useCurrency } from "@/components/currency/CurrencyProvider";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 import type { HostTranslationKey } from "@/lib/host-i18n";
 
@@ -58,6 +59,7 @@ function getBookingStatusKey(status: string, paymentStatus: string): HostTransla
 
 export default function MypageContent({ user, bookings }: Props) {
   const { t, locale } = useHostTranslations();
+  const { formatForGuest } = useCurrency();
   const [tab, setTab] = useState<"reservations" | "account">("reservations");
   const dateLocale = locale === "ja" ? "ja-JP" : "ko-KR";
 
@@ -130,6 +132,7 @@ function ReservationsSection({
   t: TFn;
   dateLocale: string;
 }) {
+  const { formatForGuest } = useCurrency();
   return (
     <section className="bg-white border border-minbak-light-gray rounded-minbak p-6">
       <h2 className="text-[18px] font-semibold text-minbak-black mb-4">
@@ -229,7 +232,7 @@ function ReservationsSection({
                   </Link>
                   <div className="flex flex-col items-end gap-2 shrink-0">
                     <p className="text-minbak-body font-semibold text-minbak-black">
-                      {t("mypage.paymentAmountFormat", { amount: b.totalPrice.toLocaleString("ko-KR") })}
+                      {t("mypage.paymentAmountFormat", { amount: formatForGuest(b.totalPrice) })}
                     </p>
                     <div className="flex flex-wrap gap-2 justify-end">
                       {b.status !== "cancelled" &&

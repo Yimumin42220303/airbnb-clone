@@ -8,6 +8,7 @@ import { Header } from "@/components/layout";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import HostCalendarBookingActions from "./HostCalendarBookingActions";
 import { useHostTranslations } from "./HostLocaleProvider";
+import { useCurrency } from "@/components/currency/CurrencyProvider";
 import { toISODateString } from "@/lib/date-utils";
 
 const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
@@ -19,12 +20,14 @@ function MobileMonthGrid({
   month,
   year,
   todayKey,
+  formatForHost,
 }: {
   listing: ListingWithBookings | undefined;
   calendarDays: Date[];
   month: number;
   year: number;
   todayKey: string;
+  formatForHost: (amount: number) => string;
 }) {
   const t = useHostTranslations().t;
 
@@ -137,7 +140,7 @@ function MobileMonthGrid({
                       {span > 1 ? ` +${span - 1}` : ""}
                     </p>
                     <p className="text-[10px] opacity-90 mt-0.5">
-                      ₩{booking.totalPrice.toLocaleString()}
+                      {formatForHost(booking.totalPrice)}
                     </p>
                   </div>
                 ))}
@@ -162,7 +165,7 @@ function MobileMonthGrid({
                     isBlocked ? "text-gray-400 line-through" : "text-minbak-gray"
                   }`}
                 >
-                  {isBlocked ? t("calendar.blocked") : `₩${listing.pricePerNight.toLocaleString()}`}
+                  {isBlocked ? t("calendar.blocked") : formatForHost(listing.pricePerNight)}
                 </span>
               )}
             </div>
@@ -241,6 +244,7 @@ function getDateKeysBetweenKeys(startKey: string, endKey: string): string[] {
 }
 
 export default function HostCalendarView() {
+  const { formatForHost } = useCurrency();
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useHostTranslations().t;
@@ -461,6 +465,7 @@ export default function HostCalendarView() {
                   month={month}
                   year={year}
                   todayKey={todayKey}
+                  formatForHost={formatForHost}
                 />
 
                 {/* 데스크톱 전용: 기존 가로 스크롤 캘린더 */}
@@ -576,6 +581,7 @@ export default function HostCalendarView() {
                       onRowMouseEnter={() => setHoveredListingId(listing.id)}
                       onRowMouseLeave={() => setHoveredListingId(null)}
                       t={t}
+                      formatForHost={formatForHost}
                     />
                   ))}
                 </div>
@@ -601,6 +607,7 @@ function CalendarRow({
   onRowMouseEnter,
   onRowMouseLeave,
   t,
+  formatForHost,
 }: {
   listing: ListingWithBookings;
   calendarDays: Date[];
@@ -613,6 +620,7 @@ function CalendarRow({
   onRowMouseEnter?: () => void;
   onRowMouseLeave?: () => void;
   t: ReturnType<typeof useHostTranslations>["t"];
+  formatForHost: (amount: number) => string;
 }) {
   const todayKey = toISODateString(new Date());
   const blockedSet = useMemo(
@@ -640,7 +648,7 @@ function CalendarRow({
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-minbak-caption text-minbak-gray">
-            ₩{listing.pricePerNight.toLocaleString()}/박
+            {formatForHost(listing.pricePerNight)}/박
           </p>
           <Link
             href={`/listing/${listing.id}`}
@@ -689,7 +697,7 @@ function CalendarRow({
             >
               {isCurrentMonth && !isBlocked && (
                 <p className="text-[11px] leading-tight text-minbak-gray whitespace-nowrap overflow-visible">
-                  ₩{listing.pricePerNight.toLocaleString()}
+                  {formatForHost(listing.pricePerNight)}
                 </p>
               )}
               {isCurrentMonth && isBlocked && (
@@ -723,7 +731,7 @@ function CalendarRow({
                 {booking.guestName}
               </p>
               <p className="text-minbak-caption opacity-90">
-                ₩{booking.totalPrice.toLocaleString()}
+                {formatForHost(booking.totalPrice)}
               </p>
               <p className="text-minbak-caption opacity-90">
                 {getBookingStatusLabel(

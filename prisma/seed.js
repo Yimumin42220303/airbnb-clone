@@ -1,12 +1,13 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
+// Phase 2: 저장 통화 JPY (1 JPY ≈ 10 KRW 기준)
 const listingsData = [
   {
     title: "신주쿠 중심가 모던 아파트",
     location: "신주쿠구, 도쿄",
     imageUrl: "https://picsum.photos/seed/listing1/400/300",
-    pricePerNight: 85000,
+    pricePerNight: 8500,
     maxGuests: 4,
     bedrooms: 2,
     beds: 2,
@@ -17,7 +18,7 @@ const listingsData = [
     title: "한적한 시부야 로프트",
     location: "시부야구, 도쿄",
     imageUrl: "https://picsum.photos/seed/listing2/400/300",
-    pricePerNight: 120000,
+    pricePerNight: 12000,
     maxGuests: 2,
     bedrooms: 1,
     beds: 1,
@@ -28,7 +29,7 @@ const listingsData = [
     title: "아사쿠사 전통 게스트하우스",
     location: "다이토구, 도쿄",
     imageUrl: "https://picsum.photos/seed/listing3/400/300",
-    pricePerNight: 65000,
+    pricePerNight: 6500,
     maxGuests: 6,
     bedrooms: 3,
     beds: 3,
@@ -39,7 +40,7 @@ const listingsData = [
     title: "오사카 도톤보리 뷰",
     location: "츄오구, 오사카",
     imageUrl: "https://picsum.photos/seed/listing4/400/300",
-    pricePerNight: 95000,
+    pricePerNight: 9500,
     maxGuests: 4,
     bedrooms: 2,
     beds: 2,
@@ -50,7 +51,7 @@ const listingsData = [
     title: "교토 아라시야마 한옥",
     location: "우쿄구, 교토",
     imageUrl: "https://picsum.photos/seed/listing5/400/300",
-    pricePerNight: 150000,
+    pricePerNight: 15000,
     maxGuests: 4,
     bedrooms: 2,
     beds: 2,
@@ -61,7 +62,7 @@ const listingsData = [
     title: "요코하마 미나토미라이 루프탑",
     location: "니시구, 요코하마",
     imageUrl: "https://picsum.photos/seed/listing6/400/300",
-    pricePerNight: 110000,
+    pricePerNight: 11000,
     maxGuests: 2,
     bedrooms: 1,
     beds: 1,

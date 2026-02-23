@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { getListingById } from "@/lib/listings";
 import { prisma } from "@/lib/prisma";
 import { getWishlistListingIds } from "@/lib/wishlist";
+import { formatForGuest } from "@/lib/currency";
 import { canUserReview } from "@/lib/reviews";
 import ListingDetailContent from "./ListingDetailContent";
 
@@ -33,7 +34,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const url = `${BASE_URL}/listing/${id}`;
   const description =
     listing.description?.trim().slice(0, 160) ||
-    `${listing.title} · ${listing.location} · 1박 ₩${listing.pricePerNight.toLocaleString()}`;
+    `${listing.title} · ${listing.location} · 1박 ${formatForGuest(listing.pricePerNight)}`;
 
   return {
     title: listing.title,
@@ -105,7 +106,7 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
     name: listing.title,
     description:
       listing.description?.trim() ||
-      `${listing.title} · ${listing.location}. 1박 ₩${listing.pricePerNight.toLocaleString()}`,
+      `${listing.title} · ${listing.location}. 1박 ${formatForGuest(listing.pricePerNight)}`,
     image: listing.imageUrl,
     address: {
       "@type": "PostalAddress",

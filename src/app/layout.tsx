@@ -4,6 +4,7 @@ import "./globals.css";
 import SessionProvider from "@/components/auth/SessionProvider";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import HostLocaleProvider from "@/components/host/HostLocaleProvider";
+import { CurrencyProvider } from "@/components/currency/CurrencyProvider";
 import Toaster from "@/components/ui/Toaster";
 import BottomNav from "@/components/layout/BottomNav";
 import FixedContactWrapper from "@/components/layout/FixedContactWrapper";
@@ -55,6 +56,7 @@ export default function RootLayout({
       <body className="min-h-full antialiased font-sans">
         <ErrorBoundary>
           <SessionProvider>
+            <CurrencyProvider>
             <HostLocaleProvider>
               <div className="pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-0">
                 {children}
@@ -63,6 +65,7 @@ export default function RootLayout({
               <FixedContactWrapper />
               <Toaster />
             </HostLocaleProvider>
+            </CurrencyProvider>
           </SessionProvider>
         </ErrorBoundary>
       </body>

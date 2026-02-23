@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatForGuest } from "@/lib/currency";
 import { redirect } from "next/navigation";
 import { Header, Footer } from "@/components/layout";
 import { prisma } from "@/lib/prisma";
@@ -169,7 +170,7 @@ export default async function BookingCompletePage({ searchParams }: Props) {
             )}
             {total && (
               <p className="text-minbak-body font-semibold text-minbak-black pt-1">
-                총 요금 ₩{Number(total).toLocaleString()}
+                총 요금 {formatForGuest(Number(total))}
               </p>
             )}
 
