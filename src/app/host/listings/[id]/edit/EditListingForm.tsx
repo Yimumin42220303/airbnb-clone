@@ -1054,6 +1054,16 @@ export default function EditListingForm({
                           className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body"
                         />
                       </label>
+                      <p className="text-minbak-caption text-minbak-gray">
+                        <a
+                          href={`/api/listings/${listingId}/beds24-debug`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-minbak-primary hover:underline"
+                        >
+                          {t("edit.beds24DebugLink")} →
+                        </a>
+                      </p>
                     </div>
                   )}
                 </div>
