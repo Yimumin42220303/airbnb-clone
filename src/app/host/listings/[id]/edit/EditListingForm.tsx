@@ -996,93 +996,110 @@ export default function EditListingForm({
                 className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body resize-y"
               />
             </div>
-            <div className="border border-minbak-light-gray rounded-minbak p-4 space-y-3 bg-minbak-bg/50">
+            <div className="border border-minbak-light-gray rounded-minbak p-4 space-y-4 bg-minbak-bg/50">
               <h3 className="text-minbak-body font-medium text-minbak-black">
                 {t("edit.calendarSync")}
               </h3>
-              <p className="text-minbak-caption text-minbak-gray">
-                {t("edit.calendarSyncHint")}
-              </p>
+              {/* 시나리오 선택 */}
+              <div>
+                <span className="text-minbak-caption font-medium text-minbak-black block mb-2">
+                  {t("edit.calendarScenarioLabel")}
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, beds24Enabled: false }))}
+                    className={`p-3 rounded-lg border-2 text-left transition-colors ${
+                      !form.beds24Enabled ? "border-[#E31C23] bg-red-50/50" : "border-minbak-light-gray hover:bg-white"
+                    }`}
+                  >
+                    <span className="text-minbak-body font-medium text-minbak-black block">
+                      {t("edit.calendarScenarioIcal")}
+                    </span>
+                    <span className="text-minbak-caption text-minbak-gray mt-0.5 block">
+                      {t("edit.calendarIcalDesc")}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, beds24Enabled: true }))}
+                    className={`p-3 rounded-lg border-2 text-left transition-colors ${
+                      form.beds24Enabled ? "border-[#E31C23] bg-red-50/50" : "border-minbak-light-gray hover:bg-white"
+                    }`}
+                  >
+                    <span className="text-minbak-body font-medium text-minbak-black block">
+                      {t("edit.calendarScenarioBeds24")}
+                    </span>
+                    <span className="text-minbak-caption text-minbak-gray mt-0.5 block">
+                      {t("edit.calendarBeds24Desc")}
+                    </span>
+                  </button>
+                </div>
+              </div>
+              {/* Export — 공통 */}
               <div>
                 <span className="text-minbak-caption font-medium text-minbak-black block mb-1">
                   {t("edit.exportTitle")}
                 </span>
-                <p className="text-minbak-caption text-minbak-gray mb-1">
-                  {t("edit.exportHint")}
-                </p>
+                <p className="text-minbak-caption text-minbak-gray mb-1">{t("edit.exportHint")}</p>
                 <code className="block text-minbak-caption text-minbak-black break-all bg-white border border-minbak-light-gray rounded px-2 py-1.5">
                   {typeof window !== "undefined"
                     ? `${window.location.origin}/api/listings/${listingId}/calendar.ics`
                     : `/api/listings/${listingId}/calendar.ics`}
                 </code>
-                <div className="mt-3 p-3 border border-minbak-primary/30 bg-minbak-primary/5 rounded-minbak">
-                  <p className="text-minbak-caption font-medium text-minbak-black mb-1">{t("edit.calendarSyncBeds24Title")}</p>
-                  <p className="text-minbak-caption text-minbak-gray mb-2">{t("edit.calendarSyncBeds24Note")}</p>
-                  <Link href="https://docs.google.com/presentation/d/1lVl_CsZCdUbPXTwBRbH57mskMv3xSC188rxBtkZLRM0/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-minbak-caption font-medium text-minbak-primary hover:underline">
-                    {t("edit.calendarSyncBeds24Link")} →
-                  </Link>
-                </div>
-                <div className="mt-4 p-4 border border-minbak-light-gray rounded-minbak bg-minbak-bg/50 space-y-3">
-                  <h3 className="text-minbak-body font-semibold text-minbak-black">{t("edit.beds24ApiTitle")}</h3>
-                  <p className="text-minbak-caption text-minbak-gray">{t("edit.beds24ApiHint")}</p>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={form.beds24Enabled}
-                      onChange={(e) => setForm((f) => ({ ...f, beds24Enabled: e.target.checked }))}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-minbak-body text-minbak-black">{t("edit.beds24ApiEnabled")}</span>
-                  </label>
-                  {form.beds24Enabled && (
-                    <div className="space-y-2 pl-6">
-                      <label className="block">
-                        <span className="text-minbak-caption font-medium text-minbak-black block mb-1">{t("edit.beds24PropId")}</span>
-                        <input
-                          type="text"
-                          value={form.beds24PropId}
-                          onChange={(e) => setForm((f) => ({ ...f, beds24PropId: e.target.value }))}
-                          placeholder="12345"
-                          className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body"
-                        />
-                      </label>
-                      <label className="block">
-                        <span className="text-minbak-caption font-medium text-minbak-black block mb-1">{t("edit.beds24RoomId")}</span>
-                        <input
-                          type="text"
-                          value={form.beds24RoomId}
-                          onChange={(e) => setForm((f) => ({ ...f, beds24RoomId: e.target.value }))}
-                          placeholder="1"
-                          className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body"
-                        />
-                      </label>
-                      <p className="text-minbak-caption text-minbak-gray">
-                        <a
-                          href={`/api/listings/${listingId}/beds24-debug`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-minbak-primary hover:underline"
-                        >
-                          {t("edit.beds24DebugLink")} →
-                        </a>
-                      </p>
-                    </div>
-                  )}
-                </div>
+                {!form.beds24Enabled && (
+                  <p className="text-minbak-caption text-minbak-gray mt-2">
+                    {t("edit.beds24IcalNote")}{" "}
+                    <Link href="https://docs.google.com/presentation/d/1lVl_CsZCdUbPXTwBRbH57mskMv3xSC188rxBtkZLRM0/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-minbak-primary hover:underline">
+                      {t("edit.beds24IcalLink")} →
+                    </Link>
+                  </p>
+                )}
               </div>
+              {/* Beds24 API — beds24Enabled 시에만 */}
+              {form.beds24Enabled && (
+                <div className="p-4 border border-minbak-light-gray rounded-minbak bg-white space-y-3">
+                  <h4 className="text-minbak-body font-semibold text-minbak-black">{t("edit.beds24ApiTitle")}</h4>
+                  <p className="text-minbak-caption text-minbak-gray">{t("edit.beds24ApiHint")}</p>
+                  <label className="block">
+                    <span className="text-minbak-caption font-medium text-minbak-black block mb-1">{t("edit.beds24PropId")}</span>
+                    <input
+                      type="text"
+                      value={form.beds24PropId}
+                      onChange={(e) => setForm((f) => ({ ...f, beds24PropId: e.target.value }))}
+                      placeholder="12345"
+                      className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-minbak-caption font-medium text-minbak-black block mb-1">{t("edit.beds24RoomId")}</span>
+                    <input
+                      type="text"
+                      value={form.beds24RoomId}
+                      onChange={(e) => setForm((f) => ({ ...f, beds24RoomId: e.target.value }))}
+                      placeholder="1"
+                      className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body"
+                    />
+                  </label>
+                  <p className="text-minbak-caption text-minbak-gray">
+                    <a href={`/api/listings/${listingId}/beds24-debug`} target="_blank" rel="noopener noreferrer" className="text-minbak-primary hover:underline">
+                      {t("edit.beds24DebugLink")} →
+                    </a>
+                  </p>
+                </div>
+              )}
+              {/* Import — 공통 */}
               <label className="block">
                 <span className="text-minbak-caption font-medium text-minbak-black block mb-1">
                   {t("edit.importTitle")}
                 </span>
                 <p className="text-minbak-caption text-minbak-gray mb-1">
-                  {t("edit.importHint")}
+                  {form.beds24Enabled ? t("edit.importHintBeds24") : t("edit.importHint")}
                 </p>
                 <p className="text-minbak-caption text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5 mb-2">
                   {t("edit.importImportant")}
                 </p>
-                <p className="text-minbak-caption text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-1.5 mb-2">
-                  {t("edit.importSaveNote")}
-                </p>
+                <p className="text-minbak-caption text-minbak-gray mb-2">{t("edit.importSaveNote")}</p>
                 <textarea
                   value={form.icalImportUrls}
                   onChange={(e) => setForm((f) => ({ ...f, icalImportUrls: e.target.value }))}
@@ -1093,7 +1110,7 @@ export default function EditListingForm({
                 <div className="mt-2 flex items-center gap-2">
                   <button
                     type="button"
-                    disabled={icalRefreshLoading || !form.icalImportUrls.trim()}
+                    disabled={icalRefreshLoading || (!form.icalImportUrls.trim() && !form.beds24Enabled)}
                     onClick={async () => {
                       setIcalRefreshLoading(true);
                       try {

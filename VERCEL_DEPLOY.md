@@ -71,6 +71,20 @@ npm run db:seed
 
 `db push`는 마이그레이션 없이 스키마를 DB에 반영합니다. 이후 배포 시 별도 DB 작업은 필요 없습니다.
 
+### 5. ⚠️ Phase 2 통화 마이그레이션 (기존 KRW 데이터가 있을 때)
+
+저장 통화가 KRW→JPY로 전환된 Phase 2를 배포할 때, **이미 KRW 데이터가 들어 있는 프로덕션 DB**라면 배포 전에 마이그레이션을 실행해야 합니다.
+
+```bash
+# .env에 프로덕션 DATABASE_URL 설정 후 실행
+npm run db:migrate-krw-to-jpy
+```
+
+마이그레이션을 하지 않으면 기존 금액이 JPY로 잘못 표시될 수 있습니다.
+
+- **신규 설치** 또는 **이미 JPY로 마이그레이션된 환경**: 추가 작업 불필요
+- 상세: [docs/통화-Phase2-마이그레이션.md](docs/통화-Phase2-마이그레이션.md)
+
 ---
 
 ## 로컬 개발 (PostgreSQL)
