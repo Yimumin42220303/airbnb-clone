@@ -52,6 +52,9 @@ type Props = {
     houseRules: string;
     categoryId: string;
     icalImportUrls: string[];
+    beds24Enabled?: boolean;
+    beds24PropId?: string | null;
+    beds24RoomId?: string | null;
     amenityIds: string[];
     mapUrl?: string;
     videoUrl?: string | null;
@@ -106,6 +109,9 @@ export default function EditListingForm({
     houseRules: initial.houseRules ?? "",
     categoryId: initial.categoryId,
     icalImportUrls: initial.icalImportUrls.join("\n"),
+    beds24Enabled: initial.beds24Enabled ?? false,
+    beds24PropId: initial.beds24PropId ?? "",
+    beds24RoomId: initial.beds24RoomId ?? "",
     amenityIds: initial.amenityIds ?? [],
     mapUrl: initial.mapUrl ?? "",
     videoUrl: initial.videoUrl ?? "",
@@ -274,6 +280,9 @@ export default function EditListingForm({
           .split("\n")
           .map((u) => u.trim())
           .filter(Boolean),
+        beds24Enabled: form.beds24Enabled,
+        beds24PropId: form.beds24PropId?.trim() || null,
+        beds24RoomId: form.beds24RoomId?.trim() || null,
         amenityIds: form.amenityIds,
         mapUrl: mapUrl || undefined,
         videoUrl: form.videoUrl != null && String(form.videoUrl).trim() !== "" ? String(form.videoUrl).trim() : null,
@@ -1010,6 +1019,43 @@ export default function EditListingForm({
                   <Link href="https://docs.google.com/presentation/d/1lVl_CsZCdUbPXTwBRbH57mskMv3xSC188rxBtkZLRM0/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-minbak-caption font-medium text-minbak-primary hover:underline">
                     {t("edit.calendarSyncBeds24Link")} →
                   </Link>
+                </div>
+                <div className="mt-4 p-4 border border-minbak-light-gray rounded-minbak bg-minbak-bg/50 space-y-3">
+                  <h3 className="text-minbak-body font-semibold text-minbak-black">{t("edit.beds24ApiTitle")}</h3>
+                  <p className="text-minbak-caption text-minbak-gray">{t("edit.beds24ApiHint")}</p>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.beds24Enabled}
+                      onChange={(e) => setForm((f) => ({ ...f, beds24Enabled: e.target.checked }))}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-minbak-body text-minbak-black">{t("edit.beds24ApiEnabled")}</span>
+                  </label>
+                  {form.beds24Enabled && (
+                    <div className="space-y-2 pl-6">
+                      <label className="block">
+                        <span className="text-minbak-caption font-medium text-minbak-black block mb-1">{t("edit.beds24PropId")}</span>
+                        <input
+                          type="text"
+                          value={form.beds24PropId}
+                          onChange={(e) => setForm((f) => ({ ...f, beds24PropId: e.target.value }))}
+                          placeholder="12345"
+                          className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="text-minbak-caption font-medium text-minbak-black block mb-1">{t("edit.beds24RoomId")}</span>
+                        <input
+                          type="text"
+                          value={form.beds24RoomId}
+                          onChange={(e) => setForm((f) => ({ ...f, beds24RoomId: e.target.value }))}
+                          placeholder="1"
+                          className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body"
+                        />
+                      </label>
+                    </div>
+                  )}
                 </div>
               </div>
               <label className="block">

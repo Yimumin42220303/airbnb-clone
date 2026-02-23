@@ -1,6 +1,7 @@
 import { prisma } from "./prisma";
 import { getNightlyAvailability } from "./availability";
 import { hasExternalBlockedOverlap } from "./ical";
+import { postBeds24Booking } from "./beds24";
 
 export type CreateBookingInput = {
   listingId: string;
@@ -138,9 +139,36 @@ export async function createBooking(input: CreateBookingInput) {
       guestPhone: input.guestPhone?.trim() || null,
     },
     include: {
-      listing: { select: { title: true, location: true } },
+      listing: { select: { title: true, location: true, beds24Enabled: true, beds24PropId: true, beds24RoomId: true } },
     },
   });
+
+  // Beds24 API 연동: 예약 확정 시 Beds24로 전송 (타 OTA 중복 예약 방지)
+  if (
+    booking.listing.beds24Enabled &&
+    booking.listing.beds24PropId?.trim() &&
+    booking.listing.beds24RoomId?.trim()
+  ) {
+    const guestUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, email: true },
+    });
+    const result = await postBeds24Booking({
+      propId: booking.listing.beds24PropId,
+      roomId: booking.listing.beds24RoomId,
+      checkIn,
+      checkOut,
+      guests: input.guests,
+      guestName: guestUser?.name ?? undefined,
+      guestEmail: guestUser?.email ?? undefined,
+      guestPhone: input.guestPhone?.trim() || undefined,
+      externalId: booking.id,
+    });
+    if (!result.ok) {
+      console.error("[Beds24] 예약 전송 실패 (예약은 생성됨):", result.error);
+      // 예약은 당 OTA에 정상 생성됨. Beds24 동기화 실패는 로그만 남기고 진행
+    }
+  }
 
   return {
     ok: true as const,

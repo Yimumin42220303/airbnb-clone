@@ -190,16 +190,23 @@ export async function getExternalBlockedDateKeys(
   const { prisma } = await import("./prisma");
   const listing = await prisma.listing.findUnique({
     where: { id: listingId },
-    select: { icalImportUrls: true },
+    select: {
+      icalImportUrls: true,
+      beds24Enabled: true,
+      beds24PropId: true,
+      beds24RoomId: true,
+    },
   });
-  if (!listing?.icalImportUrls) return new Set();
+  if (!listing) return new Set();
 
   let urls: string[] = [];
-  try {
-    const arr = JSON.parse(listing.icalImportUrls);
-    urls = Array.isArray(arr) ? arr.filter((u): u is string => typeof u === "string" && u.trim().length > 0) : [];
-  } catch {
-    return new Set();
+  if (listing.icalImportUrls) {
+    try {
+      const arr = JSON.parse(listing.icalImportUrls);
+      urls = Array.isArray(arr) ? arr.filter((u): u is string => typeof u === "string" && u.trim().length > 0) : [];
+    } catch {
+      /* icalImportUrls 파싱 실패 시 무시 */
+    }
   }
 
   const merged = new Set<string>();
@@ -208,7 +215,21 @@ export async function getExternalBlockedDateKeys(
     keys.forEach((k) => merged.add(k));
   }
 
-  // 추후: Beds24 등 API 소스에서 blocked dates 조회 후 merged에 add
+  // Beds24 API V2 소스: beds24Enabled + propId/roomId 있으면 API로 블록일 조회 후 merge
+  if (
+    listing.beds24Enabled &&
+    listing.beds24PropId?.trim() &&
+    listing.beds24RoomId?.trim()
+  ) {
+    const { getBeds24BlockedDateKeysCached } = await import("./beds24");
+    const beds24Keys = await getBeds24BlockedDateKeysCached(
+      listing.beds24PropId,
+      listing.beds24RoomId,
+      checkIn,
+      checkOut
+    );
+    beds24Keys.forEach((k) => merged.add(k));
+  }
 
   return merged;
 }

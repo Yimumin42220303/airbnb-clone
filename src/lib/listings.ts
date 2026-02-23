@@ -200,6 +200,9 @@ export async function getListingByIdForEdit(id: string) {
     amenities: listing.listingAmenities.map((la) => la.amenity.name),
     icalImportUrls: parseIcalImportUrls(listing.icalImportUrls),
     propertyType: listing.propertyType ?? "apartment",
+    beds24Enabled: listing.beds24Enabled ?? false,
+    beds24PropId: listing.beds24PropId ?? null,
+    beds24RoomId: listing.beds24RoomId ?? null,
   };
 }
 
@@ -425,6 +428,10 @@ export type UpdateListingInput = Partial<
     title?: string;
     /** OTA/PMS 캘린더 Import용 ICS URL 목록 (중복 예약 방지). 추후 Beds24 API 연동 시 동일 파이프라인 사용 */
     icalImportUrls?: string[];
+    /** Beds24 API V2 연동 */
+    beds24Enabled?: boolean;
+    beds24PropId?: string | null;
+    beds24RoomId?: string | null;
     /** 호스트 변경 (관리자 전용) */
     userId?: string;
   }
@@ -515,6 +522,9 @@ export async function updateListing(
       : [];
     data.icalImportUrls = JSON.stringify(arr);
   }
+  if (input.beds24Enabled !== undefined) data.beds24Enabled = input.beds24Enabled;
+  if (input.beds24PropId !== undefined) data.beds24PropId = input.beds24PropId?.trim() || null;
+  if (input.beds24RoomId !== undefined) data.beds24RoomId = input.beds24RoomId?.trim() || null;
 
   if (input.imageUrls !== undefined) {
     const urls = input.imageUrls.filter((u) => typeof u === "string" && u.trim());

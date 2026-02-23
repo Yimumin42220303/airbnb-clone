@@ -151,6 +151,13 @@ model Listing {
   // OTA/PMS 캘린더 연동 (임시: iCal/ICS. 추후 Beds24 등 API 연동 시 동일 blocked-dates 파이프라인 사용)
   icalImportUrls String? @default("[]") // JSON array of ICS URLs to import (Airbnb, Beds24 export, etc.)
 
+  /// Beds24 API V2 연동: true면 블록일 조회·예약 전송에 API 사용
+  beds24Enabled Boolean @default(false)
+  /// Beds24 프로퍼티 ID (propId)
+  beds24PropId  String?
+  /// Beds24 룸 ID (roomId)
+  beds24RoomId  String?
+
   bookings     Booking[]
   reviews      Review[]
   listingAmenities ListingAmenity[]

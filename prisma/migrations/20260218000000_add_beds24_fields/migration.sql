@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Listing" ADD COLUMN "beds24Enabled" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Listing" ADD COLUMN "beds24PropId" TEXT;
+ALTER TABLE "Listing" ADD COLUMN "beds24RoomId" TEXT;
