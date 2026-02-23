@@ -1040,7 +1040,8 @@ export default function EditListingForm({
                   </button>
                 </div>
               </div>
-              {/* Export — 공통 */}
+              {/* Export — iCal만 선택 시 (Beds24 API 선택 시에는 아래 API 박스 내에 URL만 표시) */}
+              {!form.beds24Enabled && (
               <div>
                 <span className="text-minbak-caption font-medium text-minbak-black block mb-1">
                   {t("edit.exportTitle")}
@@ -1051,20 +1052,27 @@ export default function EditListingForm({
                     ? `${window.location.origin}/api/listings/${listingId}/calendar.ics`
                     : `/api/listings/${listingId}/calendar.ics`}
                 </code>
-                {!form.beds24Enabled && (
-                  <p className="text-minbak-caption text-minbak-gray mt-2">
-                    {t("edit.beds24IcalNote")}{" "}
-                    <Link href="https://docs.google.com/presentation/d/1lVl_CsZCdUbPXTwBRbH57mskMv3xSC188rxBtkZLRM0/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-minbak-primary hover:underline">
-                      {t("edit.beds24IcalLink")} →
-                    </Link>
-                  </p>
-                )}
+                <p className="text-minbak-caption text-minbak-gray mt-2">
+                  {t("edit.beds24IcalNote")}{" "}
+                  <Link href="https://docs.google.com/presentation/d/1lVl_CsZCdUbPXTwBRbH57mskMv3xSC188rxBtkZLRM0/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-minbak-primary hover:underline">
+                    {t("edit.beds24IcalLink")} →
+                  </Link>
+                </p>
               </div>
+              )}
               {/* Beds24 API — beds24Enabled 시에만 */}
               {form.beds24Enabled && (
                 <div className="p-4 border border-minbak-light-gray rounded-minbak bg-white space-y-3">
                   <h4 className="text-minbak-body font-semibold text-minbak-black">{t("edit.beds24ApiTitle")}</h4>
                   <p className="text-minbak-caption text-minbak-gray">{t("edit.beds24ApiHint")}</p>
+                  <div>
+                    <p className="text-minbak-caption font-medium text-minbak-black mb-1">{t("edit.beds24ExportUrlHint")}</p>
+                    <code className="block text-minbak-caption text-minbak-black break-all bg-white border border-minbak-light-gray rounded px-2 py-1.5">
+                      {typeof window !== "undefined"
+                        ? `${window.location.origin}/api/listings/${listingId}/calendar.ics`
+                        : `/api/listings/${listingId}/calendar.ics`}
+                    </code>
+                  </div>
                   <label className="block">
                     <span className="text-minbak-caption font-medium text-minbak-black block mb-1">{t("edit.beds24PropId")}</span>
                     <input
