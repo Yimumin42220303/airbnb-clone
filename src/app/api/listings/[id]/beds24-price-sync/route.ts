@@ -60,7 +60,7 @@ export async function POST(
     const fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
     const toDate = new Date(now.getFullYear(), now.getMonth() + 14, 0);
 
-    const offerIndex = listing.beds24OfferIndex ?? 1;
+    const offerIndex = listing.beds24OfferIndex ?? 4;
     const prices = await getBeds24CalendarPrices(
       listing.beds24PropId.trim(),
       listing.beds24RoomId.trim(),

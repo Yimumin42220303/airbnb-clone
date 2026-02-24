@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     }
 
     try {
-      const offerIndex = listing.beds24OfferIndex ?? 1;
+      const offerIndex = listing.beds24OfferIndex ?? 4;
       const prices = await getBeds24CalendarPrices(
         propId,
         roomId,

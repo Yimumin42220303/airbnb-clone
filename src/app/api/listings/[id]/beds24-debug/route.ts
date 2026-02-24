@@ -49,7 +49,7 @@ export async function GET(
     beds24Enabled: listing.beds24Enabled,
     beds24PropId: listing.beds24PropId,
     beds24RoomId: listing.beds24RoomId,
-    beds24OfferIndex: listing.beds24OfferIndex ?? 1,
+    beds24OfferIndex: listing.beds24OfferIndex ?? 4,
     hasToken: !!process.env.BEDS24_REFRESH_TOKEN?.trim(),
     dateRange: { from: fromStr, to: toStr },
   };
@@ -137,7 +137,7 @@ export async function GET(
     // 가격 동기화 테스트: calendar API 호출
     try {
       const { getBeds24CalendarPrices } = await import("@/lib/beds24");
-      const offerIdx = listing.beds24OfferIndex ?? 1;
+      const offerIdx = listing.beds24OfferIndex ?? 4;
       const prices = await getBeds24CalendarPrices(
         listing.beds24PropId!,
         listing.beds24RoomId!,

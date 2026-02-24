@@ -123,7 +123,7 @@ export async function getNightlyAvailability(
   let beds24Prices = new Map<string, number>();
   if (useBeds24Prices && l.beds24PropId?.trim() && l.beds24RoomId?.trim()) {
     try {
-      const offerIdx = Math.min(16, Math.max(1, l.beds24OfferIndex ?? 1));
+      const offerIdx = Math.min(16, Math.max(1, l.beds24OfferIndex ?? 4));
       beds24Prices = await getBeds24CalendarPrices(
         l.beds24PropId.trim(),
         l.beds24RoomId.trim(),

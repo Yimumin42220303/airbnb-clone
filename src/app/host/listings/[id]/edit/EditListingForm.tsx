@@ -116,7 +116,7 @@ export default function EditListingForm({
     beds24Enabled: initial.beds24Enabled ?? !!(initial.beds24PropId?.trim() && initial.beds24RoomId?.trim()),
     beds24PropId: initial.beds24PropId ?? "",
     beds24RoomId: initial.beds24RoomId ?? "",
-    beds24OfferIndex: initial.beds24OfferIndex != null ? String(initial.beds24OfferIndex) : "",
+    beds24OfferIndex: initial.beds24OfferIndex != null ? String(initial.beds24OfferIndex) : "4",
     amenityIds: initial.amenityIds ?? [],
     mapUrl: initial.mapUrl ?? "",
     videoUrl: initial.videoUrl ?? "",
@@ -1095,16 +1095,20 @@ export default function EditListingForm({
                   </label>
                   <label className="block">
                     <span className="text-minbak-caption font-medium text-minbak-black block mb-1">{t("edit.beds24OfferIndex")}</span>
+                    <p className="text-minbak-caption text-minbak-gray mb-1">{t("edit.beds24OfferIndexHint")}</p>
                     <input
                       type="number"
                       min={1}
                       max={16}
                       value={form.beds24OfferIndex}
                       onChange={(e) => setForm((f) => ({ ...f, beds24OfferIndex: e.target.value }))}
-                      placeholder="1"
+                      placeholder="4"
                       className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body"
                     />
                   </label>
+                  <p className="text-minbak-caption text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
+                    {t("edit.beds24PriceSyncNote")}
+                  </p>
                   <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
