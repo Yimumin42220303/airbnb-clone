@@ -16,7 +16,7 @@ alwaysApply: true
 
 ## 유지보수 시 참고
 - DB 관리: `docs/DB-관리-가이드.md`
-- 유지보수 절차: `docs/유지보수-가이드.md`
+- 유지보수·배포 절차: `docs/유지보수-가이드.md`
 - 스키마 변경 후: `npm run db:migrate`, 필요 시 `npm run db:generate`
 - 새 환경 변수 추가 시: `.env.example`에 주석으로 설명 추가
 

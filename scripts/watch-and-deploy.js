@@ -29,6 +29,16 @@ async function deploy() {
   console.log("\n[deploy] 변경 감지 → push 시작...");
   try {
     const { execSync } = require("child_process");
+    let remoteUrl = "";
+    try {
+      remoteUrl = execSync("git config --get remote.origin.url", { encoding: "utf-8" }).trim();
+    } catch {
+      /* ignore */
+    }
+    if (remoteUrl) {
+      console.log("[deploy] origin:", remoteUrl);
+    }
+
     await run("git", ["add", "."]);
     const out = execSync("git status --short", { encoding: "utf-8", cwd: process.cwd() });
     if (!out.trim()) {
@@ -39,6 +49,9 @@ async function deploy() {
     await run("git", ["commit", "-m", "auto: vercel deploy"]);
     await run("git", ["push"]);
     console.log("[deploy] ✅ push 완료 → Vercel 배포 트리거됨");
+    if (remoteUrl) {
+      console.log("[deploy] ※ Vercel Git 연동이 이 저장소를 보고 있어야 배포됩니다.");
+    }
   } catch (e) {
     console.error("[deploy] 오류:", e.message);
   }
@@ -69,8 +82,15 @@ function watchFile(file) {
   });
 }
 
+let remoteUrl = "";
+try {
+  remoteUrl = require("child_process").execSync("git config --get remote.origin.url", { encoding: "utf-8" }).trim();
+} catch {
+  /* ignore */
+}
 console.log("👀 Cursor 수정 → 5초 후 자동 push → Vercel 배포");
 console.log("   감시: src/, prisma/, public/, next.config, tailwind, package.json");
+if (remoteUrl) console.log("   origin:", remoteUrl);
 console.log("   중지: Ctrl+C\n");
 
 WATCH_DIRS.forEach(watchDir);
