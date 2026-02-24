@@ -16,15 +16,15 @@ npm run deploy
 - 변경사항이 있으면 `git add` → `commit` → `push` 후 Vercel Git 연동으로 자동 배포된다.
 - `origin`과 Vercel 연결 저장소가 같아야 배포가 트리거된다.
 
-## 2. Git push만으로 배포가 되지 않는 경우
+## 2. push 후 배포가 되지 않는 경우
 
-`.env`에 `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`가 설정되어 있다면:
+`.env`에 다음 중 하나 설정:
+- **VERCEL_DEPLOY_HOOK** (권장): Vercel → Settings → Git → Deploy Hooks에서 main 브랜치용 URL
+- **VERCEL_TOKEN**: https://vercel.com/account/tokens
 
-```bash
-npm run deploy -- --vercel
-```
+설정 후 `npm run deploy`를 다시 실행하면 push 후 자동으로 Deploy Hook/API로 배포를 트리거한다.
 
-Vercel CLI로 직접 프로덕션 배포한다. (`.env.example`에 예시 값 있음)
+또는 `npm run deploy:vercel`만 실행하여 (push 없이) 배포 트리거.
 
 ## 3. 배포 확인 (Vercel MCP 사용 가능 시)
 

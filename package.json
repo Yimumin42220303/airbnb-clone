@@ -21,6 +21,7 @@
     "import:minbak-tokyo": "node scripts/import-from-minbak-tokyo.js",
     "seed:minbak-tokyo": "node scripts/seed-minbak-tokyo.js",
     "deploy": "node scripts/deploy.js",
+    "deploy:vercel": "node scripts/vercel-redeploy.js",
     "deploy:watch": "node scripts/watch-and-deploy.js",
     "test:email-auth": "node scripts/test-email-auth.js",
     "setup:resend": "node scripts/setup-resend-env.js"

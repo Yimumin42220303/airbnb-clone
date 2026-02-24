@@ -2,14 +2,14 @@
 /**
  * 배포 스크립트
  *
- * 1) 기본: git push → Vercel Git 연동으로 자동 배포
+ * 1) 기본: git push → (선택) Deploy Hook/API로 Vercel 배포 트리거
  *    npm run deploy
  *
  * 2) Vercel CLI 직접 배포 (환경변수 VERCEL_ORG_ID, VERCEL_PROJECT_ID 설정 시)
- *    Vercel 대시보드가 연결한 GitHub 저장소와 origin이 다를 때 유용
  *    npm run deploy -- --vercel
  */
 
+require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") });
 const { execSync, spawn } = require("child_process");
 const path = require("path");
 
@@ -67,7 +67,22 @@ async function main() {
     }
     execSync("git commit -m \"auto: vercel deploy\"", { stdio: "inherit" });
     await run("git", ["push"]);
-    console.log("\n[deploy] ✅ push 완료 → Vercel 배포 트리거됨");
+    console.log("\n[deploy] ✅ push 완료");
+    // Deploy Hook 또는 VERCEL_TOKEN 있으면 배포 트리거 (Git webhook 미동작 시 대비)
+    if (process.env.VERCEL_DEPLOY_HOOK || process.env.VERCEL_TOKEN) {
+      try {
+        const { spawnSync } = require("child_process");
+        const r = spawnSync("node", ["scripts/vercel-redeploy.js"], {
+          stdio: "inherit",
+          env: process.env,
+        });
+        if (r.status === 0) console.log("[deploy] Vercel 배포 트리거 완료");
+      } catch (_) {
+        /* ignore */
+      }
+    } else {
+      console.log("[deploy] Vercel Git 연동으로 배포 트리거됨");
+    }
   } catch (e) {
     console.error("[deploy] 오류:", e.message);
     process.exit(1);

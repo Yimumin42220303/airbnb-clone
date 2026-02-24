@@ -8,6 +8,7 @@
  * 변경 후 5초 대기 후 자동 push (연속 수정 시 마지막 변경 기준)
  */
 
+require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") });
 const { spawn } = require("child_process");
 const path = require("path");
 const fs = require("fs");
@@ -48,8 +49,15 @@ async function deploy() {
 
     await run("git", ["commit", "-m", "auto: vercel deploy"]);
     await run("git", ["push"]);
-    console.log("[deploy] ✅ push 완료 → Vercel 배포 트리거됨");
-    if (remoteUrl) {
+    console.log("[deploy] ✅ push 완료");
+    if (process.env.VERCEL_DEPLOY_HOOK || process.env.VERCEL_TOKEN) {
+      try {
+        require("child_process").spawnSync("node", ["scripts/vercel-redeploy.js"], {
+          stdio: "inherit",
+          cwd: process.cwd(),
+        });
+      } catch (_) {}
+    } else if (remoteUrl) {
       console.log("[deploy] ※ Vercel Git 연동이 이 저장소를 보고 있어야 배포됩니다.");
     }
   } catch (e) {
