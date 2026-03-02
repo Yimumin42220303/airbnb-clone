@@ -124,17 +124,7 @@ export default function Header() {
           ) : null}
 
           <nav className="flex items-center gap-1 sm:gap-2 md:gap-5 flex-shrink-0 min-w-0" aria-label="유틸 메뉴">
-            {isHostMode && (
-              <>
-                <HostLocaleSwitcher />
-                <Link
-                  href="/"
-                  className="min-h-[44px] flex items-center text-xs sm:text-minbak-caption md:text-minbak-body text-minbak-black hover:text-minbak-primary transition-colors px-1"
-                >
-                  {hostT.t("nav.guestMode")}
-                </Link>
-              </>
-            )}
+            {isHostMode && <HostLocaleSwitcher />}
             {!isHostMode && (
               <>
             <HostLocaleSwitcher />

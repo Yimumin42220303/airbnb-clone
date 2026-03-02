@@ -25,7 +25,6 @@ export async function POST(request: Request) {
       id: true,
       beds24PropId: true,
       beds24RoomId: true,
-      beds24OfferIndex: true,
     },
   });
 
@@ -49,13 +48,11 @@ export async function POST(request: Request) {
     }
 
     try {
-      const offerIndex = listing.beds24OfferIndex ?? 4;
       const prices = await getBeds24CalendarPrices(
         propId,
         roomId,
         fromDate,
-        toDate,
-        Math.min(16, Math.max(1, offerIndex))
+        toDate
       );
 
       let updated = 0;

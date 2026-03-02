@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui";
 import { Star } from "lucide-react";
+import ReviewPhotoUploader from "./ReviewPhotoUploader";
+import { trackEvent } from "@/lib/booking-analytics";
 
 type ReviewFormProps = {
   listingId: string;
@@ -23,9 +25,11 @@ export default function ReviewForm({
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [body, setBody] = useState("");
+  const [photos, setPhotos] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const handlePhotosChange = useCallback((urls: string[]) => setPhotos(urls), []);
 
   if (!isLoggedIn) {
     return (
@@ -75,7 +79,11 @@ export default function ReviewForm({
       const res = await fetch(`/api/listings/${listingId}/reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rating, body: body.trim() || undefined }),
+        body: JSON.stringify({
+          rating,
+          body: body.trim() || undefined,
+          imageUrls: photos.length > 0 ? photos : undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -83,6 +91,7 @@ export default function ReviewForm({
         return;
       }
       setSuccess(true);
+      trackEvent("review_written", { listing_id: listingId });
       router.refresh();
     } catch {
       setError("네트워크 오류가 발생했습니다.");
@@ -144,6 +153,10 @@ export default function ReviewForm({
         rows={4}
         className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body text-minbak-black placeholder:text-minbak-gray focus:outline-none focus:ring-2 focus:ring-minbak-gray resize-y"
       />
+      <div className="mt-3">
+        <p className="text-[13px] text-[#717171] mb-2">사진 첨부 (선택, 최대 5장)</p>
+        <ReviewPhotoUploader photos={photos} onChange={handlePhotosChange} />
+      </div>
       {error && (
         <p className="mt-2 text-minbak-body text-minbak-primary" role="alert">
           {error}

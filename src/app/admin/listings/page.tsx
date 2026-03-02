@@ -28,12 +28,6 @@ export default async function AdminListingsPage() {
           >
             숙소 등록
           </Link>
-          <Link
-            href="/admin/listings/import"
-            className="inline-flex items-center justify-center px-4 py-2 rounded-minbak bg-minbak-primary text-white text-minbak-body font-medium hover:bg-minbak-primary-hover transition-colors"
-          >
-            일괄 등록
-          </Link>
         </div>
       </div>
       <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">

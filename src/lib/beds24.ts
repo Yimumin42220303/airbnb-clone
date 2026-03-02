@@ -4,9 +4,14 @@
  * - 블록일 조회: GET /inventory/rooms/availability
  * - 예약 전송: POST /bookings
  *
+ * 캘린더 표시: 예약자명·OTA명만 영문으로 보이도록 firstName/lastName은 로마자로 전송.
+ *
  * @see docs/Beds24-API-V2-検証結果.md
  * @see docs/Beds24-連携企画.md
  */
+
+import { fromKana } from "hepburn";
+import { romanize as romanizeKorean } from "@romanize/korean";
 
 const BEDS24_BASE = "https://beds24.com/api/v2";
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6시간 (Beds24 권장)
@@ -64,6 +69,49 @@ function toBeds24Date(d: Date): string {
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}${m}${day}`;
+}
+
+/** 영문 표기용: 로마자 문자열을 첫 글자만 대문자로 (예: honggildong → Honggildong) */
+function toTitleCase(word: string): string {
+  const lower = word.toLowerCase();
+  return lower ? lower.replace(/^\w/, (c) => c.toUpperCase()) : word;
+}
+
+/** Beds24 캘린더에 '예약자명, tokyominbak' 형태로만 보이도록 게스트 이름을 영문(로마자)으로 변환 */
+function guestNameToEnglish(name: string | undefined): string {
+  const s = (name ?? "").trim();
+  if (!s) return "Guest";
+  // 이미 라틴 문자만 있으면 그대로 사용 (공백 정규화)
+  if (/^[\x20-\x7E]+$/.test(s)) return s.replace(/\s+/g, " ").trim() || "Guest";
+  // 한글 → 국립국어원 로마자 표기법(Revised Romanization)
+  if (/[가-힣]/.test(s)) {
+    try {
+      const romanized = romanizeKorean(s);
+      if (romanized && /[A-Za-z]/.test(romanized)) {
+        return romanized
+          .split(/\s+/)
+          .map(toTitleCase)
+          .join(" ")
+          .trim();
+      }
+    } catch {
+      /* fallback to Guest */
+    }
+    return "Guest";
+  }
+  // 일본어 가나 → 로마자
+  try {
+    const romaji = fromKana(s);
+    if (romaji && /[A-Za-z]/.test(romaji)) {
+      return romaji
+        .toLowerCase()
+        .replace(/\b\w/g, (c) => c.toUpperCase())
+        .trim();
+    }
+  } catch {
+    /* 한자 등 변환 실패 시 Guest */
+  }
+  return "Guest";
 }
 
 type Beds24DataItem = {
@@ -190,27 +238,34 @@ type CalendarResponse = {
 /**
  * Beds24 calendar API에서 일별 가격 조회.
  * API V2: startDate/endDate, includePrices=true 필수. calendar는 { from, to, price1..16 }[] 형식.
- * offerIndex 1~16 = price1~price16. tokyominbak이 日別料金4면 offerIndex 4.
+ * 항상 price1(AirBnB 기준가) 사용. 배율(beds24PriceMultiplier)은 도쿄민박 쪽에서 적용.
  * @returns Map<YYYY-MM-DD, pricePerNight>
  */
 export async function getBeds24CalendarPrices(
   propId: string,
   roomId: string,
   fromDate: Date,
-  toDate: Date,
-  offerIndex: number = 1
+  toDate: Date
 ): Promise<Map<string, number>> {
   const token = await getAccessToken();
   const result = new Map<string, number>();
   if (!token) return result;
 
-  const priceKey = `price${Math.min(16, Math.max(1, offerIndex))}`;
+  // Beds24 endDate = "last night" = 체크아웃 전날 (공식 문서)
+  const lastNight = new Date(toDate);
+  lastNight.setDate(lastNight.getDate() - 1);
+
+  // 요청 범위를 앞뒤 60일 확장 (Beds24가 일부 구간만 반환하는 경우 대비)
+  const padStart = new Date(fromDate);
+  padStart.setDate(padStart.getDate() - 60);
+  const padEnd = new Date(lastNight);
+  padEnd.setDate(padEnd.getDate() + 60);
 
   const url = new URL(`${BEDS24_BASE}/inventory/rooms/calendar`);
   url.searchParams.set("propertyId", propId);
   url.searchParams.set("roomId", roomId);
-  url.searchParams.set("startDate", toDateKey(fromDate));
-  url.searchParams.set("endDate", toDateKey(toDate));
+  url.searchParams.set("startDate", toDateKey(padStart));
+  url.searchParams.set("endDate", toDateKey(padEnd));
   url.searchParams.set("includePrices", "true");
 
   try {
@@ -226,26 +281,31 @@ export async function getBeds24CalendarPrices(
     const raw = (await res.json()) as CalendarResponse;
     const items = Array.isArray(raw?.data) ? raw.data : [];
 
-    for (const item of items) {
-      const ranges = item.calendar;
-      if (!Array.isArray(ranges)) continue;
-
-      for (const range of ranges) {
-        const fromStr = range.from;
-        const toStr = range.to;
-        const price = (range as Record<string, unknown>)[priceKey];
-        if (typeof price !== "number" || price <= 0 || !fromStr || !toStr) continue;
-
-        const fromD = new Date(fromStr);
-        const toD = new Date(toStr);
-        if (isNaN(fromD.getTime()) || isNaN(toD.getTime())) continue;
-
-        const dateKeys = getDateKeysBetween(fromD, toD);
-        for (const dk of dateKeys) {
-          result.set(dk, Math.round(price));
+    const extractPrices = (key: string) => {
+      const map = new Map<string, number>();
+      for (const item of items) {
+        const ranges = item.calendar;
+        if (!Array.isArray(ranges)) continue;
+        for (const range of ranges) {
+          const fromStr = range.from;
+          const toStr = range.to;
+          const price = (range as Record<string, unknown>)[key];
+          if (typeof price !== "number" || price <= 0 || !fromStr || !toStr) continue;
+          const fromD = new Date(fromStr);
+          const toD = new Date(toStr);
+          if (isNaN(fromD.getTime()) || isNaN(toD.getTime())) continue;
+          // Beds24 "to"는 inclusive → 다음 날을 end로
+          const toExclusive = new Date(toD);
+          toExclusive.setDate(toExclusive.getDate() + 1);
+          const dateKeys = getDateKeysBetween(fromD, toExclusive);
+          for (const dk of dateKeys) map.set(dk, Math.round(price));
         }
       }
-    }
+      return map;
+    };
+
+    const prices = extractPrices("price1");
+    prices.forEach((v, k) => result.set(k, v));
   } catch (err) {
     console.error("[Beds24] calendar error:", err instanceof Error ? err.message : err);
   }
@@ -302,6 +362,12 @@ export async function postBeds24Booking(input: Beds24PostBookingInput): Promise<
   const checkInStr = toBeds24Date(input.checkIn);
   const checkOutStr = toBeds24Date(input.checkOut);
 
+  // 캘린더에 '예약자명, tokyominbak' 형태로만 표시되도록 예약자명은 영문(로마자)으로 전송
+  const nameEn = guestNameToEnglish(input.guestName);
+  const nameParts = nameEn.split(/\s+/).filter(Boolean);
+  const firstName = nameParts[0] ?? "Guest";
+  const lastName = nameParts.slice(1).join(" ") || "Guest";
+
   const body: Record<string, unknown> = {
     propId: input.propId,
     roomId: input.roomId,
@@ -311,9 +377,9 @@ export async function postBeds24Booking(input: Beds24PostBookingInput): Promise<
     numChild: 0,
     referer: "tokyominbak",
     refererId: input.externalId ?? undefined,
+    firstName,
+    lastName,
   };
-  if (input.guestName) body.firstName = input.guestName.split(/\s+/)[0] ?? "Guest";
-  if (input.guestName) body.lastName = input.guestName.split(/\s+/).slice(1).join(" ") || "Guest";
   if (input.guestEmail) body.email = input.guestEmail;
   if (input.guestPhone) body.phone = input.guestPhone;
 

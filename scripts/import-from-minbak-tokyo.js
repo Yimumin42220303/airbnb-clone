@@ -4,7 +4,7 @@
  * 사용법: node scripts/import-from-minbak-tokyo.js
  *
  * 생성된 minbak-tokyo-listings.csv를 확인 후
- * /admin/listings/import 에서 업로드하세요.
+ * (일괄 등록 기능은 제거됨. CSV는 참고용으로만 활용 가능)
  *
  * ※ 가격·이미지 URL은 minbak.tokyo에서 동적 로딩되어
  *   추출되지 않습니다. CSV에서 수동 보완 후 import 하세요.
@@ -71,7 +71,7 @@ function main() {
   console.log("⚠️  다음 작업이 필요합니다:");
   console.log("  1. pricePerNight: 실제 1박 요금으로 수정 (현재 100,000원 placeholder)");
   console.log("  2. imageUrls: minbak.tokyo에서 이미지 URL 확보 후 교체 (또는 placeholder 그대로 사용)");
-  console.log("  3. tokyominbak.net /admin/listings/import 에서 CSV 업로드");
+  console.log("  3. 일괄 등록 기능은 제거됨. CSV는 참고용으로만 활용 가능");
 }
 
 main();

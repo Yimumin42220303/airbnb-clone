@@ -1,9 +1,17 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { Header, Footer } from "@/components/layout";
 import { ListingCard } from "@/components/ui";
 import SearchSort from "@/components/search/SearchSort";
+import {
+  SearchAIInlineCard,
+  SearchAIEmptyCard,
+  SearchAIFewCard,
+  INLINE_POSITION,
+  FEW_THRESHOLD,
+} from "@/components/search/SearchAIPrompt";
 import { getListings, type ListingFilters } from "@/lib/listings";
 import { getNightlyAvailability } from "@/lib/availability";
 import { getWishlistListingIds } from "@/lib/wishlist";
@@ -142,42 +150,56 @@ export default async function SearchPage({
           </div>
           <div>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6">
-              {listings.map((listing) => (
-                <ListingCard
-                  key={listing.id}
-                  {...listing}
-                  initialSaved={wishlistIds.includes(listing.id)}
-                  searchQuery={searchQueryStr || undefined}
-                  showPrice={showPrice}
-                />
+              {listings.map((listing, idx) => (
+                <Fragment key={listing.id}>
+                  {idx === INLINE_POSITION && listings.length > INLINE_POSITION && (
+                    <SearchAIInlineCard
+                      checkIn={checkIn}
+                      checkOut={checkOut}
+                      guests={guestsCount}
+                    />
+                  )}
+                  <ListingCard
+                    {...listing}
+                    initialSaved={wishlistIds.includes(listing.id)}
+                    searchQuery={searchQueryStr || undefined}
+                    showPrice={showPrice}
+                  />
+                </Fragment>
               ))}
             </div>
             {listings.length === 0 && (
-              <div className="bg-white border border-minbak-light-gray rounded-minbak p-6 md:p-10 2xl:p-14 text-center max-w-lg mx-auto">
-                <div className="w-14 h-14 rounded-full bg-neutral-100 flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl" aria-hidden>🔍</span>
+              <>
+                <div className="bg-white border border-minbak-light-gray rounded-minbak p-6 md:p-10 2xl:p-14 text-center max-w-lg mx-auto">
+                  <div className="w-14 h-14 rounded-full bg-neutral-100 flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl" aria-hidden>🔍</span>
+                  </div>
+                  <p className="text-minbak-body md:text-minbak-body-lg text-minbak-black font-medium mb-2">
+                    조건에 맞는 숙소가 없어요
+                  </p>
+                  <p className="text-minbak-caption md:text-minbak-body text-minbak-gray mb-4 md:mb-6">
+                    날짜·지역·인원·가격 조건을 완화하거나 다른 지역을 검색해 보세요.
+                  </p>
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <Link
+                      href="/search"
+                      className="inline-flex items-center justify-center min-h-[44px] px-5 md:px-6 py-2.5 rounded-minbak-full bg-minbak-primary text-white text-minbak-body font-medium hover:bg-minbak-primary-hover transition-colors"
+                    >
+                      필터 초기화
+                    </Link>
+                    <Link
+                      href="/"
+                      className="inline-flex items-center justify-center min-h-[44px] px-5 md:px-6 py-2.5 rounded-minbak-full border border-minbak-light-gray text-minbak-black text-minbak-body font-medium hover:bg-minbak-bg transition-colors"
+                    >
+                      전체 숙소 보기
+                    </Link>
+                  </div>
                 </div>
-                <p className="text-minbak-body md:text-minbak-body-lg text-minbak-black font-medium mb-2">
-                  조건에 맞는 숙소가 없어요
-                </p>
-                <p className="text-minbak-caption md:text-minbak-body text-minbak-gray mb-4 md:mb-6">
-                  날짜·지역·인원·가격 조건을 완화하거나 다른 지역을 검색해 보세요.
-                </p>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                  <Link
-                    href="/search"
-                    className="inline-flex items-center justify-center min-h-[44px] px-5 md:px-6 py-2.5 rounded-minbak-full bg-minbak-primary text-white text-minbak-body font-medium hover:bg-minbak-primary-hover transition-colors"
-                  >
-                    필터 초기화
-                  </Link>
-                  <Link
-                    href="/"
-                    className="inline-flex items-center justify-center min-h-[44px] px-5 md:px-6 py-2.5 rounded-minbak-full border border-minbak-light-gray text-minbak-black text-minbak-body font-medium hover:bg-minbak-bg transition-colors"
-                  >
-                    전체 숙소 보기
-                  </Link>
-                </div>
-              </div>
+                <SearchAIEmptyCard checkIn={checkIn} checkOut={checkOut} guests={guestsCount} />
+              </>
+            )}
+            {listings.length > 0 && listings.length <= FEW_THRESHOLD && (
+              <SearchAIFewCard checkIn={checkIn} checkOut={checkOut} guests={guestsCount} />
             )}
           </div>
         </div>

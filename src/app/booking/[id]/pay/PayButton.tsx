@@ -9,6 +9,8 @@ import { Button } from "@/components/ui";
 const PORTONE_STORE_ID = process.env.NEXT_PUBLIC_PORTONE_STORE_ID ?? "";
 const PORTONE_CHANNEL_KEY = process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY ?? "";
 const PORTONE_READY = !!(PORTONE_STORE_ID && PORTONE_CHANNEL_KEY);
+/** 개발/프리뷰 전용: 모의 결제 버튼 노출. 프로덕션에는 설정하지 마세요. */
+const MOCK_PAYMENT_ENABLED = process.env.NEXT_PUBLIC_ENABLE_MOCK_PAYMENT === "1";
 // 빌링키(후불결제)는 정식 서비스 릴리스 시 도입 예정. 현재는 즉시결제만 지원
 const BILLING_KEY_ENABLED = false;
 const PORTONE_BILLING_CHANNEL_KEY = process.env.NEXT_PUBLIC_PORTONE_BILLING_CHANNEL_KEY ?? "";
@@ -51,6 +53,35 @@ export default function PayButton({
       )
     : 0;
   const isDeferred = BILLING_KEY_ENABLED && daysBeforeCheckIn >= 7;
+
+  async function handleMockPay() {
+    if (!MOCK_PAYMENT_ENABLED) return;
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/payments/mock-verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId }),
+      });
+      const data = (await res.json()) as { ok?: boolean; error?: string; conversationId?: string };
+      if (res.ok && data.ok) {
+        if (data.conversationId) {
+          router.push(`/messages/${data.conversationId}`);
+        } else {
+          router.push("/my-bookings");
+        }
+        router.refresh();
+      } else {
+        setError(data.error || "모의 결제에 실패했습니다.");
+      }
+    } catch (e) {
+      console.error("[PayButton] mock-verify error:", e);
+      setError("모의 결제 요청에 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handlePay() {
     setLoading(true);
@@ -186,7 +217,7 @@ export default function PayButton({
               return;
             }
 
-            let verifyData: { ok?: boolean; error?: string };
+            let verifyData: { ok?: boolean; error?: string; conversationId?: string };
             try {
               verifyData = await verifyRes.json();
             } catch {
@@ -196,7 +227,12 @@ export default function PayButton({
               return;
             }
             if (verifyRes.ok && verifyData.ok) {
-              router.push("/my-bookings");
+              // 결제 성공 시 호스트와의 메시지창으로 바로 이동 (대화방 있으면)
+              if (verifyData.conversationId) {
+                router.push(`/messages/${verifyData.conversationId}`);
+              } else {
+                router.push("/my-bookings");
+              }
               router.refresh();
               return;
             } else {
@@ -276,6 +312,17 @@ export default function PayButton({
             ? "예약 확정하기"
             : `${formatForGuest(totalPrice)} 결제하기`}
       </Button>
+      {MOCK_PAYMENT_ENABLED && !isDeferred && PORTONE_READY && (
+        <Button
+          type="button"
+          onClick={handleMockPay}
+          disabled={loading}
+          variant="secondary"
+          className="mt-2 w-full border-dashed text-[13px] text-neutral-500"
+        >
+          테스트 결제 (모의 · 카드 없음)
+        </Button>
+      )}
     </div>
   );
 }

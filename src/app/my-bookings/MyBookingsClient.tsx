@@ -6,11 +6,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { Header, Footer } from "@/components/layout";
-import CancelBookingButton from "@/components/booking/CancelBookingButton";
 import StartMessageLink from "@/components/messages/StartMessageLink";
 import BookingStepIndicator, {
   getBookingStepState,
 } from "@/components/booking/BookingStepIndicator";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
 type BookingItem = {
   id: string;
@@ -27,6 +27,7 @@ type BookingItem = {
     location: string;
     imageUrl: string;
     cancellationPolicy: string;
+    instantBooking?: boolean;
   };
   lastRefund: { amount: number } | null;
   reviewed: boolean;
@@ -34,8 +35,10 @@ type BookingItem = {
 
 export default function MyBookingsClient() {
   const { formatForGuest } = useCurrency();
+  const { t, locale } = useHostTranslations();
   const searchParams = useSearchParams();
   const requested = searchParams?.get("requested") === "1";
+  const dateLocale = locale === "ja" ? "ja-JP" : "ko-KR";
 
   const [bookings, setBookings] = useState<BookingItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,7 +66,7 @@ export default function MyBookingsClient() {
         if (data != null) setBookings(Array.isArray(data) ? data : []);
       })
       .catch((e) => {
-        if (!cancelled) setError(e?.message ?? "예약 목록을 불러오는 중 오류가 발생했어요.");
+        if (!cancelled) setError(e?.message ?? t("mybookings.errorLoad"));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -71,7 +74,7 @@ export default function MyBookingsClient() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   if (loading) {
     return (
@@ -80,9 +83,9 @@ export default function MyBookingsClient() {
         <main className="min-h-screen pt-24 px-4 sm:px-6">
           <div className="max-w-[900px] mx-auto py-8">
             <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
-              내 예약
+              {t("mybookings.title")}
             </h1>
-            <p className="text-minbak-body text-minbak-gray">불러오는 중...</p>
+            <p className="text-minbak-body text-minbak-gray">{t("mybookings.loading")}</p>
           </div>
         </main>
         <Footer />
@@ -103,13 +106,13 @@ export default function MyBookingsClient() {
                 onClick={() => window.location.reload()}
                 className="min-h-[48px] px-6 py-3 text-minbak-body font-medium rounded-minbak-full bg-minbak-primary text-white hover:bg-minbak-primary-hover"
               >
-                다시 시도
+                {t("mybookings.retry")}
               </button>
               <Link
                 href="/my-bookings"
                 className="min-h-[48px] px-6 py-3 text-minbak-body font-medium rounded-minbak-full border border-minbak-light-gray text-minbak-black hover:bg-minbak-bg inline-flex items-center justify-center"
               >
-                내 예약 (새로고침)
+                {t("mybookings.refreshLink")}
               </Link>
             </div>
           </div>
@@ -126,17 +129,17 @@ export default function MyBookingsClient() {
         <main className="min-h-screen pt-24 px-4 sm:px-6">
           <div className="max-w-[900px] mx-auto py-8">
             <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
-              내 예약
+              {t("mybookings.title")}
             </h1>
             <div className="bg-white border border-minbak-light-gray rounded-minbak p-8 text-center max-w-md mx-auto">
               <p className="text-minbak-body text-minbak-gray mb-4">
-                로그인하면 예약 내역을 볼 수 있어요.
+                {t("mybookings.loginPrompt")}
               </p>
               <Link
                 href="/auth/signin?callbackUrl=/my-bookings"
                 className="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 rounded-minbak-full bg-minbak-primary text-white font-medium hover:bg-minbak-primary-hover transition-colors"
               >
-                로그인하기
+                {t("mybookings.login")}
               </Link>
             </div>
           </div>
@@ -147,7 +150,7 @@ export default function MyBookingsClient() {
   }
 
   const checkInStr = (s: string) =>
-    new Date(s).toLocaleDateString("ko-KR", {
+    new Date(s).toLocaleDateString(dateLocale, {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -159,29 +162,29 @@ export default function MyBookingsClient() {
       <main className="min-h-screen pt-24 px-4 sm:px-6">
         <div className="max-w-[900px] mx-auto py-8">
           <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
-            내 예약
+            {t("mybookings.title")}
           </h1>
           {requested && (
             <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-minbak text-minbak-body text-amber-900">
-              <p className="font-medium">예약 요청이 접수되었습니다.</p>
+              <p className="font-medium">{t("mybookings.requestedTitle")}</p>
               <p className="text-minbak-caption mt-1 text-amber-800">
-                호스트가 24시간 이내에 승인하면 결제 안내 이메일이 발송됩니다. 위 목록에서 상태를 확인할 수 있어요.
+                {t("mybookings.requestedDesc")}
               </p>
             </div>
           )}
           {bookings.length === 0 ? (
             <div className="bg-white border border-minbak-light-gray rounded-minbak p-10 text-center max-w-md mx-auto">
               <p className="text-minbak-body-lg text-minbak-black font-medium mb-2">
-                아직 예약한 숙소가 없어요
+                {t("mybookings.emptyTitle")}
               </p>
               <p className="text-minbak-body text-minbak-gray mb-6">
-                마음에 드는 숙소를 찾아 예약해 보세요.
+                {t("mybookings.emptyDesc")}
               </p>
               <Link
                 href="/search"
                 className="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 rounded-minbak-full bg-minbak-primary text-white font-medium hover:bg-minbak-primary-hover transition-colors"
               >
-                숙소 검색하기
+                {t("mybookings.searchAccommodation")}
               </Link>
             </div>
           ) : (
@@ -190,10 +193,7 @@ export default function MyBookingsClient() {
                 const listing = b.listing;
                 const listingId = listing?.id ?? "";
                 const today = new Date().toISOString().slice(0, 10);
-                const checkInDate = b.checkIn.slice(0, 10);
                 const checkOutDate = b.checkOut.slice(0, 10);
-                const canCancel =
-                  b.status !== "cancelled" && checkInDate >= today;
                 const canReview =
                   b.status === "confirmed" &&
                   checkOutDate < today &&
@@ -210,14 +210,14 @@ export default function MyBookingsClient() {
                       {listing?.imageUrl ? (
                         <Image
                           src={listing.imageUrl}
-                          alt={listing.title ?? "숙소"}
+                          alt={listing.title ?? t("mybookings.listing")}
                           fill
                           className="object-cover"
                           sizes="(max-width: 640px) 100vw, 160px"
                         />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center text-minbak-gray text-minbak-caption">
-                          숙소
+                          {t("mybookings.listing")}
                         </div>
                       )}
                     </Link>
@@ -226,7 +226,7 @@ export default function MyBookingsClient() {
                         href={`/listing/${listingId}`}
                         className="font-semibold text-minbak-black hover:text-minbak-primary hover:underline block truncate text-minbak-body"
                       >
-                        {listing?.title ?? "숙소"}
+                        {listing?.title ?? t("mybookings.listing")}
                       </Link>
                       <p className="text-minbak-caption text-minbak-gray mt-0.5">
                         {listing?.location ?? ""}
@@ -235,7 +235,7 @@ export default function MyBookingsClient() {
                         {checkInStr(b.checkIn)} ~ {checkInStr(b.checkOut)}
                       </p>
                       <p className="text-minbak-body text-minbak-gray">
-                        게스트 {b.guests}명 · {formatForGuest(b.totalPrice)}
+                        {t("mybookings.guestsCount", { count: b.guests })} · {formatForGuest(b.totalPrice)}
                       </p>
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         <span
@@ -250,26 +250,26 @@ export default function MyBookingsClient() {
                           }`}
                         >
                           {b.status === "confirmed" && b.paymentStatus === "paid"
-                            ? "예약 확정"
+                            ? t("mybookings.statusConfirmed")
                             : b.status === "confirmed" && b.paymentStatus !== "paid"
-                              ? "호스트 승인 · 결제 대기"
+                              ? (listing?.instantBooking ? t("mybookings.statusPaymentWaiting") : t("mybookings.statusHostApprovalPayment"))
                               : b.status === "cancelled"
-                                ? "취소됨"
-                                : "호스트 응답 대기"}
+                                ? t("mybookings.statusCancelled")
+                                : t("mybookings.statusPendingHost")}
                         </span>
                         {b.paymentStatus === "failed" && b.status !== "cancelled" && (
                           <span className="inline-block text-minbak-caption font-medium px-2.5 py-1 rounded-full bg-red-100 text-red-800">
-                            결제실패
+                            {t("mybookings.paymentFailed")}
                           </span>
                         )}
                         {b.paymentStatus === "refunded" && (
                           <span className="inline-block text-minbak-caption font-medium px-2.5 py-1 rounded-full bg-purple-100 text-purple-800">
-                            환불완료
+                            {t("mybookings.refunded")}
                           </span>
                         )}
                         {b.lastRefund && (
                           <span className="inline-block text-minbak-caption font-medium px-2.5 py-1 rounded-full bg-orange-100 text-orange-800">
-                            {formatForGuest(b.lastRefund.amount)} 환불
+                            {t("mybookings.refundAmount", { amount: formatForGuest(b.lastRefund.amount) })}
                           </span>
                         )}
                       </div>
@@ -279,6 +279,7 @@ export default function MyBookingsClient() {
                             b.paymentStatus === "failed"))) && (
                         <BookingStepIndicator
                           {...getBookingStepState(b.status, b.paymentStatus)}
+                          instantBooking={listing?.instantBooking}
                           compact
                           className="mt-1.5"
                         />
@@ -286,10 +287,16 @@ export default function MyBookingsClient() {
                       {b.status === "confirmed" &&
                         (b.paymentStatus === "pending" || b.paymentStatus === "failed") && (
                           <p className="text-minbak-caption text-minbak-gray mt-1.5">
-                            24시간 이내 결제 시 예약 확정 · 미결제 시 자동 취소될 수 있어요.
+                            {t("mybookings.payWithin24")}
                           </p>
                         )}
                       <div className="flex flex-wrap gap-2 mt-3">
+                        <Link
+                          href={`/my-bookings/${b.id}`}
+                          className="inline-flex items-center min-h-[36px] px-4 py-2 rounded-minbak text-minbak-body font-medium text-minbak-black border border-minbak-light-gray hover:bg-minbak-bg transition-colors"
+                        >
+                          {t("mybookings.detail")}
+                        </Link>
                         {b.status === "confirmed" &&
                           (b.paymentStatus === "pending" ||
                             b.paymentStatus === "failed") && (
@@ -298,23 +305,10 @@ export default function MyBookingsClient() {
                               className="inline-flex items-center min-h-[36px] px-4 py-2 rounded-minbak text-minbak-body font-medium bg-minbak-primary text-white hover:bg-minbak-primary-hover transition-colors"
                             >
                               {b.paymentStatus === "failed"
-                                ? "재결제하기"
-                                : "결제하기"}
+                                ? t("mybookings.repay")
+                                : t("mybookings.pay")}
                             </Link>
                           )}
-                        {canCancel && (
-                          <CancelBookingButton
-                            bookingId={b.id}
-                            listingTitle={listing?.title ?? "숙소"}
-                            paymentStatus={b.paymentStatus}
-                            checkIn={checkInDate}
-                            totalPrice={b.totalPrice}
-                            cancellationPolicy={
-                              listing?.cancellationPolicy ?? "flexible"
-                            }
-                            bookingCreatedAt={b.createdAt}
-                          />
-                        )}
                         {b.status !== "cancelled" && (
                           <StartMessageLink
                             bookingId={b.id}
@@ -326,14 +320,14 @@ export default function MyBookingsClient() {
                             href={`/listing/${listingId}#review`}
                             className="inline-flex items-center min-h-[36px] px-4 py-2 rounded-minbak text-minbak-body font-medium text-minbak-primary border border-minbak-primary hover:bg-red-50 transition-colors"
                           >
-                            &#9997; 리뷰 작성
+                            &#9997; {t("mybookings.writeReview")}
                           </Link>
                         )}
                         {b.reviewed &&
                           b.status === "confirmed" &&
                           checkOutDate < today && (
                             <span className="inline-flex items-center min-h-[36px] px-4 py-2 rounded-minbak text-minbak-body text-minbak-gray bg-gray-50">
-                              &#10003; 리뷰 작성완료
+                              &#10003; {t("mybookings.reviewDone")}
                             </span>
                           )}
                       </div>

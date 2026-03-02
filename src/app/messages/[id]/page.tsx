@@ -28,6 +28,7 @@ export default async function ConversationPage({ params }: Props) {
                 select: {
                   id: true,
                   title: true,
+                  hostDisplayName: true,
                   user: { select: { name: true, email: true } },
                 },
               },
@@ -61,6 +62,7 @@ export default async function ConversationPage({ params }: Props) {
   const guest = conversation.booking.user;
   const listing = conversation.booking.listing;
   const isGuest = userId === guest.id;
+  const isHost = !isGuest;
   const otherName = isGuest
     ? "호스트"
     : (guest.name || guest.email || "게스트");
@@ -125,6 +127,7 @@ export default async function ConversationPage({ params }: Props) {
       const base = {
         id: m.id,
         body: m.body,
+        imageUrl: m.imageUrl ?? null,
         createdAt: m.createdAt.toISOString(),
         senderId: m.senderId,
         isFromMe: m.senderId === userId,
@@ -158,7 +161,7 @@ export default async function ConversationPage({ params }: Props) {
           <div className="border border-minbak-light-gray rounded-minbak overflow-hidden bg-white">
             <div className="px-4 py-3 border-b border-minbak-light-gray bg-minbak-bg">
               <h1 className="text-minbak-body font-semibold text-minbak-black">
-                {otherName} · {listing.title}
+                {otherName} · {listing.hostDisplayName?.trim() || listing.title}
               </h1>
               <dl className="mt-2 text-minbak-caption text-minbak-gray space-y-0.5">
                 <div>
@@ -220,6 +223,7 @@ export default async function ConversationPage({ params }: Props) {
                   ? booking.id
                   : undefined
               }
+              isHost={isHost}
             />
           </div>
         </div>

@@ -52,6 +52,12 @@ export default async function BookingConfirmPage({ searchParams }: Props) {
   if (!listing) notFound();
   if (guests > listing.maxGuests) redirect("/");
 
+  const nightsFromDates = Math.floor((checkOut.getTime() - checkIn.getTime()) / (24 * 60 * 60 * 1000));
+  const minNights = listing.minStayNights ?? 1;
+  const maxNights = listing.maxStayNights ?? null;
+  if (nightsFromDates < minNights) redirect("/");
+  if (maxNights != null && nightsFromDates > maxNights) redirect("/");
+
   let totalPrice: number;
   let nights: number;
   try {
@@ -87,6 +93,7 @@ export default async function BookingConfirmPage({ searchParams }: Props) {
           totalPrice={totalPrice}
           userEmail={userEmail}
           cancellationPolicy={listing.cancellationPolicy}
+          instantBooking={listing.instantBooking}
         />
       </main>
       <Footer />

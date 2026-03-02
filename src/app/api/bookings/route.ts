@@ -6,7 +6,12 @@ import { prisma } from "@/lib/prisma";
 import { getOfficialUserId } from "@/lib/official-account";
 import { createNotification } from "@/lib/notifications";
 import { sendEmailAsync, BASE_URL } from "@/lib/email";
-import { bookingConfirmationGuest, bookingNotificationHost } from "@/lib/email-templates";
+import {
+  bookingConfirmationGuest,
+  bookingNotificationHost,
+  instantBookingConfirmationGuest,
+  instantBookingNotificationHost,
+} from "@/lib/email-templates";
 
 /**
  * GET /api/bookings
@@ -34,6 +39,7 @@ export async function GET() {
             location: true,
             imageUrl: true,
             cancellationPolicy: true,
+            instantBooking: true,
           },
         },
         transactions: {
@@ -64,6 +70,7 @@ export async function GET() {
     listing: b.listing,
     lastRefund: b.transactions[0] ?? null,
     reviewed: reviewedListingIds.includes(b.listingId),
+    guestName: b.guestName ?? null,
     guestPhone: b.guestPhone ?? null,
   }));
 
@@ -82,6 +89,7 @@ export async function POST(request: Request) {
     const checkIn = body.checkIn;
     const checkOut = body.checkOut;
     const guests = body.guests;
+    const guestName = body.guestName;
     const guestPhone = body.guestPhone;
 
     if (!listingId || !checkIn || !checkOut || guests == null) {
@@ -97,6 +105,7 @@ export async function POST(request: Request) {
       checkOut: String(checkOut),
       guests: Number(guests),
       userId: (session as { userId?: string } | null)?.userId,
+      guestName: guestName != null ? String(guestName).trim() || undefined : undefined,
       guestPhone: guestPhone != null ? String(guestPhone).trim() || undefined : undefined,
     });
 
@@ -105,9 +114,10 @@ export async function POST(request: Request) {
     }
 
     const bookingId = result.booking.id;
+    const isInstant = result.booking.instantBooking;
     let conversationId: string | undefined;
 
-    // 예약 직후 대화방 생성 + 도쿄민박 공식 메시지 2건
+    // 예약 직후 대화방 생성 + 도쿄민박 공식 메시지
     const officialUserId = await getOfficialUserId();
     if (!officialUserId) {
       console.warn(
@@ -122,26 +132,32 @@ export async function POST(request: Request) {
           update: {},
         });
         conversationId = conversation.id;
-        await prisma.message.createMany({
-          data: [
-            {
-              conversationId: conversation.id,
-              senderId: officialUserId,
-              body: "예약 요청이 접수되었습니다. 호스트가 24시간 이내에 확인 후 안내해 드릴게요. 보통 그보다 빨리 답변이 올 수 있어요.",
-            },
-            {
-              conversationId: conversation.id,
-              senderId: officialUserId,
-              body: "호스트가 승인하시면 결제 방법을 안내해 드릴게요.",
-            },
-          ],
-        });
+
+        // 즉시예약 숙소는 '결제 후 확정' 안내 메시지를 게스트에게 보내지 않음
+        const messages = isInstant
+          ? []
+          : [
+              {
+                conversationId: conversation.id,
+                senderId: officialUserId,
+                body: "예약 요청이 접수되었습니다. 호스트가 24시간 이내에 확인 후 안내해 드릴게요. 보통 그보다 빨리 답변이 올 수 있어요.",
+              },
+              {
+                conversationId: conversation.id,
+                senderId: officialUserId,
+                body: "호스트가 승인하시면 결제 방법을 안내해 드릴게요.",
+              },
+            ];
+
+        if (messages.length > 0) {
+          await prisma.message.createMany({ data: messages });
+        }
       } catch (err) {
         console.error("[Booking] Conversation/official messages:", err);
       }
     }
 
-    // 호스트 앱 내 알림 (새 예약 요청)
+    // 호스트 앱 내 알림
     try {
       const listingForNotif = await prisma.listing.findUnique({
         where: { id: String(listingId) },
@@ -152,10 +168,13 @@ export async function POST(request: Request) {
         select: { name: true },
       });
       if (listingForNotif?.userId) {
+        const notifTitle = isInstant
+          ? `${guestForNotif?.name || "게스트"}님이 ${listingForNotif.title}에 즉시 예약을 신청했어요. 결제 완료 시 자동 확정됩니다.`
+          : `${guestForNotif?.name || "게스트"}님이 ${listingForNotif.title}에 예약을 요청했어요. 24시간 이내에 승인/거절해 주세요.`;
         createNotification({
           userId: listingForNotif.userId,
           type: "new_booking_request",
-          title: `${guestForNotif?.name || "게스트"}님이 ${listingForNotif.title}에 예약을 요청했어요. 24시간 이내에 승인/거절해 주세요.`,
+          title: notifTitle,
           linkPath: "/host/bookings",
           bookingId: result.booking.id,
           listingId: String(listingId),
@@ -187,6 +206,10 @@ export async function POST(request: Request) {
           (new Date(String(checkOut)).getTime() - new Date(String(checkIn)).getTime()) /
             (24 * 60 * 60 * 1000)
         );
+        const reservatorName =
+          guestName != null && String(guestName).trim()
+            ? String(guestName).trim()
+            : guestUser?.name || "Guest";
         const emailInfo = {
           listingTitle: listing.title,
           listingLocation: listing.location,
@@ -195,7 +218,7 @@ export async function POST(request: Request) {
           guests: Number(guests),
           nights,
           totalPrice: booking.totalPrice,
-          guestName: guestUser?.name || "Guest",
+          guestName: reservatorName,
           guestEmail: guestUser?.email ?? "",
           bookingId: booking.id,
           baseUrl: BASE_URL,
@@ -212,18 +235,23 @@ export async function POST(request: Request) {
           );
         }
 
-        // Guest email (게스트 이메일이 있고, 호스트와 다른 경우만)
         if (guestUser?.email && !isSameEmail) {
-          const guestMail = bookingConfirmationGuest(emailInfo);
+          const guestMail = isInstant
+            ? instantBookingConfirmationGuest(emailInfo)
+            : bookingConfirmationGuest(emailInfo);
           sendEmailAsync({ to: guestUser.email, ...guestMail });
         }
 
-        // Host email: 예약 요청 알림 (listing만 있으면 발송, 게스트 이메일 유무와 무관)
         if (hostEmail) {
-          const hostMail = bookingNotificationHost({
-            ...emailInfo,
-            hostName: listing.user?.name || "Host",
-          });
+          const hostMail = isInstant
+            ? instantBookingNotificationHost({
+                ...emailInfo,
+                hostName: listing.user?.name || "Host",
+              })
+            : bookingNotificationHost({
+                ...emailInfo,
+                hostName: listing.user?.name || "Host",
+              });
           sendEmailAsync({ to: hostEmail, ...hostMail });
         }
       }

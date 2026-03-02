@@ -40,7 +40,7 @@ export async function PATCH(
   const booking = await prisma.booking.findUnique({
     where: { id },
     include: {
-      listing: { select: { userId: true, title: true, location: true } },
+      listing: { select: { userId: true, title: true, hostDisplayName: true, location: true } },
       user: { select: { name: true, email: true } },
       transactions: {
         where: { status: "paid" },
@@ -71,7 +71,7 @@ export async function PATCH(
     }
     await prisma.booking.update({
       where: { id },
-      data: { status: "confirmed" },
+      data: { status: "confirmed", confirmedAt: new Date() },
     });
 
     // 호스트 승인 → 대화방에 결제 안내 메시지 1건 (게스트가 메시지창에서 결제 유도)

@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import ReviewPhotoGallery from "./ReviewPhotoGallery";
 
 const PREVIEW_LENGTH = 150;
 
-type ReviewItem = {
+export type ReviewItem = {
   rating: number;
   body: string | null;
   userName: string | null;
   createdAt: string;
   membershipYears?: number | null;
+  images?: string[];
 };
 
 type Props = { review: ReviewItem };
@@ -33,30 +35,43 @@ export default function ReviewCard({ review }: Props) {
   const showMore = body.length > PREVIEW_LENGTH;
   const displayBody =
     showMore && !expanded ? body.slice(0, PREVIEW_LENGTH) + "..." : body;
+  const hasImages = review.images && review.images.length > 0;
 
   return (
-    <div className="space-y-2">
-      <p className="text-[15px] font-semibold text-[#222]">
-        {review.userName ?? "익명"}
-      </p>
-      <div className="flex flex-wrap items-center gap-2 text-[14px]">
-        <span className="flex text-[#222]" aria-label={`평점 ${review.rating}점`}>
-          {[1, 2, 3, 4, 5].map((star) => (
-            <span
-              key={star}
-              className={
-                star <= Math.round(review.rating)
-                  ? "text-[#222]"
-                  : "text-[#ebebeb]"
-              }
-            >
-              ★
+    <div className="space-y-2.5">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#f0f0f0] to-[#e0e0e0] flex items-center justify-center flex-shrink-0 text-[15px] font-semibold text-[#484848]">
+          {getInitial(review.userName)}
+        </div>
+        <div className="min-w-0">
+          <p className="text-[15px] font-semibold text-[#222] truncate">
+            {review.userName ?? "익명"}
+          </p>
+          <div className="flex flex-wrap items-center gap-2 text-[13px]">
+            <span className="flex text-[#222]" aria-label={`평점 ${review.rating}점`}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <span
+                  key={star}
+                  className={
+                    star <= Math.round(review.rating)
+                      ? "text-[#222]"
+                      : "text-[#ebebeb]"
+                  }
+                >
+                  ★
+                </span>
+              ))}
             </span>
-          ))}
-        </span>
-        <span className="text-[#717171]">
-          {formatReviewDate(review.createdAt)}
-        </span>
+            <span className="text-[#717171]">
+              {formatReviewDate(review.createdAt)}
+            </span>
+            {review.membershipYears != null && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[11px] font-medium">
+                ✓ 숙박 인증
+              </span>
+            )}
+          </div>
+        </div>
       </div>
       {body && (
         <div className="text-[15px] text-[#222] leading-relaxed">
@@ -72,6 +87,7 @@ export default function ReviewCard({ review }: Props) {
           )}
         </div>
       )}
+      {hasImages && <ReviewPhotoGallery images={review.images!} />}
     </div>
   );
 }

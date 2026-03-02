@@ -71,6 +71,26 @@ export async function POST(
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
 
+    const imageUrls = body.imageUrls;
+    if (Array.isArray(imageUrls) && imageUrls.length > 0 && result.review) {
+      const validUrls = imageUrls
+        .filter((u: unknown) => typeof u === "string" && u.startsWith("http"))
+        .slice(0, 5);
+      if (validUrls.length > 0) {
+        try {
+          await prisma.$transaction(
+            validUrls.map((url: string, i: number) =>
+              prisma.reviewImage.create({
+                data: { reviewId: result.review!.id, url, sortOrder: i },
+              })
+            )
+          );
+        } catch (imgErr) {
+          console.error("ReviewImage save error:", imgErr);
+        }
+      }
+    }
+
     return NextResponse.json(result.review, { status: 201 });
   } catch (error) {
     console.error("POST /api/listings/[id]/reviews", error);

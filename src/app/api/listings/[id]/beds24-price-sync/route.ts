@@ -27,7 +27,6 @@ export async function POST(
       beds24Enabled: true,
       beds24PropId: true,
       beds24RoomId: true,
-      beds24OfferIndex: true,
     },
   });
   if (!listing) {
@@ -44,10 +43,10 @@ export async function POST(
     return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
   }
 
+  const propId = listing.beds24PropId?.trim();
+  const roomId = listing.beds24RoomId?.trim();
   const hasBeds24Config =
-    (listing.beds24Enabled || (listing.beds24PropId?.trim() && listing.beds24RoomId?.trim())) &&
-    listing.beds24PropId?.trim() &&
-    listing.beds24RoomId?.trim();
+    (listing.beds24Enabled || (propId && roomId)) && propId && roomId;
   if (!hasBeds24Config) {
     return NextResponse.json(
       { error: "Beds24 API 연동이 설정되지 않았거나 Prop ID/Room ID가 없습니다." },
@@ -60,13 +59,11 @@ export async function POST(
     const fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
     const toDate = new Date(now.getFullYear(), now.getMonth() + 14, 0);
 
-    const offerIndex = listing.beds24OfferIndex ?? 4;
     const prices = await getBeds24CalendarPrices(
-      listing.beds24PropId.trim(),
-      listing.beds24RoomId.trim(),
+      propId,
+      roomId,
       fromDate,
-      toDate,
-      Math.min(16, Math.max(1, offerIndex))
+      toDate
     );
 
     let updated = 0;

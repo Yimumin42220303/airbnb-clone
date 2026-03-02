@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       },
       orderBy: { createdAt: "desc" },
       include: {
-        listing: { select: { id: true, title: true } },
+        listing: { select: { id: true, title: true, hostDisplayName: true } },
         user: { select: { name: true, email: true } },
       },
     });
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
         guests: b.guests,
         guestName: b.user.name || b.user.email || "게스트",
         listingId: b.listing.id,
-        listingTitle: b.listing.title,
+        listingTitle: b.listing.hostDisplayName?.trim() || b.listing.title,
       })),
     });
   }
@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
     select: {
       id: true,
       title: true,
+      hostDisplayName: true,
       location: true,
       imageUrl: true,
       pricePerNight: true,

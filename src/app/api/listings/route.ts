@@ -53,7 +53,7 @@ export async function GET(request: Request) {
 /**
  * POST /api/listings
  * 숙소 등록: 로그인한 호스트는 본인 소유로만 등록 가능.
- * 관리자는 body.userId로 다른 호스트에게 할당 가능 (일괄 등록 등).
+ * 관리자는 body.userId로 다른 호스트에게 할당 가능.
  */
 export async function POST(request: Request) {
   try {
@@ -102,6 +102,7 @@ export async function POST(request: Request) {
 
     const result = await createListing(targetUserId, {
       title: body.title,
+      hostDisplayName: body.hostDisplayName,
       location: body.location,
       description: body.description,
       mapUrl: body.mapUrl,
@@ -119,8 +120,11 @@ export async function POST(request: Request) {
       categoryId: body.categoryId,
       amenityIds: body.amenityIds,
       isPromoted,
+      instantBooking: body.instantBooking === true,
       cancellationPolicy: ["flexible", "moderate", "strict"].includes(body.cancellationPolicy) ? body.cancellationPolicy : "flexible",
       propertyType: body.propertyType,
+      minStayNights: body.minStayNights,
+      maxStayNights: body.maxStayNights,
     });
 
     if (!result.ok) {

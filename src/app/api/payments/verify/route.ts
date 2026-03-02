@@ -3,12 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getPayment } from "@/lib/portone";
-import { sendEmailAsync, BASE_URL } from "@/lib/email";
-import {
-  paymentConfirmationGuest,
-  paymentConfirmationHost,
-} from "@/lib/email-templates";
-import { createNotification } from "@/lib/notifications";
+import { onPaymentVerified } from "@/lib/payment-complete";
 import { getJpyToKrwRate } from "@/lib/exchange-rate";
 import { STORED_CURRENCY, convertJpyToKrw } from "@/lib/currency";
 
@@ -79,13 +74,15 @@ export async function POST(request: Request) {
       );
     }
 
+    const paidAmount = portonePayment.totalAmount ?? 0;
+
     if (portonePayment.status !== "PAID") {
       await prisma.paymentTransaction.create({
         data: {
           bookingId,
           paymentId,
           transactionId: portonePayment.transactionId || null,
-          amount: portonePayment.totalAmount || 0,
+          amount: paidAmount,
           status: "failed",
           method: portonePayment.method?.type || null,
           pgProvider: portonePayment.channel?.pgProvider || null,
@@ -104,25 +101,24 @@ export async function POST(request: Request) {
       STORED_CURRENCY === "JPY"
         ? convertJpyToKrw(booking.totalPrice, await getJpyToKrwRate())
         : booking.totalPrice;
-    const paidKrw = portonePayment.totalAmount ?? 0;
-    if (Math.abs(paidKrw - expectedKrw) > 1) {
+    if (Math.abs(paidAmount - expectedKrw) > 1) {
       await prisma.paymentTransaction.create({
         data: {
           bookingId,
           paymentId,
           transactionId: portonePayment.transactionId || null,
-          amount: portonePayment.totalAmount,
+          amount: paidAmount,
           status: "failed",
           method: portonePayment.method?.type || null,
           pgProvider: portonePayment.channel?.pgProvider || null,
           failReason:
-            "Amount mismatch: paid=" + paidKrw + " expected=" + expectedKrw,
+            "Amount mismatch: paid=" + paidAmount + " expected=" + expectedKrw,
           rawResponse: JSON.stringify(portonePayment),
         },
       });
       console.error(
         "Payment amount mismatch! paymentId=" + paymentId,
-        "paid=" + paidKrw,
+        "paid=" + paidAmount,
         "expected=" + expectedKrw
       );
       return NextResponse.json(
@@ -139,7 +135,7 @@ export async function POST(request: Request) {
           bookingId,
           paymentId,
           transactionId: portonePayment.transactionId || null,
-          amount: portonePayment.totalAmount,
+          amount: paidAmount,
           status: "paid",
           method: portonePayment.method?.type || null,
           pgProvider: portonePayment.channel?.pgProvider || null,
@@ -153,99 +149,12 @@ export async function POST(request: Request) {
       }),
     ]);
 
-    // 결제 완료 후 대화방 생성 + 호스트 환영 메시지
+    // 결제 완료 후 처리 (대화방·메시지·이메일·알림·Beds24·스케줄 메시지)
     let conversationId: string | null = null;
     try {
-      const fullBooking = await prisma.booking.findUnique({
-        where: { id: bookingId },
-        include: {
-          listing: {
-            select: {
-              id: true,
-              title: true,
-              location: true,
-              userId: true,
-              user: { select: { name: true, email: true } },
-            },
-          },
-          user: { select: { name: true, email: true } },
-        },
-      });
-
-      if (fullBooking) {
-        // 대화방 생성 + 환영 메시지
-        try {
-          let conversation = await prisma.conversation.findUnique({
-            where: { bookingId },
-          });
-          if (!conversation) {
-            conversation = await prisma.conversation.create({
-              data: { bookingId },
-            });
-          }
-          conversationId = conversation.id;
-
-          await prisma.message.create({
-            data: {
-              conversationId: conversation.id,
-              senderId: fullBooking.listing.userId,
-              body: "예약감사합니다. 3일내에 체크인방법에대해 안내드릴예정이니 조금 기다려주세요.",
-            },
-          });
-        } catch (err) {
-          console.error("자동 메시지 전송 오류:", err);
-        }
-
-        // 이메일 발송
-        if (fullBooking.user?.email) {
-          const nights = Math.floor(
-            (fullBooking.checkOut.getTime() - fullBooking.checkIn.getTime()) / (24 * 60 * 60 * 1000)
-          );
-          const emailInfo = {
-            listingTitle: fullBooking.listing.title,
-            listingLocation: fullBooking.listing.location,
-            checkIn: fullBooking.checkIn.toISOString().slice(0, 10),
-            checkOut: fullBooking.checkOut.toISOString().slice(0, 10),
-            guests: fullBooking.guests,
-            nights,
-            totalPrice: fullBooking.totalPrice,
-            guestName: fullBooking.user.name || "Guest",
-            guestEmail: fullBooking.user.email,
-            bookingId,
-            baseUrl: BASE_URL,
-          };
-
-          const hostEmail = fullBooking.listing.user?.email;
-          const isSameEmail = hostEmail && hostEmail === fullBooking.user.email;
-
-          // 게스트 이메일
-          if (!isSameEmail) {
-            const guestMail = paymentConfirmationGuest(emailInfo);
-            sendEmailAsync({ to: fullBooking.user.email, ...guestMail });
-          }
-
-          // 호스트 이메일 (일본어)
-          if (hostEmail) {
-            const hostMail = paymentConfirmationHost({
-              ...emailInfo,
-              hostName: fullBooking.listing.user?.name || "Host",
-            });
-            sendEmailAsync({ to: hostEmail, ...hostMail });
-          }
-
-          // 호스트 앱 내 알림 (게스트 결제 완료)
-          createNotification({
-            userId: fullBooking.listing.userId,
-            type: "guest_payment_completed",
-            title: `${fullBooking.user?.name || "게스트"}님이 결제를 완료했어요. 예약이 확정되었습니다.`,
-            linkPath: "/host/bookings",
-            bookingId: bookingId,
-            listingId: fullBooking.listing.id,
-          }).catch(() => {});
-        }
-      }
-    } catch (emailErr) {
-      console.error("[Payment Email] Error:", emailErr);
+      conversationId = await onPaymentVerified(bookingId);
+    } catch (postErr) {
+      console.error("[Payment Verify] post-complete error:", postErr);
     }
 
     return NextResponse.json({

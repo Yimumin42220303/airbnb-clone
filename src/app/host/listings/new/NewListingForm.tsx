@@ -12,15 +12,17 @@ import type { Amenity } from "@/types";
 
 type Props = {
   amenities: Amenity[];
+  isAdmin?: boolean;
 };
 
-export default function NewListingForm({ amenities }: Props) {
+export default function NewListingForm({ amenities, isAdmin = false }: Props) {
   const router = useRouter();
   const { t } = useHostTranslations();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({
     title: "",
+    hostDisplayName: "",
     location: "",
     description: "",
     pricePerNight: "",
@@ -28,6 +30,8 @@ export default function NewListingForm({ amenities }: Props) {
     baseGuests: "2",
     maxGuests: "2",
     extraGuestFee: "0",
+    minStayNights: "",
+    maxStayNights: "",
     bedrooms: "1",
     beds: "1",
     baths: "1",
@@ -36,6 +40,7 @@ export default function NewListingForm({ amenities }: Props) {
     videoUrl: "",
     amenityIds: [] as string[],
     isPromoted: false,
+    instantBooking: false,
     cancellationPolicy: "flexible",
     propertyType: "apartment" as "apartment" | "detached_house",
   });
@@ -94,6 +99,7 @@ export default function NewListingForm({ amenities }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: form.title.trim(),
+          hostDisplayName: form.hostDisplayName.trim() || undefined,
           location: form.location.trim(),
           description: form.description.trim() || undefined,
           mapUrl: mapUrl || undefined,
@@ -104,12 +110,21 @@ export default function NewListingForm({ amenities }: Props) {
           baseGuests,
           maxGuests,
           extraGuestFee: Math.max(0, parseInt(form.extraGuestFee, 10) || 0),
+          minStayNights: (() => {
+            const v = parseInt(form.minStayNights, 10);
+            return !isNaN(v) && v >= 1 ? v : undefined;
+          })(),
+          maxStayNights: (() => {
+            const v = parseInt(form.maxStayNights, 10);
+            return !isNaN(v) && v >= 1 ? v : undefined;
+          })(),
           bedrooms: parseInt(form.bedrooms, 10) || 1,
           beds: parseInt(form.beds, 10) || 1,
           baths: parseInt(form.baths, 10) || 1,
           categoryId: form.categoryId.trim() || undefined,
           amenityIds: form.amenityIds.length > 0 ? form.amenityIds : undefined,
           isPromoted: form.isPromoted,
+          instantBooking: form.instantBooking,
           cancellationPolicy: form.cancellationPolicy,
           propertyType: form.propertyType,
         }),
@@ -207,6 +222,20 @@ export default function NewListingForm({ amenities }: Props) {
                 }
                 className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 required
+              />
+            </label>
+            <label className="block">
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">
+                {t("newListing.hostDisplayNameLabel")}
+              </span>
+              <input
+                type="text"
+                value={form.hostDisplayName}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, hostDisplayName: e.target.value }))
+                }
+                placeholder={t("newListing.hostDisplayNamePlaceholder")}
+                className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
               />
             </label>
             <label className="block">
@@ -488,6 +517,44 @@ export default function NewListingForm({ amenities }: Props) {
                 {t("newListing.cleaningFeeHint")}
               </span>
             </label>
+            <div className="grid grid-cols-2 gap-4">
+              <label>
+                <span className="text-minbak-body font-medium text-minbak-black block mb-1">
+                  {t("newListing.minStayNights")}
+                </span>
+                <input
+                  type="number"
+                  min={1}
+                  value={form.minStayNights}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, minStayNights: e.target.value }))
+                  }
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
+                  placeholder="1"
+                />
+                <span className="text-minbak-caption text-minbak-gray block mt-0.5">
+                  {t("newListing.minStayNightsHint")}
+                </span>
+              </label>
+              <label>
+                <span className="text-minbak-body font-medium text-minbak-black block mb-1">
+                  {t("newListing.maxStayNights")}
+                </span>
+                <input
+                  type="number"
+                  min={1}
+                  value={form.maxStayNights}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, maxStayNights: e.target.value }))
+                  }
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
+                  placeholder=""
+                />
+                <span className="text-minbak-caption text-minbak-gray block mt-0.5">
+                  {t("newListing.maxStayNightsHint")}
+                </span>
+              </label>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <label>
                 <span className="text-minbak-caption text-minbak-gray block mb-1">
@@ -583,6 +650,7 @@ export default function NewListingForm({ amenities }: Props) {
                 />
               </label>
             </div>
+            {isAdmin && (
             <div className="border border-minbak-light-gray rounded-minbak p-4 bg-minbak-bg/50">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
@@ -597,6 +665,45 @@ export default function NewListingForm({ amenities }: Props) {
                 </div>
               </label>
             </div>
+            )}
+          </div>
+        </section>
+
+        {/* 예약 방식 */}
+        <section className="border border-minbak-light-gray rounded-minbak p-5 space-y-3 bg-minbak-bg/50">
+          <h3 className="text-minbak-body font-medium text-minbak-black">{t("edit.bookingMode")}</h3>
+          <p className="text-minbak-caption text-minbak-gray">
+            {t("edit.bookingModeHint")}
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setForm((f) => ({ ...f, instantBooking: false }))}
+              className={`p-3 rounded-lg border-2 text-left transition-colors ${
+                !form.instantBooking ? "border-[#E31C23] bg-red-50/50" : "border-minbak-light-gray hover:bg-white"
+              }`}
+            >
+              <span className="text-minbak-body font-medium text-minbak-black block">
+                {t("edit.bookingModeApproval")}
+              </span>
+              <span className="text-minbak-caption text-minbak-gray mt-0.5 block">
+                {t("edit.bookingModeApprovalDesc")}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setForm((f) => ({ ...f, instantBooking: true }))}
+              className={`p-3 rounded-lg border-2 text-left transition-colors ${
+                form.instantBooking ? "border-[#E31C23] bg-red-50/50" : "border-minbak-light-gray hover:bg-white"
+              }`}
+            >
+              <span className="text-minbak-body font-medium text-minbak-black block">
+                {t("edit.bookingModeInstant")}
+              </span>
+              <span className="text-minbak-caption text-minbak-gray mt-0.5 block">
+                {t("edit.bookingModeInstantDesc")}
+              </span>
+            </button>
           </div>
         </section>
 

@@ -2,13 +2,19 @@
 
 push 후 자동으로 Vercel 배포가 되도록 Deploy Hook을 설정합니다.
 
+**전체 배포 흐름**은 `docs/배포-가이드.md` 참고.
+
 ---
 
 ## 즉시 적용 방법
 
 ### 1. Vercel 대시보드 → 프로젝트 → Settings → Git
 
-[https://vercel.com/chris-projects/airbnb-clone/settings/git](https://vercel.com/chris-projects/airbnb-clone/settings/git) 접속
+`npm run setup:deploy-hook` 실행 시 브라우저가 자동으로 열립니다.  
+(기본: minbaktokyos = tokyominbak.net, chris-projects 사용 시 `VERCEL_TEAM=chris npm run setup:deploy-hook`)
+
+- minbaktokyos: https://vercel.com/minbaktokyos-projects/airbnb-clone/settings/git
+- chris-projects: https://vercel.com/chris-projects/airbnb-clone/settings/git
 
 ### 2. Deploy Hooks에서 main 브랜치용 URL 생성
 

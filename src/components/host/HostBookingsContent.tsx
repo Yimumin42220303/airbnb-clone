@@ -14,7 +14,7 @@ type BookingItem = {
   status: string;
   paymentStatus: string;
   rejectedByHost: boolean | null;
-  listing: { id: string; title: string };
+  listing: { id: string; title: string; instantBooking?: boolean; imageUrl: string };
   user: { name: string | null; email: string | null };
 };
 
@@ -28,25 +28,9 @@ export default function HostBookingsContent({ bookings, userId }: Props) {
       <Header />
       <main className="min-h-screen pt-4 md:pt-8 px-4 md:px-6">
         <div className="max-w-[900px] mx-auto py-4 md:py-8">
-          <div className="flex items-center justify-between mb-4 md:mb-6 flex-wrap gap-3">
-            <h1 className="text-[22px] sm:text-minbak-h2 font-semibold text-minbak-black">
-              {t("bookings.title")}
-            </h1>
-            <div className="flex gap-2">
-              <Link
-                href="/host/calendar"
-                className="min-h-[44px] flex items-center px-4 py-2.5 border border-minbak-light-gray text-minbak-black text-minbak-body font-medium rounded-minbak hover:bg-minbak-bg transition-colors"
-              >
-                {t("bookings.calendar")}
-              </Link>
-              <Link
-                href="/host/listings"
-                className="min-h-[44px] flex items-center px-4 py-2.5 border border-minbak-light-gray text-minbak-black text-minbak-body font-medium rounded-minbak hover:bg-minbak-bg transition-colors"
-              >
-                {t("bookings.myListings")}
-              </Link>
-            </div>
-          </div>
+          <h1 className="text-[22px] sm:text-minbak-h2 font-semibold text-minbak-black mb-4 md:mb-6">
+            {t("bookings.title")}
+          </h1>
 
           {!userId ? (
             <p className="text-minbak-body text-minbak-gray">

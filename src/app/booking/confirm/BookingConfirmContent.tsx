@@ -28,6 +28,7 @@ type Props = {
   totalPrice: number;
   userEmail?: string | null;
   cancellationPolicy?: string;
+  instantBooking?: boolean;
 };
 
 export default function BookingConfirmContent({
@@ -43,6 +44,7 @@ export default function BookingConfirmContent({
   totalPrice,
   userEmail,
   cancellationPolicy = "flexible",
+  instantBooking = false,
 }: Props) {
   const { formatForGuest } = useCurrency();
   const router = useRouter();
@@ -94,6 +96,7 @@ export default function BookingConfirmContent({
           checkIn,
           checkOut,
           guests,
+          guestName: form.fullName?.trim() || undefined,
           guestPhone: phone,
         }),
       });
@@ -106,7 +109,10 @@ export default function BookingConfirmContent({
         setError("예약 요청에 실패했습니다. 다시 시도해 주세요.");
         return;
       }
-      // 메시지창으로 직행해 공식 메시지 확인·호스트와 대화 가능
+      if (instantBooking) {
+        router.push(`/booking/${data.id}/pay`);
+        return;
+      }
       if (data.conversationId) {
         router.push(`/messages/${data.conversationId}`);
         return;
@@ -130,10 +136,12 @@ export default function BookingConfirmContent({
           &larr; 뒤로가기
         </button>
         <h1 className="text-[28px] md:text-[32px] font-bold text-[#222] mb-2">
-          예약 확인
+          {instantBooking ? "예약 및 결제" : "예약 확인"}
         </h1>
         <p className="text-[15px] text-[#717171]">
-          예약 정보를 확인하고 요청을 보내주세요.
+          {instantBooking
+            ? "예약 정보를 확인하고 결제를 진행해 주세요."
+            : "예약 정보를 확인하고 요청을 보내주세요."}
         </p>
       </div>
 
@@ -455,27 +463,48 @@ export default function BookingConfirmContent({
                   </h2>
                 </div>
                 <div className="p-6 space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[#E31C23] text-white flex items-center justify-center text-[13px] font-bold">1</div>
-                    <div>
-                      <p className="text-[14px] font-medium text-[#222]">예약 요청</p>
-                      <p className="text-[13px] text-[#717171]">지금 예약을 요청합니다 (결제 없음)</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[#E31C23] text-white flex items-center justify-center text-[13px] font-bold">2</div>
-                    <div>
-                      <p className="text-[14px] font-medium text-[#222]">호스트 승인</p>
-                      <p className="text-[13px] text-[#717171]">호스트가 24시간 이내에 승인/거절합니다</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[#E31C23] text-white flex items-center justify-center text-[13px] font-bold">3</div>
-                    <div>
-                      <p className="text-[14px] font-medium text-[#222]">결제 완료</p>
-                      <p className="text-[13px] text-[#717171]">승인 후 24시간 이내에 결제하면 예약 확정!</p>
-                    </div>
-                  </div>
+                  {instantBooking ? (
+                    <>
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[#E31C23] text-white flex items-center justify-center text-[13px] font-bold">1</div>
+                        <div>
+                          <p className="text-[14px] font-medium text-[#222]">예약 및 결제</p>
+                          <p className="text-[13px] text-[#717171]">예약 정보 확인 후 결제를 진행합니다</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[#E31C23] text-white flex items-center justify-center text-[13px] font-bold">2</div>
+                        <div>
+                          <p className="text-[14px] font-medium text-[#222]">예약 확정</p>
+                          <p className="text-[13px] text-[#717171]">결제 완료 즉시 예약이 확정됩니다</p>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[#E31C23] text-white flex items-center justify-center text-[13px] font-bold">1</div>
+                        <div>
+                          <p className="text-[14px] font-medium text-[#222]">예약 요청</p>
+                          <p className="text-[13px] text-[#717171]">지금 예약을 요청합니다 (결제 없음)</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[#E31C23] text-white flex items-center justify-center text-[13px] font-bold">2</div>
+                        <div>
+                          <p className="text-[14px] font-medium text-[#222]">호스트 승인</p>
+                          <p className="text-[13px] text-[#717171]">호스트가 24시간 이내에 승인/거절합니다</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[#E31C23] text-white flex items-center justify-center text-[13px] font-bold">3</div>
+                        <div>
+                          <p className="text-[14px] font-medium text-[#222]">결제 완료</p>
+                          <p className="text-[13px] text-[#717171]">승인 후 24시간 이내에 결제하면 예약 확정!</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -488,9 +517,19 @@ export default function BookingConfirmContent({
                   </h2>
                 </div>
                 <ul className="p-6 space-y-2 text-[14px] text-[#222] list-disc list-inside">
-                  <li>지금은 결제가 진행되지 않습니다</li>
-                  <li>호스트 승인 후 결제 안내 이메일이 발송됩니다</li>
-                  <li>승인 전까지 무료 취소가 가능합니다</li>
+                  {instantBooking ? (
+                    <>
+                      <li>예약 요청 후 결제 페이지로 이동합니다</li>
+                      <li>결제 완료 시 예약이 즉시 확정됩니다</li>
+                      <li>취소 정책에 따라 취소 및 환불이 가능합니다</li>
+                    </>
+                  ) : (
+                    <>
+                      <li>지금은 결제가 진행되지 않습니다</li>
+                      <li>호스트 승인 후 결제 안내 이메일이 발송됩니다</li>
+                      <li>승인 전까지 무료 취소가 가능합니다</li>
+                    </>
+                  )}
                 </ul>
               </div>
 
@@ -506,11 +545,19 @@ export default function BookingConfirmContent({
                   disabled={loading}
                   className="w-full py-3.5 rounded-full text-[16px] font-semibold text-white bg-[#E31C23] hover:bg-[#c91820] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                 >
-                  {loading ? "처리 중..." : "예약 요청하기"}
+                  {loading ? "처리 중..." : instantBooking ? "예약하기" : "예약 요청하기"}
                 </button>
                 <div className="text-[13px] text-[#717171] text-center space-y-1">
-                  <p className="mb-0">호스트가 승인하기 전까지 요금이 청구되지 않습니다.</p>
-                  <p className="mb-0">승인 후 이메일로 받은 결제 링크에서 결제하면 예약이 확정됩니다.</p>
+                  {instantBooking ? (
+                    <>
+                      <p className="mb-0">결제가 완료되면 예약이 즉시 확정됩니다.</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="mb-0">호스트가 승인하기 전까지 요금이 청구되지 않습니다.</p>
+                      <p className="mb-0">승인 후 이메일로 받은 결제 링크에서 결제하면 예약이 확정됩니다.</p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

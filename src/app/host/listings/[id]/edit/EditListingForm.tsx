@@ -12,19 +12,19 @@ import { useCurrency } from "@/components/currency/CurrencyProvider";
 import { uploadListingImages, getUploadErrorMessage } from "@/lib/useListingImageUpload";
 import { uploadVideoClientWithProgress, canUseVideoUpload, LISTING_VIDEO_MAX_BYTES, LISTING_VIDEO_ACCEPT } from "@/lib/cloudinary-client-upload";
 import { toast } from "sonner";
-import type { Amenity, Category } from "@/types";
+import type { Amenity } from "@/types";
 
 type Host = { id: string; email: string; name: string };
 
 type Props = {
   listingId: string;
   amenities: Amenity[];
-  categories: Category[];
   isAdmin?: boolean;
   hosts?: Host[];
   currentHostId?: string;
   initial: {
     title: string;
+    hostDisplayName?: string | null;
     location: string;
     description: string;
     pricePerNight: number;
@@ -49,14 +49,29 @@ type Props = {
     beds: number;
     baths: number;
     isPromoted: boolean;
+    instantBooking: boolean;
+    hidden?: boolean;
     cancellationPolicy: string;
     houseRules: string;
-    categoryId: string;
     icalImportUrls: string[];
     beds24Enabled?: boolean;
     beds24PropId?: string | null;
     beds24RoomId?: string | null;
-    beds24OfferIndex?: number | null;
+    beds24PriceMultiplier?: number | null;
+    beds24JanuaryFactor?: number;
+    beds24FebruaryFactor?: number;
+    beds24MarchFactor?: number;
+    beds24AprilFactor?: number;
+    beds24MayFactor?: number;
+    beds24JuneFactor?: number;
+    beds24JulyFactor?: number;
+    beds24AugustFactor?: number;
+    beds24SeptemberFactor?: number;
+    beds24OctoberFactor?: number;
+    beds24NovemberFactor?: number;
+    beds24DecemberFactor?: number;
+    minStayNights?: number | null;
+    maxStayNights?: number | null;
     amenityIds: string[];
     mapUrl?: string;
     videoUrl?: string | null;
@@ -67,7 +82,6 @@ type Props = {
 export default function EditListingForm({
   listingId,
   amenities,
-  categories: initialCategories,
   isAdmin = false,
   hosts = [],
   currentHostId = "",
@@ -80,12 +94,10 @@ export default function EditListingForm({
   const [beds24PriceSyncLoading, setBeds24PriceSyncLoading] = useState(false);
   const [error, setError] = useState("");
   const { formatForHost } = useCurrency();
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const [addingCategory, setAddingCategory] = useState(false);
   const [form, setForm] = useState({
     hostId: currentHostId,
     title: initial.title,
+    hostDisplayName: initial.hostDisplayName ?? "",
     location: initial.location,
     description: initial.description,
     pricePerNight: String(initial.pricePerNight),
@@ -109,14 +121,29 @@ export default function EditListingForm({
     beds: String(initial.beds),
     baths: String(initial.baths),
     isPromoted: initial.isPromoted,
+    instantBooking: initial.instantBooking ?? false,
+    hidden: initial.hidden ?? false,
     cancellationPolicy: initial.cancellationPolicy ?? "flexible",
     houseRules: initial.houseRules ?? "",
-    categoryId: initial.categoryId,
     icalImportUrls: initial.icalImportUrls.join("\n"),
     beds24Enabled: initial.beds24Enabled ?? !!(initial.beds24PropId?.trim() && initial.beds24RoomId?.trim()),
     beds24PropId: initial.beds24PropId ?? "",
     beds24RoomId: initial.beds24RoomId ?? "",
-    beds24OfferIndex: initial.beds24OfferIndex != null ? String(initial.beds24OfferIndex) : "4",
+    beds24PriceMultiplier: initial.beds24PriceMultiplier != null ? String(initial.beds24PriceMultiplier) : "1",
+    beds24JanuaryFactor: String(initial.beds24JanuaryFactor ?? 1),
+    beds24FebruaryFactor: String(initial.beds24FebruaryFactor ?? 1),
+    beds24MarchFactor: String(initial.beds24MarchFactor ?? 1),
+    beds24AprilFactor: String(initial.beds24AprilFactor ?? 1),
+    beds24MayFactor: String(initial.beds24MayFactor ?? 1),
+    beds24JuneFactor: String(initial.beds24JuneFactor ?? 1),
+    beds24JulyFactor: String(initial.beds24JulyFactor ?? 1),
+    beds24AugustFactor: String(initial.beds24AugustFactor ?? 1),
+    beds24SeptemberFactor: String(initial.beds24SeptemberFactor ?? 1),
+    beds24OctoberFactor: String(initial.beds24OctoberFactor ?? 1),
+    beds24NovemberFactor: String(initial.beds24NovemberFactor ?? 1),
+    beds24DecemberFactor: String(initial.beds24DecemberFactor ?? 1),
+    minStayNights: initial.minStayNights != null ? String(initial.minStayNights) : "",
+    maxStayNights: initial.maxStayNights != null ? String(initial.maxStayNights) : "",
     amenityIds: initial.amenityIds ?? [],
     mapUrl: initial.mapUrl ?? "",
     videoUrl: initial.videoUrl ?? "",
@@ -147,33 +174,6 @@ export default function EditListingForm({
         ? f.amenityIds.filter((x) => x !== id)
         : [...f.amenityIds, id],
     }));
-  }
-
-  async function handleAddCategory(e: React.FormEvent) {
-    e.preventDefault();
-    const name = newCategoryName.trim();
-    if (!name) return;
-    setAddingCategory(true);
-    try {
-      const res = await fetch("/api/admin/categories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || t("newListing.categoryAddFailed"));
-        return;
-      }
-      const newCat = { id: data.id, name: data.name };
-      setCategories((prev) => [...prev, newCat]);
-      setForm((f) => ({ ...f, categoryId: data.id }));
-      setNewCategoryName("");
-    } catch {
-      setError(t("newListing.categoryAddNetworkError"));
-    } finally {
-      setAddingCategory(false);
-    }
   }
 
   function addNewImageFiles(files: FileList | null) {
@@ -254,6 +254,7 @@ export default function EditListingForm({
           : rawMap;
       const payload: Record<string, unknown> = {
         title: form.title.trim(),
+        hostDisplayName: form.hostDisplayName.trim() || null,
         location: form.location.trim(),
         description: form.description.trim() || undefined,
         pricePerNight: price,
@@ -278,9 +279,10 @@ export default function EditListingForm({
         beds: parseInt(form.beds, 10) || 1,
         baths: parseInt(form.baths, 10) || 1,
         isPromoted: form.isPromoted,
+        instantBooking: form.instantBooking,
+        hidden: form.hidden,
         cancellationPolicy: form.cancellationPolicy,
         houseRules: form.houseRules,
-        categoryId: form.categoryId.trim() || undefined,
         icalImportUrls: form.icalImportUrls
           .split("\n")
           .map((u) => u.trim())
@@ -288,7 +290,30 @@ export default function EditListingForm({
         beds24Enabled: form.beds24Enabled,
         beds24PropId: form.beds24PropId?.trim() || null,
         beds24RoomId: form.beds24RoomId?.trim() || null,
-        beds24OfferIndex: form.beds24OfferIndex ? Math.min(16, Math.max(1, Number(form.beds24OfferIndex))) || null : null,
+        beds24PriceMultiplier: (() => {
+          const v = parseFloat(form.beds24PriceMultiplier);
+          return !isNaN(v) && v > 0 ? v : null;
+        })(),
+        beds24JanuaryFactor: parseFloat(form.beds24JanuaryFactor) || 1,
+        beds24FebruaryFactor: parseFloat(form.beds24FebruaryFactor) || 1,
+        beds24MarchFactor: parseFloat(form.beds24MarchFactor) || 1,
+        beds24AprilFactor: parseFloat(form.beds24AprilFactor) || 1,
+        beds24MayFactor: parseFloat(form.beds24MayFactor) || 1,
+        beds24JuneFactor: parseFloat(form.beds24JuneFactor) || 1,
+        beds24JulyFactor: parseFloat(form.beds24JulyFactor) || 1,
+        beds24AugustFactor: parseFloat(form.beds24AugustFactor) || 1,
+        beds24SeptemberFactor: parseFloat(form.beds24SeptemberFactor) || 1,
+        beds24OctoberFactor: parseFloat(form.beds24OctoberFactor) || 1,
+        beds24NovemberFactor: parseFloat(form.beds24NovemberFactor) || 1,
+        beds24DecemberFactor: parseFloat(form.beds24DecemberFactor) || 1,
+        minStayNights: (() => {
+          const v = parseInt(form.minStayNights, 10);
+          return !isNaN(v) && v >= 1 ? v : null;
+        })(),
+        maxStayNights: (() => {
+          const v = parseInt(form.maxStayNights, 10);
+          return !isNaN(v) && v >= 1 ? v : null;
+        })(),
         amenityIds: form.amenityIds,
         mapUrl: mapUrl || undefined,
         videoUrl: form.videoUrl != null && String(form.videoUrl).trim() !== "" ? String(form.videoUrl).trim() : null,
@@ -372,6 +397,16 @@ export default function EditListingForm({
               />
             </label>
             <label className="block">
+              <span className="text-minbak-body font-medium text-minbak-black block mb-1">{t("newListing.hostDisplayNameLabel")}</span>
+              <input
+                type="text"
+                value={form.hostDisplayName}
+                onChange={(e) => setForm((f) => ({ ...f, hostDisplayName: e.target.value }))}
+                placeholder={t("newListing.hostDisplayNamePlaceholder")}
+                className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
+              />
+            </label>
+            <label className="block">
               <span className="text-minbak-body font-medium text-minbak-black block mb-1">{t("newListing.propertyType")}</span>
               <div className="flex gap-4 mt-1">
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -420,39 +455,6 @@ export default function EditListingForm({
                 className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak font-mono text-[13px]"
               />
             </label>
-            <label className="block">
-              <span className="text-minbak-body font-medium text-minbak-black block mb-1">{t("newListing.category")}</span>
-              <select
-                value={form.categoryId}
-                onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
-                className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
-              >
-                <option value="">{t("newListing.categoryNone")}</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </label>
-            <div className="flex flex-wrap items-end gap-2">
-              <label className="flex-1 min-w-[180px]">
-                <span className="text-minbak-body font-medium text-minbak-black block mb-1">{t("newListing.newCategory")}</span>
-                <input
-                  type="text"
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  placeholder={t("newListing.newCategoryPlaceholder")}
-                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
-                />
-              </label>
-              <button
-                type="button"
-                onClick={handleAddCategory}
-                disabled={!newCategoryName.trim() || addingCategory}
-                className="px-4 py-2 bg-minbak-black text-white rounded-minbak hover:bg-minbak-gray disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {addingCategory ? t("newListing.adding") : t("newListing.add")}
-              </button>
-            </div>
             <div className="block">
               <span className="text-minbak-body font-medium text-minbak-black block mb-1">
                 {t("edit.imagesLabel")}
@@ -535,6 +537,20 @@ export default function EditListingForm({
                 className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak resize-y"
               />
             </label>
+            {/* 주의사항 편집 */}
+            <div className="border border-minbak-light-gray rounded-minbak p-4 space-y-3 bg-minbak-bg/50">
+              <h3 className="text-minbak-body font-medium text-minbak-black">{t("edit.notesSection")}</h3>
+              <p className="text-minbak-caption text-minbak-gray">
+                {t("edit.notesHint")}
+              </p>
+              <textarea
+                rows={6}
+                value={form.houseRules}
+                onChange={(e) => setForm((f) => ({ ...f, houseRules: e.target.value }))}
+                placeholder={t("edit.notesPlaceholder")}
+                className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body resize-y"
+              />
+            </div>
             {canUseVideoUpload() && (
               <div className="block">
                 <span className="text-minbak-body font-medium text-minbak-black block mb-1">{t("newListing.videoLabel")}</span>
@@ -701,6 +717,32 @@ export default function EditListingForm({
               />
               <span className="text-minbak-caption text-minbak-gray block mt-0.5">{t("newListing.cleaningFeeHint")}</span>
             </label>
+            <div className="grid grid-cols-2 gap-4">
+              <label>
+                <span className="text-minbak-body font-medium text-minbak-black block mb-1">{t("newListing.minStayNights")}</span>
+                <input
+                  type="number"
+                  min={1}
+                  value={form.minStayNights}
+                  onChange={(e) => setForm((f) => ({ ...f, minStayNights: e.target.value }))}
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
+                  placeholder="1"
+                />
+                <span className="text-minbak-caption text-minbak-gray block mt-0.5">{t("newListing.minStayNightsHint")}</span>
+              </label>
+              <label>
+                <span className="text-minbak-body font-medium text-minbak-black block mb-1">{t("newListing.maxStayNights")}</span>
+                <input
+                  type="number"
+                  min={1}
+                  value={form.maxStayNights}
+                  onChange={(e) => setForm((f) => ({ ...f, maxStayNights: e.target.value }))}
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
+                  placeholder=""
+                />
+                <span className="text-minbak-caption text-minbak-gray block mt-0.5">{t("newListing.maxStayNightsHint")}</span>
+              </label>
+            </div>
             <section className="border border-minbak-light-gray rounded-minbak bg-white p-4 space-y-3">
               <h3 className="text-minbak-body font-medium text-minbak-black">
                 {t("edit.monthlyFactor")}
@@ -950,6 +992,43 @@ export default function EditListingForm({
               </label>
             </div>
             )}
+            {/* 예약 방식 */}
+            <div className="border border-minbak-light-gray rounded-minbak p-4 space-y-3 bg-minbak-bg/50">
+              <h3 className="text-minbak-body font-medium text-minbak-black">{t("edit.bookingMode")}</h3>
+              <p className="text-minbak-caption text-minbak-gray">
+                {t("edit.bookingModeHint")}
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, instantBooking: false }))}
+                  className={`p-3 rounded-lg border-2 text-left transition-colors ${
+                    !form.instantBooking ? "border-[#E31C23] bg-red-50/50" : "border-minbak-light-gray hover:bg-white"
+                  }`}
+                >
+                  <span className="text-minbak-body font-medium text-minbak-black block">
+                    {t("edit.bookingModeApproval")}
+                  </span>
+                  <span className="text-minbak-caption text-minbak-gray mt-0.5 block">
+                    {t("edit.bookingModeApprovalDesc")}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, instantBooking: true }))}
+                  className={`p-3 rounded-lg border-2 text-left transition-colors ${
+                    form.instantBooking ? "border-[#E31C23] bg-red-50/50" : "border-minbak-light-gray hover:bg-white"
+                  }`}
+                >
+                  <span className="text-minbak-body font-medium text-minbak-black block">
+                    {t("edit.bookingModeInstant")}
+                  </span>
+                  <span className="text-minbak-caption text-minbak-gray mt-0.5 block">
+                    {t("edit.bookingModeInstantDesc")}
+                  </span>
+                </button>
+              </div>
+            </div>
             {/* 취소 정책 */}
             <div className="border border-minbak-light-gray rounded-minbak p-4 space-y-3 bg-minbak-bg/50">
               <h3 className="text-minbak-body font-medium text-minbak-black">{t("newListing.cancellationPolicy")}</h3>
@@ -985,20 +1064,6 @@ export default function EditListingForm({
                   </label>
                 ))}
               </div>
-            </div>
-            {/* 주의사항 편집 */}
-            <div className="border border-minbak-light-gray rounded-minbak p-4 space-y-3 bg-minbak-bg/50">
-              <h3 className="text-minbak-body font-medium text-minbak-black">{t("edit.notesSection")}</h3>
-              <p className="text-minbak-caption text-minbak-gray">
-                {t("edit.notesHint")}
-              </p>
-              <textarea
-                rows={6}
-                value={form.houseRules}
-                onChange={(e) => setForm((f) => ({ ...f, houseRules: e.target.value }))}
-                placeholder={t("edit.notesPlaceholder")}
-                className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body resize-y"
-              />
             </div>
             <div className="border border-minbak-light-gray rounded-minbak p-4 space-y-4 bg-minbak-bg/50">
               <h3 className="text-minbak-body font-medium text-minbak-black">
@@ -1052,12 +1117,6 @@ export default function EditListingForm({
                     ? `${window.location.origin}/api/listings/${listingId}/calendar.ics`
                     : `/api/listings/${listingId}/calendar.ics`}
                 </code>
-                <p className="text-minbak-caption text-minbak-gray mt-2">
-                  {t("edit.beds24IcalNote")}{" "}
-                  <Link href="https://docs.google.com/presentation/d/1lVl_CsZCdUbPXTwBRbH57mskMv3xSC188rxBtkZLRM0/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-minbak-primary hover:underline">
-                    {t("edit.beds24IcalLink")} →
-                  </Link>
-                </p>
               </div>
               )}
               {/* Beds24 API — beds24Enabled 시에만 */}
@@ -1065,14 +1124,6 @@ export default function EditListingForm({
                 <div className="p-4 border border-minbak-light-gray rounded-minbak bg-white space-y-3">
                   <h4 className="text-minbak-body font-semibold text-minbak-black">{t("edit.beds24ApiTitle")}</h4>
                   <p className="text-minbak-caption text-minbak-gray">{t("edit.beds24ApiHint")}</p>
-                  <div>
-                    <p className="text-minbak-caption font-medium text-minbak-black mb-1">{t("edit.beds24ExportUrlHint")}</p>
-                    <code className="block text-minbak-caption text-minbak-black break-all bg-white border border-minbak-light-gray rounded px-2 py-1.5">
-                      {typeof window !== "undefined"
-                        ? `${window.location.origin}/api/listings/${listingId}/calendar.ics`
-                        : `/api/listings/${listingId}/calendar.ics`}
-                    </code>
-                  </div>
                   <label className="block">
                     <span className="text-minbak-caption font-medium text-minbak-black block mb-1">{t("edit.beds24PropId")}</span>
                     <input
@@ -1093,19 +1144,40 @@ export default function EditListingForm({
                       className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body"
                     />
                   </label>
-                  <label className="block">
-                    <span className="text-minbak-caption font-medium text-minbak-black block mb-1">{t("edit.beds24OfferIndex")}</span>
-                    <p className="text-minbak-caption text-minbak-gray mb-1">{t("edit.beds24OfferIndexHint")}</p>
-                    <input
-                      type="number"
-                      min={1}
-                      max={16}
-                      value={form.beds24OfferIndex}
-                      onChange={(e) => setForm((f) => ({ ...f, beds24OfferIndex: e.target.value }))}
-                      placeholder="4"
-                      className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body"
-                    />
-                  </label>
+                  <div>
+                    <span className="text-minbak-caption font-medium text-minbak-black block mb-1">{t("edit.beds24PriceMultiplierMonthly")}</span>
+                    <p className="text-minbak-caption text-minbak-gray mb-2">{t("edit.beds24PriceMultiplierHint")}</p>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                      {[
+                        { key: "beds24JanuaryFactor" as const, month: 1 },
+                        { key: "beds24FebruaryFactor" as const, month: 2 },
+                        { key: "beds24MarchFactor" as const, month: 3 },
+                        { key: "beds24AprilFactor" as const, month: 4 },
+                        { key: "beds24MayFactor" as const, month: 5 },
+                        { key: "beds24JuneFactor" as const, month: 6 },
+                        { key: "beds24JulyFactor" as const, month: 7 },
+                        { key: "beds24AugustFactor" as const, month: 8 },
+                        { key: "beds24SeptemberFactor" as const, month: 9 },
+                        { key: "beds24OctoberFactor" as const, month: 10 },
+                        { key: "beds24NovemberFactor" as const, month: 11 },
+                        { key: "beds24DecemberFactor" as const, month: 12 },
+                      ].map(({ key, month }) => (
+                        <label key={key} className="text-minbak-caption text-minbak-gray">
+                          <span className="block mb-0.5">{t("edit.monthFactor", { month })}</span>
+                          <input
+                            type="number"
+                            min={0.01}
+                            max={2}
+                            step={0.01}
+                            value={form[key]}
+                            onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                            placeholder="1"
+                            className="w-full px-2 py-1.5 border border-minbak-light-gray rounded-minbak text-minbak-body"
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                   <p className="text-minbak-caption text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
                     {t("edit.beds24PriceSyncNote")}
                   </p>
@@ -1212,15 +1284,31 @@ export default function EditListingForm({
                 {error}
               </p>
             )}
-            <div className="flex flex-col sm:flex-row items-start gap-4 pt-2">
-            <Button type="submit" variant="secondary" disabled={loading || videoUploadStatus === "uploading"}>
-              {loading
-                ? t("edit.saving")
-                : videoUploadStatus === "uploading"
-                  ? t("newListing.videoUploadingButton", { percent: videoUploadProgress })
-                  : t("edit.save")}
-            </Button>
-              <DeleteListingButton listingId={listingId} listingTitle={initial.title} />
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-2 flex-wrap">
+              <div className="flex flex-col sm:flex-row items-start gap-4">
+                <Button type="submit" variant="secondary" disabled={loading || videoUploadStatus === "uploading"}>
+                  {loading
+                    ? t("edit.saving")
+                    : videoUploadStatus === "uploading"
+                      ? t("newListing.videoUploadingButton", { percent: videoUploadProgress })
+                      : t("edit.save")}
+                </Button>
+                <DeleteListingButton listingId={listingId} listingTitle={initial.title} />
+              </div>
+              <label
+                className="flex items-center gap-2.5 cursor-pointer select-none p-3 rounded-lg border border-minbak-light-gray bg-white hover:bg-minbak-bg/50 transition-colors sm:min-w-[200px]"
+                title={t("edit.hideOnOtaDescription")}
+              >
+                <input
+                  type="checkbox"
+                  checked={form.hidden}
+                  onChange={(e) => setForm((f) => ({ ...f, hidden: e.target.checked }))}
+                  className="w-4 h-4 accent-rose-500 rounded"
+                />
+                <span className="text-minbak-body font-medium text-minbak-black">
+                  {t("edit.hideOnOta")} {form.hidden ? "(ON)" : "(OFF)"}
+                </span>
+              </label>
             </div>
           </form>
         </div>

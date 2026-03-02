@@ -58,7 +58,17 @@ export async function getPayment(paymentId: string): Promise<PortonePayment> {
     throw new Error("Portone payment lookup failed (" + res.status + "): " + errorBody);
   }
 
-  return res.json();
+  const raw = await res.json();
+
+  // V2 API: amount.total / amount.paid / amount.cancelled 로 제공
+  // V1 호환 코드에서 totalAmount 를 직접 참조하므로 정규화
+  return {
+    ...raw,
+    totalAmount:
+      raw.totalAmount ?? raw.amount?.total ?? 0,
+    transactionId:
+      raw.transactionId ?? raw.pgTxId ?? undefined,
+  };
 }
 
 /**

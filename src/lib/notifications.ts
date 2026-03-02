@@ -13,7 +13,9 @@ export type NotificationType =
   | "guest_payment_completed"
   | "booking_cancelled"
   | "listing_approved"
-  | "listing_rejected";
+  | "listing_rejected"
+  | "payment_reminder"
+  | "unpaid_auto_cancel";
 
 export type CreateNotificationInput = {
   userId: string;

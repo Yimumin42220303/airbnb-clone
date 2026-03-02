@@ -98,6 +98,7 @@ export async function GET(
       const base = {
         id: m.id,
         body: m.body,
+        imageUrl: m.imageUrl ?? null,
         createdAt: m.createdAt.toISOString(),
         senderId: m.senderId,
         isFromMe: m.senderId === userId,
@@ -146,9 +147,10 @@ export async function POST(
   const { id: conversationId } = await params;
   const body = await request.json();
   const text = typeof body.body === "string" ? body.body.trim() : "";
-  if (!text) {
+  const imageUrl = typeof body.imageUrl === "string" ? body.imageUrl.trim() || null : null;
+  if (!text && !imageUrl) {
     return NextResponse.json(
-      { error: "메시지 내용을 입력해 주세요." },
+      { error: "메시지 내용 또는 사진을 입력해 주세요." },
       { status: 400 }
     );
   }
@@ -208,7 +210,8 @@ export async function POST(
     data: {
       conversationId,
       senderId: userId,
-      body: text,
+      body: text || "",
+      imageUrl: imageUrl || undefined,
     },
     include: {
       sender: { select: { id: true, name: true, email: true } },
@@ -231,6 +234,7 @@ export async function POST(
   return NextResponse.json({
     id: message.id,
     body: message.body,
+    imageUrl: message.imageUrl ?? null,
     createdAt: message.createdAt.toISOString(),
     senderId: message.senderId,
     isFromMe: true,

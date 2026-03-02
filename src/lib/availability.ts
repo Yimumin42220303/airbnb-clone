@@ -60,6 +60,8 @@ export async function getNightlyAvailability(
   nights: NightlyPrice[];
   totalPrice: number;
   allAvailable: boolean;
+  minStayNights: number;
+  maxStayNights: number | null;
 }> {
   const listing = await prisma.listing.findUnique({
     where: { id: listingId },
@@ -68,6 +70,8 @@ export async function getNightlyAvailability(
       cleaningFee: true,
       baseGuests: true,
       extraGuestFee: true,
+      minStayNights: true,
+      maxStayNights: true,
       januaryFactor: true,
       februaryFactor: true,
       marchFactor: true,
@@ -83,7 +87,19 @@ export async function getNightlyAvailability(
       beds24Enabled: true,
       beds24PropId: true,
       beds24RoomId: true,
-      beds24OfferIndex: true,
+      beds24PriceMultiplier: true,
+      beds24JanuaryFactor: true,
+      beds24FebruaryFactor: true,
+      beds24MarchFactor: true,
+      beds24AprilFactor: true,
+      beds24MayFactor: true,
+      beds24JuneFactor: true,
+      beds24JulyFactor: true,
+      beds24AugustFactor: true,
+      beds24SeptemberFactor: true,
+      beds24OctoberFactor: true,
+      beds24NovemberFactor: true,
+      beds24DecemberFactor: true,
     },
   });
   if (!listing) {
@@ -96,6 +112,8 @@ export async function getNightlyAvailability(
   const extraGuestFee = l.extraGuestFee ?? 0;
 
   const dateKeys = getDateKeysBetween(checkIn, checkOut);
+  const minNights = l.minStayNights ?? 1;
+  const maxNights = l.maxStayNights ?? null;
   if (dateKeys.length === 0) {
     return {
       listingPricePerNight: l.pricePerNight,
@@ -104,7 +122,9 @@ export async function getNightlyAvailability(
       cleaningFee: l.cleaningFee ?? 0,
       nights: [],
       totalPrice: 0,
-      allAvailable: true,
+      allAvailable: false,
+      minStayNights: minNights,
+      maxStayNights: maxNights,
     };
   }
 
@@ -123,13 +143,11 @@ export async function getNightlyAvailability(
   let beds24Prices = new Map<string, number>();
   if (useBeds24Prices && l.beds24PropId?.trim() && l.beds24RoomId?.trim()) {
     try {
-      const offerIdx = Math.min(16, Math.max(1, l.beds24OfferIndex ?? 4));
       beds24Prices = await getBeds24CalendarPrices(
         l.beds24PropId.trim(),
         l.beds24RoomId.trim(),
         checkIn,
-        checkOut,
-        offerIdx
+        checkOut
       );
     } catch (_) {
       // API 실패 시 기존 로직(DB + 도쿄민박) fallback
@@ -170,14 +188,40 @@ export async function getNightlyAvailability(
     }
   }
 
+  function getBeds24MonthFactor(dateKey: string): number {
+    const month = parseInt(dateKey.slice(5, 7), 10);
+    const fallback = l.beds24PriceMultiplier != null && l.beds24PriceMultiplier > 0
+      ? l.beds24PriceMultiplier
+      : 1;
+    switch (month) {
+      case 1: return l.beds24JanuaryFactor != null && l.beds24JanuaryFactor > 0 ? l.beds24JanuaryFactor : fallback;
+      case 2: return l.beds24FebruaryFactor != null && l.beds24FebruaryFactor > 0 ? l.beds24FebruaryFactor : fallback;
+      case 3: return l.beds24MarchFactor != null && l.beds24MarchFactor > 0 ? l.beds24MarchFactor : fallback;
+      case 4: return l.beds24AprilFactor != null && l.beds24AprilFactor > 0 ? l.beds24AprilFactor : fallback;
+      case 5: return l.beds24MayFactor != null && l.beds24MayFactor > 0 ? l.beds24MayFactor : fallback;
+      case 6: return l.beds24JuneFactor != null && l.beds24JuneFactor > 0 ? l.beds24JuneFactor : fallback;
+      case 7: return l.beds24JulyFactor != null && l.beds24JulyFactor > 0 ? l.beds24JulyFactor : fallback;
+      case 8: return l.beds24AugustFactor != null && l.beds24AugustFactor > 0 ? l.beds24AugustFactor : fallback;
+      case 9: return l.beds24SeptemberFactor != null && l.beds24SeptemberFactor > 0 ? l.beds24SeptemberFactor : fallback;
+      case 10: return l.beds24OctoberFactor != null && l.beds24OctoberFactor > 0 ? l.beds24OctoberFactor : fallback;
+      case 11: return l.beds24NovemberFactor != null && l.beds24NovemberFactor > 0 ? l.beds24NovemberFactor : fallback;
+      case 12: return l.beds24DecemberFactor != null && l.beds24DecemberFactor > 0 ? l.beds24DecemberFactor : fallback;
+      default: return fallback;
+    }
+  }
+
   const nights: NightlyPrice[] = dateKeys.map((date) => {
     const row = byDate.get(date);
     const available = (row ? row.available : true) && !externalBlocked.has(date);
     const factor = getMonthFactor(date);
     const basePrice = Math.round(l.pricePerNight * factor);
+    const beds24Mult = getBeds24MonthFactor(date);
     let pricePerNight: number;
     if (useBeds24Prices && beds24Prices.has(date)) {
-      pricePerNight = beds24Prices.get(date)!;
+      pricePerNight = Math.round(beds24Prices.get(date)! * beds24Mult);
+    } else if (useBeds24Prices && row?.pricePerNight != null) {
+      // sync가 저장한 Beds24 price1 → 배율 적용
+      pricePerNight = Math.round(row.pricePerNight * beds24Mult);
     } else if (row?.pricePerNight != null) {
       pricePerNight = row.pricePerNight;
     } else {
@@ -186,7 +230,10 @@ export async function getNightlyAvailability(
     return { date, pricePerNight, available };
   });
 
-  const allAvailable = nights.every((n) => n.available);
+  let allAvailable = nights.every((n) => n.available);
+  const nightsCount = nights.length;
+  if (nightsCount < minNights) allAvailable = false;
+  if (maxNights != null && nightsCount > maxNights) allAvailable = false;
   const nightsTotal = nights.reduce((sum, n) => sum + n.pricePerNight, 0);
   const totalPrice = nightsTotal + cleaningFee;
 
@@ -198,6 +245,8 @@ export async function getNightlyAvailability(
     nights,
     totalPrice,
     allAvailable,
+    minStayNights: minNights,
+    maxStayNights: maxNights,
   };
 }
 

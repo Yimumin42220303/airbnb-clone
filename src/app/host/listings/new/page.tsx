@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getAdminUser } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { Header, Footer } from "@/components/layout";
 import NewListingForm from "./NewListingForm";
@@ -15,6 +16,9 @@ export default async function NewListingPage() {
     redirect("/auth/signin?callbackUrl=/host/listings/new");
   }
 
+  const admin = await getAdminUser();
+  const isAdmin = !!admin;
+
   const amenities = await prisma.amenity.findMany({
     orderBy: { name: "asc" },
     select: { id: true, name: true },
@@ -24,7 +28,7 @@ export default async function NewListingPage() {
     <>
       <Header />
       <main className="min-h-screen pt-4 md:pt-8 px-4 md:px-6 pb-16">
-        <NewListingForm amenities={amenities} />
+        <NewListingForm amenities={amenities} isAdmin={isAdmin} />
       </main>
       <Footer />
     </>

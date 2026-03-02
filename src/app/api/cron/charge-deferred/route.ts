@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { payWithBillingKey } from "@/lib/portone";
 import { sendEmailAsync, BASE_URL } from "@/lib/email";
+import { syncBookingToBeds24 } from "@/lib/bookings";
+import { createScheduledMessagesForBooking } from "@/lib/scheduled-messages";
 import {
   paymentConfirmationGuest,
   paymentConfirmationHost,
@@ -88,6 +90,15 @@ export async function POST(request: Request) {
           },
         }),
       ]);
+
+      // Beds24 캘린더에 예약 반영 (후불 결제 완료 시)
+      syncBookingToBeds24(booking.id).then((r) => {
+        if (!r.ok) console.error("[Beds24] 후불 결제 확정 동기화 실패:", r.error);
+      });
+
+      createScheduledMessagesForBooking(booking.id).catch((err) => {
+        console.error("[ScheduledMsg] 후불 스케줄 생성 실패:", err);
+      });
 
       // 결제 완료 이메일 발송
       const nights = Math.floor(

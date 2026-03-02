@@ -11,28 +11,45 @@ function hasIcalSync(icalImportUrls: string | null): boolean {
   if (!icalImportUrls || icalImportUrls === "[]") return false;
   try {
     const arr = JSON.parse(icalImportUrls) as string[];
-    return Array.isArray(arr) && arr.length > 0;
+    return Array.isArray(arr) && arr.some((u) => typeof u === "string" && u.trim().length > 0);
   } catch {
     return false;
   }
 }
 
+function getSyncType(
+  icalImportUrls: string | null,
+  beds24Enabled: boolean | null,
+  beds24PropId: string | null,
+  beds24RoomId: string | null
+): "beds24" | "ical" | "none" {
+  if (beds24Enabled && beds24PropId?.trim() && beds24RoomId?.trim()) return "beds24";
+  if (hasIcalSync(icalImportUrls)) return "ical";
+  return "none";
+}
+
 type Listing = {
   id: string;
   title: string;
+  hostDisplayName?: string | null;
   location: string;
   imageUrl: string;
   pricePerNight: number;
   maxGuests: number;
   icalImportUrls: string | null;
+  beds24Enabled?: boolean | null;
+  beds24PropId?: string | null;
+  beds24RoomId?: string | null;
   status?: string; // "pending" | "approved" | "rejected"
   rejectedReason?: string | null;
+  hidden?: boolean;
   _count: { reviews: number };
 };
 
-function statusLabel(status: string | undefined, t: (k: HostTranslationKey) => string): string {
+function statusLabel(status: string | undefined, hidden: boolean | undefined, t: (k: HostTranslationKey) => string): string {
   if (status === "pending") return t("listings.statusPending");
   if (status === "rejected") return t("listings.statusRejected");
+  if (hidden) return t("listings.hiddenBadge");
   return t("listings.statusApproved");
 }
 
@@ -51,14 +68,6 @@ export default function HostListingsContent({ listings, userId, isAdmin }: Props
               {t("listings.title")}
             </h1>
             <div className="flex items-center gap-2">
-              {isAdmin && (
-                <Link
-                  href="/admin/listings/import"
-                  className="min-h-[44px] flex items-center gap-2 px-4 py-2.5 rounded-minbak bg-minbak-primary text-white text-sm sm:text-minbak-body font-medium hover:bg-minbak-primary-hover transition-colors"
-                >
-                  일괄 등록
-                </Link>
-              )}
               <button
                 type="button"
                 className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-minbak border border-minbak-light-gray text-minbak-black hover:bg-minbak-bg transition-colors"
@@ -110,15 +119,15 @@ export default function HostListingsContent({ listings, userId, isAdmin }: Props
               <ul className="md:hidden space-y-3">
                 {listings.map((l) => (
                   <li key={l.id} className="border border-minbak-light-gray rounded-minbak bg-white overflow-hidden">
-                    <Link href={l.status === "approved" ? `/listing/${l.id}` : `/host/listings/${l.id}/edit`} className="flex items-center gap-3 p-4 min-h-[72px] active:opacity-95 block">
+                    <Link href={l.status === "approved" && !l.hidden ? `/listing/${l.id}` : `/host/listings/${l.id}/edit`} className="flex items-center gap-3 p-4 min-h-[72px] active:opacity-95 block">
                       <div className="relative w-16 h-16 flex-shrink-0 rounded overflow-hidden bg-minbak-light-gray">
                         <Image src={l.imageUrl} alt="" fill className="object-cover" sizes="64px" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium text-minbak-black text-[15px] line-clamp-2">{l.title}</p>
+                        <p className="font-medium text-minbak-black text-[15px] line-clamp-2">{l.hostDisplayName?.trim() || l.title}</p>
                         <p className="text-minbak-caption text-minbak-gray truncate mt-0.5">{l.location}</p>
-                        <span className={`inline-block mt-1 text-[11px] font-medium px-1.5 py-0.5 rounded ${l.status === "pending" ? "bg-amber-100 text-amber-800" : l.status === "rejected" ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}`}>
-                          {statusLabel(l.status, t)}
+                        <span className={`inline-block mt-1 text-[11px] font-medium px-1.5 py-0.5 rounded ${l.status === "pending" ? "bg-amber-100 text-amber-800" : l.status === "rejected" ? "bg-red-100 text-red-800" : l.hidden ? "bg-neutral-200 text-neutral-700" : "bg-green-100 text-green-800"}`}>
+                          {statusLabel(l.status, l.hidden, t)}
                         </span>
                         {l.status === "rejected" && l.rejectedReason && (
                           <p className="mt-1 text-[11px] text-red-700 line-clamp-2" title={l.rejectedReason}>
@@ -160,12 +169,12 @@ export default function HostListingsContent({ listings, userId, isAdmin }: Props
                       {listings.map((l) => (
                         <tr key={l.id} className="border-b border-minbak-light-gray last:border-b-0 hover:bg-minbak-bg/30 transition-colors">
                           <td className="py-3 px-3 align-middle">
-                            <Link href={l.status === "approved" ? `/listing/${l.id}` : `/host/listings/${l.id}/edit`} className="flex items-center gap-2 min-w-0 group">
+                            <Link href={l.status === "approved" && !l.hidden ? `/listing/${l.id}` : `/host/listings/${l.id}/edit`} className="flex items-center gap-2 min-w-0 group">
                               <div className="relative w-12 h-12 flex-shrink-0 rounded overflow-hidden bg-minbak-light-gray">
                                 <Image src={l.imageUrl} alt="" fill className="object-cover" sizes="48px" />
                               </div>
                               <div className="min-w-0 flex-1 overflow-hidden">
-                                <p className="font-medium text-minbak-black text-[14px] truncate group-hover:underline">{l.title}</p>
+                                <p className="font-medium text-minbak-black text-[14px] truncate group-hover:underline">{l.hostDisplayName?.trim() || l.title}</p>
                                 <p className="text-minbak-caption text-minbak-gray truncate">{l.location}</p>
                               </div>
                             </Link>
@@ -176,9 +185,9 @@ export default function HostListingsContent({ listings, userId, isAdmin }: Props
                           </td>
                           <td className="py-3 px-3 align-middle">
                             <div className="flex flex-col gap-0.5">
-                              <span className={`inline-flex items-center gap-1.5 text-minbak-body font-medium px-2 py-0.5 rounded w-fit ${l.status === "pending" ? "bg-amber-100 text-amber-800" : l.status === "rejected" ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}`}>
-                                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${l.status === "pending" ? "bg-amber-500" : l.status === "rejected" ? "bg-red-500" : "bg-green-500"}`} aria-hidden />
-                                {statusLabel(l.status, t)}
+                              <span className={`inline-flex items-center gap-1.5 text-minbak-body font-medium px-2 py-0.5 rounded w-fit ${l.status === "pending" ? "bg-amber-100 text-amber-800" : l.status === "rejected" ? "bg-red-100 text-red-800" : l.hidden ? "bg-neutral-200 text-neutral-700" : "bg-green-100 text-green-800"}`}>
+                                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${l.status === "pending" ? "bg-amber-500" : l.status === "rejected" ? "bg-red-500" : l.hidden ? "bg-neutral-500" : "bg-green-500"}`} aria-hidden />
+                                {statusLabel(l.status, l.hidden, t)}
                               </span>
                               {l.status === "rejected" && l.rejectedReason && (
                                 <span className="text-[11px] text-red-700 line-clamp-2 max-w-[120px]" title={l.rejectedReason}>
@@ -188,14 +197,28 @@ export default function HostListingsContent({ listings, userId, isAdmin }: Props
                             </div>
                           </td>
                           <td className="py-3 px-3 whitespace-nowrap align-middle overflow-hidden">
-                            {hasIcalSync(l.icalImportUrls) ? (
-                              <span className="inline-flex items-center gap-1.5 text-minbak-body text-minbak-black">
-                                <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" aria-hidden />
-                                {t("listings.syncComplete")}
-                              </span>
-                            ) : (
-                              <span className="text-minbak-caption text-minbak-gray">—</span>
-                            )}
+                            {(() => {
+                              const sync = getSyncType(l.icalImportUrls, l.beds24Enabled ?? false, l.beds24PropId ?? null, l.beds24RoomId ?? null);
+                              if (sync === "beds24") {
+                                return (
+                                  <span className="inline-flex items-center gap-1.5 text-minbak-body text-minbak-black">
+                                    <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" aria-hidden />
+                                    {t("listings.syncBeds24")}
+                                  </span>
+                                );
+                              }
+                              if (sync === "ical") {
+                                return (
+                                  <span className="inline-flex items-center gap-1.5 text-minbak-body text-minbak-black">
+                                    <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" aria-hidden />
+                                    {t("listings.syncIcal")}
+                                  </span>
+                                );
+                              }
+                              return (
+                                <span className="text-minbak-caption text-minbak-gray">{t("listings.syncNone")}</span>
+                              );
+                            })()}
                           </td>
                           <td className="py-3 px-3 align-middle">
                             <Link

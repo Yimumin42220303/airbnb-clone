@@ -35,6 +35,7 @@ model User {
   wishlists Wishlist[]
   posts    Post[]   // 운영자 블로그 (admin 전용)
   notifications Notification[]
+  scheduledMessageTemplates ScheduledMessageTemplate[] @relation("HostTemplates")
 }
 
 // NextAuth OAuth·이메일 연동
@@ -96,6 +97,8 @@ model Post {
 model Listing {
   id          String   @id @default(cuid())
   title       String
+  /// 管理者・ホストがダッシュボードで識別するための表示名（日本語可）。未設定時は title を表示。
+  hostDisplayName String?
   location    String   // 예: "신주쿠구, 도쿄" 또는 "다카다노바바역 도보 6분"
   description String? @default("")
   /// 구글 지도 등 외부 지도 서비스 링크 (선택)
@@ -128,6 +131,8 @@ model Listing {
   beds        Int      @default(1)
   baths       Int      @default(1)
   isPromoted  Boolean  @default(false) // 직영숙소(프로모션대상) 여부
+  /// 즉시 예약 허용: true면 호스트 승인 없이 바로 결제 진행
+  instantBooking Boolean @default(false)
   /// 취소 정책: "flexible" | "moderate" | "strict"
   cancellationPolicy String @default("flexible")
   /// 주의사항 (줄바꿈으로 구분, 각 줄이 하나의 항목)
@@ -139,6 +144,10 @@ model Listing {
   approvedAt     DateTime?
   rejectedAt     DateTime?
   rejectedReason String?
+  /// OTA 노출 숨김: true면 검색·상세·홈에 노출하지 않음 (호스트는 목록에서 조회·토글 가능)
+  hidden         Boolean   @default(false)
+  /// 관리자 인증 숙소 (신뢰 배지 표시)
+  isVerified     Boolean   @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -157,8 +166,27 @@ model Listing {
   beds24PropId  String?
   /// Beds24 룸 ID (roomId)
   beds24RoomId  String?
-  /// Beds24 가격 컬럼 인덱스 (1~16). tokyominbak 레이트가 p1~p16 중 어디인지. null=1(p1)
+  /// Beds24 가격 컬럼 인덱스 (1~16). tokyominbak 레이트가 p1~p16 중 어디인지. null=4(p4)
   beds24OfferIndex Int?
+  /// Beds24 가격 배율. 1=그대로, 0.5=-50%. Beds24 연동가격(価格from+オフセット) 미반환 시 수동 적용
+  beds24PriceMultiplier Float?
+  /// Beds24 가격 배율 월별 (1=그대로). 미설정 시 beds24PriceMultiplier 또는 1 사용
+  beds24JanuaryFactor   Float?  @map("beds24_january_factor")
+  beds24FebruaryFactor  Float?  @map("beds24_february_factor")
+  beds24MarchFactor     Float?  @map("beds24_march_factor")
+  beds24AprilFactor     Float?  @map("beds24_april_factor")
+  beds24MayFactor       Float?  @map("beds24_may_factor")
+  beds24JuneFactor      Float?  @map("beds24_june_factor")
+  beds24JulyFactor      Float?  @map("beds24_july_factor")
+  beds24AugustFactor    Float?  @map("beds24_august_factor")
+  beds24SeptemberFactor Float?  @map("beds24_september_factor")
+  beds24OctoberFactor   Float?  @map("beds24_october_factor")
+  beds24NovemberFactor  Float?  @map("beds24_november_factor")
+  beds24DecemberFactor  Float?  @map("beds24_december_factor")
+  /// 최소 숙박 일수. null=1박(기본)
+  minStayNights Int?
+  /// 최대 숙박 일수. null=제한 없음
+  maxStayNights Int?
 
   bookings     Booking[]
   reviews      Review[]
@@ -166,6 +194,7 @@ model Listing {
   images       ListingImage[]
   availability ListingAvailability[]
   wishlists    Wishlist[]
+  scheduledMessageTemplateListings ScheduledMessageTemplateListing[]
 
   @@index([userId]) // 호스트별 숙소 조회 최적화
 }
@@ -247,10 +276,16 @@ model Booking {
   status          String   @default("pending") // pending | confirmed | cancelled
   paymentStatus   String   @default("pending") // pending | paid | refunded | failed
   rejectedByHost  Boolean? @default(false) // 취소 시 호스트 거절 여부 (기록용)
+  /// 예약 확인 페이지에서 입력한 예약자 성함 (PG 구매자명·이메일 수신자 표시 등에 사용)
+  guestName       String?
   guestPhone      String?  // 예약 확인 페이지에서 입력한 긴급연락용 전화번호 (PG 결제 시 사용)
   billingKey            String?   // 포트원 빌링키 (카드 등록 시 발급)
   paymentMethod         String    @default("immediate") // immediate(즉시결제) | deferred(빌링키 후불결제)
   scheduledPaymentDate  DateTime? // 자동 결제 예정일 (체크인 7일 전)
+  /// 호스트 승인 시각 (승인제 숙소에서 accept 시 기록, 24시간 미결제 자동 취소 기준)
+  confirmedAt       DateTime?
+  /// 결제 리마인더 발송 여부 (24시간 기한 중 20시간 경과 시 1회 발송)
+  paymentReminderSent Boolean @default(false)
   /// 정산 상태: null(미정산) | "completed"(정산완료)
   settlementStatus  String?
   /// 정산 완료 시각 (운영자가 완료 체크한 시점)
@@ -304,6 +339,7 @@ model Conversation {
   createdAt DateTime @default(now())
 
   messages Message[]
+  scheduledMessages ScheduledMessage[]
 }
 
 model Message {
@@ -313,6 +349,8 @@ model Message {
   senderId       String
   sender         User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
   body           String
+  /// 메시지 첨부 이미지 URL (1장, 사진만)
+  imageUrl       String?
   createdAt      DateTime @default(now())
 
   translationCache TranslationCache[]
@@ -352,6 +390,64 @@ model Notification {
   @@index([userId, readAt])
 }
 
+// ---------- 예약 메시지 템플릿 (호스트가 생성·관리) ----------
+model ScheduledMessageTemplate {
+  id         String   @id @default(cuid())
+  hostId     String
+  host       User     @relation("HostTemplates", fields: [hostId], references: [id], onDelete: Cascade)
+  title      String
+  body       String
+  /// "booking_confirmed" | "before_checkin" | "after_checkin" | "before_checkout" | "after_checkout"
+  trigger    String
+  /// 트리거 기준 오프셋 (일). before_checkin+offsetDays=2 → 체크인 2일 전
+  offsetDays Int      @default(0)
+  /// 전송 시각 (HH:MM, JST 기준)
+  sendTime   String   @default("10:00")
+  /// 0件 = 호스트의 전체 숙소에 적용. 1件以上 = 指定したリスティングのみ
+  templateListings ScheduledMessageTemplateListing[]
+  enabled    Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  scheduledMessages ScheduledMessage[]
+
+  @@index([hostId, enabled])
+}
+
+/// テンプレート適用リスティング (0件=全件適用、1件以上=指定のみ)
+model ScheduledMessageTemplateListing {
+  templateId String
+  listingId  String
+  template   ScheduledMessageTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  listing    Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@id([templateId, listingId])
+  @@index([listingId])
+}
+
+// ---------- 예약 메시지 인스턴스 (예약별 자동 생성) ----------
+model ScheduledMessage {
+  id             String   @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  templateId     String
+  template       ScheduledMessageTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  /// UTC로 저장 (생성 시 JST→UTC 변환)
+  scheduledAt    DateTime
+  /// 단축 코드가 치환된 최종 본문
+  renderedBody   String
+  /// "pending" | "sent" | "skipped"
+  status         String   @default("pending")
+  sentAt         DateTime?
+  sentManually   Boolean  @default(false)
+  /// 전송된 Message ID
+  messageId      String?  @unique
+  createdAt      DateTime @default(now())
+
+  @@index([conversationId])
+  @@index([status, scheduledAt])
+}
+
 // AI 리뷰 요약 캐시 (온디맨드 생성, 24시간 유효)
 model ListingReviewSummary {
   id                 String   @id @default(cuid())
@@ -375,7 +471,19 @@ model Review {
   listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
   userId    String
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  images    ReviewImage[]
   // 과거에는 @@unique([listingId, userId]) 로 "숙소당 사용자 1인 1리뷰"를 강제했지만,
   // 관리자(admin)가 동일 숙소에 여러 리뷰를 등록할 수 있도록 제거했습니다.
   @@index([listingId, userId])
+}
+
+// ---------- 리뷰 이미지 ----------
+model ReviewImage {
+  id        String   @id @default(cuid())
+  reviewId  String
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  url       String
+  sortOrder Int      @default(0)
+
+  @@index([reviewId])
 }

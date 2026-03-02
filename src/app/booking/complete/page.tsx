@@ -36,6 +36,7 @@ export default async function BookingCompletePage({ searchParams }: Props) {
     listingId: string;
     paymentMethod: string | null;
     scheduledPaymentDate: Date | null;
+    listing: { instantBooking: boolean } | null;
   } | null = null;
 
   try {
@@ -57,6 +58,7 @@ export default async function BookingCompletePage({ searchParams }: Props) {
           listingId: true,
           paymentMethod: true,
           scheduledPaymentDate: true,
+          listing: { select: { instantBooking: true } },
         },
       });
       booking = found;
@@ -105,6 +107,7 @@ export default async function BookingCompletePage({ searchParams }: Props) {
   const isPaid = booking?.paymentStatus === "paid";
   const isConfirmed = booking?.status === "confirmed";
   const isPending = booking?.status === "pending";
+  const isInstant = booking?.listing?.instantBooking === true;
 
   return (
     <>
@@ -116,6 +119,7 @@ export default async function BookingCompletePage({ searchParams }: Props) {
             <div className="mb-8 p-4 bg-white border border-minbak-light-gray rounded-minbak">
               <BookingStepIndicator
                 {...getBookingStepState(booking.status, booking.paymentStatus)}
+                instantBooking={isInstant}
               />
             </div>
           )}
@@ -183,7 +187,7 @@ export default async function BookingCompletePage({ searchParams }: Props) {
               )}
               {isConfirmed && !isPaid && (
                 <span className="text-minbak-caption font-medium px-2.5 py-1 rounded-full bg-blue-100 text-blue-800">
-                  호스트 승인 · 결제 대기
+                  {isInstant ? "결제 대기" : "호스트 승인 · 결제 대기"}
                 </span>
               )}
               {isPending && (
@@ -231,7 +235,7 @@ export default async function BookingCompletePage({ searchParams }: Props) {
                 24시간 이내에 결제를 완료해 주세요.
               </p>
               <p className="text-[13px] text-blue-800">
-                결제하지 않으면 예약이 자동 취소될 수 있습니다.
+                결제하지 않으면 예약이 자동 취소됩니다.
               </p>
             </div>
           )}

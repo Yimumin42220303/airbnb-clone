@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getNightlyAvailability } from "@/lib/availability";
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/listings/[id]/price?checkIn=YYYY-MM-DD&checkOut=YYYY-MM-DD
  * 해당 기간의 일별 요금·가용성 및 총 금액
@@ -51,13 +53,22 @@ export async function GET(
     const extraTotal =
       nightsCount > 0 ? extraGuests * extraGuestFee * nightsCount : 0;
     const totalPrice = nightsTotal + cleaningFee + extraTotal;
-    return NextResponse.json({
-      totalPrice,
-      allAvailable: result.allAvailable,
-      listingPricePerNight: result.listingPricePerNight,
-      cleaningFee: result.cleaningFee ?? 0,
-      nights: result.nights,
-    });
+    return NextResponse.json(
+      {
+        totalPrice,
+        allAvailable: result.allAvailable,
+        listingPricePerNight: result.listingPricePerNight,
+        cleaningFee: result.cleaningFee ?? 0,
+        nights: result.nights,
+        minStayNights: result.minStayNights,
+        maxStayNights: result.maxStayNights,
+      },
+      {
+        headers: {
+          "Cache-Control": "private, no-store, max-age=0",
+        },
+      }
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : "오류가 발생했습니다.";
     return NextResponse.json(

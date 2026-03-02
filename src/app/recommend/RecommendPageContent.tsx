@@ -411,10 +411,27 @@ export default function RecommendPageContent() {
             {t("guest.aiRecommendResultsCount", { count: results.length })}
           </h2>
           {aiRefining && (
-            <p className="text-minbak-caption text-minbak-primary mb-4 flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              {t("guest.aiRefining")}
-            </p>
+            <div className="mb-4 p-4 bg-minbak-primary/5 border border-minbak-primary/20 rounded-minbak">
+              <div className="flex items-center justify-between gap-3 mb-2">
+                <span className="text-minbak-caption font-medium text-minbak-primary flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                  {t("guest.aiRefining")}
+                </span>
+                <span className="text-minbak-body font-semibold text-minbak-primary tabular-nums">
+                  {t("guest.progressPercent", {
+                    percent: Math.min(100, Math.round((results.length / 5) * 100)),
+                  })}
+                </span>
+              </div>
+              <div className="h-2 w-full bg-minbak-primary/20 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-minbak-primary rounded-full transition-all duration-500 ease-out"
+                  style={{
+                    width: `${Math.min(100, (results.length / 5) * 100)}%`,
+                  }}
+                />
+              </div>
+            </div>
           )}
           {message && !aiRefining && (
             <p className="text-minbak-caption text-minbak-gray mb-4">{message}</p>

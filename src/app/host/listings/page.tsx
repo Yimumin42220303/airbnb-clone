@@ -21,13 +21,18 @@ export default async function HostListingsPage() {
     select: {
       id: true,
       title: true,
+      hostDisplayName: true,
       location: true,
       imageUrl: true,
       pricePerNight: true,
       maxGuests: true,
       icalImportUrls: true,
+      beds24Enabled: true,
+      beds24PropId: true,
+      beds24RoomId: true,
       status: true,
       rejectedReason: true,
+      hidden: true,
       _count: { select: { reviews: true } },
     },
   });

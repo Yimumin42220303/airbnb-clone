@@ -189,6 +189,7 @@ type Booking = {
 type ListingWithBookings = {
   id: string;
   title: string;
+  hostDisplayName?: string | null;
   location: string;
   imageUrl: string;
   pricePerNight: number;
@@ -353,6 +354,7 @@ export default function HostCalendarView() {
     return listings.filter(
       (l) =>
         l.title.toLowerCase().includes(q) ||
+        (l.hostDisplayName?.trim() ?? "").toLowerCase().includes(q) ||
         l.location.toLowerCase().includes(q)
     );
   }, [listings, sidebarSearch]);
@@ -408,7 +410,7 @@ export default function HostCalendarView() {
                 <option value="">{t("calendar.filterAllListings")}</option>
                 {filteredListings.map((l) => (
                   <option key={l.id} value={l.id}>
-                    {l.title}
+                    {l.hostDisplayName?.trim() || l.title}
                   </option>
                 ))}
               </select>
@@ -654,7 +656,7 @@ function CalendarRow({
             href={`/listing/${listing.id}`}
             className="text-minbak-body font-medium text-minbak-black hover:underline truncate mt-0.5 block"
           >
-            {listing.title}
+            {listing.hostDisplayName?.trim() || listing.title}
           </Link>
         </div>
       </div>

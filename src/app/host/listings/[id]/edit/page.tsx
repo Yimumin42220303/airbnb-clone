@@ -42,11 +42,7 @@ export default async function EditListingPage({ params }: Props) {
       ? listing.images.map((i) => i.url)
       : [listing.imageUrl];
 
-  const [categories, amenities, listingAmenities] = await Promise.all([
-    prisma.listingCategory.findMany({
-      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      select: { id: true, name: true },
-    }),
+  const [amenities, listingAmenities] = await Promise.all([
     prisma.amenity.findMany({
       orderBy: { name: "asc" },
       select: { id: true, name: true },
@@ -62,13 +58,13 @@ export default async function EditListingPage({ params }: Props) {
   return (
     <EditListingForm
       listingId={id}
-      categories={categories}
       amenities={amenities}
       isAdmin={isAdmin}
       hosts={hosts.map((h) => ({ id: h.id, email: h.email, name: h.name ?? h.email }))}
       currentHostId={owner?.userId ?? ""}
       initial={{
         title: listing.title,
+        hostDisplayName: listing.hostDisplayName ?? undefined,
         location: listing.location,
         description: listing.description ?? "",
         pricePerNight: listing.pricePerNight,
@@ -92,16 +88,31 @@ export default async function EditListingPage({ params }: Props) {
         bedrooms: listing.bedrooms,
         beds: listing.beds,
         baths: listing.baths,
-        categoryId: listing.category?.id ?? "",
         icalImportUrls: listing.icalImportUrls ?? [],
         beds24Enabled: listing.beds24Enabled ?? !!(listing.beds24PropId?.trim() && listing.beds24RoomId?.trim()),
         beds24PropId: listing.beds24PropId ?? null,
         beds24RoomId: listing.beds24RoomId ?? null,
-        beds24OfferIndex: listing.beds24OfferIndex ?? null,
+        beds24PriceMultiplier: listing.beds24PriceMultiplier ?? null,
+        beds24JanuaryFactor: (listing as { beds24JanuaryFactor?: number }).beds24JanuaryFactor ?? 1,
+        beds24FebruaryFactor: (listing as { beds24FebruaryFactor?: number }).beds24FebruaryFactor ?? 1,
+        beds24MarchFactor: (listing as { beds24MarchFactor?: number }).beds24MarchFactor ?? 1,
+        beds24AprilFactor: (listing as { beds24AprilFactor?: number }).beds24AprilFactor ?? 1,
+        beds24MayFactor: (listing as { beds24MayFactor?: number }).beds24MayFactor ?? 1,
+        beds24JuneFactor: (listing as { beds24JuneFactor?: number }).beds24JuneFactor ?? 1,
+        beds24JulyFactor: (listing as { beds24JulyFactor?: number }).beds24JulyFactor ?? 1,
+        beds24AugustFactor: (listing as { beds24AugustFactor?: number }).beds24AugustFactor ?? 1,
+        beds24SeptemberFactor: (listing as { beds24SeptemberFactor?: number }).beds24SeptemberFactor ?? 1,
+        beds24OctoberFactor: (listing as { beds24OctoberFactor?: number }).beds24OctoberFactor ?? 1,
+        beds24NovemberFactor: (listing as { beds24NovemberFactor?: number }).beds24NovemberFactor ?? 1,
+        beds24DecemberFactor: (listing as { beds24DecemberFactor?: number }).beds24DecemberFactor ?? 1,
+        minStayNights: listing.minStayNights ?? null,
+        maxStayNights: listing.maxStayNights ?? null,
         amenityIds: initialAmenityIds,
         mapUrl: listing.mapUrl ?? undefined,
         videoUrl: listing.videoUrl ?? undefined,
         isPromoted: listing.isPromoted ?? false,
+        instantBooking: listing.instantBooking ?? false,
+        hidden: listing.hidden ?? false,
         cancellationPolicy: listing.cancellationPolicy ?? "flexible",
         houseRules: listing.houseRules ?? "",
         propertyType: listing.propertyType === "detached_house" ? "detached_house" : "apartment",

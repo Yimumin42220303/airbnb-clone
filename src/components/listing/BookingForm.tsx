@@ -3,9 +3,11 @@
 import { useState, useEffect, useRef, useLayoutEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui";
 import ListingBookingCalendar from "@/components/listing/ListingBookingCalendar";
 import { useCurrency } from "@/components/currency/CurrencyProvider";
+import { trackEvent } from "@/lib/booking-analytics";
 
 const CALENDAR_WIDTH = 560;
 const CALENDAR_MARGIN = 8;
@@ -18,8 +20,11 @@ type BookingFormProps = {
   cleaningFee: number;
   maxGuests: number;
   listingTitle: string;
+  bookingType?: "instant" | "approval";
+  /** 최소 숙박 일수. 없으면 1박 */
+  minStayNights?: number | null;
   /** 가격 미리보기 계산 시 (박수/총액) 정보를 상위 컴포넌트로 전달 */
-  onPriceChange?: (summary: { nights: number; totalPrice: number } | null) => void;
+  onPriceChange?: (summary: { nights: number; totalPrice: number; cleaningFee: number } | null) => void;
   /** 검색에서 전달된 초기 체크인 날짜 (YYYY-MM-DD) */
   initialCheckIn?: string;
   /** 검색에서 전달된 초기 체크아웃 날짜 (YYYY-MM-DD) */
@@ -33,6 +38,8 @@ type PriceResult = {
   allAvailable: boolean;
   cleaningFee?: number;
   nights: { date: string; pricePerNight: number; available: boolean }[];
+  minStayNights?: number;
+  maxStayNights?: number | null;
 };
 
 export default function BookingForm({
@@ -41,6 +48,8 @@ export default function BookingForm({
   cleaningFee,
   maxGuests,
   listingTitle,
+  bookingType = "approval",
+  minStayNights,
   onPriceChange,
   initialCheckIn,
   initialCheckOut,
@@ -64,6 +73,7 @@ export default function BookingForm({
   const [blockedDateKeys, setBlockedDateKeys] = useState<string[]>([]);
   const [checkoutOnlyDateKeys, setCheckoutOnlyDateKeys] = useState<string[]>([]);
   const [blockedDatesError, setBlockedDatesError] = useState(false);
+  const [priceDetailOpen, setPriceDetailOpen] = useState(false);
   const calendarWrapRef = useRef<HTMLDivElement>(null);
   const guestSelectorRef = useRef<HTMLDivElement>(null);
   const [calendarPosition, setCalendarPosition] = useState<{
@@ -113,6 +123,7 @@ export default function BookingForm({
     from.setHours(0, 0, 0, 0);
     const to = new Date(from);
     to.setMonth(to.getMonth() + 13);
+    to.setDate(to.getDate() + 1); // UTC 변환 시 하루 잘림 방지
     const fromStr = from.toISOString().slice(0, 10);
     const toStr = to.toISOString().slice(0, 10);
     setBlockedDatesError(false);
@@ -175,7 +186,8 @@ export default function BookingForm({
     fetch(
       `/api/listings/${listingId}/price?checkIn=${encodeURIComponent(
         checkIn
-      )}&checkOut=${encodeURIComponent(checkOut)}&guests=${guests}`
+      )}&checkOut=${encodeURIComponent(checkOut)}&guests=${guests}`,
+      { cache: "no-store" }
     )
       .then((res) => res.json())
       .then((data) => {
@@ -183,7 +195,7 @@ export default function BookingForm({
           setPriceResult(data);
           const nightsCount = Array.isArray(data.nights) ? data.nights.length : 0;
           if (nightsCount > 0 && typeof data.totalPrice === "number") {
-            onPriceChange?.({ nights: nightsCount, totalPrice: data.totalPrice });
+            onPriceChange?.({ nights: nightsCount, totalPrice: data.totalPrice, cleaningFee: data.cleaningFee ?? 0 });
           } else {
             onPriceChange?.(null);
           }
@@ -246,6 +258,7 @@ export default function BookingForm({
 
   return (
     <form
+      id="booking-form"
       onSubmit={handleSubmit}
       className="rounded-minbak"
     >
@@ -307,6 +320,7 @@ export default function BookingForm({
                     onComplete={() => setCalendarOpen(false)}
                     blockedDateKeys={blockedDateKeys}
                     checkoutOnlyDateKeys={checkoutOnlyDateKeys}
+                    minStayNights={minStayNights ?? undefined}
                   />
                 </div>
               )}
@@ -438,25 +452,69 @@ export default function BookingForm({
         </div>
       )}
 
-      {!priceLoading && nights > 0 && priceResult && (
-        <div className="border-t border-minbak-light-gray pt-4 space-y-2 mb-4">
-          {(() => {
-            const perNight = nights > 0 ? Math.floor(totalPrice / nights) : 0;
-            return (
-              <div className="flex justify-between text-minbak-body text-minbak-black">
-                <span>
-                  {formatForGuest(perNight)} x {nights}박
-                </span>
-                <span>{formatForGuest(totalPrice)}</span>
+      {!priceLoading && nights > 0 && priceResult && (() => {
+        const actualCleaningFee = priceResult.cleaningFee ?? 0;
+        const accommodationOnly = totalPrice - actualCleaningFee;
+        const perNight = nights > 0 ? Math.floor(accommodationOnly / nights) : 0;
+        return (
+          <div className="border-t border-[#ebebeb] pt-4 space-y-3 mb-4">
+            <div className="flex justify-between text-[15px] text-[#222]">
+              <span>총 숙박 요금 (청소비 포함)</span>
+              <span className="font-semibold">{formatForGuest(totalPrice)}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setPriceDetailOpen((v) => !v);
+                if (!priceDetailOpen) {
+                  trackEvent("price_summary_viewed", {
+                    listing_id: listingId,
+                    total_price: totalPrice,
+                    nights,
+                  });
+                }
+              }}
+              className="flex items-center gap-1 text-[13px] text-[#717171] hover:text-[#222] transition-colors"
+            >
+              요금 상세보기
+              {priceDetailOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+            {priceDetailOpen && (
+              <div className="bg-[#f7f7f7] rounded-xl p-4 space-y-2.5 text-[14px]">
+                <div className="flex justify-between text-[#222]">
+                  <span>{formatForGuest(perNight)} x {nights}박</span>
+                  <span>{formatForGuest(accommodationOnly)}</span>
+                </div>
+                {guests >= 1 && (
+                  <div className="flex justify-between text-[#717171] text-[13px]">
+                    <span>1인당 1박 (숙박비만)</span>
+                    <span>{formatForGuest(Math.round(perNight / guests))}</span>
+                  </div>
+                )}
+                {actualCleaningFee > 0 && (
+                  <div className="flex justify-between text-[#222]">
+                    <span>청소비</span>
+                    <span>{formatForGuest(actualCleaningFee)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-[#222]">
+                  <span>서비스 수수료</span>
+                  <span className="text-[#717171]">없음</span>
+                </div>
+                <div className="flex justify-between text-[#222]">
+                  <span>세금</span>
+                  <span className="text-[#717171]">포함</span>
+                </div>
               </div>
-            );
-          })()}
-          <div className="flex justify-between text-lg font-semibold text-neutral-900 pt-3 border-t border-neutral-200">
-            <span>총 합계</span>
-            <span>{formatForGuest(totalPrice)}</span>
+            )}
+            <div className="flex justify-between items-baseline pt-3 border-t border-[#ebebeb]">
+              <span className="text-[16px] font-bold text-[#222]">총 결제 금액</span>
+              <span className="text-[20px] font-bold text-[#222]">{formatForGuest(totalPrice)}</span>
+            </div>
+            <p className="text-[12px] text-[#999] text-center">숨은 비용 없이 표시된 금액이 최종 결제 금액입니다</p>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {error && (
         <p className="text-minbak-body text-minbak-primary mb-3" role="alert">
@@ -466,7 +524,11 @@ export default function BookingForm({
 
       {nights > 0 && !allAvailable && (
         <p className="text-minbak-body text-minbak-primary mb-3" role="alert">
-          선택한 날짜 중 예약 불가한 날이 있습니다.
+          {priceResult?.minStayNights != null && nights < priceResult.minStayNights
+            ? `최소 ${priceResult.minStayNights}박 이상 예약해 주세요.`
+            : priceResult?.maxStayNights != null && nights > priceResult.maxStayNights
+              ? `최대 ${priceResult.maxStayNights}박까지 예약 가능합니다.`
+              : "선택한 날짜 중 예약 불가한 날이 있습니다."}
         </p>
       )}
 
@@ -477,6 +539,14 @@ export default function BookingForm({
         rounded="full"
         className="w-full mt-1"
         disabled={nights < 1 || !allAvailable}
+        onClick={() => {
+          trackEvent("booking_cta_clicked", {
+            listing_id: listingId,
+            booking_type: bookingType,
+            total_price: totalPrice,
+            nights,
+          });
+        }}
       >
         예약하기
       </Button>

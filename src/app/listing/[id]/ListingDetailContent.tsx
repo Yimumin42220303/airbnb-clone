@@ -6,10 +6,13 @@ import Image from "next/image";
 import { MapPin, ChevronDown, ChevronUp } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import BookingForm from "@/components/listing/BookingForm";
+import BookingTypeBadge from "@/components/listing/BookingTypeBadge";
+import CancellationPolicyBadge from "@/components/listing/CancellationPolicyBadge";
+import MobileStickyBookingBar from "@/components/listing/MobileStickyBookingBar";
 import ListingImageGallery from "@/components/listing/ListingImageGallery";
-import ReviewCard from "@/components/listing/ReviewCard";
-import ReviewForm from "@/components/listing/ReviewForm";
-import ReviewSummaryAI from "@/components/listing/ReviewSummaryAI";
+import ReviewSection from "@/components/listing/ReviewSection";
+import ListingBadge, { computeBadges } from "@/components/listing/ListingBadge";
+import TrustBanner from "@/components/listing/TrustBanner";
 import WishlistHeart from "@/components/wishlist/WishlistHeart";
 import ShareListingButton from "@/components/listing/ShareListingButton";
 
@@ -19,6 +22,7 @@ type ReviewItem = {
   userName: string | null;
   createdAt: string;
   membershipYears?: number | null;
+  images?: string[];
 };
 
 type ListingData = {
@@ -46,7 +50,17 @@ type ListingData = {
   amenities: string[];
   houseRules?: string;
   cancellationPolicy?: string;
+  /** 즉시 예약 허용 여부 */
+  instantBooking?: boolean;
   reviews: ReviewItem[];
+  /** 최소 숙박 일수. null/미설정 시 1박 */
+  minStayNights?: number | null;
+  /** 관리자 인증 여부 */
+  isVerified?: boolean;
+  /** 최근 30일 예약 수 */
+  recentBookingCount?: number;
+  /** 숙소 등록일 */
+  listingCreatedAt?: string;
 };
 
 type Props = {
@@ -91,20 +105,17 @@ export default function ListingDetailContent({
 }: Props) {
   const { formatForGuest } = useCurrency();
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
-  const [priceSummary, setPriceSummary] = useState<{ nights: number; totalPrice: number } | null>(null);
-  const [reviewsExpanded, setReviewsExpanded] = useState(false);
+  const [priceSummary, setPriceSummary] = useState<{ nights: number; totalPrice: number; cleaningFee: number } | null>(null);
   const description = listing.description?.trim() || "상세 설명이 없습니다.";
   const needsExpand = description.length > DESCRIPTION_PREVIEW_LENGTH;
   const displayDescription = needsExpand && !descriptionExpanded
     ? description.slice(0, DESCRIPTION_PREVIEW_LENGTH) + "..."
     : description;
-  const REVIEWS_INITIAL = 6;
-  const reviewsToShow =
-    listing.reviews.length > REVIEWS_INITIAL && !reviewsExpanded
-      ? listing.reviews.slice(0, REVIEWS_INITIAL)
-      : listing.reviews;
-  const hasMoreReviews = listing.reviews.length > REVIEWS_INITIAL;
-  const remainingCount = listing.reviews.length - REVIEWS_INITIAL;
+  const badges = computeBadges({
+    isVerified: listing.isVerified,
+    recentBookingCount: listing.recentBookingCount,
+    createdAt: listing.listingCreatedAt,
+  });
   const isEmbeddableMap =
     listing.mapUrl != null &&
     listing.mapUrl.includes("/maps/embed");
@@ -135,11 +146,18 @@ export default function ListingDetailContent({
                   />
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px] text-[#717171]">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[15px] text-[#717171]">
                   {listing.reviewCount > 0 && listing.rating != null && (
                     <span className="text-[#222] font-medium">
                       ★ {listing.rating.toFixed(1)} · 리뷰 {listing.reviewCount}개
                     </span>
+                  )}
+                  {badges.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {badges.map((b) => (
+                        <ListingBadge key={b} type={b} listingId={listing.id} size="sm" />
+                      ))}
+                    </div>
                   )}
               </div>
             </div>
@@ -263,8 +281,8 @@ export default function ListingDetailContent({
                   );
                 })()}
 
-                {/* 4. 위치 / 오시는 방법 */}
-                <DetailSection title="위치 / 오시는 방법">
+                {/* 4. 위치 */}
+                <DetailSection title="위치">
                   <div className="space-y-3 text-[15px] text-[#222]">
                     <div className="flex items-start gap-2">
                       <MapPin
@@ -342,92 +360,18 @@ export default function ListingDetailContent({
                 </DetailSection>
               </div>
 
-              {/* 리뷰 섹션 (별도 카드) */}
-              <div id="review" className="mt-6 bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] overflow-hidden scroll-mt-28">
-                <div className="p-4 md:p-6 border-b border-[#ebebeb]">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-[17px] font-semibold text-[#222]">
-                      리뷰
-                    </h2>
-                    {listing.rating != null && listing.reviewCount > 0 && (
-                      <span className="text-[15px] text-[#222]">
-                        ★ {listing.rating.toFixed(1)} · {listing.reviewCount}개
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-1.5 text-[13px] text-[#717171]">
-                    타 플랫폼에서의 리뷰도 같이 표시됩니다
-                  </p>
-                </div>
-                {listing.reviews.length > 0 && (
-                  <ReviewSummaryAI listingId={listing.id} />
-                )}
-                {listing.reviews.length > 0 ? (
-                  <>
-                    <ul className="divide-y divide-[#ebebeb]">
-                      {reviewsToShow.map((r, i) => (
-                        <li key={i} className="p-4 md:p-6">
-                          <ReviewCard review={r} />
-                        </li>
-                      ))}
-                    </ul>
-                    {hasMoreReviews && (
-                      <div className="p-4 md:p-6 border-t border-[#ebebeb] flex justify-center">
-                        <button
-                          type="button"
-                          onClick={() => setReviewsExpanded((prev) => !prev)}
-                          className="min-h-[44px] px-6 py-2.5 text-[15px] font-medium text-[#222] border border-[#dddddd] rounded-full hover:bg-[#f7f7f7] transition-colors"
-                        >
-                          {reviewsExpanded
-                            ? "접기"
-                            : `리뷰 ${remainingCount}개 더 보기`}
-                        </button>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="p-4 md:p-6 text-center py-10">
-                    <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center mx-auto mb-3">
-                      <span className="text-xl" aria-hidden>💬</span>
-                    </div>
-                    <p className="text-[15px] text-[#717171] mb-1">
-                      아직 리뷰가 없습니다
-                    </p>
-                    <p className="text-[13px] text-[#b0b0b0]">
-                      이 숙소에 머무르셨다면 첫 번째 리뷰를 남겨보세요!
-                    </p>
-                  </div>
-                )}
-                {/* Guest Review Form */}
-                <div className="p-4 md:p-6 border-t border-[#ebebeb]">
-                  <ReviewForm
-                    listingId={listing.id}
-                    hasReviewed={hasReviewed}
-                    isLoggedIn={isLoggedIn}
-                    canReview={canReview}
-                  />
-                </div>
-              </div>
+              {/* 리뷰 섹션 */}
+              <ReviewSection
+                listingId={listing.id}
+                reviews={listing.reviews}
+                rating={listing.rating}
+                reviewCount={listing.reviewCount}
+                canReview={canReview}
+                hasReviewed={hasReviewed}
+                isLoggedIn={isLoggedIn}
+              />
 
-              {/* 모바일 전용 가격: 날짜·인원 선택이 완료되어 총액이 계산된 경우에만 표시 */}
-              {priceSummary && priceSummary.nights > 0 && (
-                <p className="text-xl font-semibold text-[#222] mt-6 lg:hidden">
-                  {(() => {
-                    const perNight = Math.floor(
-                      priceSummary.totalPrice / priceSummary.nights
-                    );
-                    return (
-                      <>
-                        {formatForGuest(perNight)}
-                        <span className="text-[15px] font-normal text-[#717171]">
-                          {" "}
-                          /박
-                        </span>
-                      </>
-                    );
-                  })()}
-                </p>
-              )}
+              {/* 모바일 가격은 MobileStickyBookingBar가 대체 */}
             </div>
 
             {/* 오른쪽: 예약 모듈(빨간 영역 - 숙소 소개 옆). 헤더와 여유 공간, 스크롤 시 top 192px 아래로 */}
@@ -462,17 +406,26 @@ export default function ListingDetailContent({
                       체크인·체크아웃 선택 후 총 요금을 확인할 수 있어요.
                     </p>
                   </div>
-                  <div className="p-4 md:p-6">
+                  <div className="p-4 md:p-6 space-y-4">
+                    <TrustBanner listingId={listing.id} variant="compact" />
+                    <BookingTypeBadge
+                      bookingType={listing.instantBooking ? "instant" : "approval"}
+                    />
                     <BookingForm
                       listingId={listing.id}
                       pricePerNight={listing.pricePerNight}
                       cleaningFee={listing.cleaningFee ?? 0}
                       maxGuests={listing.maxGuests}
                       listingTitle={listing.title}
+                      bookingType={listing.instantBooking ? "instant" : "approval"}
+                      minStayNights={listing.minStayNights ?? undefined}
                       onPriceChange={setPriceSummary}
                       initialCheckIn={initialCheckIn}
                       initialCheckOut={initialCheckOut}
                       initialGuests={initialGuests}
+                    />
+                    <CancellationPolicyBadge
+                      policy={listing.cancellationPolicy ?? "flexible"}
                     />
                   </div>
                 </div>
@@ -480,8 +433,17 @@ export default function ListingDetailContent({
             </div>
           </div>
         </div>
+        {/* 모바일 스티키 바의 높이만큼 하단 여백 */}
+        {priceSummary && priceSummary.nights > 0 && (
+          <div className="h-20 lg:hidden" />
+        )}
         <Footer />
       </main>
+      <MobileStickyBookingBar
+        listingId={listing.id}
+        priceSummary={priceSummary}
+        bookingType={listing.instantBooking ? "instant" : "approval"}
+      />
     </>
   );
 }

@@ -9,6 +9,8 @@ export type CreateBookingInput = {
   checkOut: string; // ISO date
   guests: number;
   userId?: string; // 없으면 기본 게스트 사용
+  /** 예약 확인 페이지에서 입력한 예약자 성함 (PG 구매자명 등) */
+  guestName?: string;
   guestPhone?: string; // 예약 확인 페이지 긴급연락용 전화번호 (PG 결제 시 사용)
 };
 
@@ -71,6 +73,16 @@ export async function createBooking(input: CreateBookingInput) {
     return { ok: false as const, error: `최대 인원은 ${listing.maxGuests}명입니다.` };
   }
 
+  const nightsCount = getNights(checkIn, checkOut);
+  const minNights = listing.minStayNights ?? 1;
+  const maxNights = listing.maxStayNights ?? null;
+  if (nightsCount < minNights) {
+    return { ok: false as const, error: `최소 ${minNights}박 이상 예약해 주세요.` };
+  }
+  if (maxNights != null && nightsCount > maxNights) {
+    return { ok: false as const, error: `최대 ${maxNights}박까지 예약 가능합니다.` };
+  }
+
   const overlapping = await hasOverlappingBooking(
     input.listingId,
     checkIn,
@@ -127,6 +139,8 @@ export async function createBooking(input: CreateBookingInput) {
 
   const totalPrice = baseTotalPrice + extraTotal;
 
+  const isInstant = listing.instantBooking === true;
+
   const booking = await prisma.booking.create({
     data: {
       listingId: input.listingId,
@@ -135,7 +149,8 @@ export async function createBooking(input: CreateBookingInput) {
       checkOut,
       guests: input.guests,
       totalPrice,
-      status: "pending",
+      status: isInstant ? "confirmed" : "pending",
+      guestName: input.guestName?.trim() || null,
       guestPhone: input.guestPhone?.trim() || null,
     },
     include: {
@@ -143,8 +158,9 @@ export async function createBooking(input: CreateBookingInput) {
     },
   });
 
-  // Beds24 API 연동: 예약 확정 시 Beds24로 전송 (타 OTA 중복 예약 방지)
+  // Beds24: 즉시 예약(확정)인 경우에만 생성 시점에 전송. 결제 후 확정은 payments/verify·웹훅에서 전송.
   if (
+    isInstant &&
     booking.listing.beds24Enabled &&
     booking.listing.beds24PropId?.trim() &&
     booking.listing.beds24RoomId?.trim()
@@ -159,14 +175,13 @@ export async function createBooking(input: CreateBookingInput) {
       checkIn,
       checkOut,
       guests: input.guests,
-      guestName: guestUser?.name ?? undefined,
+      guestName: (input.guestName?.trim() || guestUser?.name) ?? undefined,
       guestEmail: guestUser?.email ?? undefined,
       guestPhone: input.guestPhone?.trim() || undefined,
       externalId: booking.id,
     });
     if (!result.ok) {
       console.error("[Beds24] 예약 전송 실패 (예약은 생성됨):", result.error);
-      // 예약은 당 OTA에 정상 생성됨. Beds24 동기화 실패는 로그만 남기고 진행
     }
   }
 
@@ -181,6 +196,44 @@ export async function createBooking(input: CreateBookingInput) {
       nights,
       listingTitle: booking.listing.title,
       listingLocation: booking.listing.location,
+      instantBooking: isInstant,
     },
   };
+}
+
+/**
+ * 결제 확정 등으로 예약이 확정된 뒤 Beds24 캘린더에 예약 정보 반영.
+ * payments/verify, Portone 웹훅에서 호출.
+ */
+export async function syncBookingToBeds24(
+  bookingId: string
+): Promise<{ ok: boolean; error?: string }> {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: {
+      listing: {
+        select: { beds24Enabled: true, beds24PropId: true, beds24RoomId: true },
+      },
+      user: { select: { name: true, email: true } },
+    },
+  });
+  if (!booking) return { ok: false, error: "예약을 찾을 수 없습니다." };
+  if (
+    !booking.listing.beds24Enabled ||
+    !booking.listing.beds24PropId?.trim() ||
+    !booking.listing.beds24RoomId?.trim()
+  ) {
+    return { ok: true };
+  }
+  return postBeds24Booking({
+    propId: booking.listing.beds24PropId!,
+    roomId: booking.listing.beds24RoomId!,
+    checkIn: booking.checkIn,
+    checkOut: booking.checkOut,
+    guests: booking.guests,
+    guestName: booking.guestName ?? booking.user?.name ?? undefined,
+    guestEmail: booking.user?.email ?? undefined,
+    guestPhone: booking.guestPhone ?? undefined,
+    externalId: booking.id,
+  });
 }

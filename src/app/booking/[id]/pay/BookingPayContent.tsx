@@ -18,11 +18,13 @@ type BookingItem = {
   totalPrice: number;
   status: string;
   paymentStatus: string;
+  guestName?: string | null;
   guestPhone?: string | null;
   listing: {
     id: string;
     title: string;
     location: string;
+    instantBooking?: boolean;
   };
 };
 
@@ -208,13 +210,16 @@ export default function BookingPayContent() {
           <div className="mb-6 p-4 bg-white border border-minbak-light-gray rounded-minbak">
             <BookingStepIndicator
               {...getBookingStepState(booking.status, booking.paymentStatus)}
+              instantBooking={booking.listing.instantBooking}
             />
           </div>
           <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-2">
             결제
           </h1>
           <p className="text-minbak-body text-minbak-gray mb-6">
-            호스트가 승인한 예약입니다. 결제를 완료하면 예약이 확정됩니다.
+            {booking.listing.instantBooking
+              ? "결제를 완료하면 예약이 즉시 확정됩니다."
+              : "호스트가 승인한 예약입니다. 결제를 완료하면 예약이 확정됩니다."}
           </p>
           <div className="border border-minbak-light-gray rounded-minbak p-6 space-y-3 mb-6">
             <p className="font-semibold text-minbak-black text-minbak-body">
@@ -235,11 +240,59 @@ export default function BookingPayContent() {
             bookingId={id}
             totalPrice={booking.totalPrice}
             listingTitle={booking.listing.title}
-            userName={me?.name ?? undefined}
+            userName={booking.guestName ?? me?.name ?? undefined}
             userEmail={me?.email ?? undefined}
             userPhoneNumber={booking.guestPhone ?? me?.phone ?? undefined}
             checkIn={booking.checkIn}
           />
+          {/* KG이니시스 인증마크 */}
+          <div className="flex flex-col items-center gap-3 mt-6 pt-5 border-t border-minbak-bg">
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() =>
+                  window.open(
+                    "https://mark.inicis.com/mark/popup_v3.php?mid=MOI8774709",
+                    "mark",
+                    "scrollbars=no,resizable=no,width=565,height=683"
+                  )
+                }
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+                aria-label="이니시스 결제시스템 유효성 확인"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="https://image.inicis.com/mkt/certmark/inipay/inipay_60x60_gray.png"
+                  alt="클릭하시면 이니시스 결제시스템의 유효성을 확인하실 수 있습니다."
+                  width={60}
+                  height={60}
+                />
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  window.open(
+                    "https://mark.inicis.com/mark/escrow_popup_v3.php?mid=MOI8774709",
+                    "mark",
+                    "scrollbars=no,resizable=no,width=565,height=683"
+                  )
+                }
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+                aria-label="이니시스 에스크로 유효성 확인"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="https://image.inicis.com/mkt/certmark/escrow/escrow_60x60_gray.png"
+                  alt="클릭하시면 이니시스 결제시스템의 유효성을 확인하실 수 있습니다."
+                  width={60}
+                  height={60}
+                />
+              </button>
+            </div>
+            <p className="text-minbak-caption text-minbak-gray text-center">
+              안전한 결제를 위해 KG이니시스 결제 시스템을 사용합니다
+            </p>
+          </div>
         </div>
       </main>
       <Footer />

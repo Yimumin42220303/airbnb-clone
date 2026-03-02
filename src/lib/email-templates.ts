@@ -109,6 +109,32 @@ export function bookingConfirmationGuest(info: BookingEmailInfo) {
   };
 }
 
+export function instantBookingConfirmationGuest(info: BookingEmailInfo) {
+  const body = `
+    <p>${info.guestName}님, 예약이 접수되었습니다.</p>
+    <p><strong>내 예약</strong> 페이지에서 결제를 완료하시면 예약이 즉시 확정됩니다.</p>
+    ${bookingTable(info)}
+    ${actionButton(info.baseUrl + "/my-bookings", "결제하러 가기")}
+    <p style="font-size:13px;color:${GRAY_COLOR};">궁금한 점은 메시지로 호스트에게 문의해 주세요.</p>`;
+  return {
+    subject: "[도쿄민박] 예약 접수 - 결제를 진행해주세요 - " + info.listingTitle,
+    html: layout("예약 접수 · 결제 대기", body),
+  };
+}
+
+export function instantBookingNotificationHost(info: BookingEmailInfo & { hostName: string }) {
+  const body = `
+    <p>${info.hostName}\u69D8\u3001\u65B0\u3057\u3044\u5373\u6642\u4E88\u7D04\u304C\u5C4A\u304D\u307E\u3057\u305F\uFF01</p>
+    <p>\u30B2\u30B9\u30C8\u304C\u6C7A\u6E08\u3092\u5B8C\u4E86\u3059\u308B\u3068\u81EA\u52D5\u7684\u306B\u4E88\u7D04\u304C\u78BA\u5B9A\u3055\u308C\u307E\u3059\u3002</p>
+    ${bookingTableJa(info)}
+    <p><strong>\u4E88\u7D04\u8005:</strong> ${info.guestName} (${info.guestEmail})</p>
+    ${actionButton(info.baseUrl + "/host/bookings", "\u4E88\u7D04\u7BA1\u7406")}`;
+  return {
+    subject: "[TokyoMinbak] \u5373\u6642\u4E88\u7D04 - " + info.listingTitle,
+    html: layout("\u5373\u6642\u4E88\u7D04", body),
+  };
+}
+
 export function bookingNotificationHost(info: BookingEmailInfo & { hostName: string }) {
   const body = `
     <p>${info.hostName}\u69D8\u3001\u65B0\u3057\u3044\u4E88\u7D04\u30EA\u30AF\u30A8\u30B9\u30C8\u304C\u5C4A\u304D\u307E\u3057\u305F\uFF01</p>
@@ -307,6 +333,49 @@ export function deferredPaymentFailedGuest(info: BookingEmailInfo) {
   return {
     subject: "[도쿄민박] 자동 결제 실패 - " + info.listingTitle,
     html: layout("자동 결제 실패", body),
+  };
+}
+
+export function paymentReminderGuest(info: BookingEmailInfo & { deadlineText: string }) {
+  const body = `
+    <p>${info.guestName}님, 결제 기한이 얼마 남지 않았습니다.</p>
+    <p>호스트가 승인한 예약의 결제 기한이 <strong>${info.deadlineText}</strong>까지입니다.</p>
+    ${bookingTable(info)}
+    <div style="background:#fef3c7;border-radius:8px;padding:12px 16px;margin:16px 0;">
+      <p style="margin:0;font-size:14px;color:#92400e;font-weight:600;">
+        기한 내 결제하지 않으면 예약이 자동 취소됩니다.
+      </p>
+    </div>
+    ${actionButton(info.baseUrl + "/booking/" + info.bookingId + "/pay", "지금 결제하기")}`;
+  return {
+    subject: "[도쿄민박] 결제 기한 임박 - " + info.listingTitle,
+    html: layout("결제 기한 임박", body),
+  };
+}
+
+export function unpaidAutoCancelGuest(info: BookingEmailInfo) {
+  const body = `
+    <p>${info.guestName}님, 결제 기한(24시간)이 만료되어 예약이 자동 취소되었습니다.</p>
+    ${bookingTable(info)}
+    <p>같은 숙소를 다시 예약하시려면 아래 버튼을 눌러 주세요.</p>
+    ${actionButton(info.baseUrl + "/search", "다른 숙소 찾기")}
+    <p style="font-size:13px;color:${GRAY_COLOR};">궁금한 점은 메시지로 문의해 주세요.</p>`;
+  return {
+    subject: "[도쿄민박] 미결제 자동 취소 - " + info.listingTitle,
+    html: layout("예약 자동 취소", body),
+  };
+}
+
+export function unpaidAutoCancelHost(info: BookingEmailInfo & { hostName: string }) {
+  const body = `
+    <p>${info.hostName}様、ゲストが24時間以内に決済を完了しなかったため、予約が自動キャンセルされました。</p>
+    <p>該当日程に新しい予約を受け付けることができます。</p>
+    ${bookingTableJa(info)}
+    <p><strong>ゲスト:</strong> ${info.guestName}</p>
+    ${actionButton(info.baseUrl + "/host/bookings", "予約管理")}`;
+  return {
+    subject: "[TokyoMinbak] 未決済自動キャンセル - " + info.listingTitle,
+    html: layout("未決済自動キャンセル", body),
   };
 }
 

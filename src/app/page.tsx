@@ -79,7 +79,7 @@ export default async function Home({
       <main className="min-h-screen pt-0">
         <HomeHero />
 
-        {/* AI 맞춤 숙소 추천 - 히어로 바로 아래 눈에 띄는 위치 */}
+        {/* AI 맞춤 숙소 추천 - 간결한 CTA 배너 → 클릭 시 /recommend로 이동 */}
         <AIRecommendSection />
 
         {/* Framer 스타일 추천 민박: PC 3열 / 태블릿 2열 / 모바일 1열 */}

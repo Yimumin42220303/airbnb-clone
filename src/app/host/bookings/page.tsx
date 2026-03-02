@@ -16,7 +16,7 @@ export default async function HostBookingsPage() {
     where: { listing: { userId } },
     orderBy: { createdAt: "desc" },
     include: {
-      listing: { select: { id: true, title: true } },
+      listing: { select: { id: true, title: true, hostDisplayName: true, instantBooking: true, imageUrl: true } },
       user: { select: { name: true, email: true } },
     },
   });

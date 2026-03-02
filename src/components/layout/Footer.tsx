@@ -6,6 +6,17 @@ import { KAKAO_LINK, CONTACT_EMAIL } from "@/lib/constants";
 import KakaoIcon from "@/components/ui/KakaoIcon";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
+const INICIS_MID = "MOI8774709";
+
+function openInicisPopup(type: "inipay" | "escrow") {
+  const path = type === "inipay" ? "popup_v3.php" : "escrow_popup_v3.php";
+  window.open(
+    `https://mark.inicis.com/mark/${path}?mid=${INICIS_MID}`,
+    "mark",
+    "scrollbars=no,resizable=no,width=565,height=683"
+  );
+}
+
 /** Framer Footer 스타일: CTA 블록 → 링크 행 → 사업자 정보 그리드 → 이메일·카카오 */
 
 export default function Footer() {
@@ -63,6 +74,37 @@ export default function Footer() {
               <p>고객 문의(한국) : 010-4689-4411</p>
               <p>일본현지 파트너사 주소 도쿄 신주쿠구 카와다쵸 7</p>
               <p>일본현지파트너사 주식회사 마이크로아이디어</p>
+            </div>
+            {/* KG이니시스 인증마크 */}
+            <div className="flex items-center gap-3 pt-4">
+              <button
+                type="button"
+                onClick={() => openInicisPopup("inipay")}
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+                aria-label="이니시스 결제시스템 유효성 확인"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="https://image.inicis.com/mkt/certmark/inipay/inipay_43x43_gray.png"
+                  alt="클릭하시면 이니시스 결제시스템의 유효성을 확인하실 수 있습니다."
+                  width={43}
+                  height={43}
+                />
+              </button>
+              <button
+                type="button"
+                onClick={() => openInicisPopup("escrow")}
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+                aria-label="이니시스 에스크로 유효성 확인"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="https://image.inicis.com/mkt/certmark/escrow/escrow_43x43_gray.png"
+                  alt="클릭하시면 이니시스 결제시스템의 유효성을 확인하실 수 있습니다."
+                  width={43}
+                  height={43}
+                />
+              </button>
             </div>
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">

@@ -24,7 +24,12 @@ export default async function WishlistPage() {
       })
     : [];
 
-  const listings = items.map((w) => {
+  // 숨긴 숙소·미승인 숙소는 위시리스트에서 제외 (OTA에 노출되지 않으므로)
+  const visibleItems = items.filter(
+    (w) => w.listing.status === "approved" && !w.listing.hidden
+  );
+
+  const listings = visibleItems.map((w) => {
     const l = w.listing;
     const imageUrl = l.images.length > 0 ? l.images[0].url : l.imageUrl;
     const reviewCount = l.reviews.length;
@@ -59,7 +64,7 @@ export default async function WishlistPage() {
                 Google로 로그인
               </Link>
             </p>
-          ) : listings.length === 0 ? (
+          ) : visibleItems.length === 0 ? (
             <p className="text-minbak-body text-minbak-gray">
               저장한 숙소가 없습니다. 숙소 카드의 하트를 눌러 저장해 보세요.
             </p>

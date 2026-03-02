@@ -29,7 +29,8 @@ export const viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   icons: {
-    icon: "/icon.svg",
+    icon: "/icon.png",
+    apple: "/icon.png",
   },
   title: {
     default: "도쿄 숙소 예약｜에어비보다 합리적인 도쿄민박",

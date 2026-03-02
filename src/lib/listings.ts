@@ -29,7 +29,7 @@ export type ListingFilters = {
  * 필터: 지역(부분일치), 인원(maxGuests 이상), 가격 범위, 예약 가능 날짜
  */
 export async function getListings(filters?: ListingFilters) {
-  const where: Prisma.ListingWhereInput = { status: "approved" };
+  const where: Prisma.ListingWhereInput = { status: "approved", hidden: false };
 
   if (filters?.location?.trim()) {
     where.location = { contains: filters.location.trim() };
@@ -133,6 +133,8 @@ export async function getListings(filters?: ListingFilters) {
       category: l.category ? { id: l.category.id, name: l.category.name } : undefined,
       amenities: l.listingAmenities.map((la) => la.amenity.name),
       isPromoted: l.isPromoted,
+      isVerified: (l as Record<string, unknown>).isVerified === true,
+      listingCreatedAt: l.createdAt.toISOString(),
       cancellationPolicy: (l.cancellationPolicy as "flexible" | "moderate" | "strict") || "flexible",
       houseRules: l.houseRules ?? "",
       bedrooms: l.bedrooms,
@@ -173,6 +175,7 @@ export async function getListingByIdForEdit(id: string) {
   return {
     id: listing.id,
     title: listing.title,
+    hostDisplayName: listing.hostDisplayName ?? null,
     location: listing.location,
     description: listing.description,
     imageUrl,
@@ -198,6 +201,7 @@ export async function getListingByIdForEdit(id: string) {
     beds: listing.beds,
     baths: listing.baths,
     isPromoted: listing.isPromoted,
+    instantBooking: listing.instantBooking ?? false,
     cancellationPolicy: (listing.cancellationPolicy as "flexible" | "moderate" | "strict") || "flexible",
     houseRules: listing.houseRules ?? "",
     category: listing.category ? { id: listing.category.id, name: listing.category.name } : null,
@@ -210,6 +214,22 @@ export async function getListingByIdForEdit(id: string) {
     beds24PropId: listing.beds24PropId ?? null,
     beds24RoomId: listing.beds24RoomId ?? null,
     beds24OfferIndex: listing.beds24OfferIndex ?? null,
+    beds24PriceMultiplier: listing.beds24PriceMultiplier ?? null,
+    beds24JanuaryFactor: listing.beds24JanuaryFactor ?? 1,
+    beds24FebruaryFactor: listing.beds24FebruaryFactor ?? 1,
+    beds24MarchFactor: listing.beds24MarchFactor ?? 1,
+    beds24AprilFactor: listing.beds24AprilFactor ?? 1,
+    beds24MayFactor: listing.beds24MayFactor ?? 1,
+    beds24JuneFactor: listing.beds24JuneFactor ?? 1,
+    beds24JulyFactor: listing.beds24JulyFactor ?? 1,
+    beds24AugustFactor: listing.beds24AugustFactor ?? 1,
+    beds24SeptemberFactor: listing.beds24SeptemberFactor ?? 1,
+    beds24OctoberFactor: listing.beds24OctoberFactor ?? 1,
+    beds24NovemberFactor: listing.beds24NovemberFactor ?? 1,
+    beds24DecemberFactor: listing.beds24DecemberFactor ?? 1,
+    minStayNights: listing.minStayNights ?? null,
+    maxStayNights: listing.maxStayNights ?? null,
+    hidden: listing.hidden ?? false,
   };
 }
 
@@ -218,7 +238,7 @@ export async function getListingByIdForEdit(id: string) {
  */
 export async function getListingById(id: string) {
   const listing = await prisma.listing.findFirst({
-    where: { id, status: "approved" },
+    where: { id, status: "approved", hidden: false },
     include: {
       user: { select: { name: true, image: true } },
       category: true,
@@ -227,6 +247,7 @@ export async function getListingById(id: string) {
         orderBy: { createdAt: "desc" },
         include: {
           user: { select: { name: true, createdAt: true } },
+          images: { orderBy: { sortOrder: "asc" } },
         },
       },
       images: { orderBy: { sortOrder: "asc" } },
@@ -234,6 +255,16 @@ export async function getListingById(id: string) {
   });
 
   if (!listing) return null;
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const recentBookingCount = await prisma.booking.count({
+    where: {
+      listingId: id,
+      status: "confirmed",
+      createdAt: { gte: thirtyDaysAgo },
+    },
+  });
 
   const reviewCount = listing.reviews.length;
   const rating =
@@ -274,6 +305,7 @@ export async function getListingById(id: string) {
     baths: listing.baths,
     propertyType: listing.propertyType ?? "apartment",
     isPromoted: listing.isPromoted,
+    instantBooking: listing.instantBooking ?? false,
     cancellationPolicy: (listing.cancellationPolicy as "flexible" | "moderate" | "strict") || "flexible",
     houseRules: listing.houseRules ?? "",
     category: listing.category ? { id: listing.category.id, name: listing.category.name } : null,
@@ -285,6 +317,11 @@ export async function getListingById(id: string) {
     hostImage: listing.user.image ?? null,
     amenities: listing.listingAmenities.map((la) => la.amenity.name),
     icalImportUrls: parseIcalImportUrls(listing.icalImportUrls),
+    minStayNights: listing.minStayNights ?? null,
+    maxStayNights: listing.maxStayNights ?? null,
+    isVerified: (listing as Record<string, unknown>).isVerified === true,
+    recentBookingCount,
+    listingCreatedAt: listing.createdAt.toISOString(),
     reviews: listing.reviews.map((r) => {
       const joined = r.user.createdAt
         ? new Date(r.user.createdAt).getFullYear()
@@ -298,6 +335,7 @@ export async function getListingById(id: string) {
         userName: r.authorDisplayName ?? r.user.name,
         createdAt: r.createdAt.toISOString(),
         membershipYears,
+        images: r.images?.map((img: { url: string }) => img.url) ?? [],
       };
     }),
   };
@@ -305,6 +343,8 @@ export async function getListingById(id: string) {
 
 export type CreateListingInput = {
   title: string;
+  /** 管理者・ホストがダッシュボードで識別するための表示名（日本語可） */
+  hostDisplayName?: string | null;
   location: string;
   description?: string;
   mapUrl?: string | null;
@@ -339,6 +379,14 @@ export type CreateListingInput = {
   amenityIds?: string[];
   /** "detached_house" | "apartment" */
   propertyType?: string | null;
+  /** 즉시 예약 허용 */
+  instantBooking?: boolean;
+  /** 최소 숙박 일수. null=1박 */
+  minStayNights?: number | null;
+  /** 최대 숙박 일수. null=제한 없음 */
+  maxStayNights?: number | null;
+  /** OTA에서 숨기기 (검색·상세 노출 제외) */
+  hidden?: boolean;
 };
 
 /**
@@ -369,6 +417,7 @@ export async function createListing(
     data: {
       userId,
       title: input.title.trim(),
+      hostDisplayName: input.hostDisplayName?.trim() || null,
       location: input.location.trim(),
       description: input.description?.trim() || null,
       mapUrl: input.mapUrl?.trim() || null,
@@ -395,11 +444,15 @@ export async function createListing(
       beds: input.beds ?? 1,
       baths: input.baths ?? 1,
       isPromoted: input.isPromoted ?? false,
+      instantBooking: input.instantBooking ?? false,
       cancellationPolicy: input.cancellationPolicy ?? "flexible",
       houseRules: input.houseRules?.trim() || null,
       categoryId: input.categoryId?.trim() || null,
       propertyType: input.propertyType === "detached_house" || input.propertyType === "apartment" ? input.propertyType : "apartment",
       status: "pending", // 어드민 승인 후 게재
+      hidden: input.hidden ?? false,
+      minStayNights: input.minStayNights != null && input.minStayNights >= 1 ? input.minStayNights : null,
+      maxStayNights: input.maxStayNights != null && input.maxStayNights >= 1 ? input.maxStayNights : null,
     },
   });
 
@@ -440,8 +493,29 @@ export type UpdateListingInput = Partial<
     beds24PropId?: string | null;
     beds24RoomId?: string | null;
     beds24OfferIndex?: number | null;
+    /** Beds24 가격 배율. 1=그대로, 0.5=-50% */
+    beds24PriceMultiplier?: number | null;
+    /** Beds24 가격 배율 월별 (미설정 시 beds24PriceMultiplier 또는 1) */
+    beds24JanuaryFactor?: number | null;
+    beds24FebruaryFactor?: number | null;
+    beds24MarchFactor?: number | null;
+    beds24AprilFactor?: number | null;
+    beds24MayFactor?: number | null;
+    beds24JuneFactor?: number | null;
+    beds24JulyFactor?: number | null;
+    beds24AugustFactor?: number | null;
+    beds24SeptemberFactor?: number | null;
+    beds24OctoberFactor?: number | null;
+    beds24NovemberFactor?: number | null;
+    beds24DecemberFactor?: number | null;
+    /** 즉시 예약 허용 */
+    instantBooking?: boolean;
+    /** OTA에서 숨기기 */
+    hidden?: boolean;
     /** 호스트 변경 (관리자 전용) */
     userId?: string;
+    minStayNights?: number | null;
+    maxStayNights?: number | null;
   }
 >;
 
@@ -471,6 +545,7 @@ export async function updateListing(
 
   const data: Prisma.ListingUpdateInput = {};
   if (input.title != null) data.title = input.title.trim();
+  if (input.hostDisplayName !== undefined) data.hostDisplayName = input.hostDisplayName?.trim() || null;
   if (input.location != null) data.location = input.location.trim();
   if (input.description != null) data.description = input.description.trim() || null;
   if (input.pricePerNight != null) data.pricePerNight = input.pricePerNight;
@@ -530,12 +605,44 @@ export async function updateListing(
       : [];
     data.icalImportUrls = JSON.stringify(arr);
   }
+  if (input.instantBooking !== undefined) data.instantBooking = input.instantBooking;
+  if (input.hidden !== undefined) data.hidden = input.hidden;
   if (input.beds24Enabled !== undefined) data.beds24Enabled = input.beds24Enabled;
   if (input.beds24PropId !== undefined) data.beds24PropId = input.beds24PropId?.trim() || null;
   if (input.beds24RoomId !== undefined) data.beds24RoomId = input.beds24RoomId?.trim() || null;
   if (input.beds24OfferIndex !== undefined) {
     const v = input.beds24OfferIndex;
     data.beds24OfferIndex = v != null ? Math.min(16, Math.max(1, Number(v))) : null;
+  }
+  if (input.beds24PriceMultiplier !== undefined) {
+    const v = input.beds24PriceMultiplier;
+    const num = v != null ? Number(v) : null;
+    data.beds24PriceMultiplier = num != null && num > 0 ? num : null;
+  }
+  const setBeds24MonthFactor = (key: string, value: number | null | undefined) => {
+    if (value === undefined) return;
+    const num = value != null ? Number(value) : null;
+    (data as Record<string, unknown>)[key] = num != null && num > 0 ? num : null;
+  };
+  setBeds24MonthFactor("beds24JanuaryFactor", input.beds24JanuaryFactor);
+  setBeds24MonthFactor("beds24FebruaryFactor", input.beds24FebruaryFactor);
+  setBeds24MonthFactor("beds24MarchFactor", input.beds24MarchFactor);
+  setBeds24MonthFactor("beds24AprilFactor", input.beds24AprilFactor);
+  setBeds24MonthFactor("beds24MayFactor", input.beds24MayFactor);
+  setBeds24MonthFactor("beds24JuneFactor", input.beds24JuneFactor);
+  setBeds24MonthFactor("beds24JulyFactor", input.beds24JulyFactor);
+  setBeds24MonthFactor("beds24AugustFactor", input.beds24AugustFactor);
+  setBeds24MonthFactor("beds24SeptemberFactor", input.beds24SeptemberFactor);
+  setBeds24MonthFactor("beds24OctoberFactor", input.beds24OctoberFactor);
+  setBeds24MonthFactor("beds24NovemberFactor", input.beds24NovemberFactor);
+  setBeds24MonthFactor("beds24DecemberFactor", input.beds24DecemberFactor);
+  if (input.minStayNights !== undefined) {
+    const v = input.minStayNights;
+    data.minStayNights = v != null && v >= 1 ? v : null;
+  }
+  if (input.maxStayNights !== undefined) {
+    const v = input.maxStayNights;
+    data.maxStayNights = v != null && v >= 1 ? v : null;
   }
 
   if (input.imageUrls !== undefined) {

@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Header, Footer } from "@/components/layout";
 import Link from "next/link";
+import MessagesPageTitle from "./MessagesPageTitle";
 
 export default async function MessagesPage() {
   const session = await getServerSession(authOptions);
@@ -35,9 +36,13 @@ export default async function MessagesPage() {
       })
     : [];
 
+  const isHost = userId
+    ? (await prisma.listing.count({ where: { userId } })) > 0
+    : false;
+
   const list = conversations.map((c) => {
     const guest = c.booking.user;
-    const listing = c.booking.listing as { id: string; title: string; user: { name: string | null; email: string } };
+    const listing = c.booking.listing as { id: string; title: string; hostDisplayName?: string | null; user: { name: string | null; email: string } };
     const isGuest = userId === guest.id;
     const otherName = isGuest
       ? (listing.user?.name || listing.user?.email || "호스트")
@@ -45,7 +50,7 @@ export default async function MessagesPage() {
     const last = c.messages[0];
     return {
       id: c.id,
-      listingTitle: listing.title,
+      listingTitle: listing.hostDisplayName?.trim() || listing.title,
       otherName,
       lastBody: last?.body ?? null,
       lastAt: last?.createdAt ?? c.createdAt,
@@ -58,9 +63,7 @@ export default async function MessagesPage() {
       <Header />
       <main className="min-h-screen pt-4 md:pt-8 px-4 md:px-6">
         <div className="max-w-[600px] mx-auto py-4 md:py-8">
-          <h1 className="text-[22px] sm:text-minbak-h2 font-semibold text-minbak-black mb-4 md:mb-6">
-            메시지
-          </h1>
+          <MessagesPageTitle isHost={isHost} />
           {!userId ? (
             <p className="text-minbak-body text-minbak-gray">
               로그인하면 메시지를 볼 수 있습니다.{" "}

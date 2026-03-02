@@ -23,12 +23,14 @@ export async function GET() {
     select: {
       id: true,
       title: true,
+      hostDisplayName: true,
       location: true,
       imageUrl: true,
       pricePerNight: true,
       maxGuests: true,
       status: true,
       rejectedReason: true,
+      hidden: true,
       _count: { select: { reviews: true } },
     },
   });

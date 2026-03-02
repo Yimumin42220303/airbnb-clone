@@ -82,6 +82,9 @@ async function main() {
       }
     } else {
       console.log("[deploy] Vercel Git 연동으로 배포 트리거됨");
+      if (process.env.VERCEL_ORG_ID && process.env.VERCEL_PROJECT_ID) {
+        console.log("[deploy] 배포가 안 되면: npm run deploy:cli (로컬→Vercel 직접 배포)");
+      }
     }
   } catch (e) {
     console.error("[deploy] 오류:", e.message);

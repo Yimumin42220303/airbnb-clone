@@ -71,6 +71,8 @@ type Props = {
   blockedDateKeys?: string[];
   /** 체크아웃만 가능한 날짜 (YYYY-MM-DD). */
   checkoutOnlyDateKeys?: string[];
+  /** 최소 숙박 일수. 2 이상일 때 체크인 선택 후 "최소 N박" 표시 */
+  minStayNights?: number | null;
 };
 
 function formatDisplayDate(iso: string) {
@@ -89,6 +91,7 @@ function MonthBlock({
   blockedDateKeys = [],
   checkoutOnlyDateKeys = [],
   selectingCheckout = false,
+  minStayNights,
 }: {
   month: Date;
   today: Date;
@@ -99,6 +102,7 @@ function MonthBlock({
   blockedDateKeys?: string[];
   checkoutOnlyDateKeys?: string[];
   selectingCheckout?: boolean;
+  minStayNights?: number | null;
 }) {
   const year = month.getFullYear();
   const monthIndex = month.getMonth();
@@ -142,6 +146,7 @@ function MonthBlock({
           const checkoutOnly = isCheckoutOnly(day);
           const isStart = start && isSameDay(day, start);
           const isEnd = end && isSameDay(day, end);
+          const showMinStayOnCheckIn = selectingCheckout && isStart && minStayNights != null && minStayNights > 1;
           const inRange =
             start &&
             end &&
@@ -161,6 +166,8 @@ function MonthBlock({
             (disabled || (isBeforeOrSameAsCheckIn && !isStart)) && !canClick;
           // 체크아웃 전용 날짜는 선택 전/후 모두 은은한 회색 유지 (체크인 선택 시 갑자기 검은색으로 변하는 위화감 방지)
           const isCheckoutOnlySubdued = disabled && isCheckoutOnlySelectable;
+          // 체크인 미선택 상태에서도 체크아웃만 가능한 날짜는 숫자색 #3d3d3d 로 통일
+          const isCheckoutOnlyDay = checkoutOnly && !isStart && !isEnd;
 
           return (
             <div
@@ -179,10 +186,15 @@ function MonthBlock({
                 height: CELL_SIZE,
                 opacity: isStart || isEnd ? 1 : isFullyDisabled ? 0.35 : isCheckoutOnlySubdued ? 0.75 : 1,
                 cursor: canClick ? "pointer" : "not-allowed",
-                color: isStart || isEnd ? "#fff" : isFullyDisabled ? "#B0B0B0" : isCheckoutOnlySubdued ? "#717171" : "#222",
+                color: isStart || isEnd ? "#fff" : isFullyDisabled ? "#B0B0B0" : isCheckoutOnlyDay ? "#3d3d3d" : "#222",
                 WebkitTapHighlightColor: "transparent",
               }}
             >
+              {showMinStayOnCheckIn && (
+                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-[12px] font-medium text-[#222] bg-white border border-[#ebebeb] rounded-lg shadow-sm whitespace-nowrap z-10">
+                  최소 {minStayNights}박
+                </span>
+              )}
               {checkoutOnly && !isStart && !isEnd && (
                 <span
                   className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1.5 text-[12px] font-medium text-[#222] bg-white border border-[#ebebeb] rounded-lg shadow-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10"
@@ -211,10 +223,12 @@ function MonthBlock({
                       ? "#fff"
                       : "transparent",
                   border: isEnd ? "2px solid #E31C23" : "none",
-                  color: isStart ? "#fff" : isEnd ? "#E31C23" : undefined,
+                  color: isStart ? "#fff" : isEnd ? "#E31C23" : isCheckoutOnlyDay ? "#3d3d3d" : undefined,
                 }}
               >
-                {day.getDate()}
+                <span style={isCheckoutOnlyDay ? { color: "#3d3d3d" } : undefined}>
+                  {day.getDate()}
+                </span>
               </div>
             </div>
           );
@@ -232,6 +246,7 @@ export default function ListingBookingCalendar({
   onComplete,
   blockedDateKeys = [],
   checkoutOnlyDateKeys = [],
+  minStayNights,
 }: Props) {
   const today = useMemo(() => toDateOnly(new Date()), []);
   const maxDate = useMemo(() => addMonths(today, 12), [today]);
@@ -294,6 +309,9 @@ export default function ListingBookingCalendar({
         <div className="flex justify-between items-start gap-4 mb-4">
           <div className="flex-1 min-w-0">
             <h2 className="text-[22px] font-semibold text-[#222] mb-1">날짜 선택</h2>
+            {minStayNights != null && minStayNights > 1 && (
+              <p className="text-[14px] text-[#222] mb-1">최소 숙박 일수: {minStayNights}박</p>
+            )}
             {checkoutOnlyMessage && (
               <p className="text-[14px] text-[#222] font-medium" style={{ borderBottom: "2px solid #E31C23" }}>
                 이 날짜에는 체크인할 수 없습니다.
@@ -374,6 +392,7 @@ export default function ListingBookingCalendar({
             blockedDateKeys={blockedDateKeys}
             checkoutOnlyDateKeys={checkoutOnlyDateKeys}
             selectingCheckout={!!start && !end}
+            minStayNights={minStayNights}
           />
         ))}
         </div>

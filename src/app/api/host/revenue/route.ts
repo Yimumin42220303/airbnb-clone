@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
         },
       },
       include: {
-        listing: { select: { id: true, title: true } },
+        listing: { select: { id: true, title: true, hostDisplayName: true } },
         transactions: {
           where: { status: "paid" },
           orderBy: { verifiedAt: "desc" },
@@ -71,7 +71,8 @@ export async function GET(request: NextRequest) {
       Record<string, { listingId: string; title: string; revenue: number; count: number }>
     >((acc, b) => {
       const id = b.listing.id;
-      if (!acc[id]) acc[id] = { listingId: id, title: b.listing.title, revenue: 0, count: 0 };
+      const displayTitle = b.listing.hostDisplayName?.trim() || b.listing.title;
+      if (!acc[id]) acc[id] = { listingId: id, title: displayTitle, revenue: 0, count: 0 };
       acc[id].revenue += b.totalPrice;
       acc[id].count += 1;
       return acc;
@@ -85,7 +86,7 @@ export async function GET(request: NextRequest) {
       checkOut: b.checkOut.toISOString().slice(0, 10),
       paymentDate: b.paymentDate?.toISOString().slice(0, 10),
       listingId: b.listing.id,
-      listingTitle: b.listing.title,
+      listingTitle: b.listing.hostDisplayName?.trim() || b.listing.title,
     }));
     const now = new Date();
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -118,7 +119,7 @@ export async function GET(request: NextRequest) {
       checkIn: true,
       checkOut: true,
       listingId: true,
-      listing: { select: { id: true, title: true } },
+      listing: { select: { id: true, title: true, hostDisplayName: true } },
     },
     orderBy: { checkIn: "desc" },
   });
@@ -129,7 +130,8 @@ export async function GET(request: NextRequest) {
     Record<string, { listingId: string; title: string; revenue: number; count: number }>
   >((acc, b) => {
     const id = b.listing.id;
-    if (!acc[id]) acc[id] = { listingId: id, title: b.listing.title, revenue: 0, count: 0 };
+    const displayTitle = b.listing.hostDisplayName?.trim() || b.listing.title;
+    if (!acc[id]) acc[id] = { listingId: id, title: displayTitle, revenue: 0, count: 0 };
     acc[id].revenue += b.totalPrice;
     acc[id].count += 1;
     return acc;
@@ -143,7 +145,7 @@ export async function GET(request: NextRequest) {
     checkOut: b.checkOut.toISOString().slice(0, 10),
     paymentDate: null as string | null,
     listingId: b.listing.id,
-    listingTitle: b.listing.title,
+    listingTitle: b.listing.hostDisplayName?.trim() || b.listing.title,
   }));
 
   const now = new Date();

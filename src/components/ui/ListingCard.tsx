@@ -4,6 +4,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import WishlistHeart from "@/components/wishlist/WishlistHeart";
 import { useCurrency } from "@/components/currency/CurrencyProvider";
+import ListingBadge, { computeBadges } from "@/components/listing/ListingBadge";
 
 export interface ListingCardProps {
   id: string;
@@ -30,6 +31,10 @@ export interface ListingCardProps {
   nights?: number;
   /** 검색 조건이 있을 때: 1인당 요금 (totalPrice / 인원) */
   perPerson?: number;
+  /** 관리자 인증 여부 */
+  isVerified?: boolean;
+  /** 숙소 등록일 (ISO) */
+  listingCreatedAt?: string;
 }
 
 export default function ListingCard({
@@ -50,9 +55,12 @@ export default function ListingCard({
   totalPrice: totalPriceProp,
   nights,
   perPerson,
+  isVerified,
+  listingCreatedAt,
 }: ListingCardProps) {
   const { formatForGuest } = useCurrency();
   const listingHref = searchQuery ? `/listing/${id}?${searchQuery}` : `/listing/${id}`;
+  const badges = computeBadges({ isVerified, createdAt: listingCreatedAt });
   const showTotalPrice =
     showPrice &&
     totalPriceProp != null &&
@@ -82,11 +90,16 @@ export default function ListingCard({
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1240px) 33vw, 25vw"
           className="object-cover transition-transform duration-300 group-hover:scale-105"
         />
-        {isPromoted && (
-          <div className="absolute top-3 left-3 z-10">
-            <span className="inline-block px-3 py-1 rounded-full text-xs font-bold text-white bg-gradient-to-r from-rose-500 to-orange-400 shadow-sm">
-              프로모션대상
-            </span>
+        {(isPromoted || badges.length > 0) && (
+          <div className="absolute top-3 left-3 z-10 flex flex-wrap gap-1">
+            {isPromoted && (
+              <span className="inline-block px-3 py-1 rounded-full text-xs font-bold text-white bg-gradient-to-r from-rose-500 to-orange-400 shadow-sm">
+                프로모션대상
+              </span>
+            )}
+            {badges.map((b) => (
+              <ListingBadge key={b} type={b} listingId={id} size="sm" />
+            ))}
           </div>
         )}
         <div className="absolute top-3 right-3 z-10">

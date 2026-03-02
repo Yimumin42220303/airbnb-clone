@@ -14,7 +14,7 @@ require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") }
 
 const deployHook = process.env.VERCEL_DEPLOY_HOOK?.trim();
 const token = process.env.VERCEL_TOKEN?.trim();
-const teamId = process.env.VERCEL_TEAM_ID || "team_ZSwD0UVtxOgbCA0KkP3lLGBf";
+const teamId = process.env.VERCEL_TEAM_ID || process.env.VERCEL_ORG_ID || "team_ZSwD0UVtxOgbCA0KkP3lLGBf";
 const projectId = process.env.VERCEL_PROJECT_ID || "prj_vOtK4fShQ4xp8d1N8kpYKFDNzN71";
 
 async function triggerDeployHook() {

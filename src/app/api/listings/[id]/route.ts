@@ -65,6 +65,7 @@ export async function PATCH(
       userId,
       {
         title: body.title,
+        hostDisplayName: body.hostDisplayName,
         location: body.location,
         description: body.description,
         mapUrl: body.mapUrl,
@@ -100,7 +101,29 @@ export async function PATCH(
         beds24Enabled: body.beds24Enabled,
         beds24PropId: body.beds24PropId,
         beds24RoomId: body.beds24RoomId,
-        beds24OfferIndex: body.beds24OfferIndex != null ? Math.min(16, Math.max(1, Number(body.beds24OfferIndex))) : undefined,
+        beds24PriceMultiplier:
+          body.beds24PriceMultiplier != null
+            ? (() => {
+                const v = Number(body.beds24PriceMultiplier);
+                return !isNaN(v) && v > 0 ? v : undefined;
+              })()
+            : undefined,
+        beds24JanuaryFactor: body.beds24JanuaryFactor != null ? Number(body.beds24JanuaryFactor) : undefined,
+        beds24FebruaryFactor: body.beds24FebruaryFactor != null ? Number(body.beds24FebruaryFactor) : undefined,
+        beds24MarchFactor: body.beds24MarchFactor != null ? Number(body.beds24MarchFactor) : undefined,
+        beds24AprilFactor: body.beds24AprilFactor != null ? Number(body.beds24AprilFactor) : undefined,
+        beds24MayFactor: body.beds24MayFactor != null ? Number(body.beds24MayFactor) : undefined,
+        beds24JuneFactor: body.beds24JuneFactor != null ? Number(body.beds24JuneFactor) : undefined,
+        beds24JulyFactor: body.beds24JulyFactor != null ? Number(body.beds24JulyFactor) : undefined,
+        beds24AugustFactor: body.beds24AugustFactor != null ? Number(body.beds24AugustFactor) : undefined,
+        beds24SeptemberFactor: body.beds24SeptemberFactor != null ? Number(body.beds24SeptemberFactor) : undefined,
+        beds24OctoberFactor: body.beds24OctoberFactor != null ? Number(body.beds24OctoberFactor) : undefined,
+        beds24NovemberFactor: body.beds24NovemberFactor != null ? Number(body.beds24NovemberFactor) : undefined,
+        beds24DecemberFactor: body.beds24DecemberFactor != null ? Number(body.beds24DecemberFactor) : undefined,
+        instantBooking: body.instantBooking,
+        hidden: body.hidden,
+        minStayNights: body.minStayNights,
+        maxStayNights: body.maxStayNights,
         userId: body.userId,
         propertyType: body.propertyType,
       },
