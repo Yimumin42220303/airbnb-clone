@@ -96,16 +96,26 @@ export default function CancelBookingButton({
           };
 
       const res = await fetch(url, options);
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "취소에 실패했습니다.");
+
+      let data: Record<string, unknown> | null = null;
+      try {
+        data = await res.json();
+      } catch {
+        const text = await res.text().catch(() => "");
+        console.error("[CancelBookingButton] non-JSON response:", res.status, text.slice(0, 300));
+        toast.error(`취소에 실패했습니다. (HTTP ${res.status})`);
         return;
       }
 
-      if (isPaid && data.refundAmount !== undefined) {
-        if (data.refundAmount > 0) {
+      if (!res.ok) {
+        toast.error((data?.error as string) || `취소에 실패했습니다. (HTTP ${res.status})`);
+        return;
+      }
+
+      if (isPaid && data?.refundAmount !== undefined) {
+        if ((data.refundAmount as number) > 0) {
           toast.success(
-            `예약이 취소되었습니다. 환불 금액: ${formatForGuest(data.refundAmount)} ${data.portoneRefund ? "카드 환불이 진행됩니다." : "환불이 처리됩니다."}`
+            `예약이 취소되었습니다. 환불 금액: ${formatForGuest(data.refundAmount as number)} ${data.portoneRefund ? "카드 환불이 진행됩니다." : "환불이 처리됩니다."}`
           );
         } else {
           toast.success("예약이 취소되었습니다. (환불 불가 기간)");
@@ -116,8 +126,9 @@ export default function CancelBookingButton({
 
       router.refresh();
     } catch (err) {
-      console.error("[CancelBookingButton] fetch error:", err);
-      toast.error("취소 요청 중 오류가 발생했습니다. 다시 시도해 주세요.");
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[CancelBookingButton] fetch error:", msg);
+      toast.error(`취소 요청 중 오류가 발생했습니다. (${msg})`);
     } finally {
       setLoading(false);
     }
