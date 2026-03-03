@@ -195,34 +195,57 @@ export async function POST(
       : 0;
 
   if (paidTransaction && refundKrw > 0) {
-    try {
-      const portoneRefundResult = await cancelPayment(
-        paidTransaction.paymentId,
-        "Customer cancellation (" + refundPolicy + ")",
-        refundKrw
-      );
-
+    const isMockPayment = paidTransaction.paymentId.startsWith("mock_");
+    if (isMockPayment) {
       await prisma.paymentTransaction.create({
         data: {
           bookingId: id,
           paymentId: paidTransaction.paymentId,
-          transactionId: portoneRefundResult.cancellation?.id || null,
+          transactionId: null,
           amount: refundAmount,
           status: "refunded",
           method: paidTransaction.method,
           pgProvider: paidTransaction.pgProvider,
-          rawResponse: JSON.stringify(portoneRefundResult),
+          rawResponse: JSON.stringify({ mock: true, reason: refundPolicy }),
           verifiedAt: new Date(),
         },
       });
-
       portoneRefundDone = true;
-    } catch (err) {
-      console.error("Portone refund error:", err);
-      return NextResponse.json(
-        { error: "Refund processing failed. Please contact support." },
-        { status: 500 }
-      );
+    } else {
+      try {
+        const portoneRefundResult = await cancelPayment(
+          paidTransaction.paymentId,
+          "Customer cancellation (" + refundPolicy + ")",
+          refundKrw
+        );
+
+        await prisma.paymentTransaction.create({
+          data: {
+            bookingId: id,
+            paymentId: paidTransaction.paymentId,
+            transactionId: portoneRefundResult.cancellation?.id || null,
+            amount: refundAmount,
+            status: "refunded",
+            method: paidTransaction.method,
+            pgProvider: paidTransaction.pgProvider,
+            rawResponse: JSON.stringify(portoneRefundResult),
+            verifiedAt: new Date(),
+          },
+        });
+
+        portoneRefundDone = true;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error("Portone refund error:", message);
+        const userMessage =
+          message.includes("PORTONE_API_SECRET")
+            ? "환불을 위해 서버에 PORTONE_API_SECRET 설정이 필요합니다. 관리자에게 문의해 주세요."
+            : "환불 처리 중 오류가 발생했습니다. 관리자에게 문의해 주세요.";
+        return NextResponse.json(
+          { error: userMessage },
+          { status: 500 }
+        );
+      }
     }
   }
 
