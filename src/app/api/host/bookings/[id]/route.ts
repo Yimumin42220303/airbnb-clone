@@ -201,35 +201,59 @@ export async function PATCH(
     const paidTransaction = booking.transactions[0];
     let refundDone = false;
     if (paidTransaction && booking.paymentStatus === "paid") {
-      try {
-        const reason =
-          action === "reject"
-            ? "호스트 거절로 인한 전액 환불"
-            : "호스트 취소로 인한 전액 환불";
-        const refundResult = await cancelPayment(
-          paidTransaction.paymentId,
-          reason
-        );
+      const isMockPayment = paidTransaction.paymentId.startsWith("mock_");
+      if (isMockPayment) {
+        // 모의 결제: PG 호출 없이 DB만 환불 처리
         await prisma.paymentTransaction.create({
           data: {
             bookingId: id,
             paymentId: paidTransaction.paymentId,
-            transactionId: refundResult.cancellation?.id || null,
+            transactionId: null,
             amount: booking.totalPrice,
             status: "refunded",
             method: paidTransaction.method,
             pgProvider: paidTransaction.pgProvider,
-            rawResponse: JSON.stringify(refundResult),
+            rawResponse: JSON.stringify({ mock: true, reason: "호스트 취소" }),
             verifiedAt: new Date(),
           },
         });
         refundDone = true;
-      } catch (err) {
-        console.error("호스트 취소 환불 오류:", err);
-        return NextResponse.json(
-          { error: "환불 처리 중 오류가 발생했습니다. 관리자에게 문의해 주세요." },
-          { status: 500 }
-        );
+      } else {
+        try {
+          const reason =
+            action === "reject"
+              ? "호스트 거절로 인한 전액 환불"
+              : "호스트 취소로 인한 전액 환불";
+          const refundResult = await cancelPayment(
+            paidTransaction.paymentId,
+            reason
+          );
+          await prisma.paymentTransaction.create({
+            data: {
+              bookingId: id,
+              paymentId: paidTransaction.paymentId,
+              transactionId: refundResult.cancellation?.id || null,
+              amount: booking.totalPrice,
+              status: "refunded",
+              method: paidTransaction.method,
+              pgProvider: paidTransaction.pgProvider,
+              rawResponse: JSON.stringify(refundResult),
+              verifiedAt: new Date(),
+            },
+          });
+          refundDone = true;
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.error("호스트 취소 환불 오류:", message);
+          const userMessage =
+            message.includes("PORTONE_API_SECRET")
+              ? "환불을 위해 PORTONE_API_SECRET 환경 변수를 설정해 주세요. (포트원 콘솔 → API Keys → V2 Secret Key)"
+              : "환불 처리 중 오류가 발생했습니다. 관리자에게 문의해 주세요.";
+          return NextResponse.json(
+            { error: userMessage, detail: message },
+            { status: 500 }
+          );
+        }
       }
     }
 

@@ -42,6 +42,7 @@ export default function HostBookingActions({
       const data = await res.json();
       if (!res.ok) {
         toast.error(data.error || t("actions.processFailed"));
+        if (data.detail) console.error("[HostBookingActions]", data.detail);
         return;
       }
       router.refresh();
