@@ -58,30 +58,32 @@ export default function CancelBookingButton({
   const [loading, setLoading] = useState(false);
 
   async function handleCancel() {
-    // 결제 완료된 예약인 경우 환불 정보 표시
     const isPaid = paymentStatus === "paid";
     let confirmMsg = `"${listingTitle}" 예약을 취소할까요?`;
 
-    if (isPaid && checkIn && totalPrice) {
-      const refund = getRefundInfo(
-        checkIn,
-        totalPrice,
-        (cancellationPolicy || "flexible") as CancellationPolicyType,
-        bookingCreatedAt
-      );
-      confirmMsg =
-        `"${listingTitle}" 예약을 취소할까요?\n\n` +
-        `취소 정책: ${refund.policy}\n` +
-        `환불 금액: ${formatForGuest(refund.amount)} (${refund.rate}%)`;
-      if (refund.rate === 0) {
-        confirmMsg += "\n\n⚠️ 환불이 불가능합니다.";
+    try {
+      if (isPaid && checkIn && totalPrice) {
+        const refund = getRefundInfo(
+          checkIn,
+          totalPrice,
+          (cancellationPolicy || "flexible") as CancellationPolicyType,
+          bookingCreatedAt
+        );
+        confirmMsg =
+          `"${listingTitle}" 예약을 취소할까요?\n\n` +
+          `취소 정책: ${refund.policy}\n` +
+          `환불 금액: ${formatForGuest(refund.amount)} (${refund.rate}%)`;
+        if (refund.rate === 0) {
+          confirmMsg += "\n\n⚠️ 환불이 불가능합니다.";
+        }
       }
+    } catch (e) {
+      console.error("[CancelBookingButton] refund calc error:", e);
     }
 
     if (!confirm(confirmMsg)) return;
     setLoading(true);
     try {
-      // 결제된 예약은 refund API 사용, 미결제 예약은 기존 cancel API 사용
       const url = isPaid
         ? `/api/bookings/${bookingId}/refund`
         : `/api/bookings/${bookingId}`;
@@ -96,12 +98,10 @@ export default function CancelBookingButton({
       const res = await fetch(url, options);
       const data = await res.json();
       if (!res.ok) {
-        setLoading(false);
         toast.error(data.error || "취소에 실패했습니다.");
         return;
       }
 
-      // 환불 결과 안내
       if (isPaid && data.refundAmount !== undefined) {
         if (data.refundAmount > 0) {
           toast.success(
@@ -110,9 +110,14 @@ export default function CancelBookingButton({
         } else {
           toast.success("예약이 취소되었습니다. (환불 불가 기간)");
         }
+      } else {
+        toast.success("예약이 취소되었습니다.");
       }
 
       router.refresh();
+    } catch (err) {
+      console.error("[CancelBookingButton] fetch error:", err);
+      toast.error("취소 요청 중 오류가 발생했습니다. 다시 시도해 주세요.");
     } finally {
       setLoading(false);
     }
