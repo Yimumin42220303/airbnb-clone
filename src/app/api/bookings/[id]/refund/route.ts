@@ -235,8 +235,12 @@ export async function POST(
   }
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-function sendCancellationEmails(booking: any, id: string, refundAmount: number, refundPolicy: string) {
+function sendCancellationEmails(
+  booking: { listing: { title?: string | null; location?: string | null; userId: string | null; user?: { name?: string | null; email?: string | null } | null }; user?: { name?: string | null; email?: string | null } | null; checkOut: Date; checkIn: Date; guests: number; totalPrice: number; listingId: string },
+  id: string,
+  refundAmount: number,
+  refundPolicy: string
+) {
   try {
     const nights = Math.floor(
       (booking.checkOut.getTime() - booking.checkIn.getTime()) / (24 * 60 * 60 * 1000)
