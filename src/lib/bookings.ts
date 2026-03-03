@@ -182,6 +182,11 @@ export async function createBooking(input: CreateBookingInput) {
     });
     if (!result.ok) {
       console.error("[Beds24] 예약 전송 실패 (예약은 생성됨):", result.error);
+    } else if (result.bookId != null) {
+      await prisma.booking.update({
+        where: { id: booking.id },
+        data: { beds24BookId: String(result.bookId) },
+      });
     }
   }
 
@@ -225,7 +230,7 @@ export async function syncBookingToBeds24(
   ) {
     return { ok: true };
   }
-  return postBeds24Booking({
+  const result = await postBeds24Booking({
     propId: booking.listing.beds24PropId!,
     roomId: booking.listing.beds24RoomId!,
     checkIn: booking.checkIn,
@@ -236,4 +241,11 @@ export async function syncBookingToBeds24(
     guestPhone: booking.guestPhone ?? undefined,
     externalId: booking.id,
   });
+  if (result.ok && result.bookId != null) {
+    await prisma.booking.update({
+      where: { id: bookingId },
+      data: { beds24BookId: String(result.bookId) },
+    });
+  }
+  return { ok: result.ok, error: result.error };
 }

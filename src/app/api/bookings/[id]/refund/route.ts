@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { cancelPayment, deleteBillingKey } from "@/lib/portone";
+import { cancelBeds24Booking } from "@/lib/beds24";
 import {
   calculateRefundAmount,
   type CancellationPolicyType,
@@ -71,6 +72,16 @@ export async function POST(
     todayMidnight.setHours(0, 0, 0, 0);
     if (booking.checkIn < todayMidnight) {
       return NextResponse.json({ error: "Cannot cancel past bookings" }, { status: 400 });
+    }
+
+    // Beds24: 취소 시 캘린더 블록 해제 (실패해도 도쿄민박 취소는 진행)
+    if (booking.beds24BookId) {
+      try {
+        const beds24Result = await cancelBeds24Booking(booking.beds24BookId);
+        if (!beds24Result.ok) console.error("[refund] Beds24 취소 실패:", beds24Result.error);
+      } catch (e) {
+        console.error("[refund] Beds24 취소 예외:", e);
+      }
     }
 
     // === 빌링키 미결제 예약: 빌링키만 삭제 (PG 수수료 0원) ===

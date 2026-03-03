@@ -352,8 +352,13 @@ export type Beds24PostBookingInput = {
 /**
  * 당 OTA에서 확정된 예약을 Beds24로 전송.
  * 성공 시 Beds24가 해당 기간을 블록하여 타 OTA 중복 예약 방지.
+ * 응답 배열의 첫 항목에서 booking.id를 추출해 bookId로 반환 (취소 동기화용).
  */
-export async function postBeds24Booking(input: Beds24PostBookingInput): Promise<{ ok: boolean; error?: string }> {
+export async function postBeds24Booking(input: Beds24PostBookingInput): Promise<{
+  ok: boolean;
+  error?: string;
+  bookId?: string | number;
+}> {
   const token = await getAccessToken();
   if (!token) {
     return { ok: false, error: "Beds24 인증 정보가 없습니다." };
@@ -395,21 +400,64 @@ export async function postBeds24Booking(input: Beds24PostBookingInput): Promise<
       signal: AbortSignal.timeout(15000),
     });
     const text = await res.text();
-    let data: { error?: string; message?: string } = {};
+    let data: unknown = null;
     try {
-      data = text ? JSON.parse(text) : {};
+      data = text ? JSON.parse(text) : null;
     } catch {
       /* ignore */
     }
     if (!res.ok) {
-      const errMsg = (data.error ?? data.message ?? text) || `HTTP ${res.status}`;
+      const errData = data as { error?: string; message?: string } | null;
+      const errMsg = (errData?.error ?? errData?.message ?? text) || `HTTP ${res.status}`;
       console.error("[Beds24] POST /bookings failed:", res.status, errMsg);
+      return { ok: false, error: errMsg };
+    }
+    // API V2: 응답은 배열, 새 예약 생성 시 첫 항목에 booking.id 있음
+    const first = Array.isArray(data) ? data[0] : null;
+    const booking = first && typeof first === "object" && first !== null && "booking" in first ? (first as { booking?: { id?: number } }).booking : null;
+    const bookId = booking?.id != null ? booking.id : undefined;
+    return { ok: true, ...(bookId !== undefined && { bookId }) };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[Beds24] POST /bookings error:", msg);
+    return { ok: false, error: msg };
+  }
+}
+
+/**
+ * Beds24 예약 취소(삭제). 캘린더 블록 해제.
+ * DELETE /bookings?id={bookId}
+ */
+export async function cancelBeds24Booking(bookId: string): Promise<{ ok: boolean; error?: string }> {
+  const token = await getAccessToken();
+  if (!token) {
+    return { ok: false, error: "Beds24 인증 정보가 없습니다." };
+  }
+  const url = `${BEDS24_BASE}/bookings?id=${encodeURIComponent(bookId)}`;
+  try {
+    const res = await fetch(url, {
+      method: "DELETE",
+      headers: { Accept: "application/json", token },
+      signal: AbortSignal.timeout(15000),
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      let errMsg = text;
+      try {
+        const data = text ? JSON.parse(text) : null;
+        if (data && typeof data === "object" && ("error" in data || "message" in data)) {
+          errMsg = (data as { error?: string; message?: string }).error ?? (data as { message?: string }).message ?? text;
+        }
+      } catch {
+        /* ignore */
+      }
+      console.error("[Beds24] DELETE /bookings failed:", res.status, errMsg);
       return { ok: false, error: errMsg };
     }
     return { ok: true };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error("[Beds24] POST /bookings error:", msg);
+    console.error("[Beds24] DELETE /bookings error:", msg);
     return { ok: false, error: msg };
   }
 }

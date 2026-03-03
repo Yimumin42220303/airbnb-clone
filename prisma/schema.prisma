@@ -292,6 +292,8 @@ model Booking {
   settlementAt      DateTime?
   /// 정산 처리 메모 (운영자 입력, 선택)
   settlementNote    String?
+  /// Beds24 예약 ID (POST /bookings 성공 시 응답에서 저장, 취소 시 DELETE /bookings 호출에 사용)
+  beds24BookId      String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

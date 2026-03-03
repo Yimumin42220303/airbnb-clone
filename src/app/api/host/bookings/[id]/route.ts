@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getOfficialUserId } from "@/lib/official-account";
 import { cancelPayment } from "@/lib/portone";
+import { cancelBeds24Booking } from "@/lib/beds24";
 import { sendEmailAsync, BASE_URL } from "@/lib/email";
 import {
   paymentRequestGuest,
@@ -196,6 +197,16 @@ export async function PATCH(
         { error: "이미 지난 예약은 취소할 수 없습니다." },
         { status: 400 }
       );
+    }
+
+    // Beds24: 취소 시 캘린더 블록 해제 (실패해도 도쿄민박 취소는 진행)
+    if (booking.beds24BookId) {
+      try {
+        const beds24Result = await cancelBeds24Booking(booking.beds24BookId);
+        if (!beds24Result.ok) console.error("[host-booking] Beds24 취소 실패:", beds24Result.error);
+      } catch (e) {
+        console.error("[host-booking] Beds24 취소 예외:", e);
+      }
     }
 
     // 결제 완료된 예약이면 호스트 사유로 100% 전액 환불
