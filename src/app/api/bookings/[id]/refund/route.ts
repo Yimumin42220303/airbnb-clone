@@ -237,14 +237,35 @@ export async function POST(
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         console.error("Portone refund error:", message);
-        const userMessage =
-          message.includes("PORTONE_API_SECRET")
-            ? "환불을 위해 서버에 PORTONE_API_SECRET 설정이 필요합니다. 관리자에게 문의해 주세요."
-            : "환불 처리 중 오류가 발생했습니다. 관리자에게 문의해 주세요.";
-        return NextResponse.json(
-          { error: userMessage },
-          { status: 500 }
-        );
+
+        // 테스트 모드: PG 환불 실패해도 DB만 취소 처리 (실제 과금 아님)
+        const isTestMode = process.env.NEXT_PUBLIC_PORTONE_TEST_MODE === "true";
+        if (isTestMode) {
+          console.warn("[refund] 테스트 모드: PG 환불 실패, DB만 취소 처리");
+          await prisma.paymentTransaction.create({
+            data: {
+              bookingId: id,
+              paymentId: paidTransaction.paymentId,
+              transactionId: null,
+              amount: refundAmount,
+              status: "refunded",
+              method: paidTransaction.method,
+              pgProvider: paidTransaction.pgProvider,
+              rawResponse: JSON.stringify({ testModeFallback: true, error: message }),
+              verifiedAt: new Date(),
+            },
+          });
+          portoneRefundDone = true;
+        } else {
+          const userMessage =
+            message.includes("PORTONE_API_SECRET")
+              ? "환불을 위해 서버에 PORTONE_API_SECRET 설정이 필요합니다. 관리자에게 문의해 주세요."
+              : "환불 처리 중 오류가 발생했습니다. 관리자에게 문의해 주세요.";
+          return NextResponse.json(
+            { error: userMessage },
+            { status: 500 }
+          );
+        }
       }
     }
   }
