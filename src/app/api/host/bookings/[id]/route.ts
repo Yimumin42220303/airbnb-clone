@@ -24,6 +24,7 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
   const session = await getServerSession(authOptions);
   const userId = (session as { userId?: string } | null)?.userId;
   if (!userId) {
@@ -249,19 +250,23 @@ export async function PATCH(
           const isTestMode = process.env.NEXT_PUBLIC_PORTONE_TEST_MODE === "true";
           if (isTestMode) {
             console.warn("[host-cancel] 테스트 모드: PG 환불 실패, DB만 취소 처리");
-            await prisma.paymentTransaction.create({
-              data: {
-                bookingId: id,
-                paymentId: paidTransaction.paymentId,
-                transactionId: null,
-                amount: booking.totalPrice,
-                status: "refunded",
-                method: paidTransaction.method,
-                pgProvider: paidTransaction.pgProvider,
-                rawResponse: JSON.stringify({ testModeFallback: true, error: message }),
-                verifiedAt: new Date(),
-              },
-            });
+            try {
+              await prisma.paymentTransaction.create({
+                data: {
+                  bookingId: id,
+                  paymentId: paidTransaction.paymentId,
+                  transactionId: null,
+                  amount: booking.totalPrice,
+                  status: "refunded",
+                  method: paidTransaction.method,
+                  pgProvider: paidTransaction.pgProvider,
+                  rawResponse: JSON.stringify({ testModeFallback: true, error: message }),
+                  verifiedAt: new Date(),
+                },
+              });
+            } catch (dbErr) {
+              console.error("[host-cancel] DB fallback error:", dbErr);
+            }
             refundDone = true;
           } else {
             const userMessage =
@@ -371,4 +376,13 @@ export async function PATCH(
     { error: "지원하지 않는 요청입니다. (action: accept | reject | cancel)" },
     { status: 400 }
   );
+
+  } catch (fatalErr) {
+    const msg = fatalErr instanceof Error ? fatalErr.message : String(fatalErr);
+    console.error("[host-booking] Unhandled error:", msg, fatalErr);
+    return NextResponse.json(
+      { error: "서버 오류가 발생했습니다: " + msg },
+      { status: 500 }
+    );
+  }
 }

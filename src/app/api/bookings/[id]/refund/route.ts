@@ -26,90 +26,218 @@ export async function POST(
 ) {
   void request;
 
-  const session = await getServerSession(authOptions);
-  const userId = (session as { userId?: string } | null)?.userId;
-  if (!userId) {
-    return NextResponse.json(
-      { error: "Login required" },
-      { status: 401 }
-    );
-  }
+  try {
+    const session = await getServerSession(authOptions);
+    const userId = (session as { userId?: string } | null)?.userId;
+    if (!userId) {
+      return NextResponse.json({ error: "Login required" }, { status: 401 });
+    }
 
-  const { id } = await params;
+    const { id } = await params;
 
-  const booking = await prisma.booking.findUnique({
-    where: { id },
-    include: {
-      listing: {
-        select: {
-          userId: true,
-          cancellationPolicy: true,
-          title: true,
-          location: true,
-          user: { select: { name: true, email: true } },
+    const booking = await prisma.booking.findUnique({
+      where: { id },
+      include: {
+        listing: {
+          select: {
+            userId: true,
+            cancellationPolicy: true,
+            title: true,
+            location: true,
+            user: { select: { name: true, email: true } },
+          },
+        },
+        user: { select: { name: true, email: true } },
+        transactions: {
+          where: { status: "paid" },
+          orderBy: { createdAt: "desc" },
+          take: 1,
         },
       },
-      user: { select: { name: true, email: true } },
-      transactions: {
-        where: { status: "paid" },
-        orderBy: { createdAt: "desc" },
-        take: 1,
-      },
-    },
-  });
+    });
 
-  if (!booking) {
-    return NextResponse.json(
-      { error: "Booking not found" },
-      { status: 404 }
-    );
-  }
-  if (booking.userId !== userId) {
-    return NextResponse.json(
-      { error: "Forbidden" },
-      { status: 403 }
-    );
-  }
-  if (booking.status === "cancelled") {
-    return NextResponse.json(
-      { error: "Already cancelled" },
-      { status: 400 }
-    );
-  }
+    if (!booking) {
+      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+    }
+    if (booking.userId !== userId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    if (booking.status === "cancelled") {
+      return NextResponse.json({ error: "Already cancelled" }, { status: 400 });
+    }
 
-  const now = new Date();
-  const todayMidnight = new Date(now);
-  todayMidnight.setHours(0, 0, 0, 0);
-  if (booking.checkIn < todayMidnight) {
-    return NextResponse.json(
-      { error: "Cannot cancel past bookings" },
-      { status: 400 }
-    );
-  }
+    const now = new Date();
+    const todayMidnight = new Date(now);
+    todayMidnight.setHours(0, 0, 0, 0);
+    if (booking.checkIn < todayMidnight) {
+      return NextResponse.json({ error: "Cannot cancel past bookings" }, { status: 400 });
+    }
 
-  // === 빌링키 미결제 예약: 빌링키만 삭제 (PG 수수료 0원) ===
-  if (
-    booking.paymentMethod === "deferred" &&
-    (booking.paymentStatus === "pending" || booking.paymentStatus === "failed") &&
-    booking.billingKey
-  ) {
-    try {
-      await deleteBillingKey(booking.billingKey);
-    } catch (err) {
-      console.error("Billing key delete error:", err);
-      // 빌링키 삭제 실패해도 취소는 진행 (이미 만료되었을 수 있음)
+    // === 빌링키 미결제 예약: 빌링키만 삭제 (PG 수수료 0원) ===
+    if (
+      booking.paymentMethod === "deferred" &&
+      (booking.paymentStatus === "pending" || booking.paymentStatus === "failed") &&
+      booking.billingKey
+    ) {
+      try {
+        await deleteBillingKey(booking.billingKey);
+      } catch (err) {
+        console.error("Billing key delete error:", err);
+      }
+
+      await prisma.booking.update({
+        where: { id },
+        data: { status: "cancelled", paymentStatus: "refunded", billingKey: null },
+      });
+
+      sendCancellationEmails(booking, id, booking.totalPrice, "카드 미결제 상태: 전액 취소 (수수료 없음)");
+
+      return NextResponse.json({
+        ok: true,
+        status: "cancelled",
+        refundPolicy: "카드 미결제 상태: 빌링키 삭제 (PG 수수료 0원)",
+        refundRate: 1,
+        refundAmount: booking.totalPrice,
+        totalPrice: booking.totalPrice,
+        portoneRefund: false,
+        billingKeyCancelled: true,
+      });
+    }
+
+    // === 결제 완료 예약: 환불 로직 ===
+    const policy = (booking.listing.cancellationPolicy || "flexible") as CancellationPolicyType;
+    const refundResult = calculateRefundAmount({
+      policy,
+      totalPrice: booking.totalPrice,
+      checkInDate: booking.checkIn,
+      cancellationDate: now,
+      bookingCreatedAt: booking.createdAt,
+    });
+
+    const refundRate = refundResult.rate;
+    const refundPolicy = refundResult.policyLabel + ": " + refundResult.description;
+    const refundAmount = refundResult.amount;
+
+    const paidTransaction = booking.transactions[0];
+    let portoneRefundDone = false;
+
+    const refundKrw =
+      paidTransaction && refundRate > 0
+        ? Math.round(paidTransaction.amount * refundRate)
+        : 0;
+
+    if (paidTransaction && refundKrw > 0) {
+      const isMockPayment = paidTransaction.paymentId.startsWith("mock_");
+      if (isMockPayment) {
+        await prisma.paymentTransaction.create({
+          data: {
+            bookingId: id,
+            paymentId: paidTransaction.paymentId,
+            transactionId: null,
+            amount: refundAmount,
+            status: "refunded",
+            method: paidTransaction.method,
+            pgProvider: paidTransaction.pgProvider,
+            rawResponse: JSON.stringify({ mock: true, reason: refundPolicy }),
+            verifiedAt: new Date(),
+          },
+        });
+        portoneRefundDone = true;
+      } else {
+        try {
+          const portoneRefundResult = await cancelPayment(
+            paidTransaction.paymentId,
+            "Customer cancellation (" + refundPolicy + ")",
+            refundKrw
+          );
+
+          await prisma.paymentTransaction.create({
+            data: {
+              bookingId: id,
+              paymentId: paidTransaction.paymentId,
+              transactionId: portoneRefundResult.cancellation?.id || null,
+              amount: refundAmount,
+              status: "refunded",
+              method: paidTransaction.method,
+              pgProvider: paidTransaction.pgProvider,
+              rawResponse: JSON.stringify(portoneRefundResult),
+              verifiedAt: new Date(),
+            },
+          });
+
+          portoneRefundDone = true;
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.error("[refund] Portone refund error:", message);
+
+          const isTestMode = process.env.NEXT_PUBLIC_PORTONE_TEST_MODE === "true";
+          if (isTestMode) {
+            console.warn("[refund] 테스트 모드: PG 환불 실패, DB만 취소 처리");
+            try {
+              await prisma.paymentTransaction.create({
+                data: {
+                  bookingId: id,
+                  paymentId: paidTransaction.paymentId,
+                  transactionId: null,
+                  amount: refundAmount,
+                  status: "refunded",
+                  method: paidTransaction.method,
+                  pgProvider: paidTransaction.pgProvider,
+                  rawResponse: JSON.stringify({ testModeFallback: true, error: message }),
+                  verifiedAt: new Date(),
+                },
+              });
+            } catch (dbErr) {
+              console.error("[refund] DB fallback error:", dbErr);
+            }
+            portoneRefundDone = true;
+          } else {
+            const userMessage =
+              message.includes("PORTONE_API_SECRET")
+                ? "환불을 위해 서버에 PORTONE_API_SECRET 설정이 필요합니다."
+                : "환불 처리 중 오류가 발생했습니다. 관리자에게 문의해 주세요.";
+            return NextResponse.json(
+              { error: userMessage, detail: message },
+              { status: 500 }
+            );
+          }
+        }
+      }
     }
 
     await prisma.booking.update({
       where: { id },
       data: {
         status: "cancelled",
-        paymentStatus: "refunded",
-        billingKey: null,
+        ...(portoneRefundDone ? { paymentStatus: "refunded" } : {}),
+        ...(booking.billingKey ? { billingKey: null } : {}),
       },
     });
 
-    // 취소 이메일 발송
+    sendCancellationEmails(booking, id, refundAmount, refundPolicy);
+
+    return NextResponse.json({
+      ok: true,
+      status: "cancelled",
+      refundPolicy,
+      refundRate,
+      refundAmount,
+      totalPrice: booking.totalPrice,
+      portoneRefund: portoneRefundDone,
+    });
+  } catch (fatalErr) {
+    const msg = fatalErr instanceof Error ? fatalErr.message : String(fatalErr);
+    console.error("[refund] Unhandled error:", msg, fatalErr);
+    return NextResponse.json(
+      { error: "서버 오류가 발생했습니다: " + msg },
+      { status: 500 }
+    );
+  }
+}
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function sendCancellationEmails(booking: any, id: string, refundAmount: number, refundPolicy: string) {
+  try {
     const nights = Math.floor(
       (booking.checkOut.getTime() - booking.checkIn.getTime()) / (24 * 60 * 60 * 1000)
     );
@@ -131,11 +259,7 @@ export async function POST(
     const isSameEmail = hostEmail && booking.user?.email && hostEmail === booking.user.email;
 
     if (booking.user?.email && !isSameEmail) {
-      const guestMail = bookingCancelledGuest({
-        ...emailInfo,
-        refundAmount: booking.totalPrice,
-        refundPolicy: "카드 미결제 상태: 전액 취소 (수수료 없음)",
-      });
+      const guestMail = bookingCancelledGuest({ ...emailInfo, refundAmount, refundPolicy });
       sendEmailAsync({ to: booking.user.email, ...guestMail });
     }
     if (hostEmail) {
@@ -156,186 +280,7 @@ export async function POST(
         listingId: booking.listingId,
       }).catch(() => {});
     }
-
-    return NextResponse.json({
-      ok: true,
-      status: "cancelled",
-      refundPolicy: "카드 미결제 상태: 빌링키 삭제 (PG 수수료 0원)",
-      refundRate: 1,
-      refundAmount: booking.totalPrice,
-      totalPrice: booking.totalPrice,
-      portoneRefund: false,
-      billingKeyCancelled: true,
-    });
+  } catch (emailErr) {
+    console.error("[refund] Email/notification error:", emailErr);
   }
-
-  // === 결제 완료 예약: 기존 환불 로직 ===
-  // Calculate refund based on listing's cancellation policy
-  // Pass actual current time (not midnight) for accurate 48h grace period calculation
-  const policy = (booking.listing.cancellationPolicy || "flexible") as CancellationPolicyType;
-  const refundResult = calculateRefundAmount({
-    policy,
-    totalPrice: booking.totalPrice,
-    checkInDate: booking.checkIn,
-    cancellationDate: now,
-    bookingCreatedAt: booking.createdAt,
-  });
-
-  const refundRate = refundResult.rate;
-  const refundPolicy = refundResult.policyLabel + ": " + refundResult.description;
-  const refundAmount = refundResult.amount;
-
-  const paidTransaction = booking.transactions[0];
-  let portoneRefundDone = false;
-
-  // Portone 환불은 KRW 기준. 결제당시 청구액(paidTransaction.amount)의 비율로 환불
-  const refundKrw =
-    paidTransaction && refundRate > 0
-      ? Math.round(paidTransaction.amount * refundRate)
-      : 0;
-
-  if (paidTransaction && refundKrw > 0) {
-    const isMockPayment = paidTransaction.paymentId.startsWith("mock_");
-    if (isMockPayment) {
-      await prisma.paymentTransaction.create({
-        data: {
-          bookingId: id,
-          paymentId: paidTransaction.paymentId,
-          transactionId: null,
-          amount: refundAmount,
-          status: "refunded",
-          method: paidTransaction.method,
-          pgProvider: paidTransaction.pgProvider,
-          rawResponse: JSON.stringify({ mock: true, reason: refundPolicy }),
-          verifiedAt: new Date(),
-        },
-      });
-      portoneRefundDone = true;
-    } else {
-      try {
-        const portoneRefundResult = await cancelPayment(
-          paidTransaction.paymentId,
-          "Customer cancellation (" + refundPolicy + ")",
-          refundKrw
-        );
-
-        await prisma.paymentTransaction.create({
-          data: {
-            bookingId: id,
-            paymentId: paidTransaction.paymentId,
-            transactionId: portoneRefundResult.cancellation?.id || null,
-            amount: refundAmount,
-            status: "refunded",
-            method: paidTransaction.method,
-            pgProvider: paidTransaction.pgProvider,
-            rawResponse: JSON.stringify(portoneRefundResult),
-            verifiedAt: new Date(),
-          },
-        });
-
-        portoneRefundDone = true;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        console.error("Portone refund error:", message);
-
-        // 테스트 모드: PG 환불 실패해도 DB만 취소 처리 (실제 과금 아님)
-        const isTestMode = process.env.NEXT_PUBLIC_PORTONE_TEST_MODE === "true";
-        if (isTestMode) {
-          console.warn("[refund] 테스트 모드: PG 환불 실패, DB만 취소 처리");
-          await prisma.paymentTransaction.create({
-            data: {
-              bookingId: id,
-              paymentId: paidTransaction.paymentId,
-              transactionId: null,
-              amount: refundAmount,
-              status: "refunded",
-              method: paidTransaction.method,
-              pgProvider: paidTransaction.pgProvider,
-              rawResponse: JSON.stringify({ testModeFallback: true, error: message }),
-              verifiedAt: new Date(),
-            },
-          });
-          portoneRefundDone = true;
-        } else {
-          const userMessage =
-            message.includes("PORTONE_API_SECRET")
-              ? "환불을 위해 서버에 PORTONE_API_SECRET 설정이 필요합니다. 관리자에게 문의해 주세요."
-              : "환불 처리 중 오류가 발생했습니다. 관리자에게 문의해 주세요.";
-          return NextResponse.json(
-            { error: userMessage },
-            { status: 500 }
-          );
-        }
-      }
-    }
-  }
-
-  await prisma.booking.update({
-    where: { id },
-    data: {
-      status: "cancelled",
-      ...(portoneRefundDone ? { paymentStatus: "refunded" } : {}),
-      ...(booking.billingKey ? { billingKey: null } : {}),
-    },
-  });
-
-  // Send cancellation emails
-  const nights = Math.floor(
-    (booking.checkOut.getTime() - booking.checkIn.getTime()) / (24 * 60 * 60 * 1000)
-  );
-  const emailInfo = {
-    listingTitle: booking.listing.title || "",
-    listingLocation: booking.listing.location || "",
-    checkIn: booking.checkIn.toISOString().slice(0, 10),
-    checkOut: booking.checkOut.toISOString().slice(0, 10),
-    guests: booking.guests,
-    nights,
-    totalPrice: booking.totalPrice,
-    guestName: booking.user?.name || "Guest",
-    guestEmail: booking.user?.email || "",
-    bookingId: id,
-    baseUrl: BASE_URL,
-  };
-
-  const hostEmail = booking.listing.user?.email;
-  const isSameEmail = hostEmail && booking.user?.email && hostEmail === booking.user.email;
-
-  // 게스트 이메일 (호스트와 같은 이메일이면 생략 — 호스트용 일본어 메일만 발송)
-  if (booking.user?.email && !isSameEmail) {
-    const guestMail = bookingCancelledGuest({
-      ...emailInfo,
-      refundAmount,
-      refundPolicy,
-    });
-    sendEmailAsync({ to: booking.user.email, ...guestMail });
-  }
-  // 호스트 이메일 (일본어)
-  if (hostEmail) {
-    const hostMail = bookingCancelledHost({
-      ...emailInfo,
-      hostName: booking.listing.user?.name || "Host",
-    });
-    sendEmailAsync({ to: hostEmail, ...hostMail });
-  }
-
-  if (booking.listing.userId) {
-    createNotification({
-      userId: booking.listing.userId,
-      type: "booking_cancelled",
-      title: `${booking.user?.name || "게스트"}님의 예약이 취소되었어요.`,
-      linkPath: "/host/bookings",
-      bookingId: id,
-      listingId: booking.listingId,
-    }).catch(() => {});
-  }
-
-  return NextResponse.json({
-    ok: true,
-    status: "cancelled",
-    refundPolicy,
-    refundRate,
-    refundAmount,
-    totalPrice: booking.totalPrice,
-    portoneRefund: portoneRefundDone,
-  });
 }
