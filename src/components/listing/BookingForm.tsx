@@ -8,6 +8,7 @@ import { Button } from "@/components/ui";
 import ListingBookingCalendar from "@/components/listing/ListingBookingCalendar";
 import { useCurrency } from "@/components/currency/CurrencyProvider";
 import { trackEvent } from "@/lib/booking-analytics";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
 const CALENDAR_WIDTH = 560;
 const CALENDAR_MARGIN = 8;
@@ -56,6 +57,8 @@ export default function BookingForm({
   initialGuests,
 }: BookingFormProps) {
   const { formatForGuest } = useCurrency();
+  const { t, locale } = useHostTranslations();
+  const dateLocale = locale === "ja" ? "ja-JP" : "ko-KR";
   const router = useRouter();
   const [checkIn, setCheckIn] = useState(initialCheckIn ?? "");
   const [checkOut, setCheckOut] = useState(initialCheckOut ?? "");
@@ -226,19 +229,19 @@ export default function BookingForm({
     e.preventDefault();
     setError("");
     if (!checkIn || !checkOut) {
-      setError("체크인·체크아웃 날짜를 선택해 주세요.");
+      setError(t("bookingForm.checkInOutRequired"));
       return;
     }
     if (checkOut <= checkIn) {
-      setError("체크아웃은 체크인 다음 날 이후로 선택해 주세요.");
+      setError(t("bookingForm.checkOutAfterCheckIn"));
       return;
     }
     if (guests < 1 || guests > maxGuests) {
-      setError(`인원은 1~${maxGuests}명으로 선택해 주세요.`);
+      setError(t("bookingForm.guestsRange", { max: maxGuests }));
       return;
     }
     if (nights < 1 || !allAvailable) {
-      setError("선택한 날짜 중 예약 불가한 날이 있습니다.");
+      setError(t("bookingForm.dateUnavailable"));
       return;
     }
     const params = new URLSearchParams({
@@ -252,8 +255,11 @@ export default function BookingForm({
 
   function formatDisplayDate(iso: string) {
     if (!iso) return "";
-    const [y, m, d] = iso.split("-");
-    return `${y}년 ${Number(m)}월 ${Number(d)}일`;
+    return new Date(iso + "T12:00:00").toLocaleDateString(dateLocale, {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   }
 
   return (
@@ -269,9 +275,9 @@ export default function BookingForm({
             onClick={() => setCalendarOpen(true)}
             className="flex flex-col gap-1 text-left px-3 py-2 border border-[#ebebeb] rounded-minbak hover:border-[#b0b0b0] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E31C23] focus-visible:border-[#E31C23]"
           >
-            <span className="text-[12px] text-[#717171]">체크인</span>
+            <span className="text-[12px] text-[#717171]">{t("guest.checkIn")}</span>
             <span className="text-[14px] text-[#222]">
-              {checkIn ? formatDisplayDate(checkIn) : "날짜 추가"}
+              {checkIn ? formatDisplayDate(checkIn) : t("bookingForm.addDate")}
             </span>
           </button>
           <button
@@ -279,16 +285,16 @@ export default function BookingForm({
             onClick={() => setCalendarOpen(true)}
             className="flex flex-col gap-1 text-left px-3 py-2 border border-[#ebebeb] rounded-minbak hover:border-[#b0b0b0] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E31C23] focus-visible:border-[#E31C23]"
           >
-            <span className="text-[12px] text-[#717171]">체크아웃</span>
+            <span className="text-[12px] text-[#717171]">{t("guest.checkOut")}</span>
             <span className="text-[14px] text-[#222]">
-              {checkOut ? formatDisplayDate(checkOut) : "날짜 추가"}
+              {checkOut ? formatDisplayDate(checkOut) : t("bookingForm.addDate")}
             </span>
           </button>
         </div>
         {blockedDatesError && (
           <p className="text-[12px] text-amber-600 mt-1.5">
-            예약 가능 날짜를 불러오지 못했습니다.{" "}
-            <button type="button" onClick={fetchBlockedDates} className="underline hover:text-amber-800">다시 시도</button>
+            {t("bookingForm.loadDatesFailed")}
+            <button type="button" onClick={fetchBlockedDates} className="underline hover:text-amber-800">{t("bookingForm.retry")}</button>
           </p>
         )}
         {calendarOpen &&
@@ -300,7 +306,7 @@ export default function BookingForm({
                 className="fixed inset-0 z-[100] bg-black/30"
                 role="dialog"
                 aria-modal="true"
-                aria-label="체크인·체크아웃 날짜 선택"
+                aria-label={t("bookingForm.calendarAriaLabel")}
               />
               {calendarPosition && (
                 <div
@@ -337,9 +343,9 @@ export default function BookingForm({
           className="w-full flex items-center justify-between px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body text-minbak-black focus:outline-none focus-visible:ring-2 focus-visible:ring-minbak-primary focus-visible:border-minbak-primary"
         >
           <div className="flex flex-col text-left">
-            <span className="text-[12px] text-[#717171]">인원</span>
+            <span className="text-[12px] text-[#717171]">{t("guest.guests")}</span>
             <span className="text-[14px] text-[#222]">
-              게스트 {guests}명
+              {t("bookingForm.guestsCount", { count: guests })}
             </span>
           </div>
           <span className="text-[20px] leading-none text-[#717171]">
@@ -351,20 +357,26 @@ export default function BookingForm({
           <div className="absolute z-[120] mt-2 w-full rounded-2xl border border-minbak-light-gray bg-white shadow-[0_12px_40px_rgba(0,0,0,0.18)] p-4 space-y-3">
             {[
               {
-                label: "성인",
-                desc: "13세 이상",
+                labelKey: "guest.adult" as const,
+                descKey: "guest.adultAge" as const,
+                decreaseKey: "guest.adultDecrease" as const,
+                increaseKey: "guest.adultIncrease" as const,
                 value: adults,
                 setValue: setAdults,
               },
               {
-                label: "어린이",
-                desc: "2~12세",
+                labelKey: "guest.child" as const,
+                descKey: "guest.childAge" as const,
+                decreaseKey: "guest.childDecrease" as const,
+                increaseKey: "guest.childIncrease" as const,
                 value: children,
                 setValue: setChildren,
               },
               {
-                label: "유아",
-                desc: "2세 미만",
+                labelKey: "guest.infant" as const,
+                descKey: "guest.infantAge" as const,
+                decreaseKey: "guest.infantDecrease" as const,
+                increaseKey: "guest.infantIncrease" as const,
                 value: infants,
                 setValue: setInfants,
               },
@@ -373,21 +385,19 @@ export default function BookingForm({
                 guests - row.value; // 현재 값 제외한 합
               const canIncrement =
                 totalWithoutThis + row.value + 1 <= maxGuests;
-              const canDecrement =
-                row.label === "성인"
-                  ? row.value > 1 // 성인은 최소 1명
-                  : row.value > 0;
+              const isAdult = row.labelKey === "guest.adult";
+              const canDecrement = isAdult ? row.value > 1 : row.value > 0;
               return (
                 <div
-                  key={row.label}
+                  key={row.labelKey}
                   className="flex items-center justify-between"
                 >
                   <div className="flex flex-col">
                     <span className="text-minbak-body text-minbak-black">
-                      {row.label}
+                      {t(row.labelKey)}
                     </span>
                     <span className="text-minbak-caption text-minbak-gray">
-                      {row.desc}
+                      {t(row.descKey)}
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
@@ -396,7 +406,7 @@ export default function BookingForm({
                       onClick={() =>
                         canDecrement &&
                         row.setValue((v) =>
-                          row.label === "성인" ? Math.max(1, v - 1) : Math.max(0, v - 1)
+                          isAdult ? Math.max(1, v - 1) : Math.max(0, v - 1)
                         )
                       }
                       disabled={!canDecrement}
@@ -405,7 +415,7 @@ export default function BookingForm({
                           ? "border-minbak-light-gray text-minbak-black hover:bg-minbak-bg"
                           : "border-minbak-light-gray text-minbak-light-gray cursor-not-allowed"
                       }`}
-                      aria-label={`${row.label} 감소`}
+                      aria-label={t(row.decreaseKey)}
                     >
                       −
                     </button>
@@ -424,7 +434,7 @@ export default function BookingForm({
                           ? "border-minbak-light-gray text-minbak-black hover:bg-minbak-bg"
                           : "border-minbak-light-gray text-minbak-light-gray cursor-not-allowed"
                       }`}
-                      aria-label={`${row.label} 증가`}
+                      aria-label={t(row.increaseKey)}
                     >
                       +
                     </button>
@@ -437,7 +447,7 @@ export default function BookingForm({
               onClick={() => setGuestSelectorOpen(false)}
               className="mt-2 ml-auto px-3 py-1.5 text-minbak-caption text-minbak-black hover:underline"
             >
-              닫기
+              {t("bookingForm.close")}
             </button>
           </div>
         )}
@@ -447,7 +457,7 @@ export default function BookingForm({
         <div className="border-t border-minbak-light-gray pt-4 mb-4">
           <div className="flex items-center gap-2 text-minbak-body text-minbak-gray">
             <span className="inline-block w-4 h-4 border-2 border-minbak-gray border-t-transparent rounded-full animate-spin" />
-            요금 계산 중...
+            {t("bookingForm.calculating")}
           </div>
         </div>
       )}
@@ -459,7 +469,7 @@ export default function BookingForm({
         return (
           <div className="border-t border-[#ebebeb] pt-4 space-y-3 mb-4">
             <div className="flex justify-between text-[15px] text-[#222]">
-              <span>총 숙박 요금 (청소비 포함)</span>
+              <span>{t("bookingForm.totalWithCleaning")}</span>
               <span className="font-semibold">{formatForGuest(totalPrice)}</span>
             </div>
             <button
@@ -476,42 +486,42 @@ export default function BookingForm({
               }}
               className="flex items-center gap-1 text-[13px] text-[#717171] hover:text-[#222] transition-colors"
             >
-              요금 상세보기
+              {t("bookingForm.priceDetail")}
               {priceDetailOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
             {priceDetailOpen && (
               <div className="bg-[#f7f7f7] rounded-xl p-4 space-y-2.5 text-[14px]">
                 <div className="flex justify-between text-[#222]">
-                  <span>{formatForGuest(perNight)} x {nights}박</span>
+                  <span>{t("bookingForm.perNightNights", { perNight: formatForGuest(perNight), nights })}</span>
                   <span>{formatForGuest(accommodationOnly)}</span>
                 </div>
                 {guests >= 1 && (
                   <div className="flex justify-between text-[#717171] text-[13px]">
-                    <span>1인당 1박 (숙박비만)</span>
+                    <span>{t("bookingForm.perNightOnly")}</span>
                     <span>{formatForGuest(Math.round(perNight / guests))}</span>
                   </div>
                 )}
                 {actualCleaningFee > 0 && (
                   <div className="flex justify-between text-[#222]">
-                    <span>청소비</span>
+                    <span>{t("bookingForm.cleaningFee")}</span>
                     <span>{formatForGuest(actualCleaningFee)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-[#222]">
-                  <span>서비스 수수료</span>
-                  <span className="text-[#717171]">없음</span>
+                  <span>{t("bookingForm.serviceFee")}</span>
+                  <span className="text-[#717171]">{t("bookingForm.noFee")}</span>
                 </div>
                 <div className="flex justify-between text-[#222]">
-                  <span>세금</span>
-                  <span className="text-[#717171]">포함</span>
+                  <span>{t("bookingForm.tax")}</span>
+                  <span className="text-[#717171]">{t("bookingForm.taxIncluded")}</span>
                 </div>
               </div>
             )}
             <div className="flex justify-between items-baseline pt-3 border-t border-[#ebebeb]">
-              <span className="text-[16px] font-bold text-[#222]">총 결제 금액</span>
+              <span className="text-[16px] font-bold text-[#222]">{t("bookingForm.totalAmount")}</span>
               <span className="text-[20px] font-bold text-[#222]">{formatForGuest(totalPrice)}</span>
             </div>
-            <p className="text-[12px] text-[#999] text-center">숨은 비용 없이 표시된 금액이 최종 결제 금액입니다</p>
+            <p className="text-[12px] text-[#999] text-center">{t("bookingForm.noHiddenFees")}</p>
           </div>
         );
       })()}
@@ -525,10 +535,10 @@ export default function BookingForm({
       {nights > 0 && !allAvailable && (
         <p className="text-minbak-body text-minbak-primary mb-3" role="alert">
           {priceResult?.minStayNights != null && nights < priceResult.minStayNights
-            ? `최소 ${priceResult.minStayNights}박 이상 예약해 주세요.`
+            ? t("bookingForm.minNights", { nights: priceResult.minStayNights })
             : priceResult?.maxStayNights != null && nights > priceResult.maxStayNights
-              ? `최대 ${priceResult.maxStayNights}박까지 예약 가능합니다.`
-              : "선택한 날짜 중 예약 불가한 날이 있습니다."}
+              ? t("bookingForm.maxNights", { nights: priceResult.maxStayNights })
+              : t("bookingForm.dateUnavailable")}
         </p>
       )}
 
@@ -548,7 +558,7 @@ export default function BookingForm({
           });
         }}
       >
-        예약하기
+        {t("listingDetail.bookButton")}
       </Button>
     </form>
   );

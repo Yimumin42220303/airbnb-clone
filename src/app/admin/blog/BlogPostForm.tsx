@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import BlogBody from "@/components/blog/BlogBody";
 
 type PostFormData = {
   title: string;
@@ -42,6 +43,49 @@ export default function BlogPostForm({ mode, initial }: Props) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [imageUploading, setImageUploading] = useState(false);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function insertAtCursor(text: string) {
+    const ta = bodyRef.current;
+    if (!ta) {
+      setForm((f) => ({ ...f, body: f.body + "\n" + text + "\n" }));
+      return;
+    }
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const before = form.body.slice(0, start);
+    const after = form.body.slice(end);
+    const inserted = before + "\n" + text + "\n" + after;
+    setForm((f) => ({ ...f, body: inserted }));
+    setTimeout(() => {
+      const newPos = start + text.length + 2;
+      ta.focus();
+      ta.setSelectionRange(newPos, newPos);
+    }, 0);
+  }
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setImageUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload/blog", { method: "POST", body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || "이미지 업로드에 실패했습니다.");
+        return;
+      }
+      const url = data.url;
+      if (url) insertAtCursor(`[IMG:${url}]`);
+    } finally {
+      setImageUploading(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -158,18 +202,54 @@ export default function BlogPostForm({ mode, initial }: Props) {
       </div>
 
       <div>
-        <label htmlFor="body" className="block text-minbak-body font-medium text-minbak-black mb-1">
-          본문 *
-        </label>
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <label htmlFor="body" className="text-minbak-body font-medium text-minbak-black">
+            본문 *
+          </label>
+          <span className="flex items-center gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={handleImageUpload}
+              disabled={imageUploading}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={imageUploading}
+              className="px-3 py-1.5 text-minbak-caption font-medium border border-minbak-light-gray rounded-minbak bg-white hover:bg-minbak-bg disabled:opacity-60"
+            >
+              {imageUploading ? "업로드 중…" : "이미지 삽입"}
+            </button>
+          </span>
+        </div>
+        <p className="text-minbak-caption text-minbak-gray mb-2">
+          본문 중간에 넣을 위치에 커서를 두고 「이미지 삽입」을 누른 뒤 사진을 선택하면 해당 위치에 이미지가 들어갑니다.
+        </p>
         <textarea
+          ref={bodyRef}
           id="body"
           required
           rows={14}
           value={form.body}
           onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))}
           className="w-full px-4 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body"
-          placeholder="글 내용을 입력하세요. 줄바꿈은 그대로 반영됩니다."
+          placeholder="글 내용을 입력하세요. 줄바꿈은 그대로 반영됩니다. 이미지는 「이미지 삽입」으로 넣을 수 있습니다."
         />
+        <div className="mt-4 border border-minbak-light-gray rounded-minbak bg-white overflow-hidden">
+          <p className="px-4 py-2 text-minbak-caption text-minbak-gray border-b border-minbak-light-gray bg-minbak-bg/50">
+            미리보기 (이미지 삽입 시 아래에 바로 반영됩니다)
+          </p>
+          <div className="p-4 min-h-[120px]">
+            {form.body.trim() ? (
+              <BlogBody body={form.body} />
+            ) : (
+              <p className="text-minbak-caption text-minbak-gray">본문을 입력하면 미리보기가 표시됩니다.</p>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="flex items-center gap-2">

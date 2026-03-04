@@ -2,17 +2,12 @@
 
 import { useEffect, useRef } from "react";
 import { trackEvent } from "@/lib/booking-analytics";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
 type BannerItem = {
   icon: string;
   text: string;
 };
-
-const DEFAULT_ITEMS: BannerItem[] = [
-  { icon: "💰", text: "도쿄민박 가격 보장 — 에어비앤비보다 최소 5% 저렴" },
-  { icon: "🇰🇷", text: "한국어 고객지원 운영" },
-  { icon: "📩", text: "예약 후 체크인 안내 24시간 내 제공" },
-];
 
 type Props = {
   listingId: string;
@@ -20,11 +15,21 @@ type Props = {
   variant?: "default" | "compact";
 };
 
+const DEFAULT_ITEM_KEYS = [
+  { icon: "💰", key: "trustBanner.priceGuarantee" as const },
+  { icon: "🇰🇷", key: "trustBanner.koreanSupport" as const },
+  { icon: "📩", key: "trustBanner.checkinGuide" as const },
+];
+
 export default function TrustBanner({
   listingId,
-  items = DEFAULT_ITEMS,
+  items: itemsProp,
   variant = "default",
 }: Props) {
+  const { t } = useHostTranslations();
+  const items: BannerItem[] =
+    itemsProp ??
+    DEFAULT_ITEM_KEYS.map(({ icon, key }) => ({ icon, text: t(key) }));
   const tracked = useRef(false);
   const ref = useRef<HTMLDivElement>(null);
 

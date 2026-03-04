@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getAdminUser } from "@/lib/admin";
 import { createPost } from "@/lib/blog";
 
@@ -60,6 +61,7 @@ export async function POST(req: Request) {
             ? publishedAt
             : undefined,
     });
+    revalidatePath("/blog");
     return NextResponse.json({ id: post.id, slug: post.slug });
   } catch (e) {
     console.error("Blog create error:", e);

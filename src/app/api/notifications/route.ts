@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getHostLocaleFromCookie } from "@/lib/host-i18n";
+import { notificationTitleToJa } from "@/lib/notification-title-ja";
 
 /**
  * GET /api/notifications
  * 최신순 목록. 쿼리: limit (기본 20), cursor (id)
+ * locale=ja 이면 알림 제목을 일본어로 변환해 반환
  */
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -16,6 +19,9 @@ export async function GET(request: NextRequest) {
       { status: 401 }
     );
   }
+
+  const locale = getHostLocaleFromCookie(request.headers.get("cookie") ?? undefined);
+  const toJa = locale === "ja";
 
   const { searchParams } = new URL(request.url);
   const limit = Math.min(
@@ -50,7 +56,7 @@ export async function GET(request: NextRequest) {
     notifications: items.map((n) => ({
       id: n.id,
       type: n.type,
-      title: n.title,
+      title: toJa ? notificationTitleToJa(n.title) : n.title,
       linkPath: n.linkPath,
       linkLabel: n.linkLabel,
       readAt: n.readAt?.toISOString() ?? null,

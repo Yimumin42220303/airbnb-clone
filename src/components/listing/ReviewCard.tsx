@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import ReviewPhotoGallery from "./ReviewPhotoGallery";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
 const PREVIEW_LENGTH = 150;
 
@@ -16,8 +17,8 @@ export type ReviewItem = {
 
 type Props = { review: ReviewItem };
 
-function formatReviewDate(date: string) {
-  return new Date(date).toLocaleDateString("ko-KR", {
+function formatReviewDate(date: string, locale: "ko" | "ja") {
+  return new Date(date).toLocaleDateString(locale === "ja" ? "ja-JP" : "ko-KR", {
     year: "numeric",
     month: "long",
   });
@@ -30,6 +31,7 @@ function getInitial(name: string | null) {
 }
 
 export default function ReviewCard({ review }: Props) {
+  const { t, locale } = useHostTranslations();
   const [expanded, setExpanded] = useState(false);
   const body = review.body?.trim() ?? "";
   const showMore = body.length > PREVIEW_LENGTH;
@@ -45,10 +47,10 @@ export default function ReviewCard({ review }: Props) {
         </div>
         <div className="min-w-0">
           <p className="text-[15px] font-semibold text-[#222] truncate">
-            {review.userName ?? "익명"}
+            {review.userName ?? t("review.anonymous")}
           </p>
           <div className="flex flex-wrap items-center gap-2 text-[13px]">
-            <span className="flex text-[#222]" aria-label={`평점 ${review.rating}점`}>
+            <span className="flex text-[#222]" aria-label={t("review.ratingAriaLabel", { value: review.rating })}>
               {[1, 2, 3, 4, 5].map((star) => (
                 <span
                   key={star}
@@ -63,11 +65,11 @@ export default function ReviewCard({ review }: Props) {
               ))}
             </span>
             <span className="text-[#717171]">
-              {formatReviewDate(review.createdAt)}
+              {formatReviewDate(review.createdAt, locale)}
             </span>
             {review.membershipYears != null && (
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[11px] font-medium">
-                ✓ 숙박 인증
+                ✓ {t("review.verifiedStay")}
               </span>
             )}
           </div>
@@ -82,7 +84,7 @@ export default function ReviewCard({ review }: Props) {
               onClick={() => setExpanded(true)}
               className="ml-1 underline text-[#222] hover:no-underline"
             >
-              더 보기
+              {t("review.showMoreText")}
             </button>
           )}
         </div>

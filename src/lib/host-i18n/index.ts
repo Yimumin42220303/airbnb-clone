@@ -9,6 +9,26 @@ export function getHostLocaleFromCookie(cookieHeader: string | undefined): HostL
   return value === "ja" ? "ja" : "ko";
 }
 
+/**
+ * Accept-Language ヘッダーから優先言語を判定し、ja または ko を返す。
+ * 日本語が韓国語より優先されていれば "ja"、それ以外は "ko"。
+ */
+export function getLocaleFromAcceptLanguage(acceptLanguage: string | null): HostLocale {
+  if (!acceptLanguage?.trim()) return "ko";
+  const parts = acceptLanguage.split(",").map((p) => p.split(";")[0].trim().toLowerCase());
+  let jaIndex = -1;
+  let koIndex = -1;
+  for (let i = 0; i < parts.length; i++) {
+    const code = parts[i].slice(0, 2);
+    if (code === "ja" && jaIndex === -1) jaIndex = i;
+    if (code === "ko" && koIndex === -1) koIndex = i;
+  }
+  if (jaIndex === -1 && koIndex === -1) return "ko";
+  if (jaIndex === -1) return "ko";
+  if (koIndex === -1) return "ja";
+  return jaIndex <= koIndex ? "ja" : "ko";
+}
+
 export function t(
   locale: HostLocale,
   key: HostTranslationKey,

@@ -591,11 +591,7 @@ export async function updateListing(
   if (options?.isAdmin && input.userId != null && input.userId.trim()) {
     const targetUser = await prisma.user.findUnique({ where: { id: input.userId } });
     if (!targetUser) {
-      return { ok: false as const, error: "선택한 호스트를 찾을 수 없습니다." };
-    }
-    const isHost = await prisma.listing.count({ where: { userId: targetUser.id } }) > 0;
-    if (!isHost) {
-      return { ok: false as const, error: "선택한 사용자는 호스트가 아닙니다. (숙소를 1개 이상 보유한 사용자만 선택 가능)" };
+      return { ok: false as const, error: "선택한 사용자를 찾을 수 없습니다." };
     }
     data.user = { connect: { id: input.userId } };
   }

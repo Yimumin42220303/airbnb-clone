@@ -68,23 +68,10 @@ async function main() {
     execSync("git commit -m \"auto: vercel deploy\"", { stdio: "inherit" });
     await run("git", ["push"]);
     console.log("\n[deploy] ✅ push 완료");
-    // Deploy Hook 또는 VERCEL_TOKEN 있으면 배포 트리거 (Git webhook 미동작 시 대비)
-    if (process.env.VERCEL_DEPLOY_HOOK || process.env.VERCEL_TOKEN) {
-      try {
-        const { spawnSync } = require("child_process");
-        const r = spawnSync("node", ["scripts/vercel-redeploy.js"], {
-          stdio: "inherit",
-          env: process.env,
-        });
-        if (r.status === 0) console.log("[deploy] Vercel 배포 트리거 완료");
-      } catch (_) {
-        /* ignore */
-      }
-    } else {
-      console.log("[deploy] Vercel Git 연동으로 배포 트리거됨");
-      if (process.env.VERCEL_ORG_ID && process.env.VERCEL_PROJECT_ID) {
-        console.log("[deploy] 배포가 안 되면: npm run deploy:cli (로컬→Vercel 직접 배포)");
-      }
+    // push만으로 Vercel Git 연동이 자동 배포함. Deploy Hook을 추가 호출하면 같은 커밋으로 2번 배포되므로 호출하지 않음.
+    console.log("[deploy] Vercel Git 연동으로 배포가 자동 트리거됩니다. (1회만 배포)");
+    if (process.env.VERCEL_ORG_ID && process.env.VERCEL_PROJECT_ID) {
+      console.log("[deploy] 배포가 안 되면: npm run deploy:cli (로컬→Vercel 직접 배포)");
     }
   } catch (e) {
     console.error("[deploy] 오류:", e.message);

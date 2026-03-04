@@ -29,13 +29,15 @@ export default async function EditListingPage({ params }: Props) {
     redirect("/host/listings");
   }
 
-  const hosts = isAdmin
-    ? await prisma.user.findMany({
-        where: { listings: { some: {} } },
-        orderBy: { name: "asc" },
-        select: { id: true, email: true, name: true },
-      })
-    : [];
+  const currentHostUser =
+    owner &&
+    (await prisma.user.findUnique({
+      where: { id: owner.userId },
+      select: { id: true, email: true, name: true },
+    }));
+  const currentHostDisplay = currentHostUser
+    ? `${currentHostUser.name ?? currentHostUser.email} (${currentHostUser.email})`
+    : "";
 
   const imageUrls =
     listing.images.length > 0
@@ -60,8 +62,8 @@ export default async function EditListingPage({ params }: Props) {
       listingId={id}
       amenities={amenities}
       isAdmin={isAdmin}
-      hosts={hosts.map((h) => ({ id: h.id, email: h.email, name: h.name ?? h.email }))}
       currentHostId={owner?.userId ?? ""}
+      currentHostDisplay={currentHostDisplay}
       initial={{
         title: listing.title,
         hostDisplayName: listing.hostDisplayName ?? undefined,

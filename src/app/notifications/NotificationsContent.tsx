@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
+import type { HostTranslationKey } from "@/lib/host-i18n";
 
 type NotificationItem = {
   id: string;
@@ -13,18 +15,22 @@ type NotificationItem = {
   createdAt: string;
 };
 
-function formatRelativeTime(iso: string): string {
+function formatRelativeTime(
+  iso: string,
+  locale: "ko" | "ja",
+  t: (key: HostTranslationKey, params?: Record<string, string | number>) => string
+): string {
   const date = new Date(iso);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMin = Math.floor(diffMs / 60_000);
   const diffHour = Math.floor(diffMs / 3600_000);
   const diffDay = Math.floor(diffMs / 86400_000);
-  if (diffMin < 1) return "방금 전";
-  if (diffMin < 60) return `${diffMin}분 전`;
-  if (diffHour < 24) return `${diffHour}시간 전`;
-  if (diffDay < 7) return `${diffDay}일 전`;
-  return date.toLocaleDateString("ko-KR", {
+  if (diffMin < 1) return t("time.justNow");
+  if (diffMin < 60) return t("time.minutesAgo", { n: diffMin });
+  if (diffHour < 24) return t("time.hoursAgo", { n: diffHour });
+  if (diffDay < 7) return t("time.daysAgo", { n: diffDay });
+  return date.toLocaleDateString(locale === "ja" ? "ja-JP" : "ko-KR", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -35,6 +41,7 @@ function formatRelativeTime(iso: string): string {
 
 export default function NotificationsContent() {
   const router = useRouter();
+  const { t, locale } = useHostTranslations();
   const [list, setList] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -88,7 +95,7 @@ export default function NotificationsContent() {
   if (loading) {
     return (
       <div className="py-12 text-center text-minbak-caption text-minbak-gray">
-        불러오는 중...
+        {t("notifications.loading")}
       </div>
     );
   }
@@ -96,7 +103,7 @@ export default function NotificationsContent() {
   if (list.length === 0) {
     return (
       <div className="py-12 text-center text-minbak-caption text-minbak-gray">
-        아직 알림이 없어요.
+        {t("notifications.empty")}
       </div>
     );
   }
@@ -117,7 +124,7 @@ export default function NotificationsContent() {
                 {item.title}
               </p>
               <p className="text-minbak-caption text-minbak-gray mt-1">
-                {formatRelativeTime(item.createdAt)}
+                {formatRelativeTime(item.createdAt, locale, t)}
               </p>
             </button>
           </li>

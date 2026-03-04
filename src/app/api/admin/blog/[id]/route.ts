@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getAdminUser } from "@/lib/admin";
 import { updatePost, deletePost, getPostById } from "@/lib/blog";
 
@@ -62,6 +63,7 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     if (!updated) {
       return NextResponse.json({ error: "글을 찾을 수 없습니다." }, { status: 404 });
     }
+    revalidatePath(`/blog/${updated.slug}`);
     return NextResponse.json({ id: updated.id, slug: updated.slug });
   } catch (e) {
     console.error("Blog update error:", e);
@@ -91,6 +93,7 @@ export async function DELETE(_req: Request, { params }: RouteParams) {
   if (!ok) {
     return NextResponse.json({ error: "글을 찾을 수 없습니다." }, { status: 404 });
   }
+  revalidatePath("/blog");
   return NextResponse.json({ ok: true });
 }
 

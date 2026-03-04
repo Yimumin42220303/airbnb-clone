@@ -26,8 +26,13 @@ export default function HostLocaleProvider({
   useEffect(() => {
     const match = document.cookie.match(new RegExp(`${COOKIE_NAME}=([^;]+)`));
     const value = match?.[1]?.trim();
-    if (value === "ja" || value === "ko") setLocaleState(value);
-  }, []);
+    if (value === "ja" || value === "ko") {
+      setLocaleState(value);
+    } else {
+      // クッキーがなければサーバーで判定した initialLocale をクッキーに保存
+      document.cookie = `${COOKIE_NAME}=${initialLocale}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
+    }
+  }, [initialLocale]);
 
   useEffect(() => {
     if (typeof document !== "undefined") {

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui";
 import { Star } from "lucide-react";
 import ReviewPhotoUploader from "./ReviewPhotoUploader";
 import { trackEvent } from "@/lib/booking-analytics";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
 type ReviewFormProps = {
   listingId: string;
@@ -22,6 +23,7 @@ export default function ReviewForm({
   canReview,
 }: ReviewFormProps) {
   const router = useRouter();
+  const { t } = useHostTranslations();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [body, setBody] = useState("");
@@ -35,13 +37,13 @@ export default function ReviewForm({
     return (
       <div className="mt-8 p-6 border border-minbak-light-gray rounded-minbak bg-minbak-bg">
         <p className="text-minbak-body text-minbak-gray">
-          로그인 후 리뷰를 남길 수 있습니다.
+          {t("review.loginToReview")}
         </p>
         <Link
           href={`/auth/signin?callbackUrl=${encodeURIComponent(`/listing/${listingId}`)}`}
           className="inline-block mt-3 text-minbak-body font-medium text-minbak-primary hover:underline"
         >
-          로그인하기
+          {t("review.login")}
         </Link>
       </div>
     );
@@ -51,7 +53,7 @@ export default function ReviewForm({
     return (
       <div className="mt-8 p-6 border border-minbak-light-gray rounded-minbak bg-minbak-bg">
         <p className="text-minbak-body text-minbak-gray">
-          이미 이 숙소에 리뷰를 작성하셨습니다.
+          {t("review.alreadyReviewed")}
         </p>
       </div>
     );
@@ -61,7 +63,7 @@ export default function ReviewForm({
     return (
       <div className="mt-8 p-6 border border-minbak-light-gray rounded-minbak bg-minbak-bg">
         <p className="text-minbak-body text-minbak-gray">
-          이 숙소의 숙박을 완료한 게스트만 리뷰를 작성할 수 있습니다.
+          {t("review.onlyAfterStay")}
         </p>
       </div>
     );
@@ -71,7 +73,7 @@ export default function ReviewForm({
     e.preventDefault();
     setError("");
     if (rating < 1 || rating > 5) {
-      setError("평점을 1~5 사이로 선택해 주세요.");
+      setError(t("review.ratingRange"));
       return;
     }
     setLoading(true);
@@ -87,14 +89,14 @@ export default function ReviewForm({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "리뷰 저장에 실패했습니다.");
+        setError(data.error || t("review.saveFailed"));
         return;
       }
       setSuccess(true);
       trackEvent("review_written", { listing_id: listingId });
       router.refresh();
     } catch {
-      setError("네트워크 오류가 발생했습니다.");
+      setError(t("review.networkError"));
     } finally {
       setLoading(false);
     }
@@ -104,7 +106,7 @@ export default function ReviewForm({
     return (
       <div className="mt-8 p-6 border border-green-200 rounded-minbak bg-green-50">
         <p className="text-minbak-body font-medium text-green-800">
-          &#10003; 리뷰가 등록되었습니다. 감사합니다!
+          &#10003; {t("review.thankYou")}
         </p>
       </div>
     );
@@ -113,7 +115,7 @@ export default function ReviewForm({
   return (
     <form onSubmit={handleSubmit} className="mt-8">
       <h3 className="text-minbak-title font-semibold text-minbak-black mb-3">
-        리뷰 작성
+        {t("review.writeReview")}
       </h3>
       <div className="flex items-center gap-1 mb-3">
         {[1, 2, 3, 4, 5].map((value) => (
@@ -124,7 +126,7 @@ export default function ReviewForm({
             onMouseEnter={() => setHoverRating(value)}
             onMouseLeave={() => setHoverRating(0)}
             className="p-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-minbak-primary focus-visible:rounded"
-            aria-label={`${value}점`}
+            aria-label={t("review.ratingAriaLabel", { value })}
           >
             <Star
               className={`w-8 h-8 transition-colors ${
@@ -143,18 +145,18 @@ export default function ReviewForm({
           </button>
         ))}
         <span className="ml-2 text-minbak-body text-minbak-gray">
-          {rating > 0 ? `${rating}점` : "평점 선택"}
+          {rating > 0 ? t("review.ratingPoints", { value: rating }) : t("review.ratingSelect")}
         </span>
       </div>
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
-        placeholder="숙소 이용 경험을 자유롭게 남겨 주세요. (선택)"
+        placeholder={t("review.placeholder")}
         rows={4}
         className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body text-minbak-black placeholder:text-minbak-gray focus:outline-none focus:ring-2 focus:ring-minbak-gray resize-y"
       />
       <div className="mt-3">
-        <p className="text-[13px] text-[#717171] mb-2">사진 첨부 (선택, 최대 5장)</p>
+        <p className="text-[13px] text-[#717171] mb-2">{t("review.photoAttach")}</p>
         <ReviewPhotoUploader photos={photos} onChange={handlePhotosChange} />
       </div>
       {error && (
@@ -168,7 +170,7 @@ export default function ReviewForm({
         className="mt-3"
         disabled={loading || rating < 1}
       >
-        {loading ? "저장 중..." : "리뷰 등록"}
+        {loading ? t("review.saving") : t("review.submit")}
       </Button>
     </form>
   );

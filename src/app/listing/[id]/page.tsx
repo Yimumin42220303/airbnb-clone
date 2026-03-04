@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getListingById } from "@/lib/listings";
@@ -8,12 +9,11 @@ import { getWishlistListingIds } from "@/lib/wishlist";
 import { formatForGuest } from "@/lib/currency";
 import { canUserReview } from "@/lib/reviews";
 import ListingDetailContent from "./ListingDetailContent";
+import { BASE_URL } from "@/lib/site-url";
+import { getHostLocaleFromCookie, t } from "@/lib/host-i18n";
 
 /** 숙소 수정(영상 등) 후 상세 페이지가 최신 데이터로 보이도록 항상 동적 렌더 */
 export const dynamic = "force-dynamic";
-
-const BASE_URL =
-  process.env.NEXT_PUBLIC_APP_URL || "https://tokyominbak.example.com";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -31,10 +31,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const listing = await getListingById(id);
   if (!listing) notFound();
 
+  const cookieStore = await cookies();
+  const locale = getHostLocaleFromCookie(cookieStore.toString());
+
   const url = `${BASE_URL}/listing/${id}`;
+  const perNightLabel = locale === "ja" ? "1泊" : "1박";
   const description =
     listing.description?.trim().slice(0, 160) ||
-    `${listing.title} · ${listing.location} · 1박 ${formatForGuest(listing.pricePerNight)}`;
+    `${listing.title} · ${listing.location} · ${perNightLabel} ${formatForGuest(listing.pricePerNight)}`;
 
   return {
     title: listing.title,
@@ -45,7 +49,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       url,
       type: "website",
-      locale: "ko_KR",
+      locale: locale === "ja" ? "ja_JP" : "ko_KR",
       ...(listing.imageUrl && {
         images: [{ url: listing.imageUrl, alt: listing.title }],
       }),
@@ -139,11 +143,27 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
     url: `${BASE_URL}/listing/${id}`,
   };
 
+  const cookieStore = await cookies();
+  const locale = getHostLocaleFromCookie(cookieStore.toString());
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: t(locale, "listingDetail.home"), item: BASE_URL },
+      { "@type": "ListItem", position: 2, name: t(locale, "listingDetail.searchListings"), item: `${BASE_URL}/search` },
+      { "@type": "ListItem", position: 3, name: listing.title },
+    ],
+  };
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
       <ListingDetailContent
         listing={listing}

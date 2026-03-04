@@ -1,13 +1,16 @@
 import { notFound } from "next/navigation";
+import { unstable_noStore } from "next/cache";
 import Image from "next/image";
 import Link from "next/link";
 import { Header, Footer } from "@/components/layout";
+import BlogBody from "@/components/blog/BlogBody";
 import { getPostBySlug, getPosts } from "@/lib/blog";
-
-const BASE_URL =
-  process.env.NEXT_PUBLIC_APP_URL || "https://tokyominbak.example.com";
+import { BASE_URL } from "@/lib/site-url";
 
 type Props = { params: Promise<{ slug: string }> };
+
+/** 관리자에서 본문·이미지 수정 시 재배포 없이 바로 반영되도록 항상 최신 데이터 조회 */
+export const dynamic = "force-dynamic";
 
 export async function generateStaticParams() {
   try {
@@ -21,15 +24,17 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props) {
   const resolved = await params;
-  const slug = resolved?.slug ?? "";
+  const rawSlug = resolved?.slug ?? "";
+  const slug = decodeSlug(rawSlug);
   const post = await getPostBySlug(slug, { allowDraft: false });
   if (!post) return { title: "글을 찾을 수 없습니다 | 도쿄민박" };
 
   const title = `${post.title} | 도쿄민박 블로그`;
+  const bodyForMeta = post.body.replace(/\[IMG:[^\]]+\]/g, "").replace(/\s+/g, " ").trim();
   const description =
     post.excerpt ||
-    post.body.slice(0, 160).replace(/\s+/g, " ").trim() + (post.body.length > 160 ? "…" : "");
-  const url = `${BASE_URL}/blog/${post.slug}`;
+    bodyForMeta.slice(0, 160) + (bodyForMeta.length > 160 ? "…" : "");
+  const url = `${BASE_URL}/blog/${encodeURIComponent(post.slug)}`;
   const image = post.coverImage || undefined;
 
   return {
@@ -54,9 +59,19 @@ export async function generateMetadata({ params }: Props) {
   };
 }
 
+function decodeSlug(raw: string): string {
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}
+
 export default async function BlogPostPage({ params }: Props) {
+  unstable_noStore();
   const resolved = await params;
-  const slug = resolved?.slug ?? "";
+  const rawSlug = resolved?.slug ?? "";
+  const slug = decodeSlug(rawSlug);
   const post = await getPostBySlug(slug, { allowDraft: false });
   if (!post) notFound();
 
@@ -74,8 +89,19 @@ export default async function BlogPostPage({ params }: Props) {
     publisher: {
       "@type": "Organization",
       name: "도쿄민박",
+      logo: { "@type": "ImageObject", url: `${BASE_URL}/icon.png` },
     },
-    mainEntityOfPage: { "@type": "WebPage", "@id": `${BASE_URL}/blog/${post.slug}` },
+    mainEntityOfPage: { "@type": "WebPage", "@id": `${BASE_URL}/blog/${encodeURIComponent(post.slug)}` },
+  };
+
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "홈", item: BASE_URL },
+      { "@type": "ListItem", position: 2, name: "블로그", item: `${BASE_URL}/blog` },
+      { "@type": "ListItem", position: 3, name: post.title },
+    ],
   };
 
   return (
@@ -83,6 +109,10 @@ export default async function BlogPostPage({ params }: Props) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
       <Header />
       <main className="min-h-screen pt-24">
@@ -116,7 +146,7 @@ export default async function BlogPostPage({ params }: Props) {
             <div className="relative w-full aspect-video rounded-minbak overflow-hidden bg-minbak-light-gray mb-8">
               <Image
                 src={post.coverImage}
-                alt=""
+                alt={post.title}
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 720px"
@@ -125,12 +155,7 @@ export default async function BlogPostPage({ params }: Props) {
             </div>
           )}
 
-          <div
-            className="prose prose-neutral max-w-none text-minbak-body text-minbak-black"
-            dangerouslySetInnerHTML={{
-              __html: post.body.replace(/\n/g, "<br />"),
-            }}
-          />
+          <BlogBody body={post.body} />
         </article>
       </main>
       <Footer />

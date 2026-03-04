@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
 type UserData = {
   id: string;
@@ -19,6 +20,7 @@ type Props = {
 
 export default function ProfileEditForm({ user }: Props) {
   const router = useRouter();
+  const { t } = useHostTranslations();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(user.name ?? "");
   const [phone, setPhone] = useState(user.phone ?? "");
@@ -32,11 +34,11 @@ export default function ProfileEditForm({ user }: Props) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
-      setError("JPEG, PNG, WebP, GIF 이미지만 업로드할 수 있습니다.");
+      setError(t("profileEdit.photoFormatError"));
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      setError("이미지는 최대 2MB까지 업로드할 수 있습니다.");
+      setError(t("profileEdit.photoSizeError"));
       return;
     }
     setError("");
@@ -50,13 +52,13 @@ export default function ProfileEditForm({ user }: Props) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "사진 업로드에 실패했습니다.");
+        setError(data.error || t("profileEdit.uploadFailed"));
         return;
       }
       setDisplayImage(data.url);
       setImageToSave(data.url);
     } catch {
-      setError("사진 업로드 중 오류가 발생했습니다.");
+      setError(t("profileEdit.uploadError"));
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -85,13 +87,13 @@ export default function ProfileEditForm({ user }: Props) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "저장에 실패했습니다.");
+        setError(data.error || t("profileEdit.saveFailed"));
         return;
       }
       router.push("/mypage");
       router.refresh();
     } catch {
-      setError("네트워크 오류가 발생했습니다.");
+      setError(t("mypage.networkError"));
     } finally {
       setLoading(false);
     }
@@ -106,7 +108,7 @@ export default function ProfileEditForm({ user }: Props) {
               {displayImage ? (
                 <Image
                   src={displayImage}
-                  alt={user.name ?? "프로필"}
+                  alt={user.name ?? t("profileEdit.profileAlt")}
                   width={96}
                   height={96}
                   className="object-cover w-full h-full"
@@ -133,7 +135,7 @@ export default function ProfileEditForm({ user }: Props) {
                 disabled={uploading}
                 className="text-minbak-caption font-medium text-minbak-primary hover:underline disabled:opacity-50"
               >
-                {uploading ? "업로드 중..." : "사진 변경"}
+                {uploading ? t("profileEdit.uploading") : t("profileEdit.changePhoto")}
               </button>
               {displayImage && (
                 <>
@@ -143,13 +145,13 @@ export default function ProfileEditForm({ user }: Props) {
                     onClick={handleRemovePhoto}
                     className="text-minbak-caption font-medium text-minbak-gray hover:underline"
                   >
-                    사진 제거
+                    {t("profileEdit.removePhoto")}
                   </button>
                 </>
               )}
             </div>
             <p className="text-minbak-caption text-minbak-gray text-center">
-              JPEG/PNG/WebP/GIF, 최대 2MB
+              {t("profileEdit.photoHint")}
             </p>
           </div>
           <div className="flex-1 min-w-0 space-y-4 w-full">
@@ -158,14 +160,14 @@ export default function ProfileEditForm({ user }: Props) {
                 htmlFor="name"
                 className="block text-minbak-caption font-medium text-minbak-black mb-1.5"
               >
-                이용자 이름
+                {t("mypage.userName")}
               </label>
               <input
                 id="name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="이름을 입력하세요"
+                placeholder={t("profileEdit.namePlaceholder")}
                 className="w-full min-h-[44px] px-4 py-2.5 border border-minbak-light-gray rounded-minbak text-minbak-body text-minbak-black placeholder:text-minbak-gray focus:outline-none focus:ring-2 focus:ring-minbak-primary focus:border-transparent"
               />
             </div>
@@ -174,7 +176,7 @@ export default function ProfileEditForm({ user }: Props) {
                 htmlFor="email"
                 className="block text-minbak-caption font-medium text-minbak-black mb-1.5"
               >
-                등록된 이메일
+                {t("mypage.registeredEmail")}
               </label>
               <input
                 id="email"
@@ -184,7 +186,7 @@ export default function ProfileEditForm({ user }: Props) {
                 className="w-full min-h-[44px] px-4 py-2.5 border border-minbak-light-gray rounded-minbak text-minbak-body text-minbak-gray bg-minbak-bg/50 cursor-not-allowed"
               />
               <p className="mt-1 text-minbak-caption text-minbak-gray">
-                이메일은 소셜 로그인 연동 정보로 변경할 수 없습니다.
+                {t("profileEdit.emailNote")}
               </p>
             </div>
             <div>
@@ -192,14 +194,14 @@ export default function ProfileEditForm({ user }: Props) {
                 htmlFor="phone"
                 className="block text-minbak-caption font-medium text-minbak-black mb-1.5"
               >
-                전화번호
+                {t("mypage.phone")}
               </label>
               <input
                 id="phone"
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="예: 010-1234-5678"
+                placeholder={t("profileEdit.phonePlaceholder")}
                 className="w-full min-h-[44px] px-4 py-2.5 border border-minbak-light-gray rounded-minbak text-minbak-body text-minbak-black placeholder:text-minbak-gray focus:outline-none focus:ring-2 focus:ring-minbak-primary focus:border-transparent"
               />
             </div>
@@ -217,13 +219,13 @@ export default function ProfileEditForm({ user }: Props) {
           disabled={loading}
           className="min-h-[44px] px-6 py-2.5 rounded-minbak text-minbak-body font-medium text-white bg-minbak-primary hover:bg-minbak-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? "저장 중..." : "저장하기"}
+          {loading ? t("profileEdit.saving") : t("profileEdit.save")}
         </button>
         <Link
           href="/mypage"
           className="min-h-[44px] px-6 py-2.5 rounded-minbak text-minbak-body font-medium text-minbak-black border border-minbak-light-gray hover:bg-minbak-bg transition-colors inline-flex items-center justify-center"
         >
-          취소
+          {t("profileEdit.cancel")}
         </Link>
       </div>
     </form>

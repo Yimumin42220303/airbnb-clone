@@ -5,6 +5,7 @@ import ReviewCard from "./ReviewCard";
 import ReviewForm from "./ReviewForm";
 import ReviewSummaryAI from "./ReviewSummaryAI";
 import { trackEvent } from "@/lib/booking-analytics";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
 type ReviewItem = {
   rating: number;
@@ -26,6 +27,12 @@ type Props = {
   hasReviewed: boolean;
   isLoggedIn: boolean;
 };
+
+const SORT_OPTIONS = [
+  { key: "newest" as const, labelKey: "review.sortNewest" as const },
+  { key: "highest" as const, labelKey: "review.sortHighest" as const },
+  { key: "lowest" as const, labelKey: "review.sortLowest" as const },
+];
 
 function StarBar({ label, count, total }: { label: string; count: number; total: number }) {
   const pct = total > 0 ? (count / total) * 100 : 0;
@@ -54,6 +61,7 @@ export default function ReviewSection({
   hasReviewed,
   isLoggedIn,
 }: Props) {
+  const { t } = useHostTranslations();
   const [sort, setSort] = useState<SortMode>("newest");
   const [showAll, setShowAll] = useState(false);
   const tracked = useRef(false);
@@ -104,24 +112,20 @@ export default function ReviewSection({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-[17px] font-semibold text-[#222]">리뷰</h2>
+              <h2 className="text-[17px] font-semibold text-[#222]">{t("review.sectionTitle")}</h2>
               {rating != null && reviewCount > 0 && (
                 <span className="text-[15px] text-[#222]">
-                  ★ {rating.toFixed(1)} · {reviewCount}개
+                  ★ {rating.toFixed(1)} · {t("review.count", { count: reviewCount })}
                 </span>
               )}
             </div>
             <p className="mt-1 text-[13px] text-[#717171]">
-              타 플랫폼에서의 리뷰도 같이 표시됩니다
+              {t("review.fromOtherPlatforms")}
             </p>
           </div>
           {reviews.length > 1 && (
             <div className="flex gap-1">
-              {([
-                { key: "newest", label: "최신순" },
-                { key: "highest", label: "높은평점" },
-                { key: "lowest", label: "낮은평점" },
-              ] as const).map((opt) => (
+              {SORT_OPTIONS.map((opt) => (
                 <button
                   key={opt.key}
                   type="button"
@@ -132,7 +136,7 @@ export default function ReviewSection({
                       : "bg-white text-[#717171] border-[#dddddd] hover:border-[#999]"
                   }`}
                 >
-                  {opt.label}
+                  {t(opt.labelKey)}
                 </button>
               ))}
             </div>
@@ -157,7 +161,7 @@ export default function ReviewSection({
                     </span>
                   ))}
                 </div>
-                <p className="text-[12px] text-[#717171] mt-1">{reviewCount}개 리뷰</p>
+                <p className="text-[12px] text-[#717171] mt-1">{t("review.reviewsCount", { count: reviewCount })}</p>
               </div>
               <div className="flex-1 space-y-1.5">
                 {dist.map((d) => (
@@ -194,7 +198,7 @@ export default function ReviewSection({
                 onClick={() => setShowAll((v) => !v)}
                 className="min-h-[44px] px-6 py-2.5 text-[15px] font-medium text-[#222] border border-[#dddddd] rounded-full hover:bg-[#f7f7f7] transition-colors"
               >
-                {showAll ? "접기" : `리뷰 ${remaining}개 더 보기`}
+                {showAll ? t("review.showLess") : t("review.showMore", { count: remaining })}
               </button>
             </div>
           )}
@@ -204,9 +208,9 @@ export default function ReviewSection({
           <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center mx-auto mb-3">
             <span className="text-xl" aria-hidden>💬</span>
           </div>
-          <p className="text-[15px] text-[#717171] mb-1">아직 리뷰가 없습니다</p>
+          <p className="text-[15px] text-[#717171] mb-1">{t("review.empty")}</p>
           <p className="text-[13px] text-[#b0b0b0]">
-            이 숙소에 머무르셨다면 첫 번째 리뷰를 남겨보세요!
+            {t("review.emptyCta")}
           </p>
         </div>
       )}

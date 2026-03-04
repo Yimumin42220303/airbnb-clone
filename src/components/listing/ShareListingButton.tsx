@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Share2, Link2, Smartphone } from "lucide-react";
 import { toast } from "sonner";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
 const ALLOWED_QUERY_KEYS = ["checkIn", "checkOut", "adults", "children"] as const;
 
@@ -42,6 +43,7 @@ export default function ShareListingButton({
   shareText,
   className = "",
 }: Props) {
+  const { t } = useHostTranslations();
   const [open, setOpen] = useState(false);
   const firstFocusRef = useRef<HTMLButtonElement>(null);
   const showWebShare = canUseWebShare();
@@ -68,7 +70,7 @@ export default function ShareListingButton({
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(url);
-        toast.success("링크가 복사되었습니다.");
+        toast.success(t("share.copySuccess"));
         setOpen(false);
         return;
       }
@@ -86,13 +88,13 @@ export default function ShareListingButton({
       const ok = document.execCommand("copy");
       document.body.removeChild(textarea);
       if (ok) {
-        toast.success("링크가 복사되었습니다.");
+        toast.success(t("share.copySuccess"));
         setOpen(false);
       } else {
-        toast.error("복사에 실패했습니다. 주소창에서 URL을 복사해 주세요.");
+        toast.error(t("share.copyFailed"));
       }
     } catch {
-      toast.error("복사에 실패했습니다. 주소창에서 URL을 복사해 주세요.");
+      toast.error(t("share.copyFailed"));
     }
   }
 
@@ -101,7 +103,7 @@ export default function ShareListingButton({
     const payload: ShareData = {
       title,
       url,
-      text: shareText ?? `${title} · 도쿄민박`,
+      text: shareText ?? `${title} · ${t("guest.siteName")}`,
     };
     if (typeof navigator.canShare === "function" && !navigator.canShare(payload)) {
       await handleCopy();
@@ -115,7 +117,7 @@ export default function ShareListingButton({
         setOpen(false);
         return;
       }
-      toast.error("공유에 실패했습니다. 링크 복사를 이용해 주세요.");
+      toast.error(t("share.shareFailed"));
     }
   }
 
@@ -125,7 +127,7 @@ export default function ShareListingButton({
         type="button"
         onClick={() => setOpen(true)}
         className={`p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white/90 hover:bg-white shadow-minbak transition-colors ${className}`}
-        aria-label="숙소 공유"
+        aria-label={t("share.shareListing")}
         aria-haspopup="dialog"
         aria-expanded={open}
       >
@@ -148,7 +150,7 @@ export default function ShareListingButton({
               className="w-full sm:max-w-sm max-h-[85vh] overflow-y-auto bg-white rounded-t-2xl sm:rounded-2xl shadow-lg p-6 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-6"
             >
               <h2 id="share-listing-title" className="text-lg font-semibold text-[#222] mb-4">
-                숙소 공유
+                {t("share.shareListing")}
               </h2>
               <div className="flex flex-col gap-2">
                 <button
@@ -156,24 +158,24 @@ export default function ShareListingButton({
                   type="button"
                   onClick={handleCopy}
                   className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-[#f7f7f7] transition-colors text-left"
-                  aria-label="링크 복사"
+                  aria-label={t("share.copyLink")}
                 >
                   <span className="flex items-center justify-center w-10 h-10 rounded-full bg-[#f7f7f7]">
                     <Link2 className="w-5 h-5 text-[#222]" />
                   </span>
-                  <span className="font-medium text-[#222]">링크 복사</span>
+                  <span className="font-medium text-[#222]">{t("share.copyLink")}</span>
                 </button>
                 {showWebShare && (
                   <button
                     type="button"
                     onClick={handleNativeShare}
                     className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-[#f7f7f7] transition-colors text-left"
-                    aria-label="공유하기"
+                    aria-label={t("share.share")}
                   >
                     <span className="flex items-center justify-center w-10 h-10 rounded-full bg-[#f7f7f7]">
                       <Smartphone className="w-5 h-5 text-[#222]" />
                     </span>
-                    <span className="font-medium text-[#222]">공유하기</span>
+                    <span className="font-medium text-[#222]">{t("share.share")}</span>
                   </button>
                 )}
               </div>
@@ -181,9 +183,9 @@ export default function ShareListingButton({
                 type="button"
                 onClick={() => setOpen(false)}
                 className="mt-4 w-full py-3 rounded-xl border border-[#ddd] text-[#222] font-medium hover:bg-[#f7f7f7] transition-colors"
-                aria-label="닫기"
+                aria-label={t("gallery.close")}
               >
-                닫기
+                {t("gallery.close")}
               </button>
             </div>
           </div>,

@@ -4,6 +4,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Bell } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
+import type { HostLocale } from "@/lib/host-i18n";
 
 const POLL_INTERVAL_MS = 60_000;
 const DROPDOWN_LIMIT = 10;
@@ -18,27 +20,33 @@ type NotificationItem = {
   createdAt: string;
 };
 
-function formatRelativeTime(iso: string): string {
+function formatRelativeTime(
+  iso: string,
+  locale: HostLocale,
+  t: (key: "time.justNow" | "time.minutesAgo" | "time.hoursAgo" | "time.daysAgo", params?: { n: number }) => string
+): string {
   const date = new Date(iso);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMin = Math.floor(diffMs / 60_000);
   const diffHour = Math.floor(diffMs / 3600_000);
   const diffDay = Math.floor(diffMs / 86400_000);
-  if (diffMin < 1) return "방금 전";
-  if (diffMin < 60) return `${diffMin}분 전`;
-  if (diffHour < 24) return `${diffHour}시간 전`;
-  if (diffDay < 7) return `${diffDay}일 전`;
-  return date.toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
+  if (diffMin < 1) return t("time.justNow");
+  if (diffMin < 60) return t("time.minutesAgo", { n: diffMin });
+  if (diffHour < 24) return t("time.hoursAgo", { n: diffHour });
+  if (diffDay < 7) return t("time.daysAgo", { n: diffDay });
+  return date.toLocaleDateString(locale === "ja" ? "ja-JP" : "ko-KR", { month: "short", day: "numeric" });
 }
 
 export default function NotificationBell() {
   const { data: session, status } = useSession();
+  const { t, locale } = useHostTranslations();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [list, setList] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [markingAllRead, setMarkingAllRead] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   const fetchUnreadCount = useCallback(async () => {
@@ -92,6 +100,27 @@ export default function NotificationBell() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  async function handleMarkAllRead() {
+    if (unreadCount === 0) return;
+    try {
+      setMarkingAllRead(true);
+      const res = await fetch("/api/notifications/read-all", { method: "PATCH" });
+      if (res.ok) {
+        setUnreadCount(0);
+        setList((prev) =>
+          prev.map((n) => ({
+            ...n,
+            readAt: n.readAt ?? new Date().toISOString(),
+          }))
+        );
+      }
+    } catch {
+      // ignore
+    } finally {
+      setMarkingAllRead(false);
+    }
+  }
+
   async function handleItemClick(item: NotificationItem) {
     if (item.readAt === null) {
       try {
@@ -118,7 +147,7 @@ export default function NotificationBell() {
         type="button"
         onClick={() => setOpen((o) => !o)}
         className="flex items-center justify-center w-10 h-10 rounded-full bg-minbak-pill-bg hover:bg-minbak-light-gray text-minbak-gray hover:text-minbak-black transition-colors"
-        aria-label="알림"
+        aria-label={t("notifications.title")}
         aria-expanded={open}
         aria-haspopup="true"
       >
@@ -134,21 +163,33 @@ export default function NotificationBell() {
         <div
           className="fixed left-4 right-4 top-[calc(5.5rem+env(safe-area-inset-top,0px))] z-[10002] w-auto max-h-[70vh] overflow-hidden bg-white border border-minbak-light-gray rounded-minbak shadow-minbak flex flex-col md:left-auto md:right-0 md:top-full md:mt-2 md:absolute md:w-[320px] md:max-w-[calc(100vw-2rem)]"
           role="dialog"
-          aria-label="알림 목록"
+          aria-label={t("notifications.title")}
         >
           <div className="px-4 py-3 border-b border-minbak-light-gray shrink-0">
-            <h2 className="text-minbak-body font-semibold text-minbak-black">
-              알림
-            </h2>
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-minbak-body font-semibold text-minbak-black">
+                {t("notifications.title")}
+              </h2>
+              {unreadCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleMarkAllRead}
+                  disabled={markingAllRead}
+                  className="shrink-0 text-minbak-caption text-minbak-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {markingAllRead ? "…" : t("notifications.markAllRead")}
+                </button>
+              )}
+            </div>
           </div>
           <div className="overflow-y-auto overflow-x-hidden min-h-0 flex-1">
             {loading ? (
               <div className="px-4 py-8 text-center text-minbak-caption text-minbak-gray">
-                불러오는 중...
+                {t("notifications.loading")}
               </div>
             ) : list.length === 0 ? (
               <div className="px-4 py-8 text-center text-minbak-caption text-minbak-gray">
-                아직 알림이 없어요.
+                {t("notifications.empty")}
               </div>
             ) : (
               <ul className="py-1">
@@ -165,7 +206,7 @@ export default function NotificationBell() {
                         {item.title}
                       </p>
                       <p className="text-minbak-caption text-minbak-gray mt-0.5 break-words">
-                        {formatRelativeTime(item.createdAt)}
+                        {formatRelativeTime(item.createdAt, locale, t)}
                       </p>
                     </button>
                   </li>
@@ -180,7 +221,7 @@ export default function NotificationBell() {
                 className="block text-center text-minbak-caption text-minbak-primary hover:underline py-1"
                 onClick={() => setOpen(false)}
               >
-                모든 알림 보기
+                {t("notifications.viewAll")}
               </a>
             </div>
           )}

@@ -1,36 +1,44 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
 type BookingType = "instant" | "approval";
 
-const CONFIG = {
+const STYLE: Record<BookingType, { dot: string; bg: string; text: string; sub: string }> = {
   instant: {
     dot: "bg-emerald-500",
     bg: "bg-emerald-50 border-emerald-200",
     text: "text-emerald-800",
     sub: "text-emerald-600",
-    label: "자동확정 숙소",
-    description: "결제 완료 시 즉시 예약이 확정됩니다.",
-    tooltip: "이 숙소는 자동으로 예약이 확정됩니다.",
   },
   approval: {
     dot: "bg-amber-500",
     bg: "bg-amber-50 border-amber-200",
     text: "text-amber-800",
     sub: "text-amber-600",
-    label: "호스트 승인 필요",
-    description: "예약 요청 후 호스트 승인 시 예약이 확정됩니다.",
-    tooltip: "호스트가 예약 요청을 검토한 후 확정됩니다.",
   },
-} as const;
+};
+
+const DESC_KEYS: Record<BookingType, "bookingType.instantDesc" | "bookingType.approvalDesc"> = {
+  instant: "bookingType.instantDesc",
+  approval: "bookingType.approvalDesc",
+};
+
+const LABEL_KEYS: Record<BookingType, "bookingType.instant" | "bookingType.approval"> = {
+  instant: "bookingType.instant",
+  approval: "bookingType.approval",
+};
 
 export default function BookingTypeBadge({
   bookingType,
 }: {
   bookingType: BookingType;
 }) {
-  const c = CONFIG[bookingType];
+  const { t } = useHostTranslations();
+  const c = STYLE[bookingType];
+  const label = t(LABEL_KEYS[bookingType]);
+  const description = t(DESC_KEYS[bookingType]);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -51,13 +59,13 @@ export default function BookingTypeBadge({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
           <span className={`text-[14px] font-semibold leading-tight ${c.text}`}>
-            {c.label}
+            {label}
           </span>
           {/* Tooltip trigger */}
           <div ref={ref} className="relative inline-flex">
             <button
               type="button"
-              aria-label="예약 유형 안내"
+              aria-label={description}
               onClick={() => setOpen((v) => !v)}
               className={`w-[18px] h-[18px] rounded-full border flex items-center justify-center text-[11px] font-bold leading-none transition-colors ${
                 open
@@ -72,14 +80,14 @@ export default function BookingTypeBadge({
                 role="tooltip"
                 className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-56 rounded-lg bg-[#222] text-white text-[13px] leading-snug px-3.5 py-2.5 shadow-lg z-50 pointer-events-auto"
               >
-                {c.tooltip}
+                {description}
                 <span className="absolute left-1/2 -translate-x-1/2 top-full border-[5px] border-transparent border-t-[#222]" />
               </div>
             )}
           </div>
         </div>
         <p className={`text-[13px] mt-0.5 leading-snug ${c.sub}`}>
-          {c.description}
+          {description}
         </p>
       </div>
     </div>

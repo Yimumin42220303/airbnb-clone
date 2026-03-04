@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Header, Footer } from "@/components/layout";
 import { Button } from "@/components/ui";
@@ -14,14 +14,14 @@ import { uploadVideoClientWithProgress, canUseVideoUpload, LISTING_VIDEO_MAX_BYT
 import { toast } from "sonner";
 import type { Amenity } from "@/types";
 
-type Host = { id: string; email: string; name: string };
+type HostCandidate = { id: string; email: string; name: string };
 
 type Props = {
   listingId: string;
   amenities: Amenity[];
   isAdmin?: boolean;
-  hosts?: Host[];
   currentHostId?: string;
+  currentHostDisplay?: string;
   initial: {
     title: string;
     hostDisplayName?: string | null;
@@ -79,12 +79,14 @@ type Props = {
   };
 };
 
+const HOST_SEARCH_DEBOUNCE_MS = 250;
+
 export default function EditListingForm({
   listingId,
   amenities,
   isAdmin = false,
-  hosts = [],
   currentHostId = "",
+  currentHostDisplay = "",
   initial,
 }: Props) {
   const router = useRouter();
@@ -166,6 +168,54 @@ export default function EditListingForm({
     initial.videoUrl ? "done" : "idle"
   );
   const [videoUploadProgress, setVideoUploadProgress] = useState(0);
+
+  const [hostSearchQuery, setHostSearchQuery] = useState("");
+  const [hostSearchResults, setHostSearchResults] = useState<HostCandidate[]>([]);
+  const [hostSearchLoading, setHostSearchLoading] = useState(false);
+  const [hostDropdownOpen, setHostDropdownOpen] = useState(false);
+  const [selectedHostDisplay, setSelectedHostDisplay] = useState(currentHostDisplay);
+  const hostSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hostSearchAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    if (!hostSearchQuery.trim() || hostSearchQuery.length < 2) {
+      setHostSearchResults([]);
+      setHostDropdownOpen(false);
+      return;
+    }
+    if (hostSearchDebounceRef.current) clearTimeout(hostSearchDebounceRef.current);
+    const queryAtRequest = hostSearchQuery.trim();
+    hostSearchDebounceRef.current = setTimeout(() => {
+      setHostSearchLoading(true);
+      if (hostSearchAbortRef.current) hostSearchAbortRef.current.abort();
+      hostSearchAbortRef.current = new AbortController();
+      fetch(`/api/users/search?q=${encodeURIComponent(queryAtRequest)}`, {
+        signal: hostSearchAbortRef.current.signal,
+      })
+        .then((res) => (res.ok ? res.json() : []))
+        .then((data: HostCandidate[]) => {
+          const list = Array.isArray(data) ? data : [];
+          setHostSearchResults(list);
+          setHostDropdownOpen(list.length > 0);
+          const q = queryAtRequest.toLowerCase();
+          const exactMatch = list.find(
+            (u) => u.email.toLowerCase() === q || (u.name && u.name.toLowerCase() === q)
+          );
+          if (exactMatch) {
+            setForm((f) => ({ ...f, hostId: exactMatch.id }));
+            setSelectedHostDisplay(`${exactMatch.name || exactMatch.email} (${exactMatch.email})`);
+            setHostSearchQuery("");
+            setHostSearchResults([]);
+            setHostDropdownOpen(false);
+          }
+        })
+        .catch(() => setHostSearchResults([]))
+        .finally(() => setHostSearchLoading(false));
+    }, HOST_SEARCH_DEBOUNCE_MS);
+    return () => {
+      if (hostSearchDebounceRef.current) clearTimeout(hostSearchDebounceRef.current);
+    };
+  }, [hostSearchQuery]);
 
   function toggleAmenity(id: string) {
     setForm((f) => ({
@@ -365,24 +415,62 @@ export default function EditListingForm({
             {t("edit.title")}
           </h1>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {isAdmin && hosts.length > 0 && (
-              <div className="border border-minbak-light-gray rounded-minbak p-4 bg-minbak-bg/50">
+            {isAdmin && (
+              <div className="border border-minbak-light-gray rounded-minbak p-4 bg-minbak-bg/50 relative">
                 <h2 className="text-minbak-body font-semibold text-minbak-black mb-3">
                   {t("edit.hostChange")}
                 </h2>
                 <label className="block">
                   <span className="text-minbak-caption text-minbak-gray block mb-1">{t("edit.host")}</span>
-                  <select
-                    value={form.hostId}
-                    onChange={(e) => setForm((f) => ({ ...f, hostId: e.target.value }))}
+                  <input
+                    type="text"
+                    value={hostSearchQuery}
+                    onChange={(e) => setHostSearchQuery(e.target.value)}
+                    onFocus={() => hostSearchResults.length > 0 && setHostDropdownOpen(true)}
+                    onBlur={() => setTimeout(() => setHostDropdownOpen(false), 150)}
+                    placeholder={t("edit.hostSearchPlaceholder")}
                     className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
-                  >
-                    {hosts.map((h) => (
-                      <option key={h.id} value={h.id}>
-                        {h.name || h.email} ({h.email})
-                      </option>
-                    ))}
-                  </select>
+                  />
+                  <p className="text-minbak-caption text-minbak-gray mt-1">
+                    {t("edit.hostSearchHint")}
+                  </p>
+                  {selectedHostDisplay && !hostSearchQuery && (
+                    <p className="text-minbak-caption text-minbak-gray mt-1">
+                      {t("edit.host")}: {selectedHostDisplay}
+                    </p>
+                  )}
+                  {hostSearchLoading && (
+                    <p className="text-minbak-caption text-minbak-gray mt-1">{t("edit.hostSearching")}</p>
+                  )}
+                  {!hostSearchLoading && hostSearchQuery.trim().length >= 2 && hostSearchResults.length === 0 && (
+                    <p className="text-minbak-caption text-amber-700 mt-1" role="alert">
+                      {t("edit.hostSearchNoResults")}
+                    </p>
+                  )}
+                  {hostDropdownOpen && hostSearchResults.length > 0 && (
+                    <ul
+                      className="absolute z-10 mt-1 w-full max-h-60 overflow-auto border border-minbak-light-gray rounded-minbak bg-white shadow-md"
+                      role="listbox"
+                    >
+                      {hostSearchResults.map((u) => (
+                        <li
+                          key={u.id}
+                          role="option"
+                          className="px-3 py-2 text-minbak-body text-minbak-black hover:bg-minbak-bg cursor-pointer border-b border-minbak-light-gray last:border-b-0"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setForm((f) => ({ ...f, hostId: u.id }));
+                            setSelectedHostDisplay(`${u.name || u.email} (${u.email})`);
+                            setHostSearchQuery("");
+                            setHostSearchResults([]);
+                            setHostDropdownOpen(false);
+                          }}
+                        >
+                          {u.name || u.email} ({u.email})
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </label>
               </div>
             )}

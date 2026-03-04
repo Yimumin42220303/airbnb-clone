@@ -1,7 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
+import { unstable_noStore } from "next/cache";
 import { Header, Footer } from "@/components/layout";
 import { getPosts } from "@/lib/blog";
+
+/** 관리자에서 글 추가·삭제 시 재배포 없이 목록에 바로 반영되도록 항상 최신 데이터 조회 */
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "블로그",
@@ -16,6 +20,7 @@ export const metadata = {
 };
 
 export default async function BlogListPage() {
+  unstable_noStore();
   const posts = await getPosts({ publishedOnly: true });
 
   return (
@@ -39,7 +44,7 @@ export default async function BlogListPage() {
               {posts.map((post) => (
                 <li key={post.id}>
                   <Link
-                    href={`/blog/${post.slug}`}
+                    href={`/blog/${encodeURIComponent(post.slug)}`}
                     className="block group border border-minbak-light-gray rounded-minbak overflow-hidden bg-white hover:border-minbak-primary/40 transition-colors"
                   >
                     <div className="flex flex-col sm:flex-row">

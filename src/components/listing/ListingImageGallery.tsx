@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { X, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
 type ImageItem = { id: string; url: string; sortOrder: number };
 
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export default function ListingImageGallery({ images, title }: Props) {
+  const { t } = useHostTranslations();
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [showAll, setShowAll] = useState(false);
 
@@ -105,7 +107,7 @@ export default function ListingImageGallery({ images, title }: Props) {
               setShowAll(true);
             }}
           >
-            사진 모두 보기
+            {t("gallery.viewAllPhotos")}
           </button>
         )}
       </div>
@@ -149,9 +151,9 @@ function Lightbox({
   onPrev: () => void;
   onNext: () => void;
 }) {
+  const { t } = useHostTranslations();
   const img = images[currentIndex];
 
-  // ESC 키로 닫기
   useEffect(() => {
     function handleKeydown(e: KeyboardEvent) {
       if (e.key === "Escape") {
@@ -169,14 +171,14 @@ function Lightbox({
       className="fixed inset-0 z-[10001] bg-black/90 flex flex-col items-center justify-center pt-[max(72px,calc(56px+env(safe-area-inset-top,0px)))] md:pt-[80px] pb-14"
       role="dialog"
       aria-modal="true"
-      aria-label="사진 갤러리"
-      onClick={onClose} // 바깥(오버레이) 클릭 시 닫기
+      aria-label={t("gallery.viewAllPhotos")}
+      onClick={onClose}
     >
       <button
         type="button"
         onClick={onClose}
         className="absolute top-[max(72px,calc(56px+env(safe-area-inset-top,0px)))] md:top-[80px] right-4 p-2 text-white hover:bg-white/10 rounded-minbak-full z-10"
-        aria-label="닫기"
+        aria-label={t("gallery.close")}
       >
         <X className="w-8 h-8" />
       </button>
@@ -189,7 +191,7 @@ function Lightbox({
               onPrev();
             }}
             className="absolute left-4 top-1/2 -translate-y-1/2 p-2 text-white hover:bg-white/10 rounded-minbak-full z-10"
-            aria-label="이전"
+            aria-label={t("gallery.prev")}
           >
             <ChevronLeft className="w-10 h-10" />
           </button>
@@ -200,7 +202,7 @@ function Lightbox({
               onNext();
             }}
             className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-white hover:bg-white/10 rounded-minbak-full z-10"
-            aria-label="다음"
+            aria-label={t("gallery.next")}
           >
             <ChevronRight className="w-10 h-10" />
           </button>
@@ -234,7 +236,7 @@ function AllPhotosOverlay({
   title: string;
   onClose: () => void;
 }) {
-  // 이미지별 실제 비율 저장 (로드 후) — 세로 사진은 세로로 길게 표시
+  const { t } = useHostTranslations();
   const [aspects, setAspects] = useState<Record<number, { w: number; h: number }>>({});
 
   const handleLoad = (index: number, e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -253,16 +255,16 @@ function AllPhotosOverlay({
           type="button"
           onClick={onClose}
           className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-minbak-light-gray hover:bg-minbak-bg"
-          aria-label="뒤로"
+          aria-label={t("gallery.back")}
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div className="flex flex-col items-center gap-1">
           <h2 className="text-minbak-body md:text-[17px] font-semibold text-minbak-black">
-            추가 사진
+            {t("gallery.morePhotos")}
           </h2>
           <p className="text-minbak-caption text-minbak-gray">
-            총 {images.length}장
+            {t("gallery.totalCount", { count: images.length })}
           </p>
         </div>
         <div className="w-8 h-8" aria-hidden />

@@ -71,8 +71,83 @@ export default async function Home({
     console.error("Home data load error:", e);
   }
 
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "체크인은 어떻게 하나요?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "스태프가 시설에 상주하지 않는 무인체크인 시스템이므로, 예약 확정 후 온라인 상에서 저희가 체크인 가이드를 보내드립니다.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "반드시 지켜야할 사항이 있나요?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "네, 각 시설의 쓰레기 처리방침을 반드시 준수해 주시고, 소음 등 주변 주민들에게 피해가 되는 행동은 절대 삼가주시길 부탁드려요.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "게스트하우스처럼 방, 화장실 등을 다른 게스트와 같이 사용하나요?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "아니에요. 호텔과 같이 게스트의 실내 모든 시설의 단독 사용이 보장됩니다.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "모든 시설은 한인 민박인가요?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "아니에요. 도쿄민박은 도쿄현지민박시설들을 한국인 담당자가 안내드리는 플랫폼이에요.(일부 한인민박시설도 있어요)",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "한국어 등 외국어 대응이 가능한가요?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "네. 모든 안내는 한국어로 대응드려요.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "예약 방법 및 변경/취소 정책은 어떻게 되나요?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "취소정책(모든시설공통) - 체크인 30일전: 100%환불 - 체크인 29~8일전: 50%환불 - 체크인 7일전: 30%환불 - 체크인 당일/노쇼: 환불불가",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "결제 방법에는 어떤 것이 있나요?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "PG사(KG이니시스)를 통한 신용카드 및 페이계열결제가 가능합니다.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "추가 게스트(친구/가족) 숙박 요청이 가능한가요?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "네. 사전에 문의를 부탁드려요.",
+        },
+      },
+    ],
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <Header />
       <ProductStatusBanner />
 

@@ -3,8 +3,18 @@
 import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toISODateString } from "@/lib/date-utils";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
+import type { HostTranslationKey } from "@/lib/host-i18n";
 
-const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+const WEEKDAY_KEYS: HostTranslationKey[] = [
+  "calendar.weekday.sun",
+  "calendar.weekday.mon",
+  "calendar.weekday.tue",
+  "calendar.weekday.wed",
+  "calendar.weekday.thu",
+  "calendar.weekday.fri",
+  "calendar.weekday.sat",
+];
 
 function toDateOnly(d: Date): Date {
   const out = new Date(d);
@@ -75,12 +85,6 @@ type Props = {
   minStayNights?: number | null;
 };
 
-function formatDisplayDate(iso: string) {
-  if (!iso) return "";
-  const [y, m, d] = iso.split("-");
-  return `${y}년 ${Number(m)}월 ${Number(d)}일`;
-}
-
 function MonthBlock({
   month,
   today,
@@ -92,6 +96,9 @@ function MonthBlock({
   checkoutOnlyDateKeys = [],
   selectingCheckout = false,
   minStayNights,
+  weekdays,
+  t,
+  dateLocale,
 }: {
   month: Date;
   today: Date;
@@ -103,6 +110,9 @@ function MonthBlock({
   checkoutOnlyDateKeys?: string[];
   selectingCheckout?: boolean;
   minStayNights?: number | null;
+  weekdays: string[];
+  t: (key: HostTranslationKey, params?: Record<string, string | number>) => string;
+  dateLocale: string;
 }) {
   const year = month.getFullYear();
   const monthIndex = month.getMonth();
@@ -120,13 +130,15 @@ function MonthBlock({
 
   const isCheckoutOnly = (day: Date) => checkoutOnlySet.has(toISODateString(day));
 
+  const monthLabel = month.toLocaleDateString(dateLocale, { year: "numeric", month: "long" });
+
   return (
     <div className="flex-1 min-w-0">
       <p className="text-left mb-2 text-[15px] font-semibold text-[#222]">
-        {year}년 {monthIndex + 1}월
+        {monthLabel}
       </p>
       <div className="grid grid-cols-7 gap-0.5 mb-1">
-        {WEEKDAYS.map((day, i) => (
+        {weekdays.map((day, i) => (
           <div
             key={day}
             className="py-1 text-center text-[12px] font-medium"
@@ -192,7 +204,7 @@ function MonthBlock({
             >
               {showMinStayOnCheckIn && (
                 <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-[12px] font-medium text-[#222] bg-white border border-[#ebebeb] rounded-lg shadow-sm whitespace-nowrap z-10">
-                  최소 {minStayNights}박
+                  {t("calendar.minNightsOnly", { nights: minStayNights! })}
                 </span>
               )}
               {checkoutOnly && !isStart && !isEnd && (
@@ -200,7 +212,7 @@ function MonthBlock({
                   className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1.5 text-[12px] font-medium text-[#222] bg-white border border-[#ebebeb] rounded-lg shadow-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10"
                   style={{ borderBottom: "2px solid #E31C23" }}
                 >
-                  체크아웃만 가능
+                  {t("calendar.checkoutOnly")}
                 </span>
               )}
               {(inRange || isStart || isEnd) && (
@@ -248,6 +260,20 @@ export default function ListingBookingCalendar({
   checkoutOnlyDateKeys = [],
   minStayNights,
 }: Props) {
+  const { t, locale } = useHostTranslations();
+  const dateLocale = locale === "ja" ? "ja-JP" : "ko-KR";
+  const weekdays = useMemo(
+    () => WEEKDAY_KEYS.map((key) => t(key)),
+    [t]
+  );
+  function formatDisplayDate(iso: string) {
+    if (!iso) return "";
+    return new Date(iso + "T12:00:00").toLocaleDateString(dateLocale, {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  }
   const today = useMemo(() => toDateOnly(new Date()), []);
   const maxDate = useMemo(() => addMonths(today, 12), [today]);
 
@@ -308,13 +334,13 @@ export default function ListingBookingCalendar({
       <div className="p-4 pb-0">
         <div className="flex justify-between items-start gap-4 mb-4">
           <div className="flex-1 min-w-0">
-            <h2 className="text-[22px] font-semibold text-[#222] mb-1">날짜 선택</h2>
+            <h2 className="text-[22px] font-semibold text-[#222] mb-1">{t("calendar.title")}</h2>
             {minStayNights != null && minStayNights > 1 && (
-              <p className="text-[14px] text-[#222] mb-1">최소 숙박 일수: {minStayNights}박</p>
+              <p className="text-[14px] text-[#222] mb-1">{t("calendar.minNights", { nights: minStayNights })}</p>
             )}
             {checkoutOnlyMessage && (
               <p className="text-[14px] text-[#222] font-medium" style={{ borderBottom: "2px solid #E31C23" }}>
-                이 날짜에는 체크인할 수 없습니다.
+                {t("calendar.cannotCheckIn")}
               </p>
             )}
           </div>
@@ -324,9 +350,9 @@ export default function ListingBookingCalendar({
                 selectingCheckIn ? "border-[#222]" : "border-[#ebebeb]"
               }`}
             >
-              <span className="text-[11px] sm:text-[12px] text-[#717171]">체크인</span>
+              <span className="text-[11px] sm:text-[12px] text-[#717171]">{t("guest.checkIn")}</span>
               <span className="text-[13px] sm:text-[14px] text-[#222] truncate">
-                {checkIn ? formatDisplayDate(checkIn) : "날짜 추가"}
+                {checkIn ? formatDisplayDate(checkIn) : t("bookingForm.addDate")}
               </span>
             </div>
             <div
@@ -334,22 +360,21 @@ export default function ListingBookingCalendar({
                 !selectingCheckIn && start ? "border-[#222]" : "border-[#ebebeb]"
               }`}
             >
-              <span className="text-[11px] sm:text-[12px] text-[#717171]">체크아웃</span>
+              <span className="text-[11px] sm:text-[12px] text-[#717171]">{t("guest.checkOut")}</span>
               <span className="text-[13px] sm:text-[14px] text-[#222] truncate">
-                {checkOut ? formatDisplayDate(checkOut) : "날짜 추가"}
+                {checkOut ? formatDisplayDate(checkOut) : t("bookingForm.addDate")}
               </span>
             </div>
           </div>
         </div>
 
-        {/* 네비게이션 */}
         <div className="flex justify-between items-center mb-3">
           <button
             type="button"
             onClick={goToToday}
             className="text-[13px] font-medium text-[#E31C23] hover:underline"
           >
-            오늘
+            {t("calendar.today")}
           </button>
           <div className="flex items-center gap-1">
             <button
@@ -357,7 +382,7 @@ export default function ListingBookingCalendar({
               onClick={() => setMonthOffset((o) => Math.max(0, o - 1))}
               disabled={monthOffset === 0}
               className="p-1.5 rounded-full hover:bg-[#f7f7f7] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-              aria-label="이전 달"
+              aria-label={locale === "ja" ? "前月" : "이전 달"}
             >
               <ChevronLeft className="w-5 h-5 text-[#222]" />
             </button>
@@ -369,7 +394,7 @@ export default function ListingBookingCalendar({
                 setMonthOffset((o) => o + 1);
               }}
               className="p-1.5 rounded-full hover:bg-[#f7f7f7]"
-              aria-label="다음 달"
+              aria-label={locale === "ja" ? "翌月" : "다음 달"}
             >
               <ChevronRight className="w-5 h-5 text-[#222]" />
             </button>
@@ -393,6 +418,9 @@ export default function ListingBookingCalendar({
             checkoutOnlyDateKeys={checkoutOnlyDateKeys}
             selectingCheckout={!!start && !end}
             minStayNights={minStayNights}
+            weekdays={weekdays}
+            t={t}
+            dateLocale={dateLocale}
           />
         ))}
         </div>
@@ -406,14 +434,14 @@ export default function ListingBookingCalendar({
             onClick={handleClearDates}
             className="text-[14px] font-medium text-[#222] hover:underline"
           >
-            날짜 지우기
+            {t("calendar.clearDates")}
           </button>
           <button
             type="button"
             onClick={onComplete}
             className="px-4 py-2 rounded-lg text-[14px] font-medium text-white bg-[#222] hover:bg-[#333]"
           >
-            닫기
+            {t("calendar.close")}
           </button>
         </div>
       )}

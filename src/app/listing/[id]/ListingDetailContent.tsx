@@ -15,6 +15,8 @@ import ListingBadge, { computeBadges } from "@/components/listing/ListingBadge";
 import TrustBanner from "@/components/listing/TrustBanner";
 import WishlistHeart from "@/components/wishlist/WishlistHeart";
 import ShareListingButton from "@/components/listing/ShareListingButton";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
+import { getAmenityLabel } from "@/lib/host-i18n";
 
 type ReviewItem = {
   rating: number;
@@ -104,9 +106,10 @@ export default function ListingDetailContent({
   initialGuests,
 }: Props) {
   const { formatForGuest } = useCurrency();
+  const { t, locale } = useHostTranslations();
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [priceSummary, setPriceSummary] = useState<{ nights: number; totalPrice: number; cleaningFee: number } | null>(null);
-  const description = listing.description?.trim() || "상세 설명이 없습니다.";
+  const description = listing.description?.trim() || t("listingDetail.noDescription");
   const needsExpand = description.length > DESCRIPTION_PREVIEW_LENGTH;
   const displayDescription = needsExpand && !descriptionExpanded
     ? description.slice(0, DESCRIPTION_PREVIEW_LENGTH) + "..."
@@ -149,7 +152,7 @@ export default function ListingDetailContent({
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[15px] text-[#717171]">
                   {listing.reviewCount > 0 && listing.rating != null && (
                     <span className="text-[#222] font-medium">
-                      ★ {listing.rating.toFixed(1)} · 리뷰 {listing.reviewCount}개
+                      ★ {listing.rating.toFixed(1)} · {t("listingDetail.reviewsCount", { count: listing.reviewCount })}
                     </span>
                   )}
                   {badges.length > 0 && (
@@ -178,17 +181,17 @@ export default function ListingDetailContent({
             <p className="text-xl sm:text-2xl font-semibold text-[#222] leading-tight tracking-tight flex flex-wrap items-center gap-x-1">
               <span>
                 {listing.propertyType === "detached_house"
-                  ? "단독주택 독채대실"
-                  : "아파트의 1실독채대실"}
+                  ? t("listingDetail.propertyTypeHouse")
+                  : t("listingDetail.propertyTypeApartment")}
               </span>
               <span className="text-[#d1d1d1] font-normal">·</span>
-              <span>최대 인원 {listing.maxGuests}명</span>
+              <span>{t("listingDetail.maxGuests", { count: listing.maxGuests })}</span>
               <span className="text-[#d1d1d1] font-normal">·</span>
-              <span>침실 {listing.bedrooms}</span>
+              <span>{t("listingDetail.bedrooms", { count: listing.bedrooms })}</span>
               <span className="text-[#d1d1d1] font-normal">·</span>
-              <span>침대 {listing.beds}</span>
+              <span>{t("listingDetail.beds", { count: listing.beds })}</span>
               <span className="text-[#d1d1d1] font-normal">·</span>
-              <span>욕실 {listing.baths}</span>
+              <span>{t("listingDetail.baths", { count: listing.baths })}</span>
             </p>
           </div>
 
@@ -211,13 +214,13 @@ export default function ListingDetailContent({
                         className="w-full h-full object-contain"
                         preload="auto"
                       >
-                        영상을 지원하지 않는 브라우저입니다.
+                        {t("listingDetail.videoNotSupported")}
                       </video>
                     </div>
                   </div>
                 )}
                 {/* 1. 숙소 소개 (더보기 접기) */}
-                <DetailSection title="숙소 소개">
+                <DetailSection title={t("listingDetail.sectionIntro")}>
                   <p className="text-[15px] text-[#222] leading-relaxed whitespace-pre-wrap">
                     {displayDescription}
                   </p>
@@ -229,11 +232,11 @@ export default function ListingDetailContent({
                     >
                       {descriptionExpanded ? (
                         <>
-                          접기 <ChevronUp className="w-4 h-4" />
+                          {t("listingDetail.showLess")} <ChevronUp className="w-4 h-4" />
                         </>
                       ) : (
                         <>
-                          더보기 <ChevronDown className="w-4 h-4" />
+                          {t("listingDetail.showMore")} <ChevronDown className="w-4 h-4" />
                         </>
                       )}
                     </button>
@@ -242,7 +245,7 @@ export default function ListingDetailContent({
 
                 {/* 2. 부가시설 및 서비스 */}
                 {listing.amenities.length > 0 && (
-                  <DetailSection title="부가시설 및 서비스">
+                  <DetailSection title={t("listingDetail.sectionAmenities")}>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                       {listing.amenities.map((a) => (
                         <div
@@ -250,7 +253,7 @@ export default function ListingDetailContent({
                           className="flex items-center gap-2.5 text-[15px] text-[#222] py-1"
                         >
                           <span className="w-2 h-2 rounded-full bg-minbak-primary flex-shrink-0" />
-                          {a}
+                          {getAmenityLabel(locale, a)}
                         </div>
                       ))}
                     </div>
@@ -264,14 +267,14 @@ export default function ListingDetailContent({
                     .map((r) => r.trim())
                     .filter(Boolean);
                   const defaultRules = [
-                    "엘리베이터가 없는 건물인 경우 짐 이동에 유의해 주세요.",
-                    "실내에서는 금연입니다. 흡연은 건물 밖 지정된 장소에서만 가능합니다.",
-                    "밤 10시 이후에는 이웃을 위해 소음을 줄여 주세요.",
-                    "반려동물 동반, 파티·이벤트 허용 여부는 예약 전 호스트에게 꼭 문의해 주세요.",
+                    t("listingDetail.defaultNote1"),
+                    t("listingDetail.defaultNote2"),
+                    t("listingDetail.defaultNote3"),
+                    t("listingDetail.defaultNote4"),
                   ];
                   const items = rules.length > 0 ? rules : defaultRules;
                   return (
-                    <DetailSection title="주의사항">
+                    <DetailSection title={t("listingDetail.sectionNotes")}>
                       <ul className="list-disc pl-5 space-y-1 text-[15px] text-[#222] leading-relaxed">
                         {items.map((rule, i) => (
                           <li key={i}>{rule}</li>
@@ -282,7 +285,7 @@ export default function ListingDetailContent({
                 })()}
 
                 {/* 4. 위치 */}
-                <DetailSection title="위치">
+                <DetailSection title={t("listingDetail.sectionLocation")}>
                   <div className="space-y-3 text-[15px] text-[#222]">
                     <div className="flex items-start gap-2">
                       <MapPin
@@ -290,11 +293,11 @@ export default function ListingDetailContent({
                         aria-hidden
                       />
                       <span className="leading-relaxed">
-                        가장 가까운역 <span className="font-medium text-[#222]"> {listing.location}</span>
+                        {t("listingDetail.nearestStation")} <span className="font-medium text-[#222]"> {listing.location}</span>
                       </span>
                     </div>
                     <p className="text-[13px] text-[#717171] leading-relaxed">
-                      ※숙소보안상 상세주소는 예약확정후 알려드립니다
+                      {t("listingDetail.addressNote")}
                     </p>
                     {listing.mapUrl && (
                       isEmbeddableMap ? (
@@ -302,7 +305,7 @@ export default function ListingDetailContent({
                           <div className="relative w-full aspect-[16/9]">
                             <iframe
                               src={listing.mapUrl}
-                              title="숙소 위치 지도"
+                              title={t("listingDetail.mapTitle")}
                               className="absolute inset-0 w-full h-full border-0"
                               loading="lazy"
                               referrerPolicy="no-referrer-when-downgrade"
@@ -316,7 +319,7 @@ export default function ListingDetailContent({
                           rel="noopener noreferrer"
                           className="inline-flex items-center px-3 py-1.5 rounded-full border border-[#ebebeb] text-[13px] font-medium text-[#222] hover:bg-[#f7f7f7]"
                         >
-                          구글 지도에서 보기
+                          {t("listingDetail.viewOnGoogleMaps")}
                         </a>
                       )
                     )}
@@ -324,14 +327,14 @@ export default function ListingDetailContent({
                 </DetailSection>
 
                 {/* 5. 이용 규칙 */}
-                <DetailSection title="이용 규칙">
+                <DetailSection title={t("listingDetail.sectionRules")}>
                   <p className="text-[15px] text-[#222] leading-relaxed">
-                    체크인·체크아웃 시간은 예약 확정 후 호스트가 안내합니다. 숙소 내 규칙은 호스트와 메시지로 확인해 주세요.
+                    {t("listingDetail.rulesText")}
                   </p>
                 </DetailSection>
 
                 {/* 호스트 */}
-                <DetailSection title="호스트 소개">
+                <DetailSection title={t("listingDetail.sectionHost")}>
                   <div className="flex items-start gap-5">
                     <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-[#f0f0f0] to-[#e0e0e0] flex-shrink-0 ring-2 ring-white shadow-md">
                       {listing.hostImage ? (
@@ -350,10 +353,10 @@ export default function ListingDetailContent({
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[16px] font-semibold text-[#222]">
-                        {listing.hostName} 님이 호스팅
+                        {t("listingDetail.hostedBy", { name: listing.hostName })}
                       </p>
                       <p className="text-[14px] text-[#717171] mt-1 leading-relaxed">
-                        궁금한 점이 있으시면 언제든 문의해 주세요. 빠르게 답변드리겠습니다.
+                        {t("listingDetail.hostContact")}
                       </p>
                     </div>
                   </div>
@@ -392,7 +395,7 @@ export default function ListingDetailContent({
                                       {formatForGuest(perNight)}
                                     </span>
                                     <span className="text-[15px] text-[#717171]">
-                                      /박
+                                      {t("listingDetail.perNight")}
                                     </span>
                                   </>
                                 );
@@ -403,7 +406,7 @@ export default function ListingDetailContent({
                             })()}
                     </div>
                     <p className="text-[13px] text-[#717171] mt-2">
-                      체크인·체크아웃 선택 후 총 요금을 확인할 수 있어요.
+                      {t("listingDetail.priceHint")}
                     </p>
                   </div>
                   <div className="p-4 md:p-6 space-y-4">
