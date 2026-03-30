@@ -195,7 +195,8 @@ export const hostTranslations = {
     "edit.beds24PriceMultiplier": "가격 배율",
     "edit.beds24PriceMultiplierMonthly": "가격 배율 (월별)",
     "edit.beds24PriceMultiplierHint": "1=그대로, 0.5=50% 할인. 월별로 다르게 설정 가능. Beds24 연동가격이 API에 없을 때 도쿄민박에서 적용합니다.",
-    "edit.beds24PriceSyncNote": "저장 후 반드시 '가격 지금 동기화'를 실행해 주세요.",
+    "edit.beds24PriceSyncNote":
+      "「가격 지금 동기화」「연동 테스트」를 누르면 Beds24 설정(Prop/Room ID·배수)이 서버에 자동 저장된 뒤 실행됩니다. 다른 항목을 바꾼 뒤에는 하단 「저장」도 눌러 주세요.",
     "edit.beds24DebugLink": "연동 테스트 (디버그)",
     "edit.beds24PriceSyncNow": "가격 지금 동기화",
     "edit.beds24PriceSyncing": "동기화 중...",
@@ -1070,7 +1071,8 @@ export const hostTranslations = {
     "edit.beds24PriceMultiplier": "価格倍率",
     "edit.beds24PriceMultiplierMonthly": "価格倍率（月別）",
     "edit.beds24PriceMultiplierHint": "1=そのまま、0.5=50%割引。月別に設定可能。Beds24連動価格がAPIにない場合、当サイトで適用します。※クリーニング費用は倍率変更されません",
-    "edit.beds24PriceSyncNote": "入力後、必ず「価格を今すぐ同期」を実行してください。",
+    "edit.beds24PriceSyncNote":
+      "「価格を今すぐ同期」「連携テスト」でBeds24設定が自動保存されてから実行されます。他の項目を変更した場合は下の「保存」も押してください。",
     "edit.beds24DebugLink": "連携テスト（デバッグ）",
     "edit.beds24PriceSyncNow": "価格を今すぐ同期",
     "edit.beds24PriceSyncing": "同期中...",

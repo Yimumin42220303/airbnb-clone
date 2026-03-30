@@ -279,6 +279,43 @@ export default function EditListingForm({
     setDragIndex(null);
   }
 
+  /** Beds24 동기화·디버그 API는 DB만 조회한다. 버튼 클릭 시 폼의 Beds24 값을 먼저 PATCH한다. */
+  async function persistBeds24SettingsToServer(): Promise<
+    { ok: true } | { ok: false; error: string }
+  > {
+    const payload = {
+      beds24Enabled: form.beds24Enabled,
+      beds24PropId: form.beds24PropId?.trim() || null,
+      beds24RoomId: form.beds24RoomId?.trim() || null,
+      beds24PriceMultiplier: (() => {
+        const v = parseFloat(form.beds24PriceMultiplier);
+        return !isNaN(v) && v > 0 ? v : null;
+      })(),
+      beds24JanuaryFactor: parseFloat(form.beds24JanuaryFactor) || 1,
+      beds24FebruaryFactor: parseFloat(form.beds24FebruaryFactor) || 1,
+      beds24MarchFactor: parseFloat(form.beds24MarchFactor) || 1,
+      beds24AprilFactor: parseFloat(form.beds24AprilFactor) || 1,
+      beds24MayFactor: parseFloat(form.beds24MayFactor) || 1,
+      beds24JuneFactor: parseFloat(form.beds24JuneFactor) || 1,
+      beds24JulyFactor: parseFloat(form.beds24JulyFactor) || 1,
+      beds24AugustFactor: parseFloat(form.beds24AugustFactor) || 1,
+      beds24SeptemberFactor: parseFloat(form.beds24SeptemberFactor) || 1,
+      beds24OctoberFactor: parseFloat(form.beds24OctoberFactor) || 1,
+      beds24NovemberFactor: parseFloat(form.beds24NovemberFactor) || 1,
+      beds24DecemberFactor: parseFloat(form.beds24DecemberFactor) || 1,
+    };
+    const res = await fetch(`/api/listings/${listingId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    if (!res.ok) {
+      return { ok: false, error: data.error || "Beds24 설정 저장에 실패했습니다." };
+    }
+    return { ok: true };
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -1393,6 +1430,11 @@ export default function EditListingForm({
                       onClick={async () => {
                         setBeds24PriceSyncLoading(true);
                         try {
+                          const saved = await persistBeds24SettingsToServer();
+                          if (!saved.ok) {
+                            toast.error(saved.error);
+                            return;
+                          }
                           const res = await fetch(`/api/listings/${listingId}/beds24-price-sync`, {
                             method: "POST",
                           });
@@ -1410,9 +1452,24 @@ export default function EditListingForm({
                     >
                       {beds24PriceSyncLoading ? t("edit.beds24PriceSyncing") : t("edit.beds24PriceSyncNow")}
                     </button>
-                    <a href={`/api/listings/${listingId}/beds24-debug`} target="_blank" rel="noopener noreferrer" className="text-minbak-caption text-minbak-primary hover:underline">
+                    <button
+                      type="button"
+                      className="text-minbak-caption text-minbak-primary hover:underline"
+                      onClick={async () => {
+                        const saved = await persistBeds24SettingsToServer();
+                        if (!saved.ok) {
+                          toast.error(saved.error);
+                          return;
+                        }
+                        window.open(
+                          `/api/listings/${listingId}/beds24-debug`,
+                          "_blank",
+                          "noopener,noreferrer"
+                        );
+                      }}
+                    >
                       {t("edit.beds24DebugLink")} →
-                    </a>
+                    </button>
                   </div>
                 </div>
               )}

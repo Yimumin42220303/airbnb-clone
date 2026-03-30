@@ -54,10 +54,15 @@ export async function GET(
     dateRange: { from: fromStr, to: toStr },
   };
 
-  if (!listing.beds24Enabled || !listing.beds24PropId?.trim() || !listing.beds24RoomId?.trim()) {
+  const propId = listing.beds24PropId?.trim();
+  const roomId = listing.beds24RoomId?.trim();
+  const hasBeds24Config =
+    (listing.beds24Enabled || !!(propId && roomId)) && !!propId && !!roomId;
+  if (!hasBeds24Config) {
     return NextResponse.json({
       ok: false,
-      message: "Beds24 API 연동이 설정되지 않았거나 Prop ID/Room ID가 없습니다.",
+      message:
+        "Beds24 Prop ID/Room ID가 DB에 없습니다. 입력 후 하단 「저장」을 누르거나, 「가격 지금 동기화」를 누르면 자동 저장됩니다.",
       debug,
     });
   }

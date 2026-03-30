@@ -49,7 +49,10 @@ export async function POST(
     (listing.beds24Enabled || (propId && roomId)) && propId && roomId;
   if (!hasBeds24Config) {
     return NextResponse.json(
-      { error: "Beds24 API 연동이 설정되지 않았거나 Prop ID/Room ID가 없습니다." },
+      {
+        error:
+          "Beds24 Prop ID/Room ID가 DB에 없습니다. 입력 후 「저장」하거나 「가격 지금 동기화」(자동 저장)를 사용하세요.",
+      },
       { status: 400 }
     );
   }
