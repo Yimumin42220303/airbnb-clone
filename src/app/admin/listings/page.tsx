@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
+import { formatPrice } from "@/lib/currency";
+import { optimizeCloudinaryUrl } from "@/lib/cloudinary-optimize";
 import AdminListingActions from "@/components/admin/AdminListingActions";
 
 export default async function AdminListingsPage() {
@@ -44,7 +46,7 @@ export default async function AdminListingsPage() {
               className="relative w-24 h-20 flex-shrink-0 rounded-minbak overflow-hidden block"
             >
               <Image
-                src={l.imageUrl}
+                src={optimizeCloudinaryUrl(l.imageUrl, 192)}
                 alt={l.title}
                 fill
                 className="object-cover"
@@ -62,7 +64,7 @@ export default async function AdminListingsPage() {
                 {l.location}
               </p>
               <p className="text-minbak-body text-minbak-black mt-1">
-                ₩{l.pricePerNight.toLocaleString()}/박 · 최대 {l.maxGuests}명
+                {formatPrice(l.pricePerNight, "KRW")}/박 · 최대 {l.maxGuests}명
               </p>
               <p className="text-minbak-caption text-minbak-gray mt-0.5">
                 호스트: {l.user.name || l.user.email} · 예약 {l._count.bookings}건

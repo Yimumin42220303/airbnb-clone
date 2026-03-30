@@ -149,7 +149,7 @@ export default async function Home({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
       <Header />
-      <ProductStatusBanner />
+      {/* <ProductStatusBanner />  */}
 
       <main className="min-h-screen pt-0">
         <HomeHero />

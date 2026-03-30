@@ -88,6 +88,8 @@ export default async function BookingConfirmPage({ searchParams }: Props) {
           pricePerNight={listing.pricePerNight}
           checkIn={checkInStr}
           checkOut={checkOutStr}
+          checkInTime={listing.checkInTime}
+          checkOutTime={listing.checkOutTime}
           guests={guests}
           nights={nights}
           totalPrice={totalPrice}

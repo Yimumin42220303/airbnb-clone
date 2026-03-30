@@ -84,6 +84,13 @@ DB 구조(테이블·컬럼)를 바꾸려면 Prisma 스키마를 수정한 뒤 �
 **배포 환경 DB에 스키마만 반영할 때** (마이그레이션 없이 `schema.prisma`만 수정한 경우):  
 해당 환경의 `DATABASE_URL`로 `npx prisma db push`를 실행하면 컬럼 추가 등이 반영됩니다. (예: 숙소 타입 `propertyType` 추가 후 프로덕션 DB에 적용)
 
+**예약 전 문의(메세지 보내기) 기능 롤백 시**  
+이전에 `Conversation`에 `listingId`/`guestId`를 넣는 마이그레이션이 적용된 DB라면, 스키마와 맞추기 위해 롤백 마이그레이션을 적용해야 합니다.
+
+- **Prisma 마이그레이션 사용 중**: `npx prisma migrate deploy` 로 `20260304000000_rollback_conversation_listing_inquiry` 적용
+- **마이그레이션 기록 없이(baseline) 운영 중**: 아래 SQL을 DB에서 직접 실행  
+  `prisma/migrations/20260304000000_rollback_conversation_listing_inquiry/migration.sql`
+
 ---
 
 ## 5. 시드 데이터 (초기 데이터 넣기)
@@ -132,7 +139,49 @@ npm run db:randomize-review-dates
 
 ---
 
-## 7. 요약
+## 7. DB 백업 및 복원
+
+### 자동 백업 (GitHub Actions)
+
+매일 **JST 03:00** (UTC 18:00)에 GitHub Actions가 자동으로 `pg_dump`를 실행합니다.
+
+- **워크플로**: `.github/workflows/db-backup.yml`
+- **저장소**: GitHub Artifacts (7일 보존, 자동 만료)
+- **알림**: 성공/실패 시 Discord로 자동 알림
+- **수동 실행**: GitHub → Actions → "Daily DB Backup" → "Run workflow" 클릭
+
+백업 파일 다운로드: GitHub → Actions → 해당 실행 → Artifacts 섹션에서 다운로드
+
+### Neon PITR (시점 복원)
+
+Neon 대시보드에서 최대 **7일 전**까지 아무 시점으로 복원 가능합니다.
+
+1. Neon Console → 프로젝트 → Backup & Restore
+2. "Point in time" 날짜/시간 선택
+3. "Preview data"로 확인 후 "Proceed to restore"
+
+### 수동 백업 (로컬)
+
+```bash
+# 즉시 백업 (backups/ 디렉터리에 저장)
+npm run db:backup
+
+# 복원 (주의: 기존 데이터 덮어씀)
+npm run db:restore -- backups/backup-2026-03-30-030000.sql.gz
+```
+
+`pg_dump` / `psql` 명령이 필요합니다. PostgreSQL 클라이언트가 설치되어 있어야 합니다.
+
+### 긴급 대응 체크리스트
+
+1. **최근 수 시간**: Neon PITR로 즉시 복원
+2. **1~7일 전**: GitHub Artifacts에서 백업 다운로드 → `npm run db:restore`
+3. **스키마 변경 전**: 반드시 `npm run db:backup` 실행 후 작업
+4. **DB 접속 불가**: `.env`의 `DATABASE_URL` 확인, Neon 대시보드에서 compute 상태 확인
+
+---
+
+## 8. 요약
 
 - **일반 호스트**: `/host/listings` 계열에서 본인 숙소만 등록·수정·예약가능일 관리  
 - **전체 운영/관리**: admin 계정으로 `/admin` → 숙소·회원·예약·블로그 조회·이동  
@@ -141,5 +190,7 @@ npm run db:randomize-review-dates
 - **초기/테스트 데이터**: `npm run db:seed` 또는 `node prisma/seed-one-user.js`  
 - **리뷰 게시일 재설정**: `npm run db:randomize-review-dates` (프로덕션 적용 시 `DATABASE_URL`만 프로덕션으로 설정 후 동일 명령)
 - **통화 Phase 2 마이그레이션 (KRW→JPY)**: `docs/통화-Phase2-마이그레이션.md` 참고, `npm run db:migrate-krw-to-jpy`
+- **DB 백업**: 자동(GitHub Actions 매일 JST 03:00) + 수동(`npm run db:backup`)
+- **DB 복원**: `npm run db:restore -- backups/파일.sql.gz` 또는 Neon PITR
 
 DB 연결 정보는 `.env`의 `DATABASE_URL`(및 필요 시 `DIRECT_URL`)에서 관리합니다.

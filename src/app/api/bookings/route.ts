@@ -12,6 +12,7 @@ import {
   instantBookingConfirmationGuest,
   instantBookingNotificationHost,
 } from "@/lib/email-templates";
+import { cancelExpiredBookings } from "@/lib/cancel-expired-bookings";
 
 /**
  * GET /api/bookings
@@ -26,6 +27,8 @@ export async function GET() {
       { status: 401 }
     );
   }
+
+  await cancelExpiredBookings({ userId }).catch(() => {});
 
   const [bookings, reviewedListingIds] = await Promise.all([
     prisma.booking.findMany({
@@ -67,6 +70,7 @@ export async function GET() {
     status: b.status,
     paymentStatus: b.paymentStatus,
     createdAt: b.createdAt.toISOString(),
+    confirmedAt: b.confirmedAt?.toISOString() ?? null,
     listing: b.listing,
     lastRefund: b.transactions[0] ?? null,
     reviewed: reviewedListingIds.includes(b.listingId),

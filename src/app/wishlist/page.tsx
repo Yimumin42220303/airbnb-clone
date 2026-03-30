@@ -61,7 +61,7 @@ export default async function WishlistPage() {
             <p className="text-minbak-body text-minbak-gray">
               로그인하면 저장한 숙소를 볼 수 있습니다.{" "}
               <Link href="/auth/signin?callbackUrl=/wishlist" className="text-minbak-primary hover:underline">
-                Google로 로그인
+                회원가입/로그인
               </Link>
             </p>
           ) : visibleItems.length === 0 ? (

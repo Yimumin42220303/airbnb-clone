@@ -32,14 +32,16 @@ export function convertKrwToJpy(amountKrw: number, jpyToKrw?: number): number {
 }
 
 /**
- * 금액 포맷 (통화별)
+ * 금액 포맷 (통화별) — Intl.NumberFormat으로 통화 기호(₩/¥) 명시
  */
 export function formatPrice(amount: number, currency: DisplayCurrency): string {
   const n = Math.round(amount);
-  if (currency === "KRW") {
-    return `₩${n.toLocaleString("ko-KR")}`;
-  }
-  return `¥${n.toLocaleString("ja-JP")}`;
+  return new Intl.NumberFormat(currency === "KRW" ? "ko-KR" : "ja-JP", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+  }).format(n);
 }
 
 /** 환율 인자 (1 JPY = X KRW). 미제공 시 env/fallback 사용 */

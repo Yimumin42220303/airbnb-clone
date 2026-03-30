@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
 import Link from "next/link";
@@ -32,9 +33,13 @@ export default function NewListingForm({ amenities, isAdmin = false }: Props) {
     extraGuestFee: "0",
     minStayNights: "",
     maxStayNights: "",
+    checkInTime: "",
+    checkOutTime: "",
     bedrooms: "1",
     beds: "1",
     baths: "1",
+    areaSqm: "",
+    bathroomToiletSeparate: false,
     categoryId: "" as string,
     mapUrl: "",
     videoUrl: "",
@@ -118,9 +123,13 @@ export default function NewListingForm({ amenities, isAdmin = false }: Props) {
             const v = parseInt(form.maxStayNights, 10);
             return !isNaN(v) && v >= 1 ? v : undefined;
           })(),
+          checkInTime: form.checkInTime.trim() || undefined,
+          checkOutTime: form.checkOutTime.trim() || undefined,
           bedrooms: parseInt(form.bedrooms, 10) || 1,
           beds: parseInt(form.beds, 10) || 1,
           baths: parseInt(form.baths, 10) || 1,
+          areaSqm: form.areaSqm.trim() ? parseInt(form.areaSqm, 10) || undefined : undefined,
+          bathroomToiletSeparate: form.bathroomToiletSeparate,
           categoryId: form.categoryId.trim() || undefined,
           amenityIds: form.amenityIds.length > 0 ? form.amenityIds : undefined,
           isPromoted: form.isPromoted,
@@ -338,7 +347,7 @@ export default function NewListingForm({ amenities, isAdmin = false }: Props) {
                         preload="metadata"
                       />
                       {videoUploadStatus === "done" && (
-                        <span className="absolute top-2 left-2 rounded bg-green-600 text-white text-minbak-caption px-2 py-0.5 font-medium">
+                        <span className="absolute top-2 left-2 z-10 rounded bg-green-600 text-white text-minbak-caption px-2 py-0.5 font-medium whitespace-nowrap">
                           {t("newListing.videoUploadDone")}
                         </span>
                       )}
@@ -439,11 +448,13 @@ export default function NewListingForm({ amenities, isAdmin = false }: Props) {
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={() => handleImageDrop(i)}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element -- blob URL 미리보기 */}
-                  <img
+                  <Image
                     src={URL.createObjectURL(file)}
                     alt={t("newListing.previewN", { n: String(i + 1) })}
+                    width={96}
+                    height={96}
                     className="w-24 h-24 object-cover rounded-minbak border border-minbak-light-gray"
+                    unoptimized
                   />
                   <button
                     type="button"
@@ -555,6 +566,40 @@ export default function NewListingForm({ amenities, isAdmin = false }: Props) {
                 </span>
               </label>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <label>
+                <span className="text-minbak-body font-medium text-minbak-black block mb-1">
+                  {t("newListing.checkInTime")}
+                </span>
+                <input
+                  type="time"
+                  value={form.checkInTime}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, checkInTime: e.target.value }))
+                  }
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
+                />
+                <span className="text-minbak-caption text-minbak-gray block mt-0.5">
+                  {t("newListing.checkInTimeHint")}
+                </span>
+              </label>
+              <label>
+                <span className="text-minbak-body font-medium text-minbak-black block mb-1">
+                  {t("newListing.checkOutTime")}
+                </span>
+                <input
+                  type="time"
+                  value={form.checkOutTime}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, checkOutTime: e.target.value }))
+                  }
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
+                />
+                <span className="text-minbak-caption text-minbak-gray block mt-0.5">
+                  {t("newListing.checkOutTimeHint")}
+                </span>
+              </label>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <label>
                 <span className="text-minbak-caption text-minbak-gray block mb-1">
@@ -649,6 +694,35 @@ export default function NewListingForm({ amenities, isAdmin = false }: Props) {
                   className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 />
               </label>
+              <label>
+                <span className="text-minbak-caption text-minbak-gray block mb-1">
+                  {t("newListing.areaSqm")}
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  placeholder="—"
+                  value={form.areaSqm}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, areaSqm: e.target.value }))
+                  }
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
+                />
+              </label>
+            </div>
+            <div className="mt-4">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.bathroomToiletSeparate}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, bathroomToiletSeparate: e.target.checked }))
+                  }
+                  className="w-5 h-5 rounded accent-rose-500"
+                />
+                <span className="text-minbak-body text-minbak-black">{t("newListing.bathroomToiletSeparate")}</span>
+              </label>
+              <p className="text-minbak-caption text-minbak-gray mt-1">{t("newListing.bathroomToiletSeparateHint")}</p>
             </div>
             {isAdmin && (
             <div className="border border-minbak-light-gray rounded-minbak p-4 bg-minbak-bg/50">

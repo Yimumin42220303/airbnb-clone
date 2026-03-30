@@ -117,6 +117,8 @@ export async function POST(request: Request) {
       bedrooms: body.bedrooms,
       beds: body.beds,
       baths: body.baths,
+      areaSqm: body.areaSqm != null && body.areaSqm > 0 ? body.areaSqm : undefined,
+      bathroomToiletSeparate: body.bathroomToiletSeparate === true,
       categoryId: body.categoryId,
       amenityIds: body.amenityIds,
       isPromoted,
@@ -125,6 +127,8 @@ export async function POST(request: Request) {
       propertyType: body.propertyType,
       minStayNights: body.minStayNights,
       maxStayNights: body.maxStayNights,
+      checkInTime: body.checkInTime,
+      checkOutTime: body.checkOutTime,
     });
 
     if (!result.ok) {

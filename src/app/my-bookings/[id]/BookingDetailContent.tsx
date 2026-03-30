@@ -9,6 +9,7 @@ import { useCurrency } from "@/components/currency/CurrencyProvider";
 import CancelBookingButton from "@/components/booking/CancelBookingButton";
 import StartMessageLink from "@/components/messages/StartMessageLink";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
+import { formatPrice } from "@/lib/currency";
 import { POLICY_LABELS_KO, type CancellationPolicyType } from "@/lib/policies";
 
 /** 체크인 기준 N일 전 날짜를 "YYYY년 M월 D일" 형식으로 반환 */
@@ -80,6 +81,8 @@ type BookingDetail = {
     verifiedAt: string | null;
   } | null;
   conversationId: string | null;
+  /** 해당 숙소에 이미 리뷰를 작성했는지 (예약 상세 리뷰 유도 UI용) */
+  hasReviewed?: boolean;
 };
 
 function StatusBadge({ status, paymentStatus }: { status: string; paymentStatus: string }) {
@@ -356,7 +359,7 @@ export default function BookingDetailContent() {
             </div>
             {data.payment && (
               <p className="text-minbak-caption text-minbak-gray mt-2">
-                {t("bookingDetail.paidKrw")}: ₩{data.payment.amount.toLocaleString()}
+                {t("bookingDetail.paidKrw")}: {formatPrice(data.payment.amount, "KRW")}
               </p>
             )}
           </Section>
@@ -455,10 +458,15 @@ export default function BookingDetailContent() {
               {t("bookingDetail.viewListing")}
             </Link>
 
-            {canReview && (
+            {canReview && data.hasReviewed && (
+              <div className="w-full sm:w-auto inline-flex items-center min-h-[44px] px-6 py-2.5 rounded-minbak-full text-minbak-body text-minbak-gray bg-minbak-bg border border-minbak-light-gray">
+                {t("bookingDetail.reviewThankYou")}
+              </div>
+            )}
+            {canReview && !data.hasReviewed && (
               <Link
                 href={`/listing/${listing.id}#review`}
-                className="inline-flex items-center min-h-[44px] px-6 py-2.5 rounded-minbak-full text-minbak-body font-medium text-minbak-primary border border-minbak-primary hover:bg-red-50 transition-colors"
+                className="inline-flex items-center min-h-[44px] px-6 py-2.5 rounded-minbak-full text-minbak-body font-semibold bg-minbak-primary text-white hover:bg-minbak-primary-hover transition-colors"
               >
                 {t("mybookings.writeReview")}
               </Link>

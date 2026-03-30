@@ -9,6 +9,8 @@ import {
   paymentConfirmationHost,
 } from "@/lib/email-templates";
 import { createNotification } from "@/lib/notifications";
+import { sendPushToUser } from "@/lib/web-push";
+import { sendDiscordMessage } from "@/lib/discord";
 import { getOfficialUserId } from "@/lib/official-account";
 import { syncBookingToBeds24 } from "@/lib/bookings";
 import { createScheduledMessagesForBooking } from "@/lib/scheduled-messages";
@@ -62,7 +64,7 @@ export async function onPaymentVerified(bookingId: string): Promise<string | nul
           data: {
             conversationId: conversation.id,
             senderId: officialUserId,
-            body: "결제가 정상적으로 완료되었으며, 예약이 확정되었습니다. 호스트가 체크인 안내를 곧 전달드릴 예정이니, 잠시만 기다려 주세요.😊(여기서 언제든지 호스트에게 메시지를 보낼수 있어요)  ",
+            body: "결제가 정상적으로 완료되었으며, 예약이 확정되었습니다. 3일내에 호스트가 체크인 안내를 전달드릴 예정입니다. 호스트로부터의 메시지를 기다려 주세요.😊(여기서 언제든지 호스트에게 메시지를 보낼수 있어요)  ",
           },
         });
       }
@@ -109,7 +111,27 @@ export async function onPaymentVerified(bookingId: string): Promise<string | nul
       bookingId,
       listingId: fullBooking.listing.id,
     }).catch(() => {});
+
+    try {
+      await sendPushToUser(fullBooking.listing.userId, {
+        title: "결제 완료",
+        body: `${fullBooking.user?.name || "게스트"}님이 결제를 완료했어요. 예약이 확정되었습니다.`,
+        url: "/host/bookings",
+        tag: "guest_payment_completed",
+      });
+    } catch {
+      // 푸시 실패해도 결제·이메일·앱 내 알림에는 영향 없음
+    }
   }
+
+  // Discord 알림 (DISCORD_WEBHOOK_URL 설정 시 해당 채널로 메시지 전송)
+  const guestName = fullBooking.user?.name || "게스트";
+  const listingTitle = fullBooking.listing.title;
+  const checkIn = fullBooking.checkIn.toISOString().slice(0, 10);
+  const checkOut = fullBooking.checkOut.toISOString().slice(0, 10);
+  sendDiscordMessage(
+    `💰 **결제 완료** ${guestName}님이 **${listingTitle}** 예약 확정 (체크인 ${checkIn} ~ ${checkOut})\n${BASE_URL}/host/bookings`
+  ).catch(() => {});
 
   syncBookingToBeds24(bookingId).then((r) => {
     if (!r.ok) console.error("[Beds24] 결제 확정 동기화 실패:", r.error);

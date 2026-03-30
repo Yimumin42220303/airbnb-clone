@@ -67,6 +67,83 @@ KG이니시스와 **실계약**을 한 뒤 사용합니다.
 
 ---
 
+## 3-3. 실연동 전환 체크리스트 (단계별)
+
+테스트 연동에서 **실제 결제(실연동)** 로 전환할 때 아래 순서대로 진행하면 됩니다.
+
+### 1단계: KG이니시스 실계약 및 MID 발급
+
+| 순서 | 할 일 | 참고 |
+|------|--------|------|
+| 1 | KG이니시스 **실계약** 신청 | 전화 1588-4954 또는 ch@kggroup.co.kr. 개인/법인 구비서류 제출 후 계약 |
+| 2 | **상점관리자** 접속 | [KG이니시스 상점관리자](https://iniweb.inicis.com/security/login.do) 로그인 |
+| 3 | **MID** 확인 | 계약 완료 후 발급된 상점아이디(10자리, 예: MOI8774709). 카드사 심사 완료된 MID여야 결제 가능 |
+| 4 | **웹 signkey** 발급 | 상점정보 → 부가정보 → **웹 signkey 생성·조회** → [조회] 후 값 복사 (MID별로 다름) |
+| 5 | **INIAPI key** 발급 (V2용) | 상점정보 → 부가정보 → **INIAPI key 생성·갱신** → [조회] 또는 [생성] 후 KEY/IV 복사 |
+
+- V2 연동 시에는 별도 키파일(zip) 등록 없이 **signkey + INIAPI key** 만 있으면 됩니다.
+
+### 2단계: 포트원에 실연동 채널 추가
+
+| 순서 | 할 일 | 입력 값 |
+|------|--------|---------|
+| 1 | [포트원 관리자 콘솔](https://admin.portone.io/) 로그인 | — |
+| 2 | **결제연동** → **채널관리** → **+ 채널추가** | — |
+| 3 | **연동모드** | **실연동** 선택 |
+| 4 | **결제대행사** | KG이니시스 |
+| 5 | **결제모듈** | 결제창 일반/정기결제 및 API 일반/정기결제 (V2) |
+| 6 | **채널이름** | 예: `KG이니시스-운영` (영문, 숫자, `_`, `-` 만) |
+| 7 | **PG상점아이디 (MID)** | 1단계에서 확인한 MID 입력 |
+| 8 | **웹표준결제 signkey** | 1단계에서 복사한 signkey 입력 |
+| 9 | **INIAPI key** (V2) | 1단계에서 복사한 INIAPI KEY/IV 입력 (필드가 KEY·IV 둘이라면 둘 다 입력) |
+| 10 | 저장 후 **Channel Key** 복사 | 채널 상세에서 `channel-key-xxxx...` 복사 |
+
+### 3단계: 포트원에서 서비스 URL·웹훅 설정
+
+| 설정 | 경로·방법 |
+|------|-----------|
+| **결제 허용 URL** | 채널 상세 또는 결제연동 설정에서 **실제 서비스 도메인** 등록 (예: `https://tokyominbak.net`). 등록되지 않은 도메인에서는 결제창이 차단될 수 있음 |
+| **웹훅 URL** | 포트원 콘솔 **API Keys** 또는 **웹훅** 메뉴에서 `https://도메인/api/webhooks/portone` 등록 (이 프로젝트는 `POST /api/webhooks/portone` 사용) |
+
+- Vercel 배포 시 Production URL(예: `https://tokyominbak.net`)을 반드시 등록해야 합니다.
+
+### 4단계: 환경 변수에 실연동 값 넣기
+
+**로컬 `.env` / Vercel Production 환경 변수**에 아래처럼 **실연동 채널** 값으로 바꿉니다.
+
+```env
+# 실연동용 (테스트 채널 키가 아닌, 방금 만든 실연동 채널 키)
+NEXT_PUBLIC_PORTONE_STORE_ID="store-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+NEXT_PUBLIC_PORTONE_CHANNEL_KEY="channel-key-실연동채널키-xxxxxxxx"
+PORTONE_API_SECRET="portone-api-secret-xxxxxxxx"
+```
+
+- **NEXT_PUBLIC_PORTONE_CHANNEL_KEY** 를 **테스트 채널 키 → 실연동 채널 키** 로 변경하는 것이 실연동 전환의 핵심입니다.
+- 정기결제(빌링키)를 쓰는 경우, 실연동용 빌링 채널을 따로 추가한 뒤 `NEXT_PUBLIC_PORTONE_BILLING_CHANNEL_KEY` 도 실연동 채널 키로 설정합니다.
+
+### 5단계: 테스트 모드 끄기 (선택)
+
+- `.env`에 `NEXT_PUBLIC_PORTONE_TEST_MODE=true` 가 있으면 **제거**하거나 `false` 로 두어 실제 결제 환경으로 동작하게 합니다.
+- 프로젝트에서 해당 변수를 참조하는 경우에만 영향이 있습니다.
+
+### 6단계: 배포 후 확인
+
+1. Vercel 등에 배포한 뒤 **Production** 환경 변수가 위 4단계 값인지 확인.
+2. 실제 서비스 URL에서 **소액 결제 1건** 진행 후, 포트원 콘솔·상점관리자에서 결제/취소가 정상 보이는지 확인.
+
+### 실결제 모드 더블체크
+
+게스트 결제가 **실제로 실결제**로 끝나는지 확인하려면:
+
+| 항목 | 실결제일 때 | 비고 |
+|------|-------------|------|
+| **NEXT_PUBLIC_PORTONE_CHANNEL_KEY** | 실연동 채널 키 (`channel-key-49ba25af-...`) | 테스트 채널 키(`channel-key-f5d898c3-...`)면 테스트 결제(자동 취소 등) |
+| **NEXT_PUBLIC_PORTONE_TEST_MODE** | `false` 또는 미설정 | `true`면 환불 시 PG 호출 생략(DB만 취소) |
+
+**관리자 전용 확인 API:** 로그인한 **관리자**가 `GET /api/admin/portone-mode` 를 호출하면, 현재 배포에서 쓰는 채널 접두어·테스트 플래그·요약 문구를 JSON으로 반환합니다. 브라우저에서 `https://토큐민박도메인/api/admin/portone-mode` 접속 시 `summary` 필드가 `"실결제 모드 (실연동 채널 + 테스트플래그 없음)"` 이면 실결제 전환 완료입니다.
+
+---
+
 ## 4. Channel Key 확인
 
 - **채널관리** 목록에서 방금 만든 채널을 클릭하면 **채널 키(Channel Key)**가 표시됩니다.
@@ -92,6 +169,32 @@ PORTONE_API_SECRET="portone-api-secret-xxxxxxxx"
 - 수정 후 **개발 서버를 재시작**해야 반영됩니다. (`npm run dev` 중지 후 다시 실행)
 - **Vercel 배포 시**: 위 세 변수를 모두 **Production** 환경에 설정하고, 포트원 채널에 **실제 서비스 URL**(또는 `*.vercel.app`)을 등록해야 결제가 동작합니다.
 
+### 5-1. 오류: "channelKey is not correct" / RECORD_NOT_FOUND
+
+결제 시 **「채널 정보를 조회하는데 실패하였습니다」「channelKey is not correct」** 가 나오면, 앱이 보낸 채널 키를 포트원이 찾지 못한 상태입니다.
+
+| 가능 원인 | 확인·조치 |
+|-----------|------------|
+| **Vercel 환경 변수** | Vercel → 프로젝트 → Settings → Environment Variables 에서 `NEXT_PUBLIC_PORTONE_CHANNEL_KEY` 값이 **포트원 콘솔 채널 목록의 Channel Key와 동일한지** 확인. 수정 후 **재배포** 필요 (NEXT_PUBLIC_ 은 빌드 시 주입됨). |
+| **채널 삭제/재생성** | 채널을 지우고 새로 만들었다면 예전 키는 무효. 콘솔에서 현재 채널의 Channel Key를 다시 복사해 env에 넣고 재배포. |
+| **다른 스토어/계정의 키** | 테스트 스토어 키를 운영 도메인에 넣었거나, 다른 포트원 계정의 채널 키를 넣은 경우. 해당 배포에 쓰는 **Store ID와 같은 콘솔(계정)** 의 채널 키인지 확인. |
+| **모바일에서만 발생** | `NEXT_PUBLIC_PORTONE_CHANNEL_KEY_MOBILE` 이 설정되어 있으면 모바일에서는 이 값을 사용함. 이 키가 잘못되었거나 삭제된 채널 키면 모바일에서만 RECORD_NOT_FOUND 발생. → 모바일 전용 채널 키 제거 또는 올바른 키로 교체 후 재배포. |
+| **공백/오타** | 값 복사 시 앞뒤 공백, 줄바꿈이 들어가지 않았는지 확인. 따옴표는 제거한 채 키만 넣어도 됨. |
+
+### 5-2. 오류: "Failed to load window.PortOne"
+
+결제하기 클릭 시 **「[PortOne] Failed to load window.PortOne」** 가 나오면, 포트원 결제창을 띄우는 스크립트가 로드되지 않은 상태입니다.
+
+| 가능 원인 | 확인·조치 |
+|-----------|------------|
+| **채널 키/Store ID 무효** | 5-1과 동일. 포트원 콘솔에서 해당 Store ID·Channel Key가 존재하는지, **실연동/테스트**가 의도한 환경과 맞는지 확인. |
+| **도메인 미등록** | 포트원 관리자 콘솔 → 채널 설정에서 **결제 요청 허용 도메인**에 실제 서비스 URL(예: `https://tokyominbak.net`)이 등록되어 있는지 확인. |
+| **광고 차단/시크릿 모드** | 브라우저 확장 프로그램(광고 차단 등)이 `cdn.portone.io` 를 막을 수 있음. 시크릿 모드 또는 다른 브라우저에서 시도. |
+| **네트워크/방화벽** | 회사·공공 Wi‑Fi에서 외부 스크립트가 차단될 수 있음. 다른 네트워크(예: 휴대폰 핫스팟)에서 재시도. |
+| **CSP(Content-Security-Policy)** | 이 프로젝트의 `next.config.mjs`에서 CSP가 설정되어 있음. 포트원 결제창 로드를 위해 **script-src**에 `https://cdn.portone.io`, **connect-src**에 `https://api.portone.io` 가 포함되어 있어야 함. 누락 시 결제창 로드 실패 가능. |
+
+게스트에게는 「새로고침 후 다시 시도, 계속되면 문의하기」 안내가 표시됩니다. 관리자는 위 항목을 순서대로 점검하세요.
+
 ---
 
 ## 6. 이 프로젝트에서 동작 방식
@@ -101,6 +204,55 @@ PORTONE_API_SECRET="portone-api-secret-xxxxxxxx"
 - `.env`에 두 값이 없으면 카드 결제는 비활성화되고, **가상계좌 입금**만 사용할 수 있습니다.
 
 자세한 env 설명은 [ENV-설정-가이드.md](ENV-설정-가이드.md)의 "포트원(KG이니시스) PG" 섹션을 참고하세요.
+
+---
+
+## 7-1. 모바일 결제 설정
+
+KG이니시스는 **PC용 모듈(INIStdPay)** 과 **모바일용 모듈**이 별도입니다.  
+모바일 기기에서 PC 모듈이 호출되면 `[INIStdPay / Dev. Error] 해당기기로는 정상적인 결제가 진행되지 않을 수 있습니다` 오류가 발생합니다.
+
+### 해결 방법
+
+1. **포트원 콘솔**에서 **KG이니시스 모바일 전용 채널**을 추가합니다.
+   - 경로: 관리자 콘솔 → 결제연동 → 채널관리 → + 채널추가
+   - 모바일 결제 모듈이 별도로 제공되는 경우 해당 모듈 선택
+   - 동일 MID를 사용하되, 모바일 결제가 지원되는 채널인지 포트원 고객센터에 확인
+2. 생성된 채널의 **Channel Key**를 복사합니다.
+3. `.env` 및 Vercel 환경 변수에 추가합니다:
+
+```env
+NEXT_PUBLIC_PORTONE_CHANNEL_KEY_MOBILE="channel-key-모바일채널키-xxxxxxxx"
+```
+
+4. 배포 후 모바일 기기에서 결제가 정상 동작하는지 확인합니다.
+
+### 모바일 채널이 없는 경우 (폴백)
+
+`NEXT_PUBLIC_PORTONE_CHANNEL_KEY_MOBILE`이 **미설정**이면:
+- 기존 PC 채널로 결제를 시도합니다.
+- 모바일에서 INIStdPay 오류 발생 시 자동으로 **"결제 링크 이메일로 받기"** 폴백 UI가 표시됩니다.
+- 게스트가 이메일로 결제 페이지 링크를 받아 PC에서 결제할 수 있습니다.
+
+### 포트원 답변 요약 (모바일 INIStdPay 오류 시)
+
+포트원 측 확인 결과, **V2 채널은 PC/모바일을 자동 감지**합니다. PC → INIStdPay, 모바일 → mobile.inicis.com 호출. 별도 모바일 채널 불필요.
+
+**적용 사항**
+- **customer.fullName**: 필수. 미입력 시 `"결제자"`로 전달.
+- **bypass**: 포트원 안내 형식으로 `bypass.inicis_v2` 사용 (예: `apprun_check: "Y"` 등 모바일용 옵션).
+
+**모바일에서 INIStdPay 오류가 나는 경우 = PC 모듈이 호출된 것**
+1. **User-Agent 감지**: 인앱 브라우저(카카오톡, 네이버 앱 내 브라우저 등)나 커스텀 User-Agent 사용 시 **PC로 인식**될 수 있음. **일반 모바일 브라우저(Chrome, Safari)** 에서 다시 시도해 보세요.
+2. **KG이니시스 계약**: 실연동 계약에 **PC·모바일 모두 포함**되어 있는지 KG이니시스에 확인.
+3. **채널 확인**: 포트원 콘솔에서 해당 채널이 **"결제창 일반/정기결제 API 일반/정기결제 V2"** 로 설정되어 있는지 확인.
+4. **상세 로그**: 포트원 관리자 콘솔 → 결제 내역에서 해당 건의 상세 오류 로그 확인. 재문의 시 결제 ID, 오류 시각, 디바이스/브라우저 정보를 함께 전달.
+
+### 참고
+
+- KG이니시스 모바일 모듈 연동 가이드: https://manual.inicis.com/mobile/
+- 포트원 KG이니시스 채널 설정: https://help.portone.io/content/inicis
+- 포트원 V2 이니시스 연동 가이드: https://developers.portone.io/opi/ko/integration/pg/v2/inicis-v2
 
 ---
 

@@ -150,6 +150,7 @@ export async function createBooking(input: CreateBookingInput) {
       guests: input.guests,
       totalPrice,
       status: isInstant ? "confirmed" : "pending",
+      confirmedAt: isInstant ? new Date() : undefined,
       guestName: input.guestName?.trim() || null,
       guestPhone: input.guestPhone?.trim() || null,
     },
@@ -158,37 +159,7 @@ export async function createBooking(input: CreateBookingInput) {
     },
   });
 
-  // Beds24: 즉시 예약(확정)인 경우에만 생성 시점에 전송. 결제 후 확정은 payments/verify·웹훅에서 전송.
-  if (
-    isInstant &&
-    booking.listing.beds24Enabled &&
-    booking.listing.beds24PropId?.trim() &&
-    booking.listing.beds24RoomId?.trim()
-  ) {
-    const guestUser = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { name: true, email: true },
-    });
-    const result = await postBeds24Booking({
-      propId: booking.listing.beds24PropId,
-      roomId: booking.listing.beds24RoomId,
-      checkIn,
-      checkOut,
-      guests: input.guests,
-      guestName: (input.guestName?.trim() || guestUser?.name) ?? undefined,
-      guestEmail: guestUser?.email ?? undefined,
-      guestPhone: input.guestPhone?.trim() || undefined,
-      externalId: booking.id,
-    });
-    if (!result.ok) {
-      console.error("[Beds24] 예약 전송 실패 (예약은 생성됨):", result.error);
-    } else if (result.bookId != null) {
-      await prisma.booking.update({
-        where: { id: booking.id },
-        data: { beds24BookId: String(result.bookId) },
-      });
-    }
-  }
+  // Beds24 전송은 결제 완료 후 syncBookingToBeds24()에서 처리 (미결제 취소 시 잘못된 예약 방지)
 
   return {
     ok: true as const,

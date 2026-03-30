@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Header, Footer } from "@/components/layout";
 import { Button } from "@/components/ui";
@@ -9,6 +10,7 @@ import DeleteListingButton from "@/components/host/DeleteListingButton";
 import AmenitySelector from "@/components/host/AmenitySelector";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 import { useCurrency } from "@/components/currency/CurrencyProvider";
+import { FormFieldWithError } from "@/components/ui/FormFieldWithError";
 import { uploadListingImages, getUploadErrorMessage } from "@/lib/useListingImageUpload";
 import { uploadVideoClientWithProgress, canUseVideoUpload, LISTING_VIDEO_MAX_BYTES, LISTING_VIDEO_ACCEPT } from "@/lib/cloudinary-client-upload";
 import { toast } from "sonner";
@@ -48,6 +50,8 @@ type Props = {
     bedrooms: number;
     beds: number;
     baths: number;
+    areaSqm?: number | null;
+    bathroomToiletSeparate?: boolean;
     isPromoted: boolean;
     instantBooking: boolean;
     hidden?: boolean;
@@ -72,6 +76,8 @@ type Props = {
     beds24DecemberFactor?: number;
     minStayNights?: number | null;
     maxStayNights?: number | null;
+    checkInTime?: string | null;
+    checkOutTime?: string | null;
     amenityIds: string[];
     mapUrl?: string;
     videoUrl?: string | null;
@@ -95,6 +101,9 @@ export default function EditListingForm({
   const [icalRefreshLoading, setIcalRefreshLoading] = useState(false);
   const [beds24PriceSyncLoading, setBeds24PriceSyncLoading] = useState(false);
   const [error, setError] = useState("");
+  const [titleError, setTitleError] = useState("");
+  const [locationError, setLocationError] = useState("");
+  const [priceError, setPriceError] = useState("");
   const { formatForHost } = useCurrency();
   const [form, setForm] = useState({
     hostId: currentHostId,
@@ -122,6 +131,8 @@ export default function EditListingForm({
     bedrooms: String(initial.bedrooms),
     beds: String(initial.beds),
     baths: String(initial.baths),
+    areaSqm: initial.areaSqm != null && initial.areaSqm > 0 ? String(initial.areaSqm) : "",
+    bathroomToiletSeparate: initial.bathroomToiletSeparate ?? false,
     isPromoted: initial.isPromoted,
     instantBooking: initial.instantBooking ?? false,
     hidden: initial.hidden ?? false,
@@ -146,6 +157,8 @@ export default function EditListingForm({
     beds24DecemberFactor: String(initial.beds24DecemberFactor ?? 1),
     minStayNights: initial.minStayNights != null ? String(initial.minStayNights) : "",
     maxStayNights: initial.maxStayNights != null ? String(initial.maxStayNights) : "",
+    checkInTime: initial.checkInTime ?? "",
+    checkOutTime: initial.checkOutTime ?? "",
     amenityIds: initial.amenityIds ?? [],
     mapUrl: initial.mapUrl ?? "",
     videoUrl: initial.videoUrl ?? "",
@@ -269,14 +282,31 @@ export default function EditListingForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setTitleError("");
+    setLocationError("");
+    setPriceError("");
     const price = parseInt(form.pricePerNight, 10);
     const totalImages = existingImageUrls.length + newImageFiles.length;
     const baseGuests = parseInt(form.baseGuests, 10) || 1;
     const maxGuests = parseInt(form.maxGuests, 10) || 2;
-    if (!form.title.trim() || !form.location.trim() || totalImages === 0 || isNaN(price) || price < 0) {
-      setError(t("newListing.validationRequired"));
-      return;
+    let hasClientError = false;
+    if (!form.title.trim()) {
+      setTitleError(t("newListing.validationTitleRequired"));
+      hasClientError = true;
     }
+    if (!form.location.trim()) {
+      setLocationError(t("newListing.validationLocationRequired"));
+      hasClientError = true;
+    }
+    if (isNaN(price) || price < 0) {
+      setPriceError(t("newListing.validationPriceRequired"));
+      hasClientError = true;
+    }
+    if (totalImages === 0 && !hasClientError) {
+      setError(t("newListing.validationRequired"));
+      hasClientError = true;
+    }
+    if (hasClientError) return;
     if (baseGuests < 1) {
       setError(t("newListing.validationBaseGuests"));
       return;
@@ -328,6 +358,8 @@ export default function EditListingForm({
         bedrooms: parseInt(form.bedrooms, 10) || 1,
         beds: parseInt(form.beds, 10) || 1,
         baths: parseInt(form.baths, 10) || 1,
+        areaSqm: form.areaSqm.trim() ? parseInt(form.areaSqm, 10) || null : null,
+        bathroomToiletSeparate: form.bathroomToiletSeparate,
         isPromoted: form.isPromoted,
         instantBooking: form.instantBooking,
         hidden: form.hidden,
@@ -364,6 +396,8 @@ export default function EditListingForm({
           const v = parseInt(form.maxStayNights, 10);
           return !isNaN(v) && v >= 1 ? v : null;
         })(),
+        checkInTime: form.checkInTime.trim() || null,
+        checkOutTime: form.checkOutTime.trim() || null,
         amenityIds: form.amenityIds,
         mapUrl: mapUrl || undefined,
         videoUrl: form.videoUrl != null && String(form.videoUrl).trim() !== "" ? String(form.videoUrl).trim() : null,
@@ -456,6 +490,7 @@ export default function EditListingForm({
                         <li
                           key={u.id}
                           role="option"
+                          aria-selected={form.hostId === u.id}
                           className="px-3 py-2 text-minbak-body text-minbak-black hover:bg-minbak-bg cursor-pointer border-b border-minbak-light-gray last:border-b-0"
                           onMouseDown={(e) => {
                             e.preventDefault();
@@ -474,16 +509,21 @@ export default function EditListingForm({
                 </label>
               </div>
             )}
-            <label className="block">
-              <span className="text-minbak-body font-medium text-minbak-black block mb-1">{t("newListing.titleRequired")}</span>
+            <FormFieldWithError
+              id="edit-listing-title"
+              label={t("newListing.titleRequired")}
+              error={titleError}
+            >
               <input
                 type="text"
                 value={form.title}
-                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                onChange={(e) => {
+                  setForm((f) => ({ ...f, title: e.target.value }));
+                  setTitleError("");
+                }}
                 className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
-                required
               />
-            </label>
+            </FormFieldWithError>
             <label className="block">
               <span className="text-minbak-body font-medium text-minbak-black block mb-1">{t("newListing.hostDisplayNameLabel")}</span>
               <input
@@ -519,16 +559,21 @@ export default function EditListingForm({
                 </label>
               </div>
             </label>
-            <label className="block">
-              <span className="text-minbak-body font-medium text-minbak-black block mb-1">{t("newListing.locationRequired")}</span>
+            <FormFieldWithError
+              id="edit-listing-location"
+              label={t("newListing.locationRequired")}
+              error={locationError}
+            >
               <input
                 type="text"
                 value={form.location}
-                onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+                onChange={(e) => {
+                  setForm((f) => ({ ...f, location: e.target.value }));
+                  setLocationError("");
+                }}
                 className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
-                required
               />
-            </label>
+            </FormFieldWithError>
             <label className="block">
               <span className="text-minbak-body font-medium text-minbak-black block mb-1">
                 {t("newListing.mapLinkOptional")}
@@ -569,11 +614,13 @@ export default function EditListingForm({
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={() => handleImageDrop(globalIndex)}
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element -- blob URL 미리보기 */}
-                      <img
+                      <Image
                         src={src}
                         alt={isExisting ? t("edit.existingImageN", { n: thumb.index + 1 }) : t("edit.newImageN", { n: thumb.index + 1 })}
+                        width={96}
+                        height={96}
                         className="w-24 h-24 object-cover rounded-minbak border border-minbak-light-gray"
+                        unoptimized={src.startsWith("blob:")}
                       />
                       <button
                         type="button"
@@ -664,7 +711,7 @@ export default function EditListingForm({
                         preload="metadata"
                       />
                       {videoUploadStatus === "done" && (
-                        <span className="absolute top-2 left-2 rounded bg-green-600 text-white text-minbak-caption px-2 py-0.5 font-medium">
+                        <span className="absolute top-2 left-2 z-10 rounded bg-green-600 text-white text-minbak-caption px-2 py-0.5 font-medium whitespace-nowrap">
                           {t("newListing.videoUploadDone")}
                         </span>
                       )}
@@ -747,17 +794,22 @@ export default function EditListingForm({
                 )}
               </div>
             )}
-            <label className="block">
-              <span className="text-minbak-body font-medium text-minbak-black block mb-1">{t("newListing.pricePerNight")}</span>
+            <FormFieldWithError
+              id="edit-listing-pricePerNight"
+              label={t("newListing.pricePerNight")}
+              error={priceError}
+            >
               <input
                 type="number"
                 min={0}
                 value={form.pricePerNight}
-                onChange={(e) => setForm((f) => ({ ...f, pricePerNight: e.target.value }))}
+                onChange={(e) => {
+                  setForm((f) => ({ ...f, pricePerNight: e.target.value }));
+                  setPriceError("");
+                }}
                 className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
-                required
               />
-            </label>
+            </FormFieldWithError>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <label>
                 <span className="text-minbak-caption text-minbak-gray block mb-1">{t("newListing.baseGuests")}</span>
@@ -829,6 +881,26 @@ export default function EditListingForm({
                   placeholder=""
                 />
                 <span className="text-minbak-caption text-minbak-gray block mt-0.5">{t("newListing.maxStayNightsHint")}</span>
+              </label>
+              <label>
+                <span className="text-minbak-body font-medium text-minbak-black block mb-1">{t("newListing.checkInTime")}</span>
+                <input
+                  type="time"
+                  value={form.checkInTime}
+                  onChange={(e) => setForm((f) => ({ ...f, checkInTime: e.target.value }))}
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
+                />
+                <span className="text-minbak-caption text-minbak-gray block mt-0.5">{t("newListing.checkInTimeHint")}</span>
+              </label>
+              <label>
+                <span className="text-minbak-body font-medium text-minbak-black block mb-1">{t("newListing.checkOutTime")}</span>
+                <input
+                  type="time"
+                  value={form.checkOutTime}
+                  onChange={(e) => setForm((f) => ({ ...f, checkOutTime: e.target.value }))}
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
+                />
+                <span className="text-minbak-caption text-minbak-gray block mt-0.5">{t("newListing.checkOutTimeHint")}</span>
               </label>
             </div>
             <section className="border border-minbak-light-gray rounded-minbak bg-white p-4 space-y-3">
@@ -1062,6 +1134,29 @@ export default function EditListingForm({
                   className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
                 />
               </label>
+              <label>
+                <span className="text-minbak-caption text-minbak-gray block mb-1">{t("newListing.areaSqm")}</span>
+                <input
+                  type="number"
+                  min={0}
+                  placeholder="—"
+                  value={form.areaSqm}
+                  onChange={(e) => setForm((f) => ({ ...f, areaSqm: e.target.value }))}
+                  className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak"
+                />
+              </label>
+            </div>
+            <div className="mt-4">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.bathroomToiletSeparate}
+                  onChange={(e) => setForm((f) => ({ ...f, bathroomToiletSeparate: e.target.checked }))}
+                  className="w-5 h-5 rounded accent-rose-500"
+                />
+                <span className="text-minbak-body text-minbak-black">{t("newListing.bathroomToiletSeparate")}</span>
+              </label>
+              <p className="text-minbak-caption text-minbak-gray mt-1">{t("newListing.bathroomToiletSeparateHint")}</p>
             </div>
             {/* 프로모션대상 토글 (관리자만 표시·변경 가능) */}
             {isAdmin && (
@@ -1193,6 +1288,28 @@ export default function EditListingForm({
                   </button>
                 </div>
               </div>
+              {/* iCal만 선택 시: 3가지 항목(1박 요금, 월별 요금 배수, 예약 불가) 적용 설명 — 캘린더 연동 모듈 안에만 노출 */}
+              {!form.beds24Enabled && (
+              <div className="p-3 rounded-minbak border border-minbak-light-gray bg-white space-y-2">
+                <p className="text-minbak-caption font-medium text-minbak-black">
+                  {t("edit.icalOnlyApplyTitle")}
+                </p>
+                <ul className="list-none space-y-1.5 text-minbak-caption text-minbak-gray">
+                  <li>
+                    <span className="font-medium text-minbak-black">{t("edit.icalOnlyItem1Title")}</span>
+                    <span className="block mt-0.5">{t("edit.icalOnlyItem1Desc")}</span>
+                  </li>
+                  <li>
+                    <span className="font-medium text-minbak-black">{t("edit.icalOnlyItem2Title")}</span>
+                    <span className="block mt-0.5">{t("edit.icalOnlyItem2Desc")}</span>
+                  </li>
+                  <li>
+                    <span className="font-medium text-minbak-black">{t("edit.icalOnlyItem3Title")}</span>
+                    <span className="block mt-0.5">{t("edit.icalOnlyItem3Desc")}</span>
+                  </li>
+                </ul>
+              </div>
+              )}
               {/* Export — iCal만 선택 시 (Beds24 API 선택 시에는 아래 API 박스 내에 URL만 표시) */}
               {!form.beds24Enabled && (
               <div>

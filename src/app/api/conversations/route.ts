@@ -43,8 +43,10 @@ export async function GET() {
   });
 
   const result = conversations.map((c) => {
-    const guest = c.booking.user;
-    const listing = c.booking.listing as { id: string; title: string; user: { name: string | null; email: string } };
+    const guest = c.booking!.user;
+    const listing = c.booking!.listing as { id: string; title: string; user: { name: string | null; email: string } };
+    const listingId = listing.id;
+    const listingTitle = listing.title;
     const isGuest = userId === guest.id;
     const otherName = isGuest
       ? (listing.user?.name || listing.user?.email || "호스트")
@@ -53,8 +55,8 @@ export async function GET() {
     return {
       id: c.id,
       bookingId: c.bookingId,
-      listingId: listing.id,
-      listingTitle: listing.title,
+      listingId,
+      listingTitle,
       otherName,
       lastMessage: last
         ? {
@@ -72,7 +74,7 @@ export async function GET() {
 
 /**
  * POST /api/conversations
- * 예약에 대한 대화방 조회 또는 생성 (body: { bookingId })
+ * 대화방 조회 또는 생성 (body: { bookingId })
  */
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -86,6 +88,7 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json();
   const bookingId = body.bookingId;
+
   if (!bookingId || typeof bookingId !== "string") {
     return NextResponse.json(
       { error: "bookingId가 필요합니다." },

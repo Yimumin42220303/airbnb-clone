@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { formatPrice } from "@/lib/currency";
 
 export default async function AdminBookingsPage() {
   const bookings = await prisma.booking.findMany({
@@ -106,12 +107,12 @@ export default async function AdminBookingsPage() {
                       )}
                     </td>
                     <td className="py-3 px-4">
-                      ₩{b.totalPrice.toLocaleString()}
+                      {formatPrice(b.totalPrice, "KRW")}
                     </td>
                     <td className="py-3 px-4">
                       {refundTx ? (
                         <span className="text-minbak-caption px-2 py-0.5 rounded bg-orange-100 text-orange-800">
-                          ₩{refundTx.amount.toLocaleString()} 환불
+                          {formatPrice(refundTx.amount, "KRW")} 환불
                         </span>
                       ) : (
                         <span className="text-minbak-caption text-minbak-gray">

@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 /**
  * 블로그 본문 렌더링. [IMG:url] 형식은 이미지로 치환.
  * url은 https://, http://, / 로 시작하는 것만 허용 (XSS 방지).
@@ -65,13 +67,14 @@ export default function BlogBody({ body, className = "" }: BlogBodyProps) {
             key={i}
             className="my-6 rounded-minbak overflow-hidden bg-minbak-light-gray"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={seg.url}
               alt=""
+              width={800}
+              height={450}
               className="w-full h-auto object-contain"
-              loading="lazy"
-              decoding="async"
+              sizes="(max-width: 800px) 100vw, 800px"
+              unoptimized
             />
           </figure>
         )

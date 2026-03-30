@@ -10,7 +10,8 @@ import { useCurrency } from "@/components/currency/CurrencyProvider";
 import { trackEvent } from "@/lib/booking-analytics";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
-const CALENDAR_WIDTH = 560;
+/** PC에서 두 달(7요일)이 잘리지 않도록 최소 필요 너비: 264*2 + gap24 + px4*2 + pr6 ≈ 608 */
+const CALENDAR_WIDTH = 620;
 const CALENDAR_MARGIN = 8;
 /** 캘린더 박스 대략 높이 (스크롤 없이 전체 표시용) */
 const CALENDAR_APPROX_HEIGHT = 440;
@@ -26,6 +27,8 @@ type BookingFormProps = {
   minStayNights?: number | null;
   /** 가격 미리보기 계산 시 (박수/총액) 정보를 상위 컴포넌트로 전달 */
   onPriceChange?: (summary: { nights: number; totalPrice: number; cleaningFee: number } | null) => void;
+  /** 인원 수 변경 시 상위에서 1인당 요금 표시용으로 사용 */
+  onGuestsChange?: (guests: number) => void;
   /** 검색에서 전달된 초기 체크인 날짜 (YYYY-MM-DD) */
   initialCheckIn?: string;
   /** 검색에서 전달된 초기 체크아웃 날짜 (YYYY-MM-DD) */
@@ -52,6 +55,7 @@ export default function BookingForm({
   bookingType = "approval",
   minStayNights,
   onPriceChange,
+  onGuestsChange,
   initialCheckIn,
   initialCheckOut,
   initialGuests,
@@ -83,6 +87,7 @@ export default function BookingForm({
     top: number;
     left: number;
     width: number;
+    maxHeight?: number;
   } | null>(null);
 
   useLayoutEffect(() => {
@@ -90,16 +95,24 @@ export default function BookingForm({
       setCalendarPosition(null);
       return;
     }
-    const rect = calendarWrapRef.current.getBoundingClientRect();
+    const win = typeof window !== "undefined" ? window : null;
+    const isMobile = win ? win.innerWidth < 768 : false;
     const width = Math.min(
       CALENDAR_WIDTH,
-      typeof window !== "undefined" ? window.innerWidth - 32 : CALENDAR_WIDTH
+      win ? win.innerWidth - 32 : CALENDAR_WIDTH
     );
-    const left = Math.max(
-      16,
-      typeof window !== "undefined" ? rect.right - width : rect.left
-    );
-    const win = typeof window !== "undefined" ? window : null;
+
+    if (isMobile && win) {
+      // 모바일: 헤더 아래 고정, 두 달이 스크롤 없이 한눈에 보이도록 높이 확보
+      const top = 72;
+      const left = 16;
+      const maxHeight = win.innerHeight - top - 16;
+      setCalendarPosition({ top, left, width, maxHeight });
+      return;
+    }
+
+    const rect = calendarWrapRef.current.getBoundingClientRect();
+    const left = Math.max(16, win ? rect.right - width : rect.left);
     const spaceBelow = win ? win.innerHeight - rect.bottom - CALENDAR_MARGIN - 16 : CALENDAR_APPROX_HEIGHT;
     const spaceAbove = win ? rect.top - CALENDAR_MARGIN - 16 : CALENDAR_APPROX_HEIGHT;
     const top =
@@ -175,8 +188,10 @@ export default function BookingForm({
   // 인원 패널의 성인/어린이/유아 합계를 guests 상태와 동기화
   useEffect(() => {
     const total = adults + children + infants;
-    setGuests(total > 0 ? total : 1);
-  }, [adults, children, infants]);
+    const next = total > 0 ? total : 1;
+    setGuests(next);
+    onGuestsChange?.(next);
+  }, [adults, children, infants, onGuestsChange]);
 
   useEffect(() => {
     if (!checkIn || !checkOut || checkOut <= checkIn) {
@@ -303,18 +318,19 @@ export default function BookingForm({
             <>
               <div
                 data-calendar-backdrop
-                className="fixed inset-0 z-[100] bg-black/30"
+                className="fixed inset-0 z-[10000] bg-black/30"
                 role="dialog"
                 aria-modal="true"
                 aria-label={t("bookingForm.calendarAriaLabel")}
               />
               {calendarPosition && (
                 <div
-                  className="fixed z-[101] bg-white rounded-xl shadow-[0_6px_24px_rgba(0,0,0,0.15)]"
+                  className="fixed z-[10001] bg-white rounded-xl shadow-[0_6px_24px_rgba(0,0,0,0.15)] flex flex-col overflow-hidden"
                   style={{
                     top: calendarPosition.top,
                     left: calendarPosition.left,
                     width: calendarPosition.width,
+                    ...(calendarPosition.maxHeight != null && { maxHeight: calendarPosition.maxHeight }),
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -521,6 +537,12 @@ export default function BookingForm({
               <span className="text-[16px] font-bold text-[#222]">{t("bookingForm.totalAmount")}</span>
               <span className="text-[20px] font-bold text-[#222]">{formatForGuest(totalPrice)}</span>
             </div>
+            {guests >= 1 && (
+              <div className="flex justify-between items-baseline text-[14px] text-[#717171]">
+                <span>{t("bookingForm.perGuestTotal", { nights })}</span>
+                <span>{formatForGuest(Math.round(totalPrice / guests))}</span>
+              </div>
+            )}
             <p className="text-[12px] text-[#999] text-center">{t("bookingForm.noHiddenFees")}</p>
           </div>
         );

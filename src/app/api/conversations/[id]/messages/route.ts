@@ -4,6 +4,9 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { translateMessageBody } from "@/lib/translate";
+import { sendPushToUser } from "@/lib/web-push";
+import { sendDiscordMessage } from "@/lib/discord";
+import { BASE_URL } from "@/lib/email";
 
 function canAccessConversation(
   userId: string,
@@ -168,7 +171,7 @@ export async function POST(
         select: {
           id: true,
           userId: true,
-          listing: { select: { userId: true } },
+          listing: { select: { userId: true, title: true } },
         },
       },
     },
@@ -222,14 +225,35 @@ export async function POST(
   const hostId = conversation.booking.listing.userId;
   const recipientUserId = userId === guestId ? hostId : guestId;
   const senderLabel = userId === guestId ? "게스트" : "호스트";
+  const messageTitle = `${message.sender.name || message.sender.email || senderLabel}님이 메시지를 보냈어요.`;
+
   createNotification({
     userId: recipientUserId,
     type: "new_message",
-    title: `${message.sender.name || message.sender.email || senderLabel}님이 메시지를 보냈어요.`,
+    title: messageTitle,
     linkPath: `/messages/${conversationId}`,
     conversationId,
     bookingId: conversation.booking.id,
   }).catch(() => {});
+
+  // 게스트가 보낸 경우 호스트에게 웹 푸시 + Discord 알림 (답변 놓치지 않도록)
+  if (userId === guestId && hostId) {
+    const pushBody = text ? (text.length > 50 ? `${text.slice(0, 50)}…` : text) : "사진을 보냈어요.";
+    sendPushToUser(hostId, {
+      title: "새 메시지",
+      body: `${message.sender.name || message.sender.email || "게스트"}님이 메시지를 보냈어요. ${pushBody}`,
+      url: `/messages/${conversationId}`,
+      tag: `guest_message_${conversationId}`,
+    }).catch(() => {});
+
+    // 호스트 연동 Discord 채널로 알림 (DISCORD_WEBHOOK_URL 설정 시)
+    const guestName = message.sender.name || message.sender.email || "게스트";
+    const listingTitle = conversation.booking.listing?.title || "숙소";
+    const preview = text ? (text.length > 80 ? `${text.slice(0, 80)}…` : text) : "(사진)";
+    sendDiscordMessage(
+      `💬 **새 메시지** ${guestName}님이 **${listingTitle}** 대화에서 보냄\n> ${preview}\n${BASE_URL}/messages/${conversationId}`
+    ).catch(() => {});
+  }
 
   return NextResponse.json({
     id: message.id,

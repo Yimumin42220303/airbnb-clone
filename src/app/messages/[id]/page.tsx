@@ -57,7 +57,7 @@ export default async function ConversationPage({ params }: Props) {
       </>
     );
   }
-  if (!conversation) notFound();
+  if (!conversation || !conversation.booking) notFound();
 
   const guest = conversation.booking.user;
   const listing = conversation.booking.listing;
@@ -78,24 +78,27 @@ export default async function ConversationPage({ params }: Props) {
 
   const booking = conversation.booking;
   const hostName =
-    listing.user?.name || listing.user?.email || "호스트";
-  const totalPriceStr = formatForGuest(booking.totalPrice);
-  const checkInStr = booking.checkIn.toISOString().slice(0, 10);
-  const checkOutStr = booking.checkOut.toISOString().slice(0, 10);
-  const statusLabel =
-    booking.status === "pending"
+    listing?.user?.name || listing?.user?.email || "호스트";
+  const totalPriceStr = booking ? formatForGuest(booking.totalPrice) : "";
+  const checkInStr = booking ? booking.checkIn.toISOString().slice(0, 10) : "";
+  const checkOutStr = booking ? booking.checkOut.toISOString().slice(0, 10) : "";
+  const statusLabel = booking
+    ? booking.status === "pending"
       ? "승인대기중"
       : booking.status === "confirmed"
         ? "확정"
         : booking.status === "cancelled"
           ? "취소완료"
-          : booking.status;
+          : booking.status
+    : "";
 
-  const approvalMessage = initialMessages.find(
-    (m) =>
-      m.body.includes("호스트승인이 완료되었어요") ||
-      m.body.includes("예약이 승인되었습니다")
-  );
+  const approvalMessage = booking
+    ? initialMessages.find(
+        (m) =>
+          m.body.includes("호스트승인이 완료되었어요") ||
+          m.body.includes("예약이 승인되었습니다")
+      )
+    : null;
   const PAYMENT_DEADLINE_HOURS = 24;
   const now = new Date();
   let paymentDeadlineText: string | null = null;
@@ -161,7 +164,7 @@ export default async function ConversationPage({ params }: Props) {
           <div className="border border-minbak-light-gray rounded-minbak overflow-hidden bg-white">
             <div className="px-4 py-3 border-b border-minbak-light-gray bg-minbak-bg">
               <h1 className="text-minbak-body font-semibold text-minbak-black">
-                {otherName} · {listing.hostDisplayName?.trim() || listing.title}
+                {otherName} · {listing?.hostDisplayName?.trim() || listing?.title || "—"}
               </h1>
               <dl className="mt-2 text-minbak-caption text-minbak-gray space-y-0.5">
                 <div>
@@ -182,17 +185,19 @@ export default async function ConversationPage({ params }: Props) {
                   {statusLabel}
                 </div>
               </dl>
-              <Link
-                href={`/listing/${listing.id}`}
-                className="mt-2 inline-block text-minbak-caption text-minbak-primary hover:underline"
-              >
-                숙소 보기
-              </Link>
+              {listing?.id && (
+                <Link
+                  href={`/listing/${listing.id}`}
+                  className="mt-2 inline-block text-minbak-caption text-minbak-primary hover:underline"
+                >
+                  숙소 보기
+                </Link>
+              )}
               <MessageAutoTranslateToggle initialEnabled={autoTranslate} />
             </div>
             {isGuest &&
-              booking.status === "confirmed" &&
-              booking.paymentStatus !== "paid" && (
+              booking?.status === "confirmed" &&
+              booking?.paymentStatus !== "paid" && (
                 <div className="px-4 py-3 bg-amber-50 border-b border-amber-200 flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="text-minbak-body text-amber-800">
@@ -218,8 +223,8 @@ export default async function ConversationPage({ params }: Props) {
               currentUserId={userId}
               bookingIdForPayment={
                 isGuest &&
-                booking.status === "confirmed" &&
-                booking.paymentStatus !== "paid"
+                booking?.status === "confirmed" &&
+                booking?.paymentStatus !== "paid"
                   ? booking.id
                   : undefined
               }

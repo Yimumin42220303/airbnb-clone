@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { cancelExpiredBookings } from "@/lib/cancel-expired-bookings";
 
 /**
  * GET /api/bookings/[id]
@@ -21,6 +22,8 @@ export async function GET(
   }
 
   const { id } = await params;
+
+  await cancelExpiredBookings({ bookingId: id }).catch(() => {});
 
   const booking = await prisma.booking.findUnique({
     where: { id },
@@ -77,6 +80,17 @@ export async function GET(
 
   const paidTx = booking.transactions[0] ?? null;
 
+  // 체크아웃한 게스트 리뷰 유도: 해당 숙소에 이미 리뷰를 썼는지 여부
+  const hasReviewed = await prisma.review
+    .findFirst({
+      where: {
+        listingId: booking.listing.id,
+        userId: booking.userId,
+      },
+      select: { id: true },
+    })
+    .then((r) => !!r);
+
   return NextResponse.json({
     id: booking.id,
     checkIn: booking.checkIn,
@@ -100,6 +114,7 @@ export async function GET(
         }
       : null,
     conversationId: booking.conversation?.id ?? null,
+    hasReviewed,
   });
 }
 

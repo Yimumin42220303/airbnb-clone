@@ -36,6 +36,7 @@ model User {
   posts    Post[]   // 운영자 블로그 (admin 전용)
   notifications Notification[]
   scheduledMessageTemplates ScheduledMessageTemplate[] @relation("HostTemplates")
+  pushSubscriptions PushSubscription[]
 }
 
 // NextAuth OAuth·이메일 연동
@@ -130,6 +131,10 @@ model Listing {
   bedrooms    Int      @default(1)
   beds        Int      @default(1)
   baths       Int      @default(1)
+  /// 전용 면적 (㎡). 선택 입력.
+  areaSqm     Int?
+  /// 화장실과 욕실(샤워·욕조) 분리 여부. 일본 숙소용.
+  bathroomToiletSeparate Boolean @default(false)
   isPromoted  Boolean  @default(false) // 직영숙소(프로모션대상) 여부
   /// 즉시 예약 허용: true면 호스트 승인 없이 바로 결제 진행
   instantBooking Boolean @default(false)
@@ -187,6 +192,10 @@ model Listing {
   minStayNights Int?
   /// 최대 숙박 일수. null=제한 없음
   maxStayNights Int?
+  /// 체크인 시간 (HH:mm, 예: 15:00). 미설정 시 상세에서 표시 안 함
+  checkInTime   String?
+  /// 체크아웃 시간 (HH:mm, 예: 11:00). 미설정 시 상세에서 표시 안 함
+  checkOutTime  String?
 
   bookings     Booking[]
   reviews      Review[]
@@ -488,4 +497,20 @@ model ReviewImage {
   sortOrder Int      @default(0)
 
   @@index([reviewId])
+}
+
+// PWA 웹 푸시 구독 (호스트 결제 알림 등)
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, endpoint])
+  @@index([userId])
 }

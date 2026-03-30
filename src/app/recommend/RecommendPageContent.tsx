@@ -14,10 +14,11 @@ import { Sparkles, Loader2, Users, Target, Calendar, MessageSquare } from "lucid
 import type { HostTranslationKey } from "@/lib/host-i18n";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
-const TRIP_TYPES: { value: "friends" | "couple" | "family"; labelKey: HostTranslationKey }[] = [
+const TRIP_TYPES: { value: "friends" | "couple" | "family" | "solo"; labelKey: HostTranslationKey }[] = [
   { value: "friends", labelKey: "guest.tripFriends" },
   { value: "couple", labelKey: "guest.tripCouple" },
   { value: "family", labelKey: "guest.tripFamily" },
+  { value: "solo", labelKey: "guest.tripSolo" },
 ];
 
 const PRIORITIES: { value: Priority; labelKey: HostTranslationKey }[] = [
@@ -29,7 +30,7 @@ const PRIORITIES: { value: Priority; labelKey: HostTranslationKey }[] = [
   { value: "child_friendly", labelKey: "guest.priorityChildFriendly" },
 ];
 
-type TripType = "friends" | "couple" | "family";
+type TripType = "friends" | "couple" | "family" | "solo";
 type Priority = "value" | "rating" | "location" | "space" | "environment" | "child_friendly";
 
 type ListingFromApi = {
@@ -46,6 +47,16 @@ type ListingFromApi = {
   maxGuests?: number;
   beds?: number;
 };
+
+/** API·후속 단계에서 동일 id가 섞여 들어올 때 한 번만 유지 */
+function dedupeListingsById(listings: ListingFromApi[]): ListingFromApi[] {
+  const seen = new Set<string>();
+  return listings.filter((l) => {
+    if (seen.has(l.id)) return false;
+    seen.add(l.id);
+    return true;
+  });
+}
 
 function ruleBasedSort(
   listings: ListingFromApi[],
@@ -109,7 +120,7 @@ type RecommendItem = {
 };
 
 export default function RecommendPageContent() {
-  const t = useHostTranslations().t;
+  const { t, locale } = useHostTranslations();
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
   const [guests, setGuests] = useState<GuestCounts>(defaultGuestCounts);
@@ -155,6 +166,7 @@ export default function RecommendPageContent() {
       tripType: tripType || undefined,
       priorities: priorities.slice(0, MAX_PRIORITIES),
       preferences: preferences.trim(),
+      locale,
     };
 
     const listingsPromise = fetch(`/api/listings?${params}`).then((r) => r.json());
@@ -165,7 +177,7 @@ export default function RecommendPageContent() {
           setError(listingsData?.error ?? t("guest.recommendRequestFailed"));
           return;
         }
-        const listings: ListingFromApi[] = listingsData;
+        const listings: ListingFromApi[] = dedupeListingsById(listingsData);
         if (listings.length === 0) {
           setResults([]);
           setMessage(t("guest.noListingsAvailable"));
@@ -225,7 +237,11 @@ export default function RecommendPageContent() {
                     setResults([item]);
                     hasReceivedAny = true;
                   } else {
-                    setResults((prev) => (prev ? [...prev, item] : [item]));
+                    setResults((prev) => {
+                      if (!prev) return [item];
+                      if (prev.some((p) => p.id === item.id)) return prev;
+                      return [...prev, item];
+                    });
                   }
                 } catch {
                   // skip invalid JSON
@@ -338,7 +354,7 @@ export default function RecommendPageContent() {
               >
                 <span className="text-minbak-black">
                   {checkIn && checkOut
-                    ? `${formatDateDisplay(checkIn)} ~ ${formatDateDisplay(checkOut)}`
+                    ? `${formatDateDisplay(checkIn, locale)} ~ ${formatDateDisplay(checkOut, locale)}`
                     : t("guest.dateSelect")}
                 </span>
               </button>

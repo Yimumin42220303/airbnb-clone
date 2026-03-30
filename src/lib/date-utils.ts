@@ -16,11 +16,16 @@ export function toUTCDateString(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-/** "YYYY-MM-DD" → "M월 D일" 표시용 */
-export function formatDateDisplay(iso: string): string {
+/** "YYYY-MM-DD" → "M월 D일" / "M月D日" 표시용. locale 미지정 시 한국어 */
+export function formatDateDisplay(iso: string, locale?: "ko" | "ja"): string {
   if (!iso) return "";
   const d = new Date(iso + "T12:00:00");
-  return `${d.getMonth() + 1}월 ${d.getDate()}일`;
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  if (locale === "ja") {
+    return `${m}月${day}日`;
+  }
+  return `${m}월 ${day}일`;
 }
 
 /** "YYYY-MM-DD" → "YYYY-MM-DD" (ko-KR 로컬 포맷) */

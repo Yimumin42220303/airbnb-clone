@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toISODateString } from "@/lib/date-utils";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
@@ -48,6 +48,12 @@ function isWithinInterval(day: Date, start: Date, end: Date): boolean {
   return t > s && t < e;
 }
 
+/** 체크인(start) ~ 해당일(day)까지 숙박 수. 27→28 = 1박, 27→29 = 2박 */
+function nightsBetween(start: Date, day: Date): number {
+  const ms = toDateOnly(day).getTime() - toDateOnly(start).getTime();
+  return Math.floor(ms / (24 * 60 * 60 * 1000));
+}
+
 function eachDayOfMonth(month: Date): (Date | null)[] {
   const start = startOfMonth(month);
   const end = new Date(month.getFullYear(), month.getMonth() + 1, 0);
@@ -69,6 +75,19 @@ function eachDayOfMonth(month: Date): (Date | null)[] {
 
 const CELL_SIZE = 36;
 const CIRCLE_SIZE = 32;
+const CELL_SIZE_MOBILE = 26;
+const CIRCLE_SIZE_MOBILE = 24;
+
+function useIsMobile(): boolean {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(typeof window !== "undefined" && window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  return isMobile;
+}
 
 type Props = {
   checkIn: string;
@@ -99,6 +118,8 @@ function MonthBlock({
   weekdays,
   t,
   dateLocale,
+  cellSize = CELL_SIZE,
+  circleSize = CIRCLE_SIZE,
 }: {
   month: Date;
   today: Date;
@@ -113,6 +134,8 @@ function MonthBlock({
   weekdays: string[];
   t: (key: HostTranslationKey, params?: Record<string, string | number>) => string;
   dateLocale: string;
+  cellSize?: number;
+  circleSize?: number;
 }) {
   const year = month.getFullYear();
   const monthIndex = month.getMonth();
@@ -133,15 +156,15 @@ function MonthBlock({
   const monthLabel = month.toLocaleDateString(dateLocale, { year: "numeric", month: "long" });
 
   return (
-    <div className="flex-1 min-w-0">
-      <p className="text-left mb-2 text-[15px] font-semibold text-[#222]">
+    <div className="w-full md:flex-1 md:min-w-[264px] md:shrink-0">
+      <p className="text-left mb-1 md:mb-2 text-[13px] md:text-[15px] font-semibold text-[#222]">
         {monthLabel}
       </p>
-      <div className="grid grid-cols-7 gap-0.5 mb-1">
+      <div className="grid gap-0.5 mb-0.5 md:mb-1" style={{ gridTemplateColumns: "repeat(7, 1fr)" }}>
         {weekdays.map((day, i) => (
           <div
             key={day}
-            className="py-1 text-center text-[12px] font-medium"
+            className="py-0.5 md:py-1 text-center text-[11px] md:text-[12px] font-medium min-w-0"
             style={{
               color: i === 0 ? "#D74132" : i === 6 ? "#4A90E2" : "#717171",
             }}
@@ -150,10 +173,10 @@ function MonthBlock({
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-0.5 text-[14px]">
+      <div className="grid gap-0.5 text-[12px] md:text-[14px]" style={{ gridTemplateColumns: "repeat(7, 1fr)" }}>
         {days.map((day, i) => {
           if (!day)
-            return <div key={`e-${i}`} style={{ height: CELL_SIZE }} />;
+            return <div key={`e-${i}`} style={{ height: cellSize }} />;
           const disabled = isDisabled(day);
           const checkoutOnly = isCheckoutOnly(day);
           const isStart = start && isSameDay(day, start);
@@ -170,12 +193,21 @@ function MonthBlock({
           const isBeforeOrSameAsCheckIn =
             selectingCheckout && start && (isBefore(day, start) || isSameDay(day, start));
 
+          // 체크아웃 선택 시: 최소 숙박 일수 미만이 되는 날은 선택 불가 (예: 2박이면 체크인+1일은 선택 불가)
+          const isFewerThanMinNights =
+            selectingCheckout &&
+            start &&
+            minStayNights != null &&
+            minStayNights > 1 &&
+            nightsBetween(start, day) < minStayNights;
+
           const canClick =
             !isBeforeOrSameAsCheckIn &&
+            !isFewerThanMinNights &&
             (!disabled || (selectingCheckout && checkoutOnly));
           const isCheckoutOnlySelectable = selectingCheckout && checkoutOnly;
           const isFullyDisabled =
-            (disabled || (isBeforeOrSameAsCheckIn && !isStart)) && !canClick;
+            (disabled || (isBeforeOrSameAsCheckIn && !isStart) || isFewerThanMinNights) && !canClick;
           // 체크아웃 전용 날짜는 선택 전/후 모두 은은한 회색 유지 (체크인 선택 시 갑자기 검은색으로 변하는 위화감 방지)
           const isCheckoutOnlySubdued = disabled && isCheckoutOnlySelectable;
           // 체크인 미선택 상태에서도 체크아웃만 가능한 날짜는 숫자색 #3d3d3d 로 통일
@@ -195,7 +227,7 @@ function MonthBlock({
               }}
               className="relative flex items-center justify-center cursor-pointer select-none box-border rounded-full group"
               style={{
-                height: CELL_SIZE,
+                height: cellSize,
                 opacity: isStart || isEnd ? 1 : isFullyDisabled ? 0.35 : isCheckoutOnlySubdued ? 0.75 : 1,
                 cursor: canClick ? "pointer" : "not-allowed",
                 color: isStart || isEnd ? "#fff" : isFullyDisabled ? "#B0B0B0" : isCheckoutOnlyDay ? "#3d3d3d" : "#222",
@@ -227,8 +259,8 @@ function MonthBlock({
               <div
                 className="absolute rounded-full flex items-center justify-center z-[1]"
                 style={{
-                  width: CIRCLE_SIZE,
-                  height: CIRCLE_SIZE,
+                  width: circleSize,
+                  height: circleSize,
                   background: isStart
                     ? "#E31C23"
                     : isEnd
@@ -260,6 +292,7 @@ export default function ListingBookingCalendar({
   checkoutOnlyDateKeys = [],
   minStayNights,
 }: Props) {
+  const isMobile = useIsMobile();
   const { t, locale } = useHostTranslations();
   const dateLocale = locale === "ja" ? "ja-JP" : "ko-KR";
   const weekdays = useMemo(
@@ -316,7 +349,15 @@ export default function ListingBookingCalendar({
       onCheckOutChange("");
     } else {
       if (!start || isSameDay(day, start) || isBefore(day, start)) return;
+      if (
+        minStayNights != null &&
+        minStayNights > 1 &&
+        nightsBetween(start, day) < minStayNights
+      )
+        return;
       onCheckOutChange(toISODateString(day));
+      // 체크인·체크아웃 모두 선택됐으므로 캘린더 자동 닫기
+      onComplete?.();
     }
   };
 
@@ -329,12 +370,12 @@ export default function ListingBookingCalendar({
   const goToToday = () => setMonthOffset(0);
 
   return (
-    <div className="border border-[#ebebeb] rounded-xl bg-white overflow-hidden">
+    <div className="border border-[#ebebeb] rounded-xl bg-white overflow-hidden md:pr-6">
       {/* 헤더: 날짜 선택 + 메시지 + 체크인/체크아웃 입력 필드 */}
-      <div className="p-4 pb-0">
-        <div className="flex justify-between items-start gap-4 mb-4">
+      <div className="p-3 md:p-4 pb-0">
+        <div className="flex justify-between items-start gap-2 md:gap-4 mb-3 md:mb-4">
           <div className="flex-1 min-w-0">
-            <h2 className="text-[22px] font-semibold text-[#222] mb-1">{t("calendar.title")}</h2>
+            <h2 className="text-[18px] md:text-[22px] font-semibold text-[#222] mb-1">{t("calendar.title")}</h2>
             {minStayNights != null && minStayNights > 1 && (
               <p className="text-[14px] text-[#222] mb-1">{t("calendar.minNights", { nights: minStayNights })}</p>
             )}
@@ -368,11 +409,11 @@ export default function ListingBookingCalendar({
           </div>
         </div>
 
-        <div className="flex justify-between items-center mb-3">
+        <div className="flex justify-between items-center mb-2 md:mb-3">
           <button
             type="button"
             onClick={goToToday}
-            className="text-[13px] font-medium text-[#E31C23] hover:underline"
+            className="text-[12px] md:text-[13px] font-medium text-[#E31C23] hover:underline min-h-[36px] md:min-h-[44px] flex items-center md:min-h-0"
           >
             {t("calendar.today")}
           </button>
@@ -381,10 +422,10 @@ export default function ListingBookingCalendar({
               type="button"
               onClick={() => setMonthOffset((o) => Math.max(0, o - 1))}
               disabled={monthOffset === 0}
-              className="p-1.5 rounded-full hover:bg-[#f7f7f7] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              className="min-h-[36px] min-w-[36px] md:min-h-[44px] md:min-w-[44px] flex items-center justify-center rounded-full hover:bg-[#f7f7f7] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent md:min-h-0 md:min-w-0 md:p-1.5"
               aria-label={locale === "ja" ? "前月" : "이전 달"}
             >
-              <ChevronLeft className="w-5 h-5 text-[#222]" />
+              <ChevronLeft className="w-5 h-5 text-[#222] md:w-5 md:h-5" />
             </button>
             <button
               type="button"
@@ -393,36 +434,38 @@ export default function ListingBookingCalendar({
                 if (isAfter(startOfMonth(nextMonth), maxDate)) return;
                 setMonthOffset((o) => o + 1);
               }}
-              className="p-1.5 rounded-full hover:bg-[#f7f7f7]"
+              className="min-h-[36px] min-w-[36px] md:min-h-[44px] md:min-w-[44px] flex items-center justify-center rounded-full hover:bg-[#f7f7f7] md:min-h-0 md:min-w-0 md:p-1.5"
               aria-label={locale === "ja" ? "翌月" : "다음 달"}
             >
-              <ChevronRight className="w-5 h-5 text-[#222]" />
+              <ChevronRight className="w-5 h-5 text-[#222] md:w-5 md:h-5" />
             </button>
           </div>
         </div>
       </div>
 
-      {/* 캘린더 그리드 (모바일: 가로 스크롤) */}
-      <div className="px-4 pb-4 overflow-x-auto scrollbar-hide -mx-4 sm:mx-0 sm:overflow-visible">
-        <div className="flex gap-6 min-w-max sm:min-w-0 w-max sm:w-full">
-        {months.map((mon, idx) => (
-          <MonthBlock
-            key={idx}
-            month={mon}
-            today={today}
-            maxDate={maxDate}
-            start={start}
-            end={end}
-            onDayClick={handleDayClick}
-            blockedDateKeys={blockedDateKeys}
-            checkoutOnlyDateKeys={checkoutOnlyDateKeys}
-            selectingCheckout={!!start && !end}
-            minStayNights={minStayNights}
-            weekdays={weekdays}
-            t={t}
-            dateLocale={dateLocale}
-          />
-        ))}
+      {/* 캘린더: 모바일은 두 달 세로 스택(스크롤 없이 한눈에), md 이상은 두 달 가로 나란히 */}
+      <div className="px-4 pb-4 -mx-4 sm:mx-0 md:overflow-x-auto scrollbar-hide">
+        <div className="flex flex-col gap-4 md:gap-6 md:flex-row md:min-w-max md:w-max">
+          {months.map((mon, idx) => (
+            <MonthBlock
+              key={idx}
+              month={mon}
+              today={today}
+              maxDate={maxDate}
+              start={start}
+              end={end}
+              onDayClick={handleDayClick}
+              blockedDateKeys={blockedDateKeys}
+              checkoutOnlyDateKeys={checkoutOnlyDateKeys}
+              selectingCheckout={!!start && !end}
+              minStayNights={minStayNights}
+              weekdays={weekdays}
+              t={t}
+              dateLocale={dateLocale}
+              cellSize={isMobile ? CELL_SIZE_MOBILE : CELL_SIZE}
+              circleSize={isMobile ? CIRCLE_SIZE_MOBILE : CIRCLE_SIZE}
+            />
+          ))}
         </div>
       </div>
 

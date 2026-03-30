@@ -32,7 +32,7 @@ export default function HomeSearchBar({
   const [guests, setGuests] = useState<GuestCounts>(defaultGuestCounts);
   const [dateOpen, setDateOpen] = useState(false);
   const [guestOpen, setGuestOpen] = useState(false);
-  const t = useHostTranslations().t;
+  const { t, locale } = useHostTranslations();
 
   // URL과 동기화 (검색 페이지 및 숙소 상세 페이지에서 query params 반영)
   useEffect(() => {
@@ -87,6 +87,7 @@ export default function HomeSearchBar({
           type="button"
           onClick={() => setDateOpen(true)}
           className="flex-1 min-w-0 flex flex-col items-start py-0.5 md:py-1 px-2 md:px-4 border-r border-minbak-light-gray cursor-pointer text-left"
+          aria-label={t("guest.checkIn")}
         >
           <span className="text-[11px] md:text-minbak-caption text-minbak-gray block">{t("guest.checkIn")}</span>
           <span className="text-minbak-body font-medium text-minbak-black truncate w-full">
@@ -101,7 +102,7 @@ export default function HomeSearchBar({
         >
           <span className="text-[11px] md:text-minbak-caption text-minbak-gray block">{t("guest.checkOut")}</span>
           <span className="text-minbak-body font-medium text-minbak-black truncate w-full">
-            {checkOut ? formatDateDisplay(checkOut) : t("guest.addDate")}
+            {checkOut ? formatDateDisplay(checkOut, locale) : t("guest.addDate")}
           </span>
         </button>
         {/* 인원 */}
@@ -109,6 +110,7 @@ export default function HomeSearchBar({
           type="button"
           onClick={() => setGuestOpen(true)}
           className="flex-1 min-w-0 flex flex-col items-start py-0.5 md:py-1 px-2 md:px-4 cursor-pointer text-left"
+          aria-label={t("guest.guests")}
         >
           <span className="text-[11px] md:text-minbak-caption text-minbak-gray block">{t("guest.guests")}</span>
           <span className="text-minbak-body font-medium text-minbak-black truncate w-full">

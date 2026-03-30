@@ -14,6 +14,20 @@ import {
 } from "lucide-react";
 import { formatDateKR } from "@/lib/date-utils";
 import { useCurrency } from "@/components/currency/CurrencyProvider";
+import { FormFieldWithError, FormFieldGroupWithError } from "@/components/ui/FormFieldWithError";
+
+/** HH:mm → "오전 10:00시" / "오후 3:00시" 형태로 표시 (예약 정보 문구용) */
+function formatTimeLabel(timeStr: string): string {
+  const match = timeStr.trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return timeStr;
+  const hour = parseInt(match[1], 10);
+  const min = match[2];
+  if (hour >= 12) {
+    const h = hour === 12 ? 12 : hour - 12;
+    return `오후 ${h}:${min}시`;
+  }
+  return `오전 ${hour}:${min}시`;
+}
 
 type Props = {
   listingId: string;
@@ -23,6 +37,10 @@ type Props = {
   pricePerNight: number;
   checkIn: string;
   checkOut: string;
+  /** 숙소에 설정된 체크인 시간 (HH:mm). 없으면 기본 문구 표시 */
+  checkInTime?: string | null;
+  /** 숙소에 설정된 체크아웃 시간 (HH:mm). 없으면 기본 문구 표시 */
+  checkOutTime?: string | null;
   guests: number;
   nights: number;
   totalPrice: number;
@@ -39,6 +57,8 @@ export default function BookingConfirmContent({
   pricePerNight,
   checkIn,
   checkOut,
+  checkInTime,
+  checkOutTime,
   guests,
   nights,
   totalPrice,
@@ -46,10 +66,19 @@ export default function BookingConfirmContent({
   cancellationPolicy = "flexible",
   instantBooking = false,
 }: Props) {
+  const checkInTimeLabel = checkInTime?.trim()
+    ? `${formatTimeLabel(checkInTime)} 이후`
+    : "오후 4:00시 이후";
+  const checkOutTimeLabel = checkOutTime?.trim()
+    ? `${formatTimeLabel(checkOutTime)} 이전`
+    : "오전 10:00시 이전";
   const { formatForGuest } = useCurrency();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [fullNameError, setFullNameError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const defaultEmail = userEmail ?? "";
   const [form, setForm] = useState({
     fullName: "",
@@ -68,24 +97,28 @@ export default function BookingConfirmContent({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setFullNameError("");
+    setEmailError("");
+    setPhoneError("");
+    let hasClientError = false;
     if (!form.fullName?.trim()) {
-      setError("예약자 성함을 입력해 주세요.");
-      return;
+      setFullNameError("예약자 성함을 입력해 주세요.");
+      hasClientError = true;
     }
     if (!form.email?.trim()) {
-      setError("이메일을 입력해 주세요.");
-      return;
+      setEmailError("이메일을 입력해 주세요.");
+      hasClientError = true;
     }
-    const phone =
-      [form.phonePart1, form.phonePart2, form.phonePart3].join("-");
     if (
       form.phonePart1.length !== 3 ||
       form.phonePart2.length !== 4 ||
       form.phonePart3.length !== 4
     ) {
-      setError("긴급연락용 전화번호를 올바르게 입력해 주세요. (010-1234-5678)");
-      return;
+      setPhoneError("긴급연락용 전화번호를 올바르게 입력해 주세요. (010-1234-5678)");
+      hasClientError = true;
     }
+    if (hasClientError) return;
+    const phone = [form.phonePart1, form.phonePart2, form.phonePart3].join("-");
     setLoading(true);
     try {
       const res = await fetch("/api/bookings", {
@@ -189,14 +222,14 @@ export default function BookingConfirmContent({
                   <p className="text-[15px] font-medium text-[#222]">
                     {formatDateKR(checkIn)}
                   </p>
-                  <p className="text-[13px] text-[#717171]">오후 4:00시 이후</p>
+                  <p className="text-[13px] text-[#717171]">{checkInTimeLabel}</p>
                 </div>
                 <div>
                   <p className="text-[12px] text-[#717171] mb-0.5">체크아웃</p>
                   <p className="text-[15px] font-medium text-[#222]">
                     {formatDateKR(checkOut)}
                   </p>
-                  <p className="text-[13px] text-[#717171]">오전 10:00시 이전</p>
+                  <p className="text-[13px] text-[#717171]">{checkOutTimeLabel}</p>
                 </div>
                 <div className="flex flex-wrap gap-4 pt-2">
                   <span className="text-[14px] text-[#222] flex items-center gap-1.5">
@@ -219,38 +252,43 @@ export default function BookingConfirmContent({
                 </h2>
               </div>
               <div className="p-6 space-y-4">
-                <label className="flex flex-col gap-1">
-                  <span className="text-[14px] font-medium text-[#222]">
-                    예약자 성함 *
-                  </span>
+                <FormFieldWithError
+                  id="booking-fullName"
+                  label="예약자 성함 *"
+                  error={fullNameError}
+                >
                   <input
                     type="text"
                     value={form.fullName}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, fullName: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      setForm((f) => ({ ...f, fullName: e.target.value }));
+                      setFullNameError("");
+                    }}
                     className="px-3 py-2.5 border border-[#ebebeb] rounded-lg text-[15px] text-[#222] focus:outline-none focus:ring-2 focus:ring-[#E31C23] focus:border-[#E31C23]"
                     placeholder="홍길동"
                   />
-                </label>
-                <label className="block flex flex-col gap-1">
-                  <span className="text-[14px] font-medium text-[#222]">
-                    이메일 *
-                  </span>
+                </FormFieldWithError>
+                <FormFieldWithError
+                  id="booking-email"
+                  label="이메일 *"
+                  error={emailError}
+                >
                   <input
                     type="email"
                     value={form.email}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, email: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      setForm((f) => ({ ...f, email: e.target.value }));
+                      setEmailError("");
+                    }}
                     className="px-3 py-2.5 border border-[#ebebeb] rounded-lg text-[15px] text-[#222] focus:outline-none focus:ring-2 focus:ring-[#E31C23] focus:border-[#E31C23]"
                     placeholder="example@email.com"
                   />
-                </label>
-                <div className="block flex flex-col gap-1">
-                  <span className="text-[14px] font-medium text-[#222]">
-                    긴급연락용 전화번호 *
-                  </span>
+                </FormFieldWithError>
+                <FormFieldGroupWithError
+                  id="booking-phone"
+                  label="휴대폰번호(예약자본인의 번호를 입력해주세요)*"
+                  error={phoneError}
+                >
                   <div className="flex items-center gap-1">
                     <input
                       ref={phoneRef1}
@@ -258,9 +296,12 @@ export default function BookingConfirmContent({
                       inputMode="numeric"
                       maxLength={3}
                       value={form.phonePart1}
+                      aria-invalid={!!phoneError}
+                      aria-describedby={phoneError ? "booking-phone-error" : undefined}
                       onChange={(e) => {
                         const v = digitsOnly(e.target.value).slice(0, 3);
                         setForm((f) => ({ ...f, phonePart1: v }));
+                        setPhoneError("");
                         if (v.length === 3) phoneRef2.current?.focus();
                       }}
                       onPaste={(e) => {
@@ -277,6 +318,7 @@ export default function BookingConfirmContent({
                           phonePart2: p2,
                           phonePart3: p3,
                         }));
+                        setPhoneError("");
                         if (p3.length === 4) phoneRef3.current?.focus();
                         else if (p2.length === 4) phoneRef3.current?.focus();
                         else if (p1.length === 3) phoneRef2.current?.focus();
@@ -290,7 +332,7 @@ export default function BookingConfirmContent({
                           phoneRef1.current?.focus();
                         }
                       }}
-                      className="w-[72px] px-2 py-2.5 border border-[#ebebeb] rounded-lg text-[15px] text-center text-[#222] focus:outline-none focus:ring-2 focus:ring-[#E31C23] focus:border-[#E31C23]"
+                      className={`w-[72px] px-2 py-2.5 border rounded-lg text-[15px] text-center text-[#222] focus:outline-none focus:ring-2 focus:ring-[#E31C23] focus:border-[#E31C23] ${phoneError ? "border-[#D74132]" : "border-[#ebebeb]"}`}
                       placeholder="010"
                       aria-label="전화번호 앞 3자리"
                     />
@@ -304,6 +346,7 @@ export default function BookingConfirmContent({
                       onChange={(e) => {
                         const v = digitsOnly(e.target.value).slice(0, 4);
                         setForm((f) => ({ ...f, phonePart2: v }));
+                        setPhoneError("");
                         if (v.length === 4) phoneRef3.current?.focus();
                       }}
                       onKeyDown={(e) => {
@@ -315,7 +358,7 @@ export default function BookingConfirmContent({
                           phoneRef1.current?.focus();
                         }
                       }}
-                      className="w-[72px] px-2 py-2.5 border border-[#ebebeb] rounded-lg text-[15px] text-center text-[#222] focus:outline-none focus:ring-2 focus:ring-[#E31C23] focus:border-[#E31C23]"
+                      className={`w-[72px] px-2 py-2.5 border rounded-lg text-[15px] text-center text-[#222] focus:outline-none focus:ring-2 focus:ring-[#E31C23] focus:border-[#E31C23] ${phoneError ? "border-[#D74132]" : "border-[#ebebeb]"}`}
                       placeholder="1234"
                       aria-label="전화번호 중간 4자리"
                     />
@@ -329,6 +372,7 @@ export default function BookingConfirmContent({
                       onChange={(e) => {
                         const v = digitsOnly(e.target.value).slice(0, 4);
                         setForm((f) => ({ ...f, phonePart3: v }));
+                        setPhoneError("");
                       }}
                       onKeyDown={(e) => {
                         if (
@@ -339,12 +383,12 @@ export default function BookingConfirmContent({
                           phoneRef2.current?.focus();
                         }
                       }}
-                      className="w-[72px] px-2 py-2.5 border border-[#ebebeb] rounded-lg text-[15px] text-center text-[#222] focus:outline-none focus:ring-2 focus:ring-[#E31C23] focus:border-[#E31C23]"
+                      className={`w-[72px] px-2 py-2.5 border rounded-lg text-[15px] text-center text-[#222] focus:outline-none focus:ring-2 focus:ring-[#E31C23] focus:border-[#E31C23] ${phoneError ? "border-[#D74132]" : "border-[#ebebeb]"}`}
                       placeholder="5678"
                       aria-label="전화번호 뒤 4자리"
                     />
                   </div>
-                </div>
+                </FormFieldGroupWithError>
                 <label className="block flex flex-col gap-1">
                   <span className="text-[14px] font-medium text-[#222]">
                     특별 요청사항
@@ -410,7 +454,7 @@ export default function BookingConfirmContent({
                   <div className="p-6 border-b border-[#ebebeb]">
                     <h2 className="text-[17px] font-semibold text-[#222] flex items-center gap-2">
                       <Shield className="w-5 h-5 text-[#717171]" />
-                      취소 정책
+                      취소·환불 정책
                     </h2>
                   </div>
                   <ul className="p-6 space-y-2 text-[14px] text-[#222]">
@@ -521,7 +565,7 @@ export default function BookingConfirmContent({
                     <>
                       <li>예약 요청 후 결제 페이지로 이동합니다</li>
                       <li>결제 완료 시 예약이 즉시 확정됩니다</li>
-                      <li>취소 정책에 따라 취소 및 환불이 가능합니다</li>
+                      <li>취소·환불 정책에 따라 취소 및 환불이 가능합니다</li>
                     </>
                   ) : (
                     <>

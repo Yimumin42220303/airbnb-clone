@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { formatPrice } from "./currency";
 
 const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
 
@@ -26,7 +27,7 @@ export function renderShortcodes(body: string, ctx: ShortcodeContext): string {
     .replace(/\{checkout_date\}/g, ctx.checkoutDate)
     .replace(/\{guests_count\}/g, String(ctx.guestsCount))
     .replace(/\{nights\}/g, String(ctx.nights))
-    .replace(/\{total_price\}/g, `¥${ctx.totalPrice.toLocaleString()}`)
+    .replace(/\{total_price\}/g, formatPrice(ctx.totalPrice, "JPY"))
     .replace(/\{booking_id\}/g, ctx.bookingId)
     .replace(/\{house_rules\}/g, ctx.houseRules || "");
 }

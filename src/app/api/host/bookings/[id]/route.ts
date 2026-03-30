@@ -259,8 +259,16 @@ export async function PATCH(
           console.error("호스트 취소 환불 오류:", message);
 
           const isTestMode = process.env.NEXT_PUBLIC_PORTONE_TEST_MODE === "true";
-          if (isTestMode) {
-            console.warn("[host-cancel] 테스트 모드: PG 환불 실패, DB만 취소 처리");
+          const isNotFoundOrAlreadyCancelled =
+            message.includes("404") ||
+            /not found|already cancelled|취소됨|취소된/i.test(message);
+
+          if (isTestMode || isNotFoundOrAlreadyCancelled) {
+            if (isNotFoundOrAlreadyCancelled) {
+              console.warn("[host-cancel] 결제 없음/이미 취소됨: DB만 취소 처리", message);
+            } else {
+              console.warn("[host-cancel] 테스트 모드: PG 환불 실패, DB만 취소 처리");
+            }
             try {
               await prisma.paymentTransaction.create({
                 data: {
@@ -271,7 +279,11 @@ export async function PATCH(
                   status: "refunded",
                   method: paidTransaction.method,
                   pgProvider: paidTransaction.pgProvider,
-                  rawResponse: JSON.stringify({ testModeFallback: true, error: message }),
+                  rawResponse: JSON.stringify({
+                    testModeFallback: isTestMode,
+                    pgSkipped: isNotFoundOrAlreadyCancelled,
+                    error: message,
+                  }),
                   verifiedAt: new Date(),
                 },
               });

@@ -2,6 +2,8 @@
  * Email HTML templates for booking notifications.
  */
 
+import { formatPrice } from "@/lib/currency";
+
 const BRAND_COLOR = "#E31C23";
 const TEXT_COLOR = "#222";
 const GRAY_COLOR = "#717171";
@@ -50,7 +52,7 @@ function bookingTable(p: {
   ${infoRow("체크아웃", p.checkOut)}
   ${infoRow("게스트", p.guests + "명")}
   ${infoRow("숙박", p.nights + "박")}
-  ${infoRow("결제금액", "\u20A9" + p.totalPrice.toLocaleString())}
+  ${infoRow("결제금액", formatPrice(p.totalPrice, "KRW"))}
 </table>`;
 }
 
@@ -69,7 +71,7 @@ function bookingTableJa(p: {
   ${infoRow("\u30C1\u30A7\u30C3\u30AF\u30A2\u30A6\u30C8", p.checkOut)}
   ${infoRow("\u30B2\u30B9\u30C8", p.guests + "\u540D")}
   ${infoRow("\u5BBF\u6CCA", p.nights + "\u6CCA")}
-  ${infoRow("\u5408\u8A08\u91D1\u984D", "\u20A9" + p.totalPrice.toLocaleString())}
+  ${infoRow("\u5408\u8A08\u91D1\u984D", formatPrice(p.totalPrice, "JPY"))}
 </table>`;
 }
 
@@ -151,7 +153,7 @@ export function bookingNotificationHost(info: BookingEmailInfo & { hostName: str
 export function paymentConfirmationGuest(info: BookingEmailInfo) {
   const body = `
     <p>${info.guestName}님, 결제가 완료되었습니다.</p>
-    <p style="font-size:18px;font-weight:700;color:${BRAND_COLOR};">\u20A9${info.totalPrice.toLocaleString()}</p>
+    <p style="font-size:18px;font-weight:700;color:${BRAND_COLOR};">${formatPrice(info.totalPrice, "KRW")}</p>
     ${bookingTable(info)}
     ${actionButton(info.baseUrl + "/my-bookings", "예약 상세 보기")}
     <p style="font-size:13px;color:${GRAY_COLOR};">체크인 정보는 예약 확정 후 안내됩니다.</p>`;
@@ -223,7 +225,7 @@ export function bookingRejectedGuest(info: BookingEmailInfo & { reason?: string 
 
 export function bookingCancelledGuest(info: BookingEmailInfo & { refundAmount: number; refundPolicy: string }) {
   const refundText = info.refundAmount > 0
-    ? `<p>환불 금액: <strong>\u20A9${info.refundAmount.toLocaleString()}</strong> (${info.refundPolicy})</p>`
+    ? `<p>환불 금액: <strong>${formatPrice(info.refundAmount, "KRW")}</strong> (${info.refundPolicy})</p>`
     : `<p>취소 정책에 따라 환불이 불가합니다. (${info.refundPolicy})</p>`;
   const body = `
     <p>${info.guestName}님, 예약이 취소되었습니다.</p>
@@ -353,9 +355,27 @@ export function paymentReminderGuest(info: BookingEmailInfo & { deadlineText: st
   };
 }
 
-export function unpaidAutoCancelGuest(info: BookingEmailInfo) {
+export function instantPaymentReminderGuest(info: BookingEmailInfo & { deadlineText: string }) {
   const body = `
-    <p>${info.guestName}님, 결제 기한(24시간)이 만료되어 예약이 자동 취소되었습니다.</p>
+    <p>${info.guestName}님, 결제 기한이 얼마 남지 않았습니다.</p>
+    <p>예약의 결제 기한이 <strong>${info.deadlineText}</strong>까지입니다.</p>
+    ${bookingTable(info)}
+    <div style="background:#fef3c7;border-radius:8px;padding:12px 16px;margin:16px 0;">
+      <p style="margin:0;font-size:14px;color:#92400e;font-weight:600;">
+        기한 내 결제하지 않으면 예약이 자동 취소됩니다.
+      </p>
+    </div>
+    ${actionButton(info.baseUrl + "/booking/" + info.bookingId + "/pay", "지금 결제하기")}`;
+  return {
+    subject: "[도쿄민박] 결제 기한 임박 (15분 남음) - " + info.listingTitle,
+    html: layout("결제 기한 임박", body),
+  };
+}
+
+export function unpaidAutoCancelGuest(info: BookingEmailInfo & { deadlineLabel?: string }) {
+  const label = info.deadlineLabel || "24시간";
+  const body = `
+    <p>${info.guestName}님, 결제 기한(${label})이 만료되어 예약이 자동 취소되었습니다.</p>
     ${bookingTable(info)}
     <p>같은 숙소를 다시 예약하시려면 아래 버튼을 눌러 주세요.</p>
     ${actionButton(info.baseUrl + "/search", "다른 숙소 찾기")}
@@ -366,9 +386,10 @@ export function unpaidAutoCancelGuest(info: BookingEmailInfo) {
   };
 }
 
-export function unpaidAutoCancelHost(info: BookingEmailInfo & { hostName: string }) {
+export function unpaidAutoCancelHost(info: BookingEmailInfo & { hostName: string; deadlineLabel?: string }) {
+  const label = info.deadlineLabel === "1시간" ? "1時間" : "24時間";
   const body = `
-    <p>${info.hostName}様、ゲストが24時間以内に決済を完了しなかったため、予約が自動キャンセルされました。</p>
+    <p>${info.hostName}様、ゲストが${label}以内に決済を完了しなかったため、予約が自動キャンセルされました。</p>
     <p>該当日程に新しい予約を受け付けることができます。</p>
     ${bookingTableJa(info)}
     <p><strong>ゲスト:</strong> ${info.guestName}</p>
@@ -388,5 +409,26 @@ export function bookingCancelledHost(info: BookingEmailInfo & { hostName: string
   return {
     subject: "[TokyoMinbak] \u4E88\u7D04\u30AD\u30E3\u30F3\u30BB\u30EB - " + info.listingTitle,
     html: layout("\u4E88\u7D04\u30AD\u30E3\u30F3\u30BB\u30EB", body),
+  };
+}
+
+/** 체크아웃 D+1 리뷰 요청 (게스트) */
+export type ReviewRequestEmailInfo = {
+  guestName: string;
+  listingTitle: string;
+  baseUrl: string;
+  listingId: string;
+};
+
+export function reviewRequestGuest(info: ReviewRequestEmailInfo) {
+  const reviewUrl = `${info.baseUrl}/listing/${info.listingId}#review`;
+  const body = `
+    <p>${info.guestName}님, 최근 숙박하신 <strong>${info.listingTitle}</strong>은 어떠셨나요?</p>
+    <p>다른 게스트를 위해 평점과 리뷰를 남겨 주시면 큰 도움이 됩니다.</p>
+    ${actionButton(reviewUrl, "리뷰 작성하기")}
+    <p style="font-size:13px;color:${GRAY_COLOR};">내 예약에서도 리뷰 작성이 가능합니다.</p>`;
+  return {
+    subject: "[도쿄민박] " + info.listingTitle + " 리뷰를 남겨 주세요",
+    html: layout("숙소 리뷰를 남겨 주세요", body),
   };
 }

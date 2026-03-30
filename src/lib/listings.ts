@@ -2,6 +2,10 @@ import { prisma } from "./prisma";
 import type { Prisma } from "@prisma/client";
 import { getDateKeysBetween, getListingBlockedDateKeys } from "./availability";
 import { STORED_CURRENCY, convertKrwToJpy } from "./currency";
+import { mapWithConcurrency } from "./map-with-concurrency";
+
+/** 날짜 필터 시 숙소별 iCal/Beds24 조회 동시 실행 상한 */
+const LISTING_AVAILABILITY_CHECK_CONCURRENCY = 6;
 
 function parseIcalImportUrls(json: string | null): string[] {
   if (!json?.trim()) return [];
@@ -97,8 +101,10 @@ export async function getListings(filters?: ListingFilters) {
   let filteredListings = listings;
   if (checkInDate && checkOutDate && listings.length > 0) {
     const stayKeys = getDateKeysBetween(checkInDate, checkOutDate);
-    const results = await Promise.all(
-      listings.map(async (l) => {
+    const results = await mapWithConcurrency(
+      listings,
+      LISTING_AVAILABILITY_CHECK_CONCURRENCY,
+      async (l) => {
         const blocked = await getListingBlockedDateKeys(
           l.id,
           checkInDate!,
@@ -106,7 +112,7 @@ export async function getListings(filters?: ListingFilters) {
         );
         const hasOverlap = stayKeys.some((k) => blocked.includes(k));
         return { id: l.id, available: !hasOverlap };
-      })
+      }
     );
     const availableIds = new Set(
       results.filter((r) => r.available).map((r) => r.id)
@@ -200,6 +206,8 @@ export async function getListingByIdForEdit(id: string) {
     bedrooms: listing.bedrooms,
     beds: listing.beds,
     baths: listing.baths,
+    areaSqm: listing.areaSqm ?? null,
+    bathroomToiletSeparate: listing.bathroomToiletSeparate ?? false,
     isPromoted: listing.isPromoted,
     instantBooking: listing.instantBooking ?? false,
     cancellationPolicy: (listing.cancellationPolicy as "flexible" | "moderate" | "strict") || "flexible",
@@ -230,6 +238,8 @@ export async function getListingByIdForEdit(id: string) {
     minStayNights: listing.minStayNights ?? null,
     maxStayNights: listing.maxStayNights ?? null,
     hidden: listing.hidden ?? false,
+    checkInTime: listing.checkInTime ?? null,
+    checkOutTime: listing.checkOutTime ?? null,
   };
 }
 
@@ -303,6 +313,8 @@ export async function getListingById(id: string) {
     bedrooms: listing.bedrooms,
     beds: listing.beds,
     baths: listing.baths,
+    areaSqm: listing.areaSqm ?? null,
+    bathroomToiletSeparate: listing.bathroomToiletSeparate ?? false,
     propertyType: listing.propertyType ?? "apartment",
     isPromoted: listing.isPromoted,
     instantBooking: listing.instantBooking ?? false,
@@ -319,6 +331,8 @@ export async function getListingById(id: string) {
     icalImportUrls: parseIcalImportUrls(listing.icalImportUrls),
     minStayNights: listing.minStayNights ?? null,
     maxStayNights: listing.maxStayNights ?? null,
+    checkInTime: listing.checkInTime ?? null,
+    checkOutTime: listing.checkOutTime ?? null,
     isVerified: (listing as Record<string, unknown>).isVerified === true,
     recentBookingCount,
     listingCreatedAt: listing.createdAt.toISOString(),
@@ -372,6 +386,10 @@ export type CreateListingInput = {
   bedrooms?: number;
   beds?: number;
   baths?: number;
+  /** 전용 면적 (㎡). 선택 */
+  areaSqm?: number | null;
+  /** 화장실·욕실 분리 여부 */
+  bathroomToiletSeparate?: boolean;
   isPromoted?: boolean;
   cancellationPolicy?: string;
   houseRules?: string;
@@ -385,6 +403,10 @@ export type CreateListingInput = {
   minStayNights?: number | null;
   /** 최대 숙박 일수. null=제한 없음 */
   maxStayNights?: number | null;
+  /** 체크인 시간 (HH:mm). 선택 */
+  checkInTime?: string | null;
+  /** 체크아웃 시간 (HH:mm). 선택 */
+  checkOutTime?: string | null;
   /** OTA에서 숨기기 (검색·상세 노출 제외) */
   hidden?: boolean;
 };
@@ -443,6 +465,8 @@ export async function createListing(
       bedrooms: input.bedrooms ?? 1,
       beds: input.beds ?? 1,
       baths: input.baths ?? 1,
+      areaSqm: input.areaSqm != null && input.areaSqm > 0 ? input.areaSqm : null,
+      bathroomToiletSeparate: input.bathroomToiletSeparate ?? false,
       isPromoted: input.isPromoted ?? false,
       instantBooking: input.instantBooking ?? false,
       cancellationPolicy: input.cancellationPolicy ?? "flexible",
@@ -453,6 +477,8 @@ export async function createListing(
       hidden: input.hidden ?? false,
       minStayNights: input.minStayNights != null && input.minStayNights >= 1 ? input.minStayNights : null,
       maxStayNights: input.maxStayNights != null && input.maxStayNights >= 1 ? input.maxStayNights : null,
+      checkInTime: input.checkInTime?.trim() && /^\d{1,2}:\d{2}$/.test(input.checkInTime.trim()) ? input.checkInTime.trim() : null,
+      checkOutTime: input.checkOutTime?.trim() && /^\d{1,2}:\d{2}$/.test(input.checkOutTime.trim()) ? input.checkOutTime.trim() : null,
     },
   });
 
@@ -516,6 +542,8 @@ export type UpdateListingInput = Partial<
     userId?: string;
     minStayNights?: number | null;
     maxStayNights?: number | null;
+    checkInTime?: string | null;
+    checkOutTime?: string | null;
   }
 >;
 
@@ -568,6 +596,10 @@ export async function updateListing(
   if (input.bedrooms != null) data.bedrooms = input.bedrooms;
   if (input.beds != null) data.beds = input.beds;
   if (input.baths != null) data.baths = input.baths;
+  if (input.areaSqm !== undefined) {
+    data.areaSqm = input.areaSqm != null && input.areaSqm > 0 ? input.areaSqm : null;
+  }
+  if (input.bathroomToiletSeparate !== undefined) data.bathroomToiletSeparate = input.bathroomToiletSeparate;
   if (input.isPromoted != null) data.isPromoted = input.isPromoted;
   if (input.cancellationPolicy && ["flexible", "moderate", "strict"].includes(input.cancellationPolicy)) {
     data.cancellationPolicy = input.cancellationPolicy;
@@ -639,6 +671,14 @@ export async function updateListing(
   if (input.maxStayNights !== undefined) {
     const v = input.maxStayNights;
     data.maxStayNights = v != null && v >= 1 ? v : null;
+  }
+  if (input.checkInTime !== undefined) {
+    const s = input.checkInTime?.trim();
+    data.checkInTime = s && /^\d{1,2}:\d{2}$/.test(s) ? s : null;
+  }
+  if (input.checkOutTime !== undefined) {
+    const s = input.checkOutTime?.trim();
+    data.checkOutTime = s && /^\d{1,2}:\d{2}$/.test(s) ? s : null;
   }
 
   if (input.imageUrls !== undefined) {

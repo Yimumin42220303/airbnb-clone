@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
+import { FormFieldWithError } from "@/components/ui/FormFieldWithError";
 
 type UserData = {
   id: string;
@@ -29,6 +30,7 @@ export default function ProfileEditForm({ user }: Props) {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [nameError, setNameError] = useState("");
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -73,6 +75,11 @@ export default function ProfileEditForm({ user }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setNameError("");
+    if (!name.trim()) {
+      setNameError(t("profileEdit.nameRequired"));
+      return;
+    }
     setLoading(true);
     try {
       const body: { name: string; phone: string; image?: string | null } = {
@@ -155,22 +162,22 @@ export default function ProfileEditForm({ user }: Props) {
             </p>
           </div>
           <div className="flex-1 min-w-0 space-y-4 w-full">
-            <div>
-              <label
-                htmlFor="name"
-                className="block text-minbak-caption font-medium text-minbak-black mb-1.5"
-              >
-                {t("mypage.userName")}
-              </label>
+            <FormFieldWithError
+              id="profile-name"
+              label={t("mypage.userName")}
+              error={nameError}
+            >
               <input
-                id="name"
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setNameError("");
+                }}
                 placeholder={t("profileEdit.namePlaceholder")}
                 className="w-full min-h-[44px] px-4 py-2.5 border border-minbak-light-gray rounded-minbak text-minbak-body text-minbak-black placeholder:text-minbak-gray focus:outline-none focus:ring-2 focus:ring-minbak-primary focus:border-transparent"
               />
-            </div>
+            </FormFieldWithError>
             <div>
               <label
                 htmlFor="email"

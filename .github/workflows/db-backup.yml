@@ -1,0 +1,57 @@
+name: Daily DB Backup
+
+on:
+  schedule:
+    # 매일 UTC 18:00 (JST 03:00 새벽)
+    - cron: '0 18 * * *'
+  workflow_dispatch:
+    # GitHub UI에서 수동 트리거 가능
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: pg_dump 실행
+        env:
+          DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+        run: |
+          TIMESTAMP=$(date -u +"%Y-%m-%d-%H%M%S")
+          FILENAME="backup-${TIMESTAMP}.sql.gz"
+          echo "BACKUP_FILENAME=${FILENAME}" >> $GITHUB_ENV
+
+          pg_dump "${DATABASE_URL}" --no-owner --no-acl | gzip > "${FILENAME}"
+
+          SIZE=$(du -h "${FILENAME}" | cut -f1)
+          echo "BACKUP_SIZE=${SIZE}" >> $GITHUB_ENV
+          echo "✅ Backup created: ${FILENAME} (${SIZE})"
+
+      - name: GitHub Artifacts에 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: ${{ env.BACKUP_FILENAME }}
+          retention-days: 7
+
+      - name: Discord 성공 알림
+        if: success()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [ -n "${DISCORD_WEBHOOK}" ]; then
+            curl -s -X POST "${DISCORD_WEBHOOK}" \
+              -H "Content-Type: application/json" \
+              -d "{\"content\":\"✅ **DB 백업 완료**\n파일: \`${BACKUP_FILENAME}\` (${BACKUP_SIZE})\n보존: 7일\nhttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}"
+          fi
+
+      - name: Discord 실패 알림
+        if: failure()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [ -n "${DISCORD_WEBHOOK}" ]; then
+            curl -s -X POST "${DISCORD_WEBHOOK}" \
+              -H "Content-Type: application/json" \
+              -d "{\"content\":\"❌ **DB 백업 실패!** 즉시 확인 필요\nhttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}"
+          fi

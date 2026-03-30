@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useCurrency } from "@/components/currency/CurrencyProvider";
 import Image from "next/image";
 import { MapPin, ChevronDown, ChevronUp } from "lucide-react";
@@ -8,11 +8,10 @@ import { Header, Footer } from "@/components/layout";
 import BookingForm from "@/components/listing/BookingForm";
 import BookingTypeBadge from "@/components/listing/BookingTypeBadge";
 import CancellationPolicyBadge from "@/components/listing/CancellationPolicyBadge";
-import MobileStickyBookingBar from "@/components/listing/MobileStickyBookingBar";
+import MobileStickyBookingBar, { BOOKING_FORM_AREA_ID } from "@/components/listing/MobileStickyBookingBar";
 import ListingImageGallery from "@/components/listing/ListingImageGallery";
 import ReviewSection from "@/components/listing/ReviewSection";
 import ListingBadge, { computeBadges } from "@/components/listing/ListingBadge";
-import TrustBanner from "@/components/listing/TrustBanner";
 import WishlistHeart from "@/components/wishlist/WishlistHeart";
 import ShareListingButton from "@/components/listing/ShareListingButton";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
@@ -40,6 +39,10 @@ type ListingData = {
   bedrooms: number;
   beds: number;
   baths: number;
+  /** 전용 면적 (㎡). null/미설정 시 표시 안 함 */
+  areaSqm?: number | null;
+  /** 화장실·욕실 분리 여부 */
+  bathroomToiletSeparate?: boolean;
   /** "apartment" | "detached_house" */
   propertyType?: string;
   category?: { id: string; name: string } | null;
@@ -57,6 +60,10 @@ type ListingData = {
   reviews: ReviewItem[];
   /** 최소 숙박 일수. null/미설정 시 1박 */
   minStayNights?: number | null;
+  /** 체크인 시간 (HH:mm). 미설정 시 표시 안 함 */
+  checkInTime?: string | null;
+  /** 체크아웃 시간 (HH:mm). 미설정 시 표시 안 함 */
+  checkOutTime?: string | null;
   /** 관리자 인증 여부 */
   isVerified?: boolean;
   /** 최근 30일 예약 수 */
@@ -109,6 +116,23 @@ export default function ListingDetailContent({
   const { t, locale } = useHostTranslations();
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [priceSummary, setPriceSummary] = useState<{ nights: number; totalPrice: number; cleaningFee: number } | null>(null);
+  const [guestCount, setGuestCount] = useState(initialGuests ?? 1);
+  const bookingFormAreaRef = useRef<HTMLDivElement>(null);
+  const [isBookingFormInView, setIsBookingFormInView] = useState(true);
+  const [videoLoadError, setVideoLoadError] = useState(false);
+
+  // 스크롤 시: 예약 폼이 뷰포트에 안 보일 때만 하단 스티키 바 표시
+  useEffect(() => {
+    const el = bookingFormAreaRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsBookingFormInView(entry.isIntersecting),
+      { threshold: 0, rootMargin: "0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const description = listing.description?.trim() || t("listingDetail.noDescription");
   const needsExpand = description.length > DESCRIPTION_PREVIEW_LENGTH;
   const displayDescription = needsExpand && !descriptionExpanded
@@ -176,7 +200,7 @@ export default function ListingDetailContent({
             />
           </div>
 
-          {/* 숙소 스펙 (갤러리 아래): 숙소 형태 · 최대 인원 · 침실 · 침대 · 욕실 */}
+          {/* 숙소 스펙 (갤러리 아래): 숙소 형태 · 최대 인원 · 침실 · 침대 · 욕실 · 전용면적 · 화장실욕실분리 */}
           <div className="mb-8">
             <p className="text-xl sm:text-2xl font-semibold text-[#222] leading-tight tracking-tight flex flex-wrap items-center gap-x-1">
               <span>
@@ -192,7 +216,32 @@ export default function ListingDetailContent({
               <span>{t("listingDetail.beds", { count: listing.beds })}</span>
               <span className="text-[#d1d1d1] font-normal">·</span>
               <span>{t("listingDetail.baths", { count: listing.baths })}</span>
+              {listing.areaSqm != null && listing.areaSqm > 0 && (
+                <>
+                  <span className="text-[#d1d1d1] font-normal">·</span>
+                  <span>{t("listingDetail.areaSqm", { count: listing.areaSqm })}</span>
+                </>
+              )}
+              {listing.bathroomToiletSeparate && (
+                <>
+                  <span className="text-[#d1d1d1] font-normal">·</span>
+                  <span>{t("listingDetail.bathroomToiletSeparate")}</span>
+                </>
+              )}
             </p>
+            {(listing.checkInTime || listing.checkOutTime) && (
+              <p className="mt-2 text-[15px] text-[#717171] flex flex-wrap items-center gap-x-2">
+                {listing.checkInTime && (
+                  <span>{t("listingDetail.checkIn", { time: listing.checkInTime })}</span>
+                )}
+                {listing.checkInTime && listing.checkOutTime && (
+                  <span className="text-[#d1d1d1]">·</span>
+                )}
+                {listing.checkOutTime && (
+                  <span>{t("listingDetail.checkOut", { time: listing.checkOutTime })}</span>
+                )}
+              </p>
+            )}
           </div>
 
           {/* 하단: 왼쪽 = 숙소 소개·부가시설 등, 오른쪽 = 예약 모듈(빨간 영역) */}
@@ -201,7 +250,7 @@ export default function ListingDetailContent({
               {/* 상세 정보 카드: 한 덩어리로 (minbak 상세 정보 섹션) */}
               <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] overflow-hidden px-4 md:px-6">
                 {/* 숙소 소개 영상 (인스타 릴스 비율 9:16) */}
-                {listing.videoUrl && (
+                {listing.videoUrl && !videoLoadError && (
                   <div className="py-8 border-b border-[#ebebeb]">
                     <div className="w-full max-w-[320px] mx-auto aspect-[9/16] rounded-xl overflow-hidden bg-black">
                       <video
@@ -213,9 +262,19 @@ export default function ListingDetailContent({
                         loop
                         className="w-full h-full object-contain"
                         preload="auto"
+                        onError={() => setVideoLoadError(true)}
                       >
                         {t("listingDetail.videoNotSupported")}
                       </video>
+                    </div>
+                  </div>
+                )}
+                {listing.videoUrl && videoLoadError && (
+                  <div className="py-8 border-b border-[#ebebeb]">
+                    <div className="w-full max-w-[320px] mx-auto aspect-[9/16] rounded-xl overflow-hidden bg-[#f7f7f7] border border-[#ebebeb] flex items-center justify-center px-4">
+                      <p className="text-minbak-body text-[#717171] text-center">
+                        {t("listingDetail.videoLoadFailed" as Parameters<typeof t>[0])}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -335,7 +394,7 @@ export default function ListingDetailContent({
 
                 {/* 호스트 */}
                 <DetailSection title={t("listingDetail.sectionHost")}>
-                  <div className="flex items-start gap-5">
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-5">
                     <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-[#f0f0f0] to-[#e0e0e0] flex-shrink-0 ring-2 ring-white shadow-md">
                       {listing.hostImage ? (
                         <Image
@@ -377,18 +436,25 @@ export default function ListingDetailContent({
               {/* 모바일 가격은 MobileStickyBookingBar가 대체 */}
             </div>
 
-            {/* 오른쪽: 예약 모듈(빨간 영역 - 숙소 소개 옆). 헤더와 여유 공간, 스크롤 시 top 192px 아래로 */}
-            <div className="lg:col-span-1 mt-6 lg:mt-0 lg:pt-2 max-lg:overflow-x-clip">
+            {/* 오른쪽: 예약 모듈. 모바일에서 이 영역이 뷰포트 밖이면 스티키 바 표시 */}
+            <div
+              id={BOOKING_FORM_AREA_ID}
+              ref={bookingFormAreaRef}
+              className="lg:col-span-1 mt-6 lg:mt-0 lg:pt-2 max-lg:overflow-x-clip"
+            >
               <div className="lg:sticky lg:top-[200px] transition-shadow duration-300">
                 {/* overflow-visible 로 변경하여 인원/캘린더 패널이 카드 밖으로 넘쳐도 보이도록 */}
                 <div className="bg-white rounded-2xl border border-[#e8e8e8] shadow-xl overflow-visible">
                   <div className="p-4 md:p-6 border-b border-[#ebebeb]">
-                    <div className="flex items-baseline gap-1">
+                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                             {(() => {
                           if (priceSummary && priceSummary.nights > 0) {
                                 const perNight = Math.floor(
                                   priceSummary.totalPrice / priceSummary.nights
                                 );
+                                const perGuestPerNight = guestCount >= 1
+                                  ? Math.round(priceSummary.totalPrice / priceSummary.nights / guestCount)
+                                  : perNight;
                                 return (
                                   <>
                                     <span className="text-[22px] font-semibold text-[#222]">
@@ -397,6 +463,11 @@ export default function ListingDetailContent({
                                     <span className="text-[15px] text-[#717171]">
                                       {t("listingDetail.perNight")}
                                     </span>
+                                    {guestCount >= 1 && (
+                                      <span className="text-[14px] text-[#717171]">
+                                        {t("listingDetail.perGuestPerNight")} {formatForGuest(perGuestPerNight)}
+                                      </span>
+                                    )}
                                   </>
                                 );
                               }
@@ -410,7 +481,6 @@ export default function ListingDetailContent({
                     </p>
                   </div>
                   <div className="p-4 md:p-6 space-y-4">
-                    <TrustBanner listingId={listing.id} variant="compact" />
                     <BookingTypeBadge
                       bookingType={listing.instantBooking ? "instant" : "approval"}
                     />
@@ -423,6 +493,7 @@ export default function ListingDetailContent({
                       bookingType={listing.instantBooking ? "instant" : "approval"}
                       minStayNights={listing.minStayNights ?? undefined}
                       onPriceChange={setPriceSummary}
+                      onGuestsChange={setGuestCount}
                       initialCheckIn={initialCheckIn}
                       initialCheckOut={initialCheckOut}
                       initialGuests={initialGuests}
@@ -436,17 +507,18 @@ export default function ListingDetailContent({
             </div>
           </div>
         </div>
-        {/* 모바일 스티키 바의 높이만큼 하단 여백 */}
-        {priceSummary && priceSummary.nights > 0 && (
-          <div className="h-20 lg:hidden" />
-        )}
+        {/* 모바일: 스티키 바 노출 시 하단 여백(스크롤 끝에서 콘텐츠 가림 방지) */}
+        <div className="h-36 lg:hidden" aria-hidden />
         <Footer />
       </main>
-      <MobileStickyBookingBar
-        listingId={listing.id}
-        priceSummary={priceSummary}
-        bookingType={listing.instantBooking ? "instant" : "approval"}
-      />
+      {/* 모바일: 예약 폼이 화면에 안 보일 때만 스티키 바 표시. 금액 있으면 예약하기, 없으면 날짜 선택 유도 */}
+      {!isBookingFormInView && (
+        <MobileStickyBookingBar
+          listingId={listing.id}
+          priceSummary={priceSummary}
+          bookingType={listing.instantBooking ? "instant" : "approval"}
+        />
+      )}
     </>
   );
 }

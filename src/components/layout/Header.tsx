@@ -35,9 +35,9 @@ function HomeSearchBarFallback() {
 export default function Header() {
   const pathname = usePathname();
   const hostT = useHostTranslations();
+  // /messages는 게스트도 하단 네비로 접근하므로 호스트 전용으로 보지 않음. 호스트 메뉴는 /host, /admin 경로에서만 표시
   const isHostMode =
     pathname?.startsWith("/host") ||
-    pathname === "/messages" ||
     pathname?.startsWith("/admin");
 
   // 고정 헤더가 본문을 가리는 문제를 방지하기 위한 전역 여백.
@@ -64,7 +64,7 @@ export default function Header() {
             <span className="block relative h-8 md:h-9 w-auto max-w-[110px] sm:max-w-[140px] md:max-w-[160px]">
               <Image
                 src="/logo-minbak.png"
-                alt={hostT.t("guest.siteName")}
+                alt="도쿄민박"
                 width={160}
                 height={36}
                 className="h-full w-auto object-contain object-left"

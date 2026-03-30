@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Check, Loader2 } from "lucide-react";
+import { formatPrice } from "@/lib/currency";
 
 type SettlementBooking = {
   id: string;
@@ -153,7 +154,7 @@ export default function AdminSettlementContent() {
           <div className="border border-minbak-light-gray rounded-minbak p-4 bg-green-50">
             <p className="text-minbak-caption text-minbak-gray">정산 완료 총액</p>
             <p className="text-xl font-semibold text-minbak-black mt-1">
-              ₩{(summary.completedAmount ?? 0).toLocaleString()}
+              {formatPrice(summary.completedAmount ?? 0, "KRW")}
             </p>
           </div>
         </div>
@@ -266,7 +267,7 @@ export default function AdminSettlementContent() {
                       <td className="py-3 px-4 text-minbak-caption">{b.checkIn}</td>
                       <td className="py-3 px-4 text-minbak-caption">{b.checkOut}</td>
                       <td className="py-3 px-4 text-minbak-caption">{b.paymentDate ?? "-"}</td>
-                      <td className="py-3 px-4">₩{b.totalPrice.toLocaleString()}</td>
+                      <td className="py-3 px-4">{formatPrice(b.totalPrice, "KRW")}</td>
                       <td className="py-3 px-4">
                         {isCompleted ? (
                           <span className="text-minbak-caption px-2 py-0.5 rounded bg-green-100 text-green-800">

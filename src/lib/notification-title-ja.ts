@@ -43,5 +43,9 @@ export function notificationTitleToJa(koTitle: string): string {
   const rejectedMatch = s.match(/^숙소 "(.+?)" 등록이 거절되었습니다\.$/);
   if (rejectedMatch) return `宿泊施設「${rejectedMatch[1]}」の登録が拒否されました。`;
 
+  // "{listingTitle} 숙박은 어떠셨나요? 리뷰를 남겨 주세요."
+  const reviewRequestMatch = s.match(/^(.+?) 숙박은 어떠셨나요\? 리뷰를 남겨 주세요\.$/);
+  if (reviewRequestMatch) return `${reviewRequestMatch[1]}の宿泊はいかがでしたか？レビューを残してください。`;
+
   return s;
 }

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { X, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
+import { optimizeCloudinaryUrl } from "@/lib/cloudinary-optimize";
 
 type ImageItem = { id: string; url: string; sortOrder: number };
 
@@ -23,7 +24,7 @@ export default function ListingImageGallery({ images, title }: Props) {
     return (
       <div className="relative aspect-video w-full bg-minbak-light-gray overflow-hidden">
             <Image
-              src={images[0].url}
+              src={optimizeCloudinaryUrl(images[0].url, 1200)}
               alt={title}
               fill
               className="object-contain cursor-pointer bg-black/5"
@@ -53,9 +54,37 @@ export default function ListingImageGallery({ images, title }: Props) {
   return (
     <>
       <div className="relative w-full">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 overflow-hidden bg-white w-full">
-          {/* 메인 1장: 정사각형, 라운드 */}
-          <div className="aspect-square w-full max-md:max-w-full rounded-xl overflow-hidden">
+        {/* 모바일: 가로 스와이프 캐러셀 (CSS scroll-snap) */}
+        <div
+          className="md:hidden flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory snap-center rounded-xl bg-white touch-pan-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          style={{ WebkitOverflowScrolling: "touch" }}
+          aria-label={t("gallery.viewAllPhotos")}
+        >
+          {images.map((img, i) => (
+            <button
+              key={img.id}
+              type="button"
+              className="relative flex-shrink-0 w-full min-w-full aspect-square snap-center snap-always bg-minbak-light-gray overflow-hidden focus:outline-none focus:ring-2 focus:ring-inset focus:ring-minbak-black/20"
+              onClick={() => {
+                setShowAll(false);
+                setLightboxIndex(i);
+              }}
+            >
+              <Image
+                src={optimizeCloudinaryUrl(img.url, 800)}
+                alt={i === 0 ? title : `${title} ${i + 1}`}
+                fill
+                className="object-cover"
+                sizes="100vw"
+                priority={i === 0}
+              />
+            </button>
+          ))}
+        </div>
+
+        {/* PC: 기존 그리드 (메인 1 + 서브 2x2) */}
+        <div className="hidden md:grid grid-cols-2 gap-2 md:gap-3 overflow-hidden bg-white w-full rounded-xl">
+          <div className="aspect-square w-full rounded-xl overflow-hidden">
             <button
               type="button"
               className="relative w-full h-full bg-minbak-light-gray overflow-hidden focus:outline-none focus:ring-2 focus:ring-minbak-black/20 rounded-xl"
@@ -65,17 +94,16 @@ export default function ListingImageGallery({ images, title }: Props) {
               }}
             >
               <Image
-                src={main.url}
+                src={optimizeCloudinaryUrl(main.url, 1200)}
                 alt={title}
                 fill
                 className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
+                sizes="50vw"
                 priority
               />
             </button>
           </div>
-          {/* 서브 4장: 2x2 정사각형, 라운드 */}
-          <div className="hidden md:grid grid-cols-2 grid-rows-2 gap-2 md:gap-3 aspect-square w-full rounded-xl overflow-hidden">
+          <div className="grid grid-cols-2 grid-rows-2 gap-2 md:gap-3 aspect-square w-full rounded-xl overflow-hidden">
             {rest.map((img, i) => (
               <div key={img.id} className="w-full h-full min-h-0 rounded-xl overflow-hidden">
                 <button
@@ -87,7 +115,7 @@ export default function ListingImageGallery({ images, title }: Props) {
                   }}
                 >
                   <Image
-                    src={img.url}
+                    src={optimizeCloudinaryUrl(img.url, 600)}
                     alt={`${title} ${i + 2}`}
                     fill
                     className="object-cover"
@@ -98,6 +126,7 @@ export default function ListingImageGallery({ images, title }: Props) {
             ))}
           </div>
         </div>
+
         {images.length > 1 && (
           <button
             type="button"
@@ -213,7 +242,7 @@ function Lightbox({
         onClick={(e) => e.stopPropagation()} // 실제 이미지 영역 클릭 시에는 닫히지 않도록
       >
         <Image
-          src={img.url}
+          src={optimizeCloudinaryUrl(img.url, 1200)}
           alt={`${title} - ${currentIndex + 1}`}
           fill
           className="object-contain"
@@ -286,7 +315,7 @@ function AllPhotosOverlay({
               >
                 <div className="relative w-full" style={aspectStyle}>
                   <Image
-                    src={img.url}
+                    src={optimizeCloudinaryUrl(img.url, 800)}
                     alt={`${title} 추가 사진 ${index + 1}`}
                     fill
                     className="object-cover"

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { onPaymentVerified } from "@/lib/payment-complete";
+import { sendChannelTalkNotification } from "@/lib/channel-api";
 import { getJpyToKrwRate } from "@/lib/exchange-rate";
 import { STORED_CURRENCY, convertJpyToKrw } from "@/lib/currency";
 
@@ -101,6 +102,15 @@ export async function POST(request: Request) {
       conversationId = await onPaymentVerified(bookingId);
     } catch (postErr) {
       console.error("[MockVerify] post-complete error:", postErr);
+    }
+
+    try {
+      await sendChannelTalkNotification(
+        userId,
+        "예약이 확정되었습니다. 메시지창에서 자세한 내용을 확인하세요."
+      );
+    } catch {
+      // 로그는 channel-api 내부에서 처리
     }
 
     return NextResponse.json({

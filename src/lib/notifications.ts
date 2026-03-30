@@ -15,7 +15,8 @@ export type NotificationType =
   | "listing_approved"
   | "listing_rejected"
   | "payment_reminder"
-  | "unpaid_auto_cancel";
+  | "unpaid_auto_cancel"
+  | "review_request";
 
 export type CreateNotificationInput = {
   userId: string;
@@ -47,6 +48,7 @@ export async function createNotification(
         createdAt: { gte: since },
         ...(bookingId && { bookingId }),
         ...(conversationId && { conversationId }),
+        ...(listingId && { listingId }),
       },
     });
     if (existing) return;

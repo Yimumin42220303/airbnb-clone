@@ -1,12 +1,29 @@
 "use client";
 
+import { useState } from "react";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
+
+/** 히어로 배경 이미지: env 또는 public/hero-bg.jpg, 로드 실패 시 기본 도쿄 이미지 */
+const HERO_IMAGE_FALLBACK =
+  "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1920&q=80";
 
 export default function HomeHero() {
   const t = useHostTranslations().t;
+  const heroImageUrl =
+    process.env.NEXT_PUBLIC_HERO_IMAGE_URL || "/hero-bg.jpg";
+  const [bgSrc, setBgSrc] = useState(heroImageUrl);
+  const [videoPlaying, setVideoPlaying] = useState(false);
 
   return (
-    <section className="relative min-h-[380px] sm:min-h-[420px] md:min-h-[640px] flex flex-col items-center justify-center bg-black text-white px-4 pt-[140px] pb-10 sm:pt-[152px] sm:pb-12 md:pt-[172px] md:pb-[100px] md:px-6 overflow-hidden">
+    <section className="relative min-h-[380px] sm:min-h-[420px] md:min-h-[640px] flex flex-col items-center justify-center bg-gray-900 text-white px-4 pt-[140px] pb-10 sm:pt-[152px] sm:pb-12 md:pt-[172px] md:pb-[100px] md:px-6 overflow-hidden">
+      {/* 배경 이미지: 비디오 미재생 시 보임. 비디오 재생되면 가림 */}
+      <img
+        src={bgSrc}
+        alt=""
+        className={`absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-500 ${videoPlaying ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+        aria-hidden
+        onError={() => setBgSrc(HERO_IMAGE_FALLBACK)}
+      />
       <video
         autoPlay
         muted
@@ -15,8 +32,11 @@ export default function HomeHero() {
         className="absolute inset-0 w-full h-full object-cover z-0"
         src={process.env.NEXT_PUBLIC_HERO_VIDEO_URL || "https://framerusercontent.com/assets/MLWPbW1dUQawJLhhun3dBwpgJak.mp4"}
         aria-hidden
+        onPlaying={() => setVideoPlaying(true)}
+        onEnded={() => setVideoPlaying(false)}
+        onPause={() => setVideoPlaying(false)}
       />
-      <div className="absolute inset-0 bg-black/60 z-[1]" aria-hidden />
+      <div className="absolute inset-0 bg-black/55 z-[1]" aria-hidden />
       <div className="relative z-10 flex flex-col items-center gap-2 text-center max-w-[900px]">
         <h1 className="text-minbak-h1 md:text-framer-h1 font-extrabold leading-tight">
           {t("guest.heroTitle1")}

@@ -54,6 +54,14 @@ const config: Config = {
       },
       spacing: {
         "navbar": "80px",
+        "safe-top": "env(safe-area-inset-top, 0px)",
+        "safe-bottom": "env(safe-area-inset-bottom, 0px)",
+      },
+      minHeight: {
+        touch: "44px",
+      },
+      minWidth: {
+        touch: "44px",
       },
     },
   },

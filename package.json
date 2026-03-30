@@ -17,6 +17,8 @@
     "db:studio": "prisma studio",
     "db:add-amenities": "node scripts/add-airbnb-amenities.js",
     "db:randomize-review-dates": "node scripts/randomize-review-dates.js",
+    "db:backup": "node scripts/db-backup.js",
+    "db:restore": "node scripts/db-restore.js",
     "db:migrate-krw-to-jpy": "node scripts/migrate-krw-to-jpy.js",
     "import:minbak-tokyo": "node scripts/import-from-minbak-tokyo.js",
     "seed:minbak-tokyo": "node scripts/seed-minbak-tokyo.js",
@@ -28,7 +30,8 @@
     "deploy:watch": "node scripts/watch-and-deploy.js",
     "test:email-auth": "node scripts/test-email-auth.js",
     "setup:resend": "node scripts/setup-resend-env.js",
-    "beds24:diagnose": "node scripts/beds24-diagnose.js"
+    "beds24:diagnose": "node scripts/beds24-diagnose.js",
+    "push:vapid-keys": "web-push generate-vapid-keys"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
@@ -51,12 +54,14 @@
     "react-dom": "^18.3.1",
     "resend": "^6.9.2",
     "sonner": "^2.0.7",
-    "tailwind-merge": "^2.5.4"
+    "tailwind-merge": "^2.5.4",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/web-push": "^3.6.4",
     "autoprefixer": "^10.4.20",
     "dotenv": "^17.3.1",
     "eslint": "^8",

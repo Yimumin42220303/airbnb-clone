@@ -9,6 +9,21 @@ import { useCurrency } from "@/components/currency/CurrencyProvider";
 import BookingStepIndicator, {
   getBookingStepState,
 } from "@/components/booking/BookingStepIndicator";
+import { CONTACT_EMAIL } from "@/lib/constants";
+
+const INSTANT_DEADLINE_MS = 60 * 60 * 1000;
+const APPROVAL_DEADLINE_MS = 24 * 60 * 60 * 1000;
+
+function formatDeadline(deadline: Date): string {
+  return deadline.toLocaleString("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
 
 type BookingItem = {
   id: string;
@@ -18,6 +33,7 @@ type BookingItem = {
   totalPrice: number;
   status: string;
   paymentStatus: string;
+  confirmedAt?: string | null;
   guestName?: string | null;
   guestPhone?: string | null;
   listing: {
@@ -158,12 +174,29 @@ export default function BookingPayContent() {
             <p className="text-minbak-body text-minbak-gray mb-4">
               {error || "예약을 찾을 수 없거나 결제할 수 없는 상태입니다."}
             </p>
-            <Link
-              href="/my-bookings"
-              className="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 rounded-minbak-full bg-minbak-primary text-white font-medium hover:bg-minbak-primary-hover"
-            >
-              내 예약으로
-            </Link>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/my-bookings"
+                className="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 rounded-minbak-full bg-minbak-primary text-white font-medium hover:bg-minbak-primary-hover"
+              >
+                내 예약으로
+              </Link>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 rounded-minbak-full border border-minbak-light-gray text-minbak-black font-medium hover:bg-minbak-bg"
+              >
+                다시 시도
+              </button>
+              <a
+                href={CONTACT_EMAIL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 rounded-minbak-full border border-minbak-light-gray text-minbak-black font-medium hover:bg-minbak-bg"
+              >
+                문의하기
+              </a>
+            </div>
           </div>
         </main>
         <Footer />
@@ -216,11 +249,32 @@ export default function BookingPayContent() {
           <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-2">
             결제
           </h1>
-          <p className="text-minbak-body text-minbak-gray mb-6">
+          <p className="text-minbak-body text-minbak-gray mb-4">
             {booking.listing.instantBooking
               ? "결제를 완료하면 예약이 즉시 확정됩니다."
               : "호스트가 승인한 예약입니다. 결제를 완료하면 예약이 확정됩니다."}
           </p>
+          {booking.confirmedAt && (() => {
+            const deadlineMs = booking.listing.instantBooking ? INSTANT_DEADLINE_MS : APPROVAL_DEADLINE_MS;
+            const deadline = new Date(new Date(booking.confirmedAt).getTime() + deadlineMs);
+            const isExpired = Date.now() > deadline.getTime();
+            return isExpired ? (
+              <div className="rounded-lg px-4 py-3 mb-4 bg-red-50">
+                <p className="text-sm font-semibold text-red-700">
+                  결제 기한이 만료되었습니다. 예약이 곧 자동 취소됩니다.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-lg px-4 py-3 mb-4 bg-amber-50">
+                <p className="text-sm font-semibold text-amber-800">
+                  결제 기한: {formatDeadline(deadline)}까지
+                </p>
+                <p className="text-xs mt-0.5 text-amber-700">
+                  기한 내 결제하지 않으면 예약이 자동 취소됩니다.
+                </p>
+              </div>
+            );
+          })()}
           <div className="border border-minbak-light-gray rounded-minbak p-6 space-y-3 mb-6">
             <p className="font-semibold text-minbak-black text-minbak-body">
               {booking.listing.title}

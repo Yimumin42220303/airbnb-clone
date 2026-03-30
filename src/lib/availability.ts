@@ -265,6 +265,7 @@ export async function getListingBlockedDateKeys(
     where: {
       listingId,
       status: "confirmed",
+      paymentStatus: "paid",
       checkIn: { lt: toDate },
       checkOut: { gt: fromDate },
     },
@@ -316,6 +317,7 @@ export async function getListingCheckoutOnlyDateKeys(
     where: {
       listingId,
       status: "confirmed",
+      paymentStatus: "paid",
       checkIn: { lt: toDate },
       checkOut: { gt: fromDate },
     },

@@ -15,21 +15,32 @@ function getOpenAI() {
   return new OpenAI({ apiKey: key });
 }
 
+/** locale에 따라 reason・highlights 출력 언어 지정 문구 */
+function getOutputLanguageInstruction(locale?: "ko" | "ja"): string {
+  return locale === "ja"
+    ? "각 숙소를 추천하는 이유(reason)와 근거(highlights)를 **일본어**로 작성합니다."
+    : "각 숙소를 추천하는 이유(reason)와 근거(highlights)를 **한국어**로 작성합니다.";
+}
+
 /** 스트리밍: NDJSON 형식(한 줄에 하나씩)으로 추천 1,2,3,4,5를 순차 출력 */
-const NDJSON_SYSTEM = `당신은 도쿄 숙소 추천 전문가입니다. 게스트의 선호사항에 맞게 숙소를 순위 매기고, 각 숙소를 추천하는 이유(reason)와 근거(highlights)를 한국어로 작성합니다.
-추천의 근거: location, description, amenities, houseRules, reviews, totalEstimatedPrice, category, propertyType.
+function buildNdjsonSystem(locale?: "ko" | "ja"): string {
+  const lang = getOutputLanguageInstruction(locale);
+  return `당신은 도쿄 숙소 추천 전문가입니다. 게스트의 선호사항에 맞게 숙소를 순위 매기고, ${lang}
+추천의 근거: title(숙소명)·location·description·amenities·houseRules·reviews·totalEstimatedPrice·category·propertyType. 숙소명(title)에 위치·특징이 요약되어 있으므로 순위와 reason·highlights에 반영하세요.
 - reason: 1~2문장으로 간결하게.
 - highlights: 구체적 근거 2~4개.
 중요: JSON 배열이 아니라, 각 추천을 한 줄에 하나씩 출력. 5줄. 배열 기호 없음. 쉼표 없음.
+**같은 숙소 id는 절대 두 번 쓰지 마세요.** 5줄은 모두 서로 다른 id여야 합니다.
 형식 (줄바꿈으로 구분):
 {"id":"숙소ID","rank":1,"reason":"이유","highlights":["a","b"]}
 {"id":"숙소ID","rank":2,"reason":"이유","highlights":["a","b"]}
 ...`;
+}
 
 export async function POST(req: NextRequest) {
   const encoder = new TextEncoder();
   const body = (await req.json()) as RecommendInput;
-  const { checkIn, checkOut, adults, children, tripType, priority, priorities: prioritiesInput, preferences } = body;
+  const { checkIn, checkOut, adults, children, tripType, priority, priorities: prioritiesInput, preferences, locale } = body;
 
   if (!checkIn || !checkOut) {
     return new Response(
@@ -154,7 +165,7 @@ export async function POST(req: NextRequest) {
     };
   });
 
-  const tripTypeLabel = tripType === "friends" ? "친구와" : tripType === "couple" ? "커플" : tripType === "family" ? "가족" : null;
+  const tripTypeLabel = tripType === "friends" ? "친구와" : tripType === "couple" ? "커플" : tripType === "family" ? "가족" : tripType === "solo" ? "혼자" : null;
   const priorityLabels: Record<string, string> = {
     value: "가성비", rating: "평점", location: "위치", space: "숙소넓이",
     environment: "건전한 주변환경", child_friendly: "어린이·유아친화 설비",
@@ -182,7 +193,7 @@ ${JSON.stringify(listingSummaries, null, 2)}
   const stream = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
-      { role: "system", content: NDJSON_SYSTEM },
+      { role: "system", content: buildNdjsonSystem(locale) },
       { role: "user", content: userPrompt },
     ],
     temperature: 0.5,
@@ -194,6 +205,8 @@ ${JSON.stringify(listingSummaries, null, 2)}
   const readable = new ReadableStream({
     async start(controller) {
       let buffer = "";
+      /** 동일 숙소가 LLM 출력·파싱에서 중복될 때 한 번만 SSE로 보냄 */
+      const emittedListingIds = new Set<string>();
       const sendEvent = (data: unknown) => {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
       };
@@ -210,8 +223,10 @@ ${JSON.stringify(listingSummaries, null, 2)}
             if (!trimmed) continue;
             const parseAndEmit = (obj: { id?: string; rank?: number; reason?: string; highlights?: string[] }) => {
               if (obj?.id && obj?.rank != null && obj?.reason) {
+                if (emittedListingIds.has(obj.id)) return;
                 const listing = listingMap.get(obj.id);
                 if (listing) {
+                  emittedListingIds.add(obj.id);
                   sendEvent({
                     ...listing,
                     rank: obj.rank,
@@ -236,9 +251,10 @@ ${JSON.stringify(listingSummaries, null, 2)}
         if (buffer.trim()) {
           try {
             const parsed = JSON.parse(buffer.trim()) as { id?: string; rank?: number; reason?: string; highlights?: string[] };
-            if (parsed?.id && parsed?.rank != null && parsed?.reason) {
+            if (parsed?.id && parsed?.rank != null && parsed?.reason && !emittedListingIds.has(parsed.id)) {
               const listing = listingMap.get(parsed.id);
               if (listing) {
+                emittedListingIds.add(parsed.id);
                 const full = {
                   ...listing,
                   rank: parsed.rank,

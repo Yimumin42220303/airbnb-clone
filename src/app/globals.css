@@ -32,12 +32,12 @@ body {
   color: var(--minbak-black);
   background: #ffffff;
   font-family: var(--font-noto-sans-kr), "Noto Sans KR", system-ui, sans-serif;
-  /* 글로벌 본문: 크기·줄간격 최적화 */
   font-size: 1rem;
   line-height: 1.6;
   letter-spacing: -0.01em;
-  /* 모바일: 터치 시 하이라이트 제거 (선택적) */
   -webkit-tap-highlight-color: transparent;
+  /* 모바일: 가로 overscroll 방지 */
+  overscroll-behavior-x: none;
 }
 
 /* 게스트 UX: 포커스 링으로 키보드/접근성 개선 */
@@ -80,3 +80,38 @@ textarea:focus-visible {
     font-size: max(16px, 1rem);
   }
 }
+
+/* ─── 글로벌 모바일 최적화 ─── */
+/* 터치 시 300ms 지연 제거 (viewport width=device-width 와 함께 사용) */
+@media (pointer: coarse) {
+  button,
+  a,
+  [role="button"],
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"] {
+    touch-action: manipulation;
+  }
+}
+
+/* 터치 타겟 최소 44×44px (WCAG 권장). 작은 버튼/링크에 클래스로 적용 */
+.touch-target-min {
+  min-width: 44px;
+  min-height: 44px;
+}
+@media (min-width: 768px) {
+  .touch-target-min {
+    min-width: auto;
+    min-height: auto;
+  }
+}
+
+/* 모바일: 세로 스크롤 영역 부드럽게 (iOS) */
+@supports (-webkit-overflow-scrolling: touch) {
+  .overflow-y-auto,
+  .overflow-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* 채널톡 기본 버튼 위치는 Shadow DOM이라 여기서 조정 불가 → 커스텀 런처 사용 (ChannelTalk.tsx) */

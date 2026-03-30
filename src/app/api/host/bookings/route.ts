@@ -87,12 +87,45 @@ export async function GET(request: NextRequest) {
     },
   });
 
+  const listingIds = listings.map((l) => l.id);
+  const monthDateKeys: string[] = [];
+  const cur = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  while (cur <= lastDay) {
+    monthDateKeys.push(
+      `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, "0")}-${String(cur.getDate()).padStart(2, "0")}`
+    );
+    cur.setDate(cur.getDate() + 1);
+  }
+  const priceRows =
+    monthDateKeys.length > 0 && listingIds.length > 0
+      ? await prisma.listingAvailability.findMany({
+          where: {
+            listingId: { in: listingIds },
+            date: { in: monthDateKeys },
+            pricePerNight: { not: null },
+          },
+          select: { listingId: true, date: true, pricePerNight: true },
+        })
+      : [];
+  const dailyPriceByListing = new Map<string, Record<string, number>>();
+  for (const r of priceRows) {
+    if (r.pricePerNight == null) continue;
+    let map = dailyPriceByListing.get(r.listingId);
+    if (!map) {
+      map = {};
+      dailyPriceByListing.set(r.listingId, map);
+    }
+    map[r.date] = r.pricePerNight;
+  }
+
   const listingsWithGuestNamesAndBlocked = await Promise.all(
     listings.map(async (l) => {
       const blockedDateKeys = await getListingBlockedDateKeys(l.id, start, monthEnd);
       return {
         ...l,
         blockedDateKeys,
+        dailyPriceOverrides: dailyPriceByListing.get(l.id) ?? {},
         bookings: l.bookings.map((b) => ({
           id: b.id,
           checkIn: b.checkIn.toISOString(),

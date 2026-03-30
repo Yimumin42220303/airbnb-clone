@@ -22,13 +22,15 @@ export type RecommendInput = {
   adults: number;
   children: number;
   infants?: number;
-  /** 여행 유형: friends | couple | family */
+  /** 여행 유형: friends | couple | family | solo */
   tripType?: string;
   /** 우선순위 단일 (하위 호환) */
   priority?: string;
   /** 우선순위 최대 3개 */
   priorities?: string[];
   preferences: string;
+  /** 출력 언어: "ja"면 reason・highlights를 일본어로 생성 */
+  locale?: "ko" | "ja";
 };
 
 export type RecommendResult = {
@@ -38,6 +40,20 @@ export type RecommendResult = {
   /** AI가 추천한 근거(리뷰·위치·가격 등) 2~4개. 게스트에게 "왜 이 숙소인지" 보여줄 때 사용 */
   highlights?: string[];
 };
+
+/** rank 오름차순으로 정렬 후, 동일 listing id는 첫 번째(더 높은 순위)만 유지 */
+function dedupeRecommendationsByListingId(recs: RecommendResult[]): RecommendResult[] {
+  const sorted = [...recs].sort((a, b) => a.rank - b.rank);
+  const seen = new Set<string>();
+  const out: RecommendResult[] = [];
+  for (const r of sorted) {
+    if (seen.has(r.id)) continue;
+    seen.add(r.id);
+    out.push(r);
+    if (out.length >= 5) break;
+  }
+  return out;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -186,12 +202,13 @@ export async function POST(req: NextRequest) {
 
     const systemPrompt = `당신은 도쿄 숙소 추천 전문가입니다. 게스트의 선호사항에 맞게 숙소를 순위 매기고, 각 숙소를 추천하는 이유(reason)와 근거(highlights)를 한국어로 작성합니다.
 
-추천의 근거가 되는 5가지 요소를 반드시 활용하세요:
-1. location (立地): 숙소 위치·역 거리·주변 환경
-2. description (宿の説明文): 호스트가 작성한 숙소 설명
-3. amenities (設備及びサービス): WiFi, 주방, 세탁기 등 편의시설 목록
-4. houseRules (注意事項): 엘리베이터 유무, 흡연 규칙, 소음 주의, 반려동물·파티 등
-5. reviews (レビューデータ): 실제 게스트 리뷰(평점+본문)
+추천의 근거가 되는 요소를 반드시 활용하세요:
+1. title (숙소명): 각 후보 숙소의 제목. 위치·역 거리·특징(발코니, 세탁기 등)이 요약되어 있으므로 순위와 reason·highlights 판단에 반영하세요.
+2. location (立地): 숙소 위치·역 거리·주변 환경
+3. description (宿の説明文): 호스트가 작성한 숙소 설명
+4. amenities (設備及びサービス): WiFi, 주방, 세탁기 등 편의시설 목록
+5. houseRules (注意事項): 엘리베이터 유무, 흡연 규칙, 소음 주의, 반려동물·파티 등
+6. reviews (レビューデータ): 실제 게스트 리뷰(평점+본문)
 
 추가 고려 요소:
 - stayNights (숙박 일수): 1~2박 단기→위치·편의성, 7박 이상 장기→주방·세탁기·넓이·totalEstimatedPrice 가성비
@@ -201,12 +218,13 @@ export async function POST(req: NextRequest) {
 
 우선순위별 반영: 가성비→totalEstimatedPrice·리뷰, 평점→평점·리뷰 수, 위치→location·description·리뷰, 숙소넓이→bedrooms·maxGuests·beds·amenities·propertyType, 건전한 주변환경→location·houseRules·리뷰(조용함·안전함 언급), 어린이·유아친화→amenities·houseRules.
 - reason: 추천 이유를 1~2문장으로 간결하게.
-- highlights: 위 5가지 요소 중 해당하는 구체적 근거 2~4개. 게스트가 '왜 이 숙소인지' 알 수 있도록 짧은 문장으로.
+- highlights: 위 요소(title·location·description 등) 중 해당하는 구체적 근거 2~4개. 게스트가 '왜 이 숙소인지' 알 수 있도록 짧은 문장으로.
 반드시 JSON 배열만 반환하세요. 다른 텍스트는 포함하지 마세요.
+**배열 안에서 같은 숙소 id는 한 번만 사용하세요. 서로 다른 5개 숙소만 추천합니다.**
 형식: [{"id": "숙소ID", "rank": 1, "reason": "추천 이유", "highlights": ["근거1", "근거2", ...]}]`;
 
     const tripTypeLabel =
-      tripType === "friends" ? "친구와" : tripType === "couple" ? "커플" : tripType === "family" ? "가족" : null;
+      tripType === "friends" ? "친구와" : tripType === "couple" ? "커플" : tripType === "family" ? "가족" : tripType === "solo" ? "혼자" : null;
     const priorityLabels: Record<string, string> = {
       value: "가성비",
       rating: "평점",
@@ -271,8 +289,9 @@ ${JSON.stringify(listingSummaries, null, 2)}
       recommendations = [];
     }
 
+    recommendations = dedupeRecommendationsByListingId(recommendations);
+
     const ordered = recommendations
-      .sort((a, b) => a.rank - b.rank)
       .map((r) => {
         const listing = listings.find((l) => l.id === r.id);
         return listing

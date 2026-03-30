@@ -26,7 +26,7 @@ export default function Footer() {
     <footer className="mt-12 md:mt-24 bg-[#3F2826] text-[#D3D3D3]">
       <div className="max-w-[1240px] mx-auto px-4 py-8 md:px-8 md:py-8">
         {/* Framer 링크: 모바일에서 2줄 랩 */}
-        <nav className="flex flex-wrap items-center justify-center gap-3 md:gap-6 pb-4 md:pb-6 border-b border-white/20">
+        <nav className="flex flex-wrap items-center justify-center gap-3 md:gap-6 pb-4 md:pb-6 border-b border-white/20" aria-label="푸터 내비게이션">
           <Link href="/search" className="text-minbak-body font-bold text-white/95 hover:text-white hover:underline">
             {t("guest.findStay")}
           </Link>
@@ -55,13 +55,13 @@ export default function Footer() {
               {t("guest.contactNote")}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 pt-4">
-              <p>상호명 주식회사 한일익스프레스</p>
-              <p>소재지 경상남도 창원시 성산구 토월로 72-1</p>
-              <p>대표 임민철</p>
-              <p>관광사업자등록번호 제2026-000002호 (국내외여행업, 경상남도 창원시 성산구청장)</p>
-              <p>사업자등록번호 158-07-02612</p>
+              <p>{t("footer.companyName")}</p>
+              <p>{t("footer.address")}</p>
+              <p>{t("footer.ceo")}</p>
+              <p>{t("footer.tourismBizNo")}</p>
+              <p>{t("footer.bizNo")}</p>
               <p>
-                통신판매업 신고번호 제2025-창원성산-0109{" "}
+                {t("footer.onlineBizNo")}{" "}
                 <Link
                   href="https://www.ftc.go.kr/bizCommPop.do?wrkr_no=15807002612"
                   target="_blank"
@@ -71,9 +71,9 @@ export default function Footer() {
                   {t("guest.bizVerify")}
                 </Link>
               </p>
-              <p>고객 문의(한국) : 010-4689-4411</p>
-              <p>일본현지 파트너사 주소 도쿄 신주쿠구 카와다쵸 7</p>
-              <p>일본현지파트너사 주식회사 마이크로아이디어</p>
+              <p>{t("footer.contactKr")}</p>
+              <p>{t("footer.partnerAddress")}</p>
+              <p>{t("footer.partnerCompany")}</p>
             </div>
             {/* KG이니시스 인증마크 */}
             <div className="flex items-center gap-3 pt-4">
@@ -81,12 +81,12 @@ export default function Footer() {
                 type="button"
                 onClick={() => openInicisPopup("inipay")}
                 className="cursor-pointer hover:opacity-80 transition-opacity"
-                aria-label="이니시스 결제시스템 유효성 확인"
+                aria-label={t("footer.inicisInipayAria")}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="https://image.inicis.com/mkt/certmark/inipay/inipay_43x43_gray.png"
-                  alt="클릭하시면 이니시스 결제시스템의 유효성을 확인하실 수 있습니다."
+                  alt={t("footer.inicisImgAlt")}
                   width={43}
                   height={43}
                 />
@@ -95,12 +95,12 @@ export default function Footer() {
                 type="button"
                 onClick={() => openInicisPopup("escrow")}
                 className="cursor-pointer hover:opacity-80 transition-opacity"
-                aria-label="이니시스 에스크로 유효성 확인"
+                aria-label={t("footer.inicisEscrowAria")}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="https://image.inicis.com/mkt/certmark/escrow/escrow_43x43_gray.png"
-                  alt="클릭하시면 이니시스 결제시스템의 유효성을 확인하실 수 있습니다."
+                  alt={t("footer.inicisImgAlt")}
                   width={43}
                   height={43}
                 />

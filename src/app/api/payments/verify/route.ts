@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getPayment } from "@/lib/portone";
 import { onPaymentVerified } from "@/lib/payment-complete";
+import { sendChannelTalkNotification } from "@/lib/channel-api";
 import { getJpyToKrwRate } from "@/lib/exchange-rate";
 import { STORED_CURRENCY, convertJpyToKrw } from "@/lib/currency";
 
@@ -155,6 +156,16 @@ export async function POST(request: Request) {
       conversationId = await onPaymentVerified(bookingId);
     } catch (postErr) {
       console.error("[Payment Verify] post-complete error:", postErr);
+    }
+
+    // 채널톡 봇 알림 (실패해도 결제 완료 응답은 유지)
+    try {
+      await sendChannelTalkNotification(
+        userId,
+        "예약이 확정되었습니다. 메시지창에서 자세한 내용을 확인하세요."
+      );
+    } catch {
+      // 로그는 channel-api 내부에서 처리
     }
 
     return NextResponse.json({

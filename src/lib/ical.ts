@@ -178,6 +178,13 @@ function getIcalDateKey(veventBlock: string, prop: "DTSTART" | "DTEND"): string 
   return `${datePart.slice(0, 4)}-${datePart.slice(4, 6)}-${datePart.slice(6, 8)}`;
 }
 
+/** YYYY-MM-DD에서 하루 빼기. 표준 iCal DTEND(exclusive) → 퇴실일 = DTEND-1. */
+function subtractOneDay(dateKey: string): string {
+  const d = new Date(dateKey + "T12:00:00Z");
+  d.setUTCDate(d.getUTCDate() - 1);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+}
+
 /**
  * 숙소의 외부 캘린더(ICS Import URL 목록)에서 해당 기간에 막힌 날짜 집합 반환.
  * 추후 Beds24 API 연동 시 이 함수 내부에서 API 소스를 추가로 호출해 같은 Set에 merge하면 됨.
@@ -273,7 +280,9 @@ export function parseIcsToCheckoutOnlyDateKeys(
     }
     if (end <= fromDate || dtStart >= toDate) continue;
 
-    // 1) 체크아웃일
+    // 1) 체크아웃일 (퇴실하는 날 = 체크인 불가, 체크아웃만 가능)
+    // 표준 iCal: DTEND은 exclusive → 마지막 숙박일 = DTEND-1, 퇴실일 = DTEND-1 (그날 아침 퇴실). 따라서 체크아웃만 가능한 날 = DTEND-1.
+    // Airbnb: DTEND이 마지막 숙박일을 가리키므로 퇴실일 = DTEND+1 → 기존대로 +1 사용.
     let checkoutKey: string | null = null;
     const dtEndKey = getIcalDateKey(block, "DTEND");
     if (dtEndKey) {
@@ -282,10 +291,11 @@ export function parseIcsToCheckoutOnlyDateKeys(
         d.setUTCDate(d.getUTCDate() + 1);
         checkoutKey = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
       } else {
-        checkoutKey = dtEndKey;
+        checkoutKey = subtractOneDay(dtEndKey);
       }
     } else {
-      checkoutKey = toDateKey(end);
+      const endKey = toDateKey(end);
+      checkoutKey = subtractOneDay(endKey);
     }
     if (checkoutKey && checkoutKey >= fromKey && checkoutKey < toKey) {
       out.add(checkoutKey);
@@ -311,16 +321,23 @@ export async function getExternalCheckoutOnlyDateKeys(
   const { prisma } = await import("./prisma");
   const listing = await prisma.listing.findUnique({
     where: { id: listingId },
-    select: { icalImportUrls: true },
+    select: {
+      icalImportUrls: true,
+      beds24Enabled: true,
+      beds24PropId: true,
+      beds24RoomId: true,
+    },
   });
-  if (!listing?.icalImportUrls) return new Set();
+  if (!listing) return new Set();
 
   let urls: string[] = [];
-  try {
-    const arr = JSON.parse(listing.icalImportUrls);
-    urls = Array.isArray(arr) ? arr.filter((u): u is string => typeof u === "string" && u.trim().length > 0) : [];
-  } catch {
-    return new Set();
+  if (listing.icalImportUrls) {
+    try {
+      const arr = JSON.parse(listing.icalImportUrls);
+      urls = Array.isArray(arr) ? arr.filter((u): u is string => typeof u === "string" && u.trim().length > 0) : [];
+    } catch {
+      /* icalImportUrls 파싱 실패 시 무시 */
+    }
   }
 
   const merged = new Set<string>();
@@ -352,6 +369,23 @@ export async function getExternalCheckoutOnlyDateKeys(
     const keys = parseIcsToCheckoutOnlyDateKeys(text, fromDate, toDate, url);
     keys.forEach((k) => merged.add(k));
   }
+
+  if (
+    listing.beds24Enabled &&
+    listing.beds24PropId?.trim() &&
+    listing.beds24RoomId?.trim()
+  ) {
+    const { getBeds24BlockedDateKeysCached, deriveBeds24CheckoutOnlyDateKeys } = await import("./beds24");
+    const beds24Blocked = await getBeds24BlockedDateKeysCached(
+      listing.beds24PropId,
+      listing.beds24RoomId,
+      fromDate,
+      toDate
+    );
+    const beds24CheckoutOnly = deriveBeds24CheckoutOnlyDateKeys(beds24Blocked);
+    beds24CheckoutOnly.forEach((k) => merged.add(k));
+  }
+
   return merged;
 }
 

@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 import MessagePlusMenu from "@/components/message/MessagePlusMenu";
 import ScheduledTimelineModal from "@/components/host/ScheduledTimelineModal";
 
@@ -51,12 +53,14 @@ export default function MessageThread({
   isHost = false,
 }: Props) {
   const router = useRouter();
+  const { t } = useHostTranslations();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
   const [showPlusMenu, setShowPlusMenu] = useState(false);
   const [showTimeline, setShowTimeline] = useState(false);
+  const [suggestLoading, setSuggestLoading] = useState(false);
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [pendingImagePreviewUrl, setPendingImagePreviewUrl] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -283,12 +287,15 @@ export default function MessageThread({
                       href={m.imageUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block mb-1 rounded-minbak overflow-hidden max-w-[240px]"
+                      className="block mb-1 rounded-minbak overflow-hidden max-w-[240px] w-full relative h-[200px]"
                     >
-                      <img
+                      <Image
                         src={m.imageUrl}
                         alt="첨부 이미지"
-                        className="w-full h-auto max-h-[200px] object-cover"
+                        fill
+                        className="object-cover"
+                        sizes="240px"
+                        unoptimized={m.imageUrl.startsWith("blob:") || m.imageUrl.startsWith("data:")}
                       />
                     </a>
                   )}
@@ -329,11 +336,14 @@ export default function MessageThread({
       </div>
       {pendingImagePreviewUrl && (
         <div className="px-4 pt-2 pb-0 border-t border-minbak-light-gray flex items-center gap-2">
-          <div className="relative inline-block">
-            <img
+          <div className="relative inline-block w-16 h-16">
+            <Image
               src={pendingImagePreviewUrl}
               alt="첨부 미리보기"
-              className="w-16 h-16 object-cover rounded-minbak border border-minbak-light-gray"
+              width={64}
+              height={64}
+              className="object-cover rounded-minbak border border-minbak-light-gray"
+              unoptimized
             />
             <button
               type="button"
@@ -349,7 +359,7 @@ export default function MessageThread({
       )}
       <form
         onSubmit={handleSubmit}
-        className="p-4 border-t border-minbak-light-gray flex gap-2"
+        className="p-4 border-t border-minbak-light-gray flex gap-2 items-end"
       >
         <input
           ref={fileInputRef}
@@ -369,20 +379,54 @@ export default function MessageThread({
             <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
           </svg>
         </button>
-        <input
-          type="text"
+        {isHost && (
+          <button
+            type="button"
+            disabled={suggestLoading}
+            onClick={async () => {
+              setSuggestLoading(true);
+              try {
+                const res = await fetch(`/api/conversations/${conversationId}/suggest-reply`, {
+                  method: "POST",
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                  toast.error(data.error ?? t("messageThread.aiSuggestError"));
+                  return;
+                }
+                if (data.draft) setInput(data.draft);
+              } catch {
+                toast.error(t("messageThread.aiSuggestError"));
+              } finally {
+                setSuggestLoading(false);
+              }
+            }}
+            title={t("messageThread.aiSuggestTitle")}
+            className="shrink-0 px-3 py-2 text-minbak-body text-minbak-gray hover:text-minbak-black border border-minbak-light-gray rounded-minbak hover:bg-minbak-light-gray/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {suggestLoading ? t("messageThread.aiSuggestLoading") : t("messageThread.aiSuggestReply")}
+          </button>
+        )}
+        <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="메시지를 입력하세요"
+          placeholder={t("messageThread.placeholder")}
           maxLength={2000}
-          className="flex-1 px-4 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body placeholder:text-minbak-gray focus:outline-none focus:ring-2 focus:ring-minbak-black/20"
+          rows={1}
+          className="flex-1 min-h-[44px] max-h-[120px] px-4 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body placeholder:text-minbak-gray focus:outline-none focus:ring-2 focus:ring-minbak-black/20 resize-y"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              e.currentTarget.form?.requestSubmit();
+            }
+          }}
         />
         <button
           type="submit"
           disabled={sending || cooldownUntil != null || (!input.trim() && !pendingImageFile)}
-          className="px-4 py-2 bg-minbak-primary text-white text-minbak-body font-medium rounded-minbak hover:bg-minbak-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 bg-minbak-primary text-white text-minbak-body font-medium rounded-minbak hover:bg-minbak-primary-hover disabled:opacity-50 disabled:cursor-not-allowed shrink-0 self-end"
         >
-          {sending ? "전송 중..." : cooldownUntil != null ? "잠시만요" : "전송"}
+          {sending ? t("messageThread.sending") : cooldownUntil != null ? t("messageThread.cooldown") : t("messageThread.send")}
         </button>
       </form>
 

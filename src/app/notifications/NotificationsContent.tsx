@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 import type { HostTranslationKey } from "@/lib/host-i18n";
+import PushSubscribeBlock from "@/components/push/PushSubscribeBlock";
 
 type NotificationItem = {
   id: string;
@@ -100,15 +101,14 @@ export default function NotificationsContent() {
     );
   }
 
-  if (list.length === 0) {
-    return (
-      <div className="py-12 text-center text-minbak-caption text-minbak-gray">
-        {t("notifications.empty")}
-      </div>
-    );
-  }
-
   return (
+    <>
+      <PushSubscribeBlock />
+      {list.length === 0 ? (
+        <div className="py-12 text-center text-minbak-caption text-minbak-gray">
+          {t("notifications.empty")}
+        </div>
+      ) : (
     <div className="bg-white border border-minbak-light-gray rounded-minbak overflow-hidden">
       <ul>
         {list.map((item) => (
@@ -143,5 +143,7 @@ export default function NotificationsContent() {
         </div>
       )}
     </div>
+      )}
+    </>
   );
 }

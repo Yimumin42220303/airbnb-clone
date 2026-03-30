@@ -165,7 +165,7 @@ function MobileMonthGrid({
                     isBlocked ? "text-gray-400 line-through" : "text-minbak-gray"
                   }`}
                 >
-                  {isBlocked ? t("calendar.blocked") : formatForHost(listing.pricePerNight)}
+                  {isBlocked ? t("calendar.blocked") : formatForHost((listing.dailyPriceOverrides ?? {})[dateKey] ?? listing.pricePerNight)}
                 </span>
               )}
             </div>
@@ -195,6 +195,8 @@ type ListingWithBookings = {
   pricePerNight: number;
   bookings: Booking[];
   blockedDateKeys?: string[];
+  /** 일별 가격 오버라이드 (날짜키 -> 1박 요금). 없으면 기본가 사용 */
+  dailyPriceOverrides?: Record<string, number>;
 };
 
 function getCalendarDays(year: number, month: number): Date[] {
@@ -267,6 +269,15 @@ export default function HostCalendarView() {
   const [selectedRange, setSelectedRange] = useState<{ listingId: string; dateKeys: string[] } | null>(null);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [hoveredListingId, setHoveredListingId] = useState<string | null>(null);
+  const [priceEdit, setPriceEdit] = useState<{ listingId: string; dateKey: string } | null>(null);
+  const [priceEditInput, setPriceEditInput] = useState("");
+  const [batchPriceInput, setBatchPriceInput] = useState("");
+  const [copyMode, setCopyMode] = useState<"month" | "listing" | null>(null);
+  const [copyTargetMonth, setCopyTargetMonth] = useState("");
+  const [copyTargetListingId, setCopyTargetListingId] = useState("");
+  const [weekendRuleInput, setWeekendRuleInput] = useState("1");
+  const [weekdayRuleInput, setWeekdayRuleInput] = useState("1");
+  const [rulesListingId, setRulesListingId] = useState<string | null>(null);
   const dragStartRef = useRef<{ listingId: string; dateKey: string } | null>(null);
   const dragEndRef = useRef<string | null>(null);
 
@@ -293,7 +304,13 @@ export default function HostCalendarView() {
     if (!start) return;
     const end = dragEndRef.current ?? start.dateKey;
     const dateKeys = getDateKeysBetweenKeys(start.dateKey, end);
-    setSelectedRange({ listingId: start.listingId, dateKeys });
+    if (dateKeys.length === 1 && dateKeys[0] === start.dateKey) {
+      setPriceEdit({ listingId: start.listingId, dateKey: start.dateKey });
+      setSelectedRange(null);
+    } else {
+      setSelectedRange({ listingId: start.listingId, dateKeys });
+      setPriceEdit(null);
+    }
     dragStartRef.current = null;
     dragEndRef.current = null;
     setDragStart(null);
@@ -304,6 +321,22 @@ export default function HostCalendarView() {
     window.addEventListener("mouseup", handleMouseUp);
     return () => window.removeEventListener("mouseup", handleMouseUp);
   }, []);
+
+  useEffect(() => {
+    if (!priceEdit) return;
+    const listing = listings.find((l) => l.id === priceEdit.listingId);
+    const current = listing ? (listing.dailyPriceOverrides ?? {})[priceEdit.dateKey] ?? listing.pricePerNight : 0;
+    setPriceEditInput(String(current));
+  }, [priceEdit, listings]);
+
+  useEffect(() => {
+    if (!selectedRange) {
+      setBatchPriceInput("");
+      return;
+    }
+    const listing = listings.find((l) => l.id === selectedRange.listingId);
+    if (listing) setBatchPriceInput(String(listing.pricePerNight));
+  }, [selectedRange, listings]);
 
   useEffect(() => {
     if (!monthParam) return;
@@ -448,6 +481,65 @@ export default function HostCalendarView() {
                   {t("calendar.today")}
                 </button>
               </div>
+              {/* 요일 규칙 적용 (3단계) */}
+              <div className="hidden md:flex flex-wrap items-center gap-2 py-2 px-3 bg-white border border-minbak-light-gray rounded-minbak">
+                <span className="text-minbak-caption text-minbak-black font-medium">{t("calendar.applyRules")}</span>
+                <select
+                  value={rulesListingId ?? selectedListingId ?? filteredListings[0]?.id ?? ""}
+                  onChange={(e) => setRulesListingId(e.target.value || null)}
+                  className="min-h-[36px] px-2 py-1 border border-minbak-light-gray rounded-minbak text-minbak-body text-sm"
+                >
+                  {filteredListings.map((l) => (
+                    <option key={l.id} value={l.id}>{l.hostDisplayName?.trim() || l.title}</option>
+                  ))}
+                </select>
+                <label className="text-minbak-caption text-minbak-gray">{t("calendar.weekendMultiplier")}</label>
+                <input
+                  type="number"
+                  min="0.1"
+                  step="0.1"
+                  value={weekendRuleInput}
+                  onChange={(e) => setWeekendRuleInput(e.target.value)}
+                  className="w-16 px-2 py-1 border border-minbak-light-gray rounded-minbak text-sm"
+                />
+                <label className="text-minbak-caption text-minbak-gray">{t("calendar.weekdayMultiplier")}</label>
+                <input
+                  type="number"
+                  min="0.1"
+                  step="0.1"
+                  value={weekdayRuleInput}
+                  onChange={(e) => setWeekdayRuleInput(e.target.value)}
+                  className="w-16 px-2 py-1 border border-minbak-light-gray rounded-minbak text-sm"
+                />
+                <button
+                  type="button"
+                  disabled={availabilityLoading || !filteredListings.length}
+                  onClick={async () => {
+                    const lid = rulesListingId ?? selectedListingId ?? filteredListings[0]?.id;
+                    if (!lid) return;
+                    const w = Number(weekendRuleInput) || 1;
+                    const wd = Number(weekdayRuleInput) || 1;
+                    setAvailabilityLoading(true);
+                    try {
+                      const res = await fetch(`/api/host/listings/${lid}/availability/apply-rules`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          month: `${year}-${String(month).padStart(2, "0")}`,
+                          weekendMultiplier: w,
+                          weekdayMultiplier: wd,
+                        }),
+                      });
+                      if (res.ok) setRefreshKey((k) => k + 1);
+                    } finally {
+                      setAvailabilityLoading(false);
+                    }
+                  }}
+                  className="px-3 py-1.5 text-sm font-medium rounded-minbak bg-minbak-primary text-white hover:bg-minbak-primary/90 disabled:opacity-50"
+                >
+                  {t("calendar.applyThisMonth")}
+                </button>
+              </div>
             </div>
 
             {loading ? (
@@ -473,7 +565,7 @@ export default function HostCalendarView() {
                 {/* 데스크톱 전용: 기존 가로 스크롤 캘린더 */}
                 <div className="hidden md:block bg-white rounded-minbak border border-minbak-light-gray overflow-hidden relative">
                 {selectedRange && (
-                  <div className="absolute left-1/2 -translate-x-1/2 top-2 z-10 flex items-center gap-2 px-3 py-2 bg-white border border-minbak-light-gray rounded-minbak shadow-lg">
+                  <div className="absolute left-1/2 -translate-x-1/2 top-2 z-10 flex flex-wrap items-center gap-2 px-3 py-2 bg-white border border-minbak-light-gray rounded-minbak shadow-lg">
                     <span className="text-minbak-caption text-minbak-black whitespace-nowrap">
                       {t("calendar.selectedDays", { count: selectedRange.dateKeys.length })}
                     </span>
@@ -533,6 +625,45 @@ export default function HostCalendarView() {
                     >
                       {t("calendar.open")}
                     </button>
+                    <span className="border-l border-minbak-light-gray h-6 mx-0.5" aria-hidden />
+                    <input
+                      type="number"
+                      min={1}
+                      value={batchPriceInput}
+                      onChange={(e) => setBatchPriceInput(e.target.value)}
+                      placeholder={formatForHost(listings.find((l) => l.id === selectedRange.listingId)?.pricePerNight ?? 0)}
+                      className="w-24 px-2 py-1.5 border border-minbak-light-gray rounded-minbak text-minbak-body text-sm"
+                    />
+                    <button
+                      type="button"
+                      disabled={availabilityLoading || !batchPriceInput || Number(batchPriceInput) < 1}
+                      onClick={async () => {
+                        const value = Math.round(Number(batchPriceInput));
+                        if (value < 1) return;
+                        setAvailabilityLoading(true);
+                        try {
+                          const res = await fetch(
+                            `/api/host/listings/${selectedRange.listingId}/availability`,
+                            {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                updates: selectedRange.dateKeys.map((date) => ({ date, pricePerNight: value })),
+                              }),
+                            }
+                          );
+                          if (res.ok) {
+                            setRefreshKey((k) => k + 1);
+                            setSelectedRange(null);
+                          }
+                        } finally {
+                          setAvailabilityLoading(false);
+                        }
+                      }}
+                      className="px-3 py-1.5 text-sm font-medium rounded-minbak bg-minbak-primary text-white hover:bg-minbak-primary/90 disabled:opacity-50"
+                    >
+                      {t("calendar.unifyPrice")}
+                    </button>
                     <button
                       type="button"
                       onClick={() => setSelectedRange(null)}
@@ -540,6 +671,165 @@ export default function HostCalendarView() {
                     >
                       {t("calendar.cancel")}
                     </button>
+                    {copyMode ? (
+                      <div className="w-full flex flex-wrap items-center gap-2 pt-2 border-t border-minbak-light-gray mt-2">
+                        {copyMode === "month" && (
+                          <>
+                            <label className="text-minbak-caption text-minbak-black">{t("calendar.targetMonth")}</label>
+                            <select
+                              value={copyTargetMonth}
+                              onChange={(e) => setCopyTargetMonth(e.target.value)}
+                              className="px-2 py-1.5 border border-minbak-light-gray rounded-minbak text-sm"
+                            >
+                              {Array.from({ length: 12 }, (_, i) => {
+                                const d = new Date(year, month - 1 + i, 1);
+                                const v = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+                                return <option key={v} value={v}>{d.getFullYear()}년 {d.getMonth() + 1}월</option>;
+                              })}
+                            </select>
+                          </>
+                        )}
+                        {copyMode === "listing" && (
+                          <>
+                            <label className="text-minbak-caption text-minbak-black">{t("calendar.targetListing")}</label>
+                            <select
+                              value={copyTargetListingId}
+                              onChange={(e) => setCopyTargetListingId(e.target.value)}
+                              className="px-2 py-1.5 border border-minbak-light-gray rounded-minbak text-sm min-w-[140px]"
+                            >
+                              <option value="">—</option>
+                              {filteredListings
+                                .filter((l) => l.id !== selectedRange.listingId)
+                                .map((l) => (
+                                  <option key={l.id} value={l.id}>{l.hostDisplayName?.trim() || l.title}</option>
+                                ))}
+                            </select>
+                          </>
+                        )}
+                        <button
+                          type="button"
+                          disabled={availabilityLoading || (copyMode === "month" && !copyTargetMonth) || (copyMode === "listing" && !copyTargetListingId)}
+                          onClick={async () => {
+                            if (!selectedRange) return;
+                            const body =
+                              copyMode === "month"
+                                ? { sourceDateKeys: selectedRange.dateKeys, targetType: "otherMonth", targetMonth: copyTargetMonth }
+                                : { sourceDateKeys: selectedRange.dateKeys, targetType: "otherListing", targetListingId: copyTargetListingId };
+                            setAvailabilityLoading(true);
+                            try {
+                              const res = await fetch(
+                                `/api/host/listings/${selectedRange.listingId}/availability/copy`,
+                                { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }
+                              );
+                              if (res.ok) {
+                                setRefreshKey((k) => k + 1);
+                                setSelectedRange(null);
+                                setCopyMode(null);
+                              }
+                            } finally {
+                              setAvailabilityLoading(false);
+                            }
+                          }}
+                          className="px-3 py-1.5 text-sm font-medium rounded-minbak bg-minbak-primary text-white hover:bg-minbak-primary/90 disabled:opacity-50"
+                        >
+                          {t("calendar.apply")}
+                        </button>
+                        <button type="button" onClick={() => setCopyMode(null)} className="px-3 py-1.5 text-sm rounded-minbak border border-minbak-light-gray text-minbak-black hover:bg-minbak-bg">
+                          {t("calendar.cancel")}
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="border-l border-minbak-light-gray h-6 mx-0.5" aria-hidden />
+                        <button type="button" onClick={() => { setCopyMode("month"); const next = month === 12 ? [year + 1, 1] : [year, month + 1]; setCopyTargetMonth(`${next[0]}-${String(next[1]).padStart(2, "0")}`); }} className="px-3 py-1.5 text-sm font-medium rounded-minbak border border-minbak-light-gray text-minbak-black hover:bg-minbak-bg">
+                          {t("calendar.copyToOtherMonth")}
+                        </button>
+                        <button type="button" onClick={() => { setCopyMode("listing"); setCopyTargetListingId(filteredListings.find((l) => l.id !== selectedRange.listingId)?.id ?? ""); }} className="px-3 py-1.5 text-sm font-medium rounded-minbak border border-minbak-light-gray text-minbak-black hover:bg-minbak-bg">
+                          {t("calendar.copyToOtherListing")}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+                {priceEdit && (
+                  <div className="absolute left-1/2 -translate-x-1/2 top-2 z-10 flex flex-col gap-2 px-3 py-2 bg-white border border-minbak-light-gray rounded-minbak shadow-lg">
+                    <p className="text-minbak-caption text-minbak-black whitespace-nowrap">
+                      {t("calendar.editDailyPrice")} — {priceEdit.dateKey}
+                    </p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <input
+                        type="number"
+                        min={1}
+                        value={priceEditInput}
+                        onChange={(e) => setPriceEditInput(e.target.value)}
+                        className="w-28 px-2 py-1.5 border border-minbak-light-gray rounded-minbak text-minbak-body"
+                      />
+                      <button
+                        type="button"
+                        disabled={availabilityLoading || !priceEditInput || Number(priceEditInput) < 1}
+                        onClick={async () => {
+                          const value = Math.round(Number(priceEditInput));
+                          if (value < 1) return;
+                          setAvailabilityLoading(true);
+                          try {
+                            const res = await fetch(
+                              `/api/host/listings/${priceEdit.listingId}/availability`,
+                              {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  updates: [{ date: priceEdit.dateKey, pricePerNight: value }],
+                                }),
+                              }
+                            );
+                            if (res.ok) {
+                              setRefreshKey((k) => k + 1);
+                              setPriceEdit(null);
+                            }
+                          } finally {
+                            setAvailabilityLoading(false);
+                          }
+                        }}
+                        className="px-3 py-1.5 text-sm font-medium rounded-minbak bg-minbak-primary text-white hover:bg-minbak-primary/90 disabled:opacity-50"
+                      >
+                        {t("calendar.apply")}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={availabilityLoading}
+                        onClick={async () => {
+                          setAvailabilityLoading(true);
+                          try {
+                            const res = await fetch(
+                              `/api/host/listings/${priceEdit.listingId}/availability`,
+                              {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  updates: [{ date: priceEdit.dateKey, available: true, pricePerNight: null }],
+                                }),
+                              }
+                            );
+                            if (res.ok) {
+                              setRefreshKey((k) => k + 1);
+                              setPriceEdit(null);
+                            }
+                          } finally {
+                            setAvailabilityLoading(false);
+                          }
+                        }}
+                        className="px-3 py-1.5 text-sm font-medium rounded-minbak border border-minbak-light-gray text-minbak-black hover:bg-minbak-bg"
+                      >
+                        {t("calendar.revertToDefault")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPriceEdit(null)}
+                        className="px-3 py-1.5 text-sm font-medium rounded-minbak border border-minbak-light-gray text-minbak-black hover:bg-minbak-bg"
+                      >
+                        {t("calendar.cancel")}
+                      </button>
+                    </div>
                   </div>
                 )}
                 <div
@@ -699,7 +989,7 @@ function CalendarRow({
             >
               {isCurrentMonth && !isBlocked && (
                 <p className="text-[11px] leading-tight text-minbak-gray whitespace-nowrap overflow-visible">
-                  {formatForHost(listing.pricePerNight)}
+                  {formatForHost((listing.dailyPriceOverrides ?? {})[dateKey] ?? listing.pricePerNight)}
                 </p>
               )}
               {isCurrentMonth && isBlocked && (

@@ -53,6 +53,7 @@ export default function UserMenu() {
         className="flex items-center gap-2 px-3 py-2 rounded-minbak-full border border-minbak-light-gray hover:shadow-minbak transition-shadow"
         aria-expanded={open}
         aria-haspopup="true"
+        aria-label={open ? "메뉴 닫기" : "프로필 메뉴"}
       >
         <Menu className="w-5 h-5 text-minbak-gray" />
         <div className="w-8 h-8 rounded-full bg-minbak-gray overflow-hidden flex items-center justify-center">

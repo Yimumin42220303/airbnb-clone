@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { formatPrice } from "@/lib/currency";
 
 type SearchParams = { [key: string]: string | string[] | undefined };
 
@@ -312,7 +313,7 @@ export default async function AdminDashboardPage({
                           : "대기"}
                     </span>
                   </td>
-                  <td className="py-2">₩{b.totalPrice.toLocaleString()}</td>
+                  <td className="py-2">{formatPrice(b.totalPrice, "KRW")}</td>
                 </tr>
               ))}
             </tbody>

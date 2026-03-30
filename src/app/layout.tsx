@@ -8,7 +8,7 @@ import HostLocaleProvider from "@/components/host/HostLocaleProvider";
 import { CurrencyProvider } from "@/components/currency/CurrencyProvider";
 import Toaster from "@/components/ui/Toaster";
 import BottomNav from "@/components/layout/BottomNav";
-import FixedContactWrapper from "@/components/layout/FixedContactWrapper";
+import ChannelTalk from "@/components/channel/ChannelTalk";
 import { BASE_URL } from "@/lib/site-url";
 import { getHostLocaleFromCookie, getLocaleFromAcceptLanguage } from "@/lib/host-i18n";
 
@@ -24,6 +24,10 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 5,
   viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f7f7f7" },
+    { media: "(prefers-color-scheme: dark)", color: "#1e1e1e" },
+  ],
 };
 
 export const metadata: Metadata = {
@@ -39,13 +43,15 @@ export const metadata: Metadata = {
   description:
     "에어비앤비보다 합리적인 가격으로 도쿄 숙소를 예약하세요. 문의부터 체크아웃까지 한국어로 편하게 이용할 수 있습니다.",
   openGraph: {
+    url: BASE_URL,
     title: "도쿄민박 – 도쿄 숙소 예약",
     description:
       "에어비앤비보다 합리적인 가격으로 도쿄 숙소를 예약하세요. 한국어 서포트.",
     type: "website",
     locale: "ko_KR",
+    siteName: "도쿄민박",
     images: [
-      { url: "/og-image.png", width: 1200, height: 630, alt: "도쿄민박" },
+      { url: "/og-image.png", width: 1200, height: 630, alt: "도쿄민박 – 도쿄 숙소 예약" },
       { url: "/icon.png", width: 512, height: 512, alt: "도쿄민박" },
     ],
   },
@@ -60,6 +66,11 @@ export const metadata: Metadata = {
   other: {
     "naver-site-verification": "494be8c8f8bcbd6179490efcdb06e07bc5daac04",
   },
+  // 모바일 웹앱: 전체화면·스탠드얼론 시 UI 모드
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "도쿄민박" },
+  formatDetection: { telephone: false, email: false, address: false },
+  // PWA: 홈 화면 추가·웹 푸시용
+  manifest: "/manifest.json",
 };
 
 export default async function RootLayout({
@@ -130,7 +141,7 @@ export default async function RootLayout({
                 {children}
               </div>
               <BottomNav />
-              <FixedContactWrapper />
+              <ChannelTalk />
               <Toaster />
             </HostLocaleProvider>
             </CurrencyProvider>
