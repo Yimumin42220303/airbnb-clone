@@ -58,7 +58,7 @@ export async function GET(
   const roomId = listing.beds24RoomId?.trim();
   const hasBeds24Config =
     (listing.beds24Enabled || !!(propId && roomId)) && !!propId && !!roomId;
-  if (!hasBeds24Config) {
+  if (!hasBeds24Config || !propId || !roomId) {
     return NextResponse.json({
       ok: false,
       message:
@@ -85,7 +85,7 @@ export async function GET(
     const d2 = String(toDate.getDate()).padStart(2, "0");
     const to = `${y2}${m2}${d2}`;
 
-    const url = `https://beds24.com/api/v2/inventory/rooms/availability?propId=${encodeURIComponent(listing.beds24PropId)}&roomId=${encodeURIComponent(listing.beds24RoomId)}&from=${from}&to=${to}`;
+    const url = `https://beds24.com/api/v2/inventory/rooms/availability?propId=${encodeURIComponent(propId)}&roomId=${encodeURIComponent(roomId)}&from=${from}&to=${to}`;
 
     const tokenRes = await fetch("https://beds24.com/api/v2/authentication/token", {
       method: "GET",
@@ -121,12 +121,7 @@ export async function GET(
     }
 
     const { getBeds24BlockedDateKeys } = await import("@/lib/beds24");
-    const blocked = await getBeds24BlockedDateKeys(
-      listing.beds24PropId,
-      listing.beds24RoomId,
-      fromDate,
-      toDate
-    );
+    const blocked = await getBeds24BlockedDateKeys(propId, roomId, fromDate, toDate);
     const blockedList = Array.from(blocked).sort();
     debug.blockedCount = blockedList.length;
     debug.blockedDates = blockedList.slice(0, 50);
@@ -142,12 +137,7 @@ export async function GET(
     // 가격 동기화 테스트: calendar API 호출 (항상 price1 사용)
     try {
       const { getBeds24CalendarPrices } = await import("@/lib/beds24");
-      const prices = await getBeds24CalendarPrices(
-        listing.beds24PropId!,
-        listing.beds24RoomId!,
-        fromDate,
-        toDate
-      );
+      const prices = await getBeds24CalendarPrices(propId, roomId, fromDate, toDate);
       debug.priceSync = {
         priceKey: "price1",
         fetchedCount: prices.size,
