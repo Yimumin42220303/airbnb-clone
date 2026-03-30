@@ -17,6 +17,7 @@
     "db:studio": "prisma studio",
     "db:add-amenities": "node scripts/add-airbnb-amenities.js",
     "db:randomize-review-dates": "node scripts/randomize-review-dates.js",
+    "db:set-admin": "node scripts/set-admin-by-email.js",
     "db:backup": "node scripts/db-backup.js",
     "db:restore": "node scripts/db-restore.js",
     "db:migrate-krw-to-jpy": "node scripts/migrate-krw-to-jpy.js",
