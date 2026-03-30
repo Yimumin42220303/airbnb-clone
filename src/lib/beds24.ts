@@ -333,6 +333,46 @@ export async function getBeds24BlockedDateKeysCached(
   return keys;
 }
 
+/**
+ * Beds24 availability에서 false인 날(숙박 불가 밤) 집합으로부터,
+ * ICS `getExternalCheckoutOnlyDateKeys`와 같은 의미의 "체크아웃만 가능" 날짜 키를 만든다.
+ * 연속 블록의 첫날 = 체크인일(전 게스트 오전 체크아웃 가능), 마지막 밤 다음날 = 퇴실일.
+ */
+export function deriveBeds24CheckoutOnlyDateKeys(blocked: Set<string>): Set<string> {
+  if (blocked.size === 0) return new Set();
+  const sorted = Array.from(blocked).filter((k) => /^\d{4}-\d{2}-\d{2}$/.test(k)).sort();
+  if (sorted.length === 0) return new Set();
+  const out = new Set<string>();
+
+  const addDays = (key: string, delta: number): string => {
+    const [y, m, d] = key.split("-").map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, d + delta));
+    return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}-${String(dt.getUTCDate()).padStart(2, "0")}`;
+  };
+
+  const dayDiff = (a: string, b: string): number => {
+    const [y1, m1, d1] = a.split("-").map(Number);
+    const [y2, m2, d2] = b.split("-").map(Number);
+    const t1 = Date.UTC(y1, m1 - 1, d1);
+    const t2 = Date.UTC(y2, m2 - 1, d2);
+    return Math.round((t2 - t1) / (24 * 60 * 60 * 1000));
+  };
+
+  let runStart = sorted[0];
+  for (let i = 1; i <= sorted.length; i++) {
+    const prev = sorted[i - 1];
+    const curr = sorted[i];
+    const endOfRun = !curr || dayDiff(prev, curr) !== 1;
+    if (endOfRun) {
+      out.add(runStart);
+      out.add(addDays(prev, 1));
+      if (curr) runStart = curr;
+    }
+  }
+
+  return out;
+}
+
 export type Beds24PostBookingInput = {
   propId: string;
   roomId: string;
