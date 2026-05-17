@@ -7,7 +7,8 @@ import { useSession } from "next-auth/react";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 import type { HostLocale } from "@/lib/host-i18n";
 
-const POLL_INTERVAL_MS = 60_000;
+const POLL_INTERVAL_ACTIVE_MS = 120_000;
+const POLL_INTERVAL_HIDDEN_MS = 300_000;
 const DROPDOWN_LIMIT = 10;
 
 type NotificationItem = {
@@ -81,8 +82,22 @@ export default function NotificationBell() {
   useEffect(() => {
     if (status !== "authenticated") return;
     fetchUnreadCount();
-    const t = setInterval(fetchUnreadCount, POLL_INTERVAL_MS);
-    return () => clearInterval(t);
+    let timer: ReturnType<typeof setInterval>;
+    function startPolling() {
+      clearInterval(timer);
+      const interval = document.hidden ? POLL_INTERVAL_HIDDEN_MS : POLL_INTERVAL_ACTIVE_MS;
+      timer = setInterval(fetchUnreadCount, interval);
+    }
+    startPolling();
+    function onVisibilityChange() {
+      if (!document.hidden) fetchUnreadCount();
+      startPolling();
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, [status, fetchUnreadCount]);
 
   useEffect(() => {

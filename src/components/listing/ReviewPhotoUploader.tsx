@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import Image from "next/image";
+import { cloudinaryLoader } from "@/lib/cloudinary-loader";
 import { Camera, X, Loader2 } from "lucide-react";
 import { uploadImageClient, canUseClientUpload } from "@/lib/cloudinary-client-upload";
 
@@ -77,7 +78,14 @@ export default function ReviewPhotoUploader({ photos, onChange }: Props) {
       <div className="flex flex-wrap gap-2">
         {photos.map((url, i) => (
           <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-[#ebebeb]">
-            <Image src={url} alt={`업로드 사진 ${i + 1}`} fill className="object-cover" sizes="64px" />
+            <Image
+              loader={cloudinaryLoader}
+              src={url}
+              alt={`업로드 사진 ${i + 1}`}
+              fill
+              className="object-cover"
+              sizes="64px"
+            />
             <button
               type="button"
               onClick={() => removePhoto(i)}

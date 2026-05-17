@@ -178,32 +178,40 @@ function getIcalDateKey(veventBlock: string, prop: "DTSTART" | "DTEND"): string 
   return `${datePart.slice(0, 4)}-${datePart.slice(4, 6)}-${datePart.slice(6, 8)}`;
 }
 
-/** YYYY-MM-DD에서 하루 빼기. 표준 iCal DTEND(exclusive) → 퇴실일 = DTEND-1. */
-function subtractOneDay(dateKey: string): string {
-  const d = new Date(dateKey + "T12:00:00Z");
-  d.setUTCDate(d.getUTCDate() - 1);
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
-}
+export type ExternalCalendarInfo = {
+  icalImportUrls: string | null;
+  beds24Enabled: boolean | null;
+  beds24PropId: string | null;
+  beds24RoomId: string | null;
+  /** Beds24 계정 식별자 (관리자 설정, null=공용 토큰 fallback) */
+  beds24AccountKey?: string | null;
+};
 
 /**
  * 숙소의 외부 캘린더(ICS Import URL 목록)에서 해당 기간에 막힌 날짜 집합 반환.
- * 추후 Beds24 API 연동 시 이 함수 내부에서 API 소스를 추가로 호출해 같은 Set에 merge하면 됨.
+ * listingOrId: listing 정보를 이미 갖고 있으면 DB 중복 조회 없이 바로 사용.
  */
 export async function getExternalBlockedDateKeys(
-  listingId: string,
+  listingOrId: string | ExternalCalendarInfo,
   checkIn: Date,
   checkOut: Date
 ): Promise<Set<string>> {
-  const { prisma } = await import("./prisma");
-  const listing = await prisma.listing.findUnique({
-    where: { id: listingId },
-    select: {
-      icalImportUrls: true,
-      beds24Enabled: true,
-      beds24PropId: true,
-      beds24RoomId: true,
-    },
-  });
+  let listing: ExternalCalendarInfo | null;
+  if (typeof listingOrId === "string") {
+    const { prisma } = await import("./prisma");
+    listing = await prisma.listing.findUnique({
+      where: { id: listingOrId },
+      select: {
+        icalImportUrls: true,
+        beds24Enabled: true,
+        beds24PropId: true,
+        beds24RoomId: true,
+        beds24AccountKey: true,
+      },
+    });
+  } else {
+    listing = listingOrId;
+  }
   if (!listing) return new Set();
 
   let urls: string[] = [];
@@ -217,8 +225,10 @@ export async function getExternalBlockedDateKeys(
   }
 
   const merged = new Set<string>();
-  for (const url of urls) {
-    const keys = await fetchIcsBlockedDateKeys(url, checkIn, checkOut);
+  const icsResults = await Promise.all(
+    urls.map((url) => fetchIcsBlockedDateKeys(url, checkIn, checkOut))
+  );
+  for (const keys of icsResults) {
     keys.forEach((k) => merged.add(k));
   }
 
@@ -233,7 +243,8 @@ export async function getExternalBlockedDateKeys(
       listing.beds24PropId,
       listing.beds24RoomId,
       checkIn,
-      checkOut
+      checkOut,
+      listing.beds24AccountKey ?? null
     );
     beds24Keys.forEach((k) => merged.add(k));
   }
@@ -243,24 +254,19 @@ export async function getExternalBlockedDateKeys(
 
 /**
  * ICS에서 체크아웃 전용 날짜 추출:
- * 1) 체크아웃일(DTEND): 전날 게스트 퇴실 → 당일 체크인 불가, 체크아웃만 가능
- * 2) 체크인일(DTSTART): 당일 오후 다음 게스트 체크인 → 당일 오전에는 체크아웃 가능 (체크인은 주로 15시 이후)
- *
- * Airbnb iCal: DTEND이 마지막 숙박일을 가리킬 수 있음(체크아웃 00:00).
- * 표준 iCal: DTEND exclusive → 체크아웃일 = DTEND 날짜.
- * Airbnb 계열 URL이면 DTEND+1일을 체크아웃일로 사용.
+ * - 체크인일(DTSTART)만 포함. 해당일은 (막힘과 겹칠 때) 전 예약의 체크아웃 선택은 허용하되,
+ *   새 예약의 체크인 시작일로는 선택하지 못하게 함.
+ * - 퇴실일(전 게스트 체크아웃 당일)은 당일 턴오버로 새 체크인 허용 → checkoutOnly에 넣지 않음.
  */
 export function parseIcsToCheckoutOnlyDateKeys(
   icsBody: string,
   fromDate: Date,
-  toDate: Date,
-  icsUrl?: string
+  toDate: Date
 ): Set<string> {
   const unfolded = unfoldIcs(icsBody);
   const out = new Set<string>();
   const fromKey = toDateKey(fromDate);
   const toKey = toDateKey(toDate);
-  const isAirbnbFormat = !!(icsUrl && /airbnb\.com|airbnb\.co\.|airbnb\.co\.kr|ical\/\d+/.test(icsUrl));
   const veventRegex = /BEGIN:VEVENT[\s\S]*?END:VEVENT/gi;
   let m: RegExpExecArray | null;
   while ((m = veventRegex.exec(unfolded)) !== null) {
@@ -280,28 +286,6 @@ export function parseIcsToCheckoutOnlyDateKeys(
     }
     if (end <= fromDate || dtStart >= toDate) continue;
 
-    // 1) 체크아웃일 (퇴실하는 날 = 체크인 불가, 체크아웃만 가능)
-    // 표준 iCal: DTEND은 exclusive → 마지막 숙박일 = DTEND-1, 퇴실일 = DTEND-1 (그날 아침 퇴실). 따라서 체크아웃만 가능한 날 = DTEND-1.
-    // Airbnb: DTEND이 마지막 숙박일을 가리키므로 퇴실일 = DTEND+1 → 기존대로 +1 사용.
-    let checkoutKey: string | null = null;
-    const dtEndKey = getIcalDateKey(block, "DTEND");
-    if (dtEndKey) {
-      if (isAirbnbFormat) {
-        const d = new Date(dtEndKey + "T12:00:00Z");
-        d.setUTCDate(d.getUTCDate() + 1);
-        checkoutKey = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
-      } else {
-        checkoutKey = subtractOneDay(dtEndKey);
-      }
-    } else {
-      const endKey = toDateKey(end);
-      checkoutKey = subtractOneDay(endKey);
-    }
-    if (checkoutKey && checkoutKey >= fromKey && checkoutKey < toKey) {
-      out.add(checkoutKey);
-    }
-
-    // 2) 체크인일 (다른 게스트 체크인일 = 전 게스트가 오전 체크아웃 가능)
     const checkInKey = getIcalDateKey(block, "DTSTART") ?? toDateKey(dtStart);
     if (checkInKey >= fromKey && checkInKey < toKey) {
       out.add(checkInKey);
@@ -326,6 +310,7 @@ export async function getExternalCheckoutOnlyDateKeys(
       beds24Enabled: true,
       beds24PropId: true,
       beds24RoomId: true,
+      beds24AccountKey: true,
     },
   });
   if (!listing) return new Set();
@@ -341,10 +326,11 @@ export async function getExternalCheckoutOnlyDateKeys(
   }
 
   const merged = new Set<string>();
-  for (const url of urls) {
-    const key = cacheKey(url);
+
+  async function fetchAndParseCheckoutOnly(url: string): Promise<Set<string>> {
+    const k = cacheKey(url);
     let text: string | null = null;
-    const cached = icalCache.get(key);
+    const cached = icalCache.get(k);
     if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
       text = cached.text;
     }
@@ -359,14 +345,18 @@ export async function getExternalCheckoutOnlyDateKeys(
           signal: AbortSignal.timeout(15000),
           cache: "no-store",
         });
-        if (!res.ok) continue;
+        if (!res.ok) return new Set();
         text = await res.text();
-        icalCache.set(key, { text, fetchedAt: Date.now() });
+        icalCache.set(k, { text, fetchedAt: Date.now() });
       } catch {
-        continue;
+        return new Set();
       }
     }
-    const keys = parseIcsToCheckoutOnlyDateKeys(text, fromDate, toDate, url);
+    return parseIcsToCheckoutOnlyDateKeys(text, fromDate, toDate);
+  }
+
+  const checkoutResults = await Promise.all(urls.map(fetchAndParseCheckoutOnly));
+  for (const keys of checkoutResults) {
     keys.forEach((k) => merged.add(k));
   }
 
@@ -380,7 +370,8 @@ export async function getExternalCheckoutOnlyDateKeys(
       listing.beds24PropId,
       listing.beds24RoomId,
       fromDate,
-      toDate
+      toDate,
+      listing.beds24AccountKey ?? null
     );
     const beds24CheckoutOnly = deriveBeds24CheckoutOnlyDateKeys(beds24Blocked);
     beds24CheckoutOnly.forEach((k) => merged.add(k));

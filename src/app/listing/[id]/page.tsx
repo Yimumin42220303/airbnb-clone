@@ -6,14 +6,13 @@ import { authOptions } from "@/lib/auth";
 import { getListingById } from "@/lib/listings";
 import { prisma } from "@/lib/prisma";
 import { getWishlistListingIds } from "@/lib/wishlist";
-import { formatForGuest } from "@/lib/currency";
+import { formatStoredForGuestView } from "@/lib/currency";
 import { canUserReview } from "@/lib/reviews";
 import ListingDetailContent from "./ListingDetailContent";
 import { BASE_URL } from "@/lib/site-url";
 import { getHostLocaleFromCookie, t } from "@/lib/host-i18n";
 
-/** 숙소 수정(영상 등) 후 상세 페이지가 최신 데이터로 보이도록 항상 동적 렌더 */
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -36,9 +35,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const url = `${BASE_URL}/listing/${id}`;
   const perNightLabel = locale === "ja" ? "1泊" : "1박";
+  const perNightMeta = await formatStoredForGuestView(listing.pricePerNight);
   const description =
     listing.description?.trim().slice(0, 160) ||
-    `${listing.title} · ${listing.location} · ${perNightLabel} ${formatForGuest(listing.pricePerNight)}`;
+    `${listing.title} · ${listing.location} · ${perNightLabel} ${perNightMeta}`;
 
   return {
     title: listing.title,
@@ -104,13 +104,14 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
       : Promise.resolve({ canReview: false, hasReviewed: false }),
   ]);
 
+  const perNightJsonLd = await formatStoredForGuestView(listing.pricePerNight);
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Accommodation",
     name: listing.title,
     description:
       listing.description?.trim() ||
-      `${listing.title} · ${listing.location}. 1박 ${formatForGuest(listing.pricePerNight)}`,
+      `${listing.title} · ${listing.location}. 1박 ${perNightJsonLd}`,
     image: listing.imageUrl,
     address: {
       "@type": "PostalAddress",

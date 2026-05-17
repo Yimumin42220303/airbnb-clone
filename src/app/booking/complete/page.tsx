@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { formatForGuest } from "@/lib/currency";
+import { formatStoredForGuestView } from "@/lib/currency";
 import { redirect } from "next/navigation";
-import { Header, Footer } from "@/components/layout";
 import { prisma } from "@/lib/prisma";
 import BookingStepIndicator, {
   getBookingStepState,
@@ -84,23 +83,19 @@ export default async function BookingCompletePage({ searchParams }: Props) {
     if (typeof d === "string" && d.startsWith("NEXT_REDIRECT")) throw err;
     console.error("[BookingCompletePage]", err);
     return (
-      <>
-        <Header />
-        <main className="min-h-screen pt-24 px-4 sm:px-6">
-          <div className="max-w-[560px] mx-auto py-12 text-center">
-            <p className="text-minbak-body text-minbak-gray mb-6">
-              예약 정보를 불러오는 중 오류가 발생했어요.
-            </p>
-            <Link
-              href="/my-bookings"
-              className="inline-flex items-center justify-center min-h-[48px] px-6 py-3 text-minbak-body font-medium rounded-minbak-full bg-minbak-primary text-white hover:bg-minbak-primary-hover"
-            >
-              내 예약 보기
-            </Link>
-          </div>
-        </main>
-        <Footer />
-      </>
+      <main className="min-h-screen pt-24 px-4 sm:px-6">
+        <div className="max-w-[560px] mx-auto py-12 text-center">
+          <p className="text-minbak-body text-minbak-gray mb-6">
+            예약 정보를 불러오는 중 오류가 발생했어요.
+          </p>
+          <Link
+            href="/my-bookings"
+            className="inline-flex items-center justify-center min-h-[48px] px-6 py-3 text-minbak-body font-medium rounded-minbak-full bg-minbak-primary text-white hover:bg-minbak-primary-hover"
+          >
+            내 예약 보기
+          </Link>
+        </div>
+      </main>
     );
   }
 
@@ -109,10 +104,13 @@ export default async function BookingCompletePage({ searchParams }: Props) {
   const isPending = booking?.status === "pending";
   const isInstant = booking?.listing?.instantBooking === true;
 
+  const totalGuestStr =
+    total && !Number.isNaN(Number(total))
+      ? await formatStoredForGuestView(Number(total))
+      : "";
+
   return (
-    <>
-      <Header />
-      <main className="min-h-screen pt-24 px-4 sm:px-6">
+    <main className="min-h-screen pt-24 px-4 sm:px-6">
         <div className="max-w-[560px] mx-auto py-12">
           {/* 진행 스텝: 예약이 있고 pending/confirmed일 때만 */}
           {booking && (isPending || isConfirmed) && (
@@ -153,7 +151,7 @@ export default async function BookingCompletePage({ searchParams }: Props) {
                 : isPending
                   ? "호스트가 24시간 이내에 예약을 승인하면 결제 안내 이메일이 발송됩니다."
                   : isConfirmed
-                    ? "24시간 이내에 결제를 완료하면 예약이 최종 확정됩니다."
+                    ? "48시간(2일) 이내에 결제를 완료하면 예약이 최종 확정됩니다."
                     : "예약 내역을 확인해 주세요."}
             </p>
           </div>
@@ -172,9 +170,9 @@ export default async function BookingCompletePage({ searchParams }: Props) {
                 게스트 {guests}명
               </p>
             )}
-            {total && (
+            {total && totalGuestStr && (
               <p className="text-minbak-body font-semibold text-minbak-black pt-1">
-                총 요금 {formatForGuest(Number(total))}
+                총 요금 {totalGuestStr}
               </p>
             )}
 
@@ -228,11 +226,11 @@ export default async function BookingCompletePage({ searchParams }: Props) {
             </div>
           )}
 
-          {/* 호스트 승인 후 결제 대기: 24시간 안내 */}
+          {/* 호스트 승인 후 결제 대기: 48시간 안내 */}
           {isConfirmed && !isPaid && (
             <div className="bg-blue-50 border border-blue-200 rounded-minbak p-5 mb-6">
               <p className="text-[14px] font-medium text-blue-900 mb-1">
-                24시간 이내에 결제를 완료해 주세요.
+                48시간(2일) 이내에 결제를 완료해 주세요.
               </p>
               <p className="text-[13px] text-blue-800">
                 결제하지 않으면 예약이 자동 취소됩니다.
@@ -271,8 +269,6 @@ export default async function BookingCompletePage({ searchParams }: Props) {
             )}
           </div>
         </div>
-        <Footer />
       </main>
-    </>
   );
 }

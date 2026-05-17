@@ -2,7 +2,6 @@ import { Fragment } from "react";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { Header, Footer } from "@/components/layout";
 import { ListingCard } from "@/components/ui";
 import SearchSort from "@/components/search/SearchSort";
 import {
@@ -13,7 +12,7 @@ import {
   FEW_THRESHOLD,
 } from "@/components/search/SearchAIPrompt";
 import { getListings, type ListingFilters } from "@/lib/listings";
-import { getNightlyAvailability } from "@/lib/availability";
+import { getNightlyAvailabilityForListings } from "@/lib/availability";
 import { getWishlistListingIds } from "@/lib/wishlist";
 
 export const metadata = {
@@ -100,47 +99,44 @@ export default async function SearchPage({
     const checkInDate = new Date(checkIn);
     const checkOutDate = new Date(checkOut);
     if (!isNaN(checkInDate.getTime()) && !isNaN(checkOutDate.getTime()) && checkInDate < checkOutDate) {
-      const withTotals = await Promise.all(
-        listingsBase.map(async (listing) => {
-          try {
-            const result = await getNightlyAvailability(
-              listing.id,
-              checkInDate,
-              checkOutDate
-            );
-            const nightsCount = result.nights.length;
-            const nightsTotal = result.nights.reduce(
-              (sum, n) => sum + n.pricePerNight,
-              0
-            );
-            const cleaningFee = result.cleaningFee ?? 0;
-            const baseGuests = result.baseGuests ?? 2;
-            const extraGuestFee = result.extraGuestFee ?? 0;
-            const extraGuests = Math.max(0, guestsCount - baseGuests);
-            const extraTotal =
-              nightsCount > 0 ? extraGuests * extraGuestFee * nightsCount : 0;
-            const totalPrice = nightsTotal + cleaningFee + extraTotal;
-            const perPerson =
-              guestsCount > 0 ? Math.round(totalPrice / guestsCount) : totalPrice;
-            return {
-              ...listing,
-              totalPrice,
-              nights: nightsCount,
-              perPerson,
-            };
-          } catch {
-            return listing;
-          }
-        })
-      );
-      listings = withTotals;
+      try {
+        const availabilityMap = await getNightlyAvailabilityForListings(
+          listingsBase.map((l) => l.id),
+          checkInDate,
+          checkOutDate
+        );
+        listings = listingsBase.map((listing) => {
+          const result = availabilityMap.get(listing.id);
+          if (!result) return listing;
+          const nightsCount = result.nights.length;
+          const nightsTotal = result.nights.reduce(
+            (sum, n) => sum + n.pricePerNight,
+            0
+          );
+          const cleaningFee = result.cleaningFee ?? 0;
+          const baseGuests = result.baseGuests ?? 2;
+          const extraGuestFee = result.extraGuestFee ?? 0;
+          const extraGuests = Math.max(0, guestsCount - baseGuests);
+          const extraTotal =
+            nightsCount > 0 ? extraGuests * extraGuestFee * nightsCount : 0;
+          const totalPrice = nightsTotal + cleaningFee + extraTotal;
+          const perPerson =
+            guestsCount > 0 ? Math.round(totalPrice / guestsCount) : totalPrice;
+          return {
+            ...listing,
+            totalPrice,
+            nights: nightsCount,
+            perPerson,
+          };
+        });
+      } catch {
+        listings = listingsBase;
+      }
     }
   }
 
   return (
-    <>
-      <Header />
-      <main className="min-h-screen pt-4 md:pt-8 px-4 md:px-6">
+    <main className="min-h-screen pt-4 md:pt-8 px-4 md:px-6">
         <div className="max-w-[1760px] mx-auto py-4 md:py-8">
           <div className="flex flex-wrap items-center justify-between gap-3 md:gap-4 mb-4 md:mb-5">
             <p className="text-minbak-body text-minbak-black font-medium">
@@ -203,8 +199,6 @@ export default async function SearchPage({
             )}
           </div>
         </div>
-        <Footer />
       </main>
-    </>
   );
 }

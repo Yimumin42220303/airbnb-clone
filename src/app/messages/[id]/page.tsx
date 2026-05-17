@@ -2,10 +2,11 @@ import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Header, Footer } from "@/components/layout";
 import Link from "next/link";
 import { translateMessageBody } from "@/lib/translate";
-import { formatForGuest } from "@/lib/currency";
+import { formatBookingTotalForGuestDisplay } from "@/lib/currency";
+import { ensureInstantBookingWelcomeMessage } from "@/lib/payment-complete";
+import { UNPAID_DEADLINE_HOURS } from "@/lib/unpaid-deadline";
 import MessageThread from "./MessageThread";
 import MessageAutoTranslateToggle from "./MessageAutoTranslateToggle";
 
@@ -23,16 +24,31 @@ export default async function ConversationPage({ params }: Props) {
         where: { id: conversationId },
         include: {
           booking: {
-            include: {
+            select: {
+              id: true,
+              checkIn: true,
+              checkOut: true,
+              guests: true,
+              status: true,
+              paymentStatus: true,
+              totalPrice: true,
+              confirmedAt: true,
               listing: {
                 select: {
                   id: true,
                   title: true,
                   hostDisplayName: true,
+                  instantBooking: true,
                   user: { select: { name: true, email: true } },
                 },
               },
               user: { select: { id: true, name: true, email: true } },
+              transactions: {
+                where: { status: "paid" },
+                orderBy: { verifiedAt: "desc" },
+                take: 1,
+                select: { amount: true },
+              },
             },
           },
         },
@@ -41,20 +57,16 @@ export default async function ConversationPage({ params }: Props) {
 
   if (!userId) {
     return (
-      <>
-        <Header />
-        <main className="min-h-screen pt-24 px-4 sm:px-6">
-          <div className="max-w-[600px] mx-auto py-8">
-            <p className="text-minbak-body text-minbak-gray">
-              로그인하면 대화를 볼 수 있습니다.{" "}
-              <Link href={`/auth/signin?callbackUrl=/messages/${conversationId}`} className="text-minbak-primary hover:underline">
-                Google로 로그인
-              </Link>
-            </p>
-          </div>
-        </main>
-        <Footer />
-      </>
+      <main className="min-h-screen pt-24 px-4 sm:px-6">
+        <div className="max-w-[600px] mx-auto py-8">
+          <p className="text-minbak-body text-minbak-gray">
+            로그인하면 대화를 볼 수 있습니다.{" "}
+            <Link href={`/auth/signin?callbackUrl=/messages/${conversationId}`} className="text-minbak-primary hover:underline">
+              Google로 로그인
+            </Link>
+          </p>
+        </div>
+      </main>
     );
   }
   if (!conversation || !conversation.booking) notFound();
@@ -67,7 +79,8 @@ export default async function ConversationPage({ params }: Props) {
     ? "호스트"
     : (guest.name || guest.email || "게스트");
 
-  const initialMessages = await prisma.message.findMany({
+  const booking = conversation.booking;
+  let threadMessages = await prisma.message.findMany({
     where: { conversationId },
     orderBy: { createdAt: "asc" },
     take: 100,
@@ -76,10 +89,34 @@ export default async function ConversationPage({ params }: Props) {
     },
   });
 
-  const booking = conversation.booking;
+  if (
+    threadMessages.length === 0 &&
+    isGuest &&
+    listing?.instantBooking === true &&
+    booking.paymentStatus === "paid" &&
+    booking.status === "confirmed"
+  ) {
+    await ensureInstantBookingWelcomeMessage(booking.id);
+    threadMessages = await prisma.message.findMany({
+      where: { conversationId },
+      orderBy: { createdAt: "asc" },
+      take: 100,
+      include: {
+        sender: { select: { id: true, name: true, email: true } },
+      },
+    });
+  }
+
   const hostName =
     listing?.user?.name || listing?.user?.email || "호스트";
-  const totalPriceStr = booking ? formatForGuest(booking.totalPrice) : "";
+  const paidKrw = booking.transactions[0]?.amount ?? null;
+  const totalPriceStr = booking
+    ? await formatBookingTotalForGuestDisplay({
+        totalPriceStored: booking.totalPrice,
+        paymentStatus: booking.paymentStatus,
+        paidAmountKrw: paidKrw,
+      })
+    : "";
   const checkInStr = booking ? booking.checkIn.toISOString().slice(0, 10) : "";
   const checkOutStr = booking ? booking.checkOut.toISOString().slice(0, 10) : "";
   const statusLabel = booking
@@ -93,19 +130,20 @@ export default async function ConversationPage({ params }: Props) {
     : "";
 
   const approvalMessage = booking
-    ? initialMessages.find(
+    ? threadMessages.find(
         (m) =>
           m.body.includes("호스트승인이 완료되었어요") ||
           m.body.includes("예약이 승인되었습니다")
       )
     : null;
-  const PAYMENT_DEADLINE_HOURS = 24;
   const now = new Date();
   let paymentDeadlineText: string | null = null;
-  if (approvalMessage) {
-    const approvedAt = approvalMessage.createdAt;
+  const paymentBaseAt =
+    booking?.confirmedAt ??
+    (approvalMessage ? approvalMessage.createdAt : null);
+  if (paymentBaseAt) {
     const deadline = new Date(
-      approvedAt.getTime() + PAYMENT_DEADLINE_HOURS * 60 * 60 * 1000
+      paymentBaseAt.getTime() + UNPAID_DEADLINE_HOURS * 60 * 60 * 1000
     );
     if (deadline > now) {
       paymentDeadlineText = deadline.toLocaleString("ko-KR", {
@@ -126,7 +164,7 @@ export default async function ConversationPage({ params }: Props) {
   const targetLang = isGuest ? "ko" : "ja";
 
   const messagesForClient = await Promise.all(
-    initialMessages.map(async (m) => {
+    threadMessages.map(async (m) => {
       const base = {
         id: m.id,
         body: m.body,
@@ -149,10 +187,8 @@ export default async function ConversationPage({ params }: Props) {
   );
 
   return (
-    <>
-      <Header />
-      <main className="min-h-screen pt-24 px-4 sm:px-6">
-        <div className="max-w-[600px] mx-auto py-8">
+    <main className="min-h-screen pt-24 px-4 sm:px-6">
+      <div className="max-w-[600px] mx-auto py-8">
           <div className="mb-4">
             <Link
               href="/messages"
@@ -201,7 +237,7 @@ export default async function ConversationPage({ params }: Props) {
                 <div className="px-4 py-3 bg-amber-50 border-b border-amber-200 flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="text-minbak-body text-amber-800">
-                      호스트가 승인했습니다. 24시간 이내에 결제해 주세요.
+                      호스트가 승인했습니다. 48시간(2일) 이내에 결제해 주세요.
                     </p>
                     {paymentDeadlineText && (
                       <p className="text-minbak-caption text-amber-700 mt-1">
@@ -232,8 +268,6 @@ export default async function ConversationPage({ params }: Props) {
             />
           </div>
         </div>
-        <Footer />
-      </main>
-    </>
+    </main>
   );
 }

@@ -3,7 +3,6 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import Link from "next/link";
-import { Header, Footer } from "@/components/layout";
 
 function CallbackContent() {
   const router = useRouter();
@@ -104,21 +103,17 @@ function CallbackContent() {
 
 export default function PaymentCallbackPage() {
   return (
-    <>
-      <Header />
-      <main className="min-h-screen pt-24 px-4 sm:px-6">
-        <Suspense
-          fallback={
-            <div className="max-w-[480px] mx-auto py-20 text-center">
-              <div className="w-12 h-12 border-4 border-gray-200 border-t-rose-500 rounded-full animate-spin mx-auto mb-6" />
-              <p className="text-[16px] font-medium text-[#222]">결제 확인 중입니다...</p>
-            </div>
-          }
-        >
-          <CallbackContent />
-        </Suspense>
-      </main>
-      <Footer />
-    </>
+    <main className="min-h-screen pt-24 px-4 sm:px-6">
+      <Suspense
+        fallback={
+          <div className="max-w-[480px] mx-auto py-20 text-center">
+            <div className="w-12 h-12 border-4 border-gray-200 border-t-rose-500 rounded-full animate-spin mx-auto mb-6" />
+            <p className="text-[16px] font-medium text-[#222]">결제 확인 중입니다...</p>
+          </div>
+        }
+      >
+        <CallbackContent />
+      </Suspense>
+    </main>
   );
 }

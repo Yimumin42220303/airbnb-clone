@@ -5,12 +5,12 @@ import { useCurrency } from "@/components/currency/CurrencyProvider";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
-import { Header, Footer } from "@/components/layout";
 import StartMessageLink from "@/components/messages/StartMessageLink";
 import BookingStepIndicator, {
   getBookingStepState,
 } from "@/components/booking/BookingStepIndicator";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
+import { cloudinaryLoader } from "@/lib/cloudinary-loader";
 
 type BookingItem = {
   id: string;
@@ -78,74 +78,62 @@ export default function MyBookingsClient() {
 
   if (loading) {
     return (
-      <>
-        <Header />
-        <main className="min-h-screen pt-24 px-4 sm:px-6">
-          <div className="max-w-[900px] mx-auto py-8">
-            <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
-              {t("mybookings.title")}
-            </h1>
-            <p className="text-minbak-body text-minbak-gray">{t("mybookings.loading")}</p>
-          </div>
-        </main>
-        <Footer />
-      </>
+      <main className="min-h-screen pt-24 px-4 sm:px-6">
+        <div className="max-w-[900px] mx-auto py-8">
+          <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
+            {t("mybookings.title")}
+          </h1>
+          <p className="text-minbak-body text-minbak-gray">{t("mybookings.loading")}</p>
+        </div>
+      </main>
     );
   }
 
   if (error) {
     return (
-      <>
-        <Header />
-        <main className="min-h-screen pt-24 px-4 sm:px-6">
-          <div className="max-w-[560px] mx-auto py-12 text-center">
-            <p className="text-minbak-body text-minbak-gray mb-6">{error}</p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <button
-                type="button"
-                onClick={() => window.location.reload()}
-                className="min-h-[48px] px-6 py-3 text-minbak-body font-medium rounded-minbak-full bg-minbak-primary text-white hover:bg-minbak-primary-hover"
-              >
-                {t("mybookings.retry")}
-              </button>
-              <Link
-                href="/my-bookings"
-                className="min-h-[48px] px-6 py-3 text-minbak-body font-medium rounded-minbak-full border border-minbak-light-gray text-minbak-black hover:bg-minbak-bg inline-flex items-center justify-center"
-              >
-                {t("mybookings.refreshLink")}
-              </Link>
-            </div>
+      <main className="min-h-screen pt-24 px-4 sm:px-6">
+        <div className="max-w-[560px] mx-auto py-12 text-center">
+          <p className="text-minbak-body text-minbak-gray mb-6">{error}</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="min-h-[48px] px-6 py-3 text-minbak-body font-medium rounded-minbak-full bg-minbak-primary text-white hover:bg-minbak-primary-hover"
+            >
+              {t("mybookings.retry")}
+            </button>
+            <Link
+              href="/my-bookings"
+              className="min-h-[48px] px-6 py-3 text-minbak-body font-medium rounded-minbak-full border border-minbak-light-gray text-minbak-black hover:bg-minbak-bg inline-flex items-center justify-center"
+            >
+              {t("mybookings.refreshLink")}
+            </Link>
           </div>
-        </main>
-        <Footer />
-      </>
+        </div>
+      </main>
     );
   }
 
   if (unauthorized) {
     return (
-      <>
-        <Header />
-        <main className="min-h-screen pt-24 px-4 sm:px-6">
-          <div className="max-w-[900px] mx-auto py-8">
-            <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
-              {t("mybookings.title")}
-            </h1>
-            <div className="bg-white border border-minbak-light-gray rounded-minbak p-8 text-center max-w-md mx-auto">
-              <p className="text-minbak-body text-minbak-gray mb-4">
-                {t("mybookings.loginPrompt")}
-              </p>
-              <Link
-                href="/auth/signin?callbackUrl=/my-bookings"
-                className="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 rounded-minbak-full bg-minbak-primary text-white font-medium hover:bg-minbak-primary-hover transition-colors"
-              >
-                {t("mybookings.login")}
-              </Link>
-            </div>
+      <main className="min-h-screen pt-24 px-4 sm:px-6">
+        <div className="max-w-[900px] mx-auto py-8">
+          <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
+            {t("mybookings.title")}
+          </h1>
+          <div className="bg-white border border-minbak-light-gray rounded-minbak p-8 text-center max-w-md mx-auto">
+            <p className="text-minbak-body text-minbak-gray mb-4">
+              {t("mybookings.loginPrompt")}
+            </p>
+            <Link
+              href="/auth/signin?callbackUrl=/my-bookings"
+              className="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 rounded-minbak-full bg-minbak-primary text-white font-medium hover:bg-minbak-primary-hover transition-colors"
+            >
+              {t("mybookings.login")}
+            </Link>
           </div>
-        </main>
-        <Footer />
-      </>
+        </div>
+      </main>
     );
   }
 
@@ -157,10 +145,8 @@ export default function MyBookingsClient() {
     });
 
   return (
-    <>
-      <Header />
-      <main className="min-h-screen pt-24 px-4 sm:px-6">
-        <div className="max-w-[900px] mx-auto py-8">
+    <main className="min-h-screen pt-24 px-4 sm:px-6">
+      <div className="max-w-[900px] mx-auto py-8">
           <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
             {t("mybookings.title")}
           </h1>
@@ -209,6 +195,7 @@ export default function MyBookingsClient() {
                     >
                       {listing?.imageUrl ? (
                         <Image
+                          loader={cloudinaryLoader}
                           src={listing.imageUrl}
                           alt={listing.title ?? t("mybookings.listing")}
                           fill
@@ -287,7 +274,7 @@ export default function MyBookingsClient() {
                       {b.status === "confirmed" &&
                         (b.paymentStatus === "pending" || b.paymentStatus === "failed") && (
                           <p className="text-minbak-caption text-minbak-gray mt-1.5">
-                            {t("mybookings.payWithin24")}
+                            {t("mybookings.payWithin48")}
                           </p>
                         )}
                       <div className="flex flex-wrap gap-2 mt-3">
@@ -337,9 +324,7 @@ export default function MyBookingsClient() {
               })}
             </ul>
           )}
-        </div>
-      </main>
-      <Footer />
-    </>
+      </div>
+    </main>
   );
 }

@@ -2,6 +2,11 @@
 const nextConfig = {
   experimental: {
     serverActions: { bodySizeLimit: "10mb" },
+    /** 동적 라우트도 짧게 클라이언트 캐시 → 같은 링크 재방문·뒤로가기 체감 개선 */
+    staleTimes: {
+      dynamic: 30,
+      static: 300,
+    },
   },
   images: {
     remotePatterns: [

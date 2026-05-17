@@ -1,4 +1,3 @@
-import { Header, Footer } from "@/components/layout";
 import Link from "next/link";
 
 export const metadata = {
@@ -8,10 +7,8 @@ export const metadata = {
 
 export default function Beds24CalendarHelpPage() {
   return (
-    <>
-      <Header />
-      <main className="min-h-screen pt-24 md:pt-32 pb-16">
-        <div className="max-w-[720px] mx-auto px-4 md:px-6">
+    <main className="min-h-screen pt-24 md:pt-32 pb-16">
+      <div className="max-w-[720px] mx-auto px-4 md:px-6">
           <p className="text-minbak-caption text-minbak-primary font-medium tracking-widest uppercase mb-2">
             HELP
           </p>
@@ -70,9 +67,7 @@ export default function Beds24CalendarHelpPage() {
           >
             ← 宿泊施設一覧に戻る
           </Link>
-        </div>
-      </main>
-      <Footer />
-    </>
+      </div>
+    </main>
   );
 }

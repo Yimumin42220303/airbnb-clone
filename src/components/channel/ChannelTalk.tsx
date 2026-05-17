@@ -53,39 +53,50 @@ export default function ChannelTalk() {
       window.ChannelIO = ch as Window["ChannelIO"];
     }
 
-    // 2. SDK 스크립트 로드
-    if (!window.ChannelIOInitialized) {
-      window.ChannelIOInitialized = true;
-      const s = document.createElement("script");
-      s.type = "text/javascript";
-      s.async = true;
-      s.src = "https://cdn.channel.io/plugin/ch-plugin-web.js";
-      const x = document.getElementsByTagName("script")[0];
-      if (x?.parentNode) x.parentNode.insertBefore(s, x);
+    // 2. SDK 스크립트 로드 (idle 시점까지 지연하여 초기 로딩 성능 확보)
+    function loadAndBoot() {
+      if (!window.ChannelIOInitialized) {
+        window.ChannelIOInitialized = true;
+        const s = document.createElement("script");
+        s.type = "text/javascript";
+        s.async = true;
+        s.src = "https://cdn.channel.io/plugin/ch-plugin-web.js";
+        const x = document.getElementsByTagName("script")[0];
+        if (x?.parentNode) x.parentNode.insertBefore(s, x);
+      }
+
+      // 3. boot — customLauncherSelector로 클릭 처리를 SDK에 위임
+      const lang = locale === "ja" ? "ja" : "ko";
+      const memberId =
+        status === "authenticated" && session
+          ? (session as { userId?: string }).userId ?? (session.user as { id?: string })?.id
+          : undefined;
+
+      window.ChannelIO!("boot", {
+        pluginKey: PLUGIN_KEY,
+        language: lang,
+        customLauncherSelector: `#${LAUNCHER_ID}`,
+        hideChannelButtonOnBoot: true,
+        ...(memberId ? { memberId } : {}),
+      });
+      bootedRef.current = true;
     }
 
-    // 3. boot — customLauncherSelector로 클릭 처리를 SDK에 위임
-    const lang = locale === "ja" ? "ja" : "ko";
-    const memberId =
-      status === "authenticated" && session
-        ? (session as { userId?: string }).userId ?? (session.user as { id?: string })?.id
-        : undefined;
-
-    window.ChannelIO!("boot", {
-      pluginKey: PLUGIN_KEY,
-      language: lang,
-      customLauncherSelector: `#${LAUNCHER_ID}`,
-      hideChannelButtonOnBoot: true,
-      ...(memberId ? { memberId } : {}),
-    });
-    bootedRef.current = true;
-
+    const timer = setTimeout(() => {
+      if ("requestIdleCallback" in window) {
+        (window as unknown as { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(loadAndBoot);
+      } else {
+        loadAndBoot();
+      }
+    }, 4000);
     return () => {
+      clearTimeout(timer);
       if (window.ChannelIO) {
         try { window.ChannelIO("shutdown"); } catch { /* ignore */ }
       }
       bootedRef.current = false;
     };
+
   }, [locale, status, session]);
 
   // 로그인 시 프로필 전달

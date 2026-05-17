@@ -175,12 +175,14 @@ export default function RecommendPageContent() {
       .then(async (listingsData) => {
         if (!Array.isArray(listingsData)) {
           setError(listingsData?.error ?? t("guest.recommendRequestFailed"));
+          setLoading(false);
           return;
         }
         const listings: ListingFromApi[] = dedupeListingsById(listingsData);
         if (listings.length === 0) {
           setResults([]);
           setMessage(t("guest.noListingsAvailable"));
+          setLoading(false);
           return;
         }
         const sorted = ruleBasedSort(listings, priorities.slice(0, MAX_PRIORITIES));
@@ -192,17 +194,33 @@ export default function RecommendPageContent() {
         setLoading(false);
         setAiRefining(true);
 
+        let hasReceivedAny = false;
         try {
           const res = await fetch("/api/recommend/stream", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(recommendBody),
           });
-          if (!res.ok || !res.body) return;
+          if (!res.ok) {
+            let streamError = t("guest.aiRefineFailedUseRuleBased");
+            try {
+              const errData = await res.json();
+              if (typeof errData?.error === "string" && errData.error.trim()) {
+                streamError = errData.error;
+              }
+            } catch {
+              // ignore parsing failure and keep fallback message
+            }
+            setMessage(streamError);
+            return;
+          }
+          if (!res.body) {
+            setMessage(t("guest.aiRefineFailedUseRuleBased"));
+            return;
+          }
           const reader = res.body.getReader();
           const decoder = new TextDecoder();
           let buffer = "";
-          let hasReceivedAny = false;
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
@@ -250,8 +268,11 @@ export default function RecommendPageContent() {
             }
           }
         } catch {
-          // 규칙 기반 결과 유지
+          setMessage(t("guest.aiRefineFailedUseRuleBased"));
         } finally {
+          if (!hasReceivedAny) {
+            setMessage((prev) => prev ?? t("guest.aiRefineFailedUseRuleBased"));
+          }
           setAiRefining(false);
         }
       })

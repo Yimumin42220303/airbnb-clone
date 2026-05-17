@@ -15,6 +15,7 @@ import {
 import { formatDateKR } from "@/lib/date-utils";
 import { useCurrency } from "@/components/currency/CurrencyProvider";
 import { FormFieldWithError, FormFieldGroupWithError } from "@/components/ui/FormFieldWithError";
+import { cloudinaryLoader } from "@/lib/cloudinary-loader";
 
 /** HH:mm → "오전 10:00시" / "오후 3:00시" 형태로 표시 (예약 정보 문구용) */
 function formatTimeLabel(timeStr: string): string {
@@ -189,6 +190,7 @@ export default function BookingConfirmContent({
               <div className="flex gap-4 p-6">
                 <div className="relative w-[120px] h-[100px] rounded-xl overflow-hidden flex-shrink-0 bg-[#f7f7f7]">
                   <Image
+                    loader={cloudinaryLoader}
                     src={listingImageUrl}
                     alt={listingTitle}
                     fill
@@ -544,7 +546,7 @@ export default function BookingConfirmContent({
                         <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[#E31C23] text-white flex items-center justify-center text-[13px] font-bold">3</div>
                         <div>
                           <p className="text-[14px] font-medium text-[#222]">결제 완료</p>
-                          <p className="text-[13px] text-[#717171]">승인 후 24시간 이내에 결제하면 예약 확정!</p>
+                          <p className="text-[13px] text-[#717171]">승인 후 48시간(2일) 이내에 결제하면 예약 확정!</p>
                         </div>
                       </div>
                     </>

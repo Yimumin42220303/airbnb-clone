@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { getAdminUser } from "@/lib/admin";
-import { Header, Footer } from "@/components/layout";
 
 export default async function AdminLayout({
   children,
@@ -12,11 +11,5 @@ export default async function AdminLayout({
     redirect("/host/listings");
   }
 
-  return (
-    <>
-      <Header />
-      <main className="min-h-screen pt-24">{children}</main>
-      <Footer />
-    </>
-  );
+  return <main className="min-h-screen pt-24">{children}</main>;
 }

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { sendEmailAsync, BASE_URL } from "@/lib/email";
 import { reviewRequestGuest } from "@/lib/email-templates";
 import { createNotification } from "@/lib/notifications";
+import { requireCronAuth } from "@/lib/cron-auth";
 
 /**
  * POST /api/cron/review-request
@@ -13,11 +14,8 @@ import { createNotification } from "@/lib/notifications";
  * 리뷰 요청 이메일 + 인앱 알림 발송.
  */
 export async function POST(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authError = requireCronAuth(request);
+  if (authError) return authError;
 
   const now = new Date();
   const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));

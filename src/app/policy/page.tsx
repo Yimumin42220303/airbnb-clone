@@ -1,4 +1,3 @@
-import { Header, Footer } from "@/components/layout";
 import Link from "next/link";
 
 export const metadata = {
@@ -9,9 +8,7 @@ export const metadata = {
 
 export default function PolicyPage() {
   return (
-    <>
-      <Header />
-      <main className="min-h-screen pt-24">
+    <main className="min-h-screen pt-24">
         {/* Hero */}
         <section className="bg-white border-b border-minbak-light-gray">
           <div className="max-w-[720px] mx-auto px-6 py-12">
@@ -251,9 +248,6 @@ export default function PolicyPage() {
             </Link>
           </div>
         </section>
-
-        <Footer />
       </main>
-    </>
   );
 }

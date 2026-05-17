@@ -2,7 +2,6 @@ import nextDynamic from "next/dynamic";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { Header, Footer } from "@/components/layout";
 import { ListingCard } from "@/components/ui";
 import { Skeleton } from "@/components/ui/Skeleton";
 import HomeHero from "@/components/home/HomeHero";
@@ -26,14 +25,14 @@ const ProductStatusBanner = nextDynamic(
   { ssr: false }
 );
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export const metadata = {
-  title: "도쿄 숙소, 가격도 소통도 걱정 없이",
+  title: "도쿄민박 | 한국인을 위한 도쿄 숙소 추천 플랫폼",
   description:
     "에어비앤비보다 합리적인 가격으로, 문의부터 체크아웃까지 한국어로 편하게 이용하세요. 도쿄민박에서 직접 확인하고 엄선한 도쿄 현지 숙소.",
   openGraph: {
-    title: "도쿄 숙소, 가격도 소통도 걱정 없이 | 도쿄민박",
+    title: "도쿄민박 | 한국인을 위한 도쿄 숙소 추천 플랫폼",
     description:
       "에어비앤비보다 합리적인 가격으로 도쿄 숙소를 예약하세요. 한국인 스태프 전 과정 고객 서포트.",
     type: "website",
@@ -148,7 +147,6 @@ export default async function Home({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
-      <Header />
       {/* <ProductStatusBanner />  */}
 
       <main className="min-h-screen pt-0">
@@ -174,8 +172,6 @@ export default async function Home({
         <FaqSection />
 
         <HomeCtaSection />
-
-        <Footer />
       </main>
     </>
   );

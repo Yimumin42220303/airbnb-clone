@@ -3,9 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Search, LayoutGrid, Plus } from "lucide-react";
-import { Header, Footer } from "@/components/layout";
 import { useHostTranslations } from "./HostLocaleProvider";
-import { optimizeCloudinaryUrl } from "@/lib/cloudinary-optimize";
+import { cloudinaryLoader } from "@/lib/cloudinary-loader";
 import type { HostTranslationKey } from "@/lib/host-i18n";
 
 function hasIcalSync(icalImportUrls: string | null): boolean {
@@ -60,9 +59,7 @@ export default function HostListingsContent({ listings, userId, isAdmin }: Props
   const t = useHostTranslations().t;
 
   return (
-    <>
-      <Header />
-      <main className="min-h-screen pt-4 md:pt-8 px-4 md:px-6">
+    <main className="min-h-screen pt-4 md:pt-8 px-4 md:px-6">
         <div className="max-w-[1200px] mx-auto py-4 md:py-8">
           <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4 mb-4 md:mb-6">
             <h1 className="text-[22px] sm:text-minbak-h2 font-semibold text-minbak-black">
@@ -122,7 +119,7 @@ export default function HostListingsContent({ listings, userId, isAdmin }: Props
                   <li key={l.id} className="border border-minbak-light-gray rounded-minbak bg-white overflow-hidden">
                     <Link href={l.status === "approved" && !l.hidden ? `/listing/${l.id}` : `/host/listings/${l.id}/edit`} className="flex items-center gap-3 p-4 min-h-[72px] active:opacity-95 block">
                       <div className="relative w-16 h-16 flex-shrink-0 rounded overflow-hidden bg-minbak-light-gray">
-                        <Image src={optimizeCloudinaryUrl(l.imageUrl, 128)} alt="" fill className="object-cover" sizes="64px" />
+                        <Image loader={cloudinaryLoader} src={l.imageUrl} alt="" fill className="object-cover" sizes="64px" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="font-medium text-minbak-black text-[15px] line-clamp-2">{l.hostDisplayName?.trim() || l.title}</p>
@@ -172,7 +169,7 @@ export default function HostListingsContent({ listings, userId, isAdmin }: Props
                           <td className="py-3 px-3 align-middle">
                             <Link href={l.status === "approved" && !l.hidden ? `/listing/${l.id}` : `/host/listings/${l.id}/edit`} className="flex items-center gap-2 min-w-0 group">
                               <div className="relative w-12 h-12 flex-shrink-0 rounded overflow-hidden bg-minbak-light-gray">
-                                <Image src={optimizeCloudinaryUrl(l.imageUrl, 96)} alt="" fill className="object-cover" sizes="48px" />
+                                <Image loader={cloudinaryLoader} src={l.imageUrl} alt="" fill className="object-cover" sizes="48px" />
                               </div>
                               <div className="min-w-0 flex-1 overflow-hidden">
                                 <p className="font-medium text-minbak-black text-[14px] truncate group-hover:underline">{l.hostDisplayName?.trim() || l.title}</p>
@@ -238,8 +235,6 @@ export default function HostListingsContent({ listings, userId, isAdmin }: Props
             </>
           )}
         </div>
-        <Footer />
       </main>
-    </>
   );
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { cloudinaryLoader } from "@/lib/cloudinary-loader";
 import { signOut } from "next-auth/react";
 import { toast } from "sonner";
 import { Briefcase, User, LogOut, Home } from "lucide-react";
@@ -18,6 +19,8 @@ type UserData = {
   image: string | null;
   phone?: string | null;
   accounts: { provider: string }[];
+  /** 이메일·비밀번호 가입( DB에 password 있음 ) */
+  canChangePassword?: boolean;
 };
 
 type BookingData = {
@@ -195,6 +198,7 @@ function ReservationsSection({
                   >
                     <div className="relative w-14 h-14 shrink-0 rounded overflow-hidden bg-minbak-bg">
                       <Image
+                        loader={cloudinaryLoader}
                         src={b.listing.imageUrl}
                         alt={b.listing.title}
                         fill
@@ -358,6 +362,16 @@ function AccountSection({ user, t }: { user: UserData; t: TFn }) {
                 {user.phone || t("mypage.noPhone")}
               </p>
             </div>
+            {user.canChangePassword && (
+              <div>
+                <Link
+                  href="/mypage/edit#password"
+                  className="text-[14px] font-medium text-[#4A90E2] hover:underline"
+                >
+                  {t("mypage.changePasswordLink")}
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>

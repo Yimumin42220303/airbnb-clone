@@ -328,6 +328,12 @@ export default function ListingBookingCalendar({
   const blockedSet = useMemo(() => new Set(blockedDateKeys ?? []), [blockedDateKeys]);
   const checkoutOnlySet = useMemo(() => new Set(checkoutOnlyDateKeys ?? []), [checkoutOnlyDateKeys]);
 
+  /** 다음 달 보기 가능 여부 — 클릭 핸들러와 동일 조건 */
+  const canGoNext = useMemo(
+    () => !isAfter(startOfMonth(addMonths(today, monthOffset + 1)), maxDate),
+    [today, monthOffset, maxDate]
+  );
+
   const selectingCheckIn = !start || (start && end);
   const selectingCheckout = !!start && !end;
 
@@ -417,15 +423,19 @@ export default function ListingBookingCalendar({
           >
             {t("calendar.today")}
           </button>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2.5">
             <button
               type="button"
               onClick={() => setMonthOffset((o) => Math.max(0, o - 1))}
               disabled={monthOffset === 0}
-              className="min-h-[36px] min-w-[36px] md:min-h-[44px] md:min-w-[44px] flex items-center justify-center rounded-full hover:bg-[#f7f7f7] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent md:min-h-0 md:min-w-0 md:p-1.5"
+              className={`flex items-center justify-center rounded-xl min-h-[44px] min-w-[44px] shrink-0 transition-colors active:scale-[0.98] ${
+                monthOffset === 0
+                  ? "bg-[#e8e8e8] text-[#bdbdbd] cursor-not-allowed hover:bg-[#e8e8e8]"
+                  : "bg-[#E31C23] text-white shadow-sm hover:bg-[#c91820] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E31C23]"
+              }`}
               aria-label={locale === "ja" ? "前月" : "이전 달"}
             >
-              <ChevronLeft className="w-5 h-5 text-[#222] md:w-5 md:h-5" />
+              <ChevronLeft className="w-7 h-7" strokeWidth={2.75} aria-hidden />
             </button>
             <button
               type="button"
@@ -434,10 +444,15 @@ export default function ListingBookingCalendar({
                 if (isAfter(startOfMonth(nextMonth), maxDate)) return;
                 setMonthOffset((o) => o + 1);
               }}
-              className="min-h-[36px] min-w-[36px] md:min-h-[44px] md:min-w-[44px] flex items-center justify-center rounded-full hover:bg-[#f7f7f7] md:min-h-0 md:min-w-0 md:p-1.5"
+              disabled={!canGoNext}
+              className={`flex items-center justify-center rounded-xl min-h-[44px] min-w-[44px] shrink-0 transition-colors active:scale-[0.98] ${
+                !canGoNext
+                  ? "bg-[#e8e8e8] text-[#bdbdbd] cursor-not-allowed hover:bg-[#e8e8e8]"
+                  : "bg-[#E31C23] text-white shadow-sm hover:bg-[#c91820] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E31C23]"
+              }`}
               aria-label={locale === "ja" ? "翌月" : "다음 달"}
             >
-              <ChevronRight className="w-5 h-5 text-[#222] md:w-5 md:h-5" />
+              <ChevronRight className="w-7 h-7" strokeWidth={2.75} aria-hidden />
             </button>
           </div>
         </div>

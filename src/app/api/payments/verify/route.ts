@@ -7,6 +7,7 @@ import { onPaymentVerified } from "@/lib/payment-complete";
 import { sendChannelTalkNotification } from "@/lib/channel-api";
 import { getJpyToKrwRate } from "@/lib/exchange-rate";
 import { STORED_CURRENCY, convertJpyToKrw } from "@/lib/currency";
+import { hasOverlappingPaidBooking } from "@/lib/availability";
 
 /**
  * POST /api/payments/verify
@@ -61,7 +62,22 @@ export async function POST(request: Request) {
     }
 
     if (booking.paymentStatus === "paid") {
-      return NextResponse.json({ ok: true, alreadyPaid: true });
+      // 웹훅이 먼저 paid를 기록한 경우: 대화방·메시지가 아직 없으면 보완 생성
+      let conversationId: string | null = null;
+      try {
+        const existing = await prisma.conversation.findUnique({
+          where: { bookingId },
+          select: { id: true, _count: { select: { messages: true } } },
+        });
+        if (!existing || existing._count.messages === 0) {
+          conversationId = await onPaymentVerified(bookingId);
+        } else {
+          conversationId = existing.id;
+        }
+      } catch (err) {
+        console.error("[payments/verify] alreadyPaid补完 error:", err);
+      }
+      return NextResponse.json({ ok: true, alreadyPaid: true, conversationId });
     }
 
     let portonePayment;
@@ -125,6 +141,39 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { ok: false, error: "결제 금액이 예약 금액과 일치하지 않습니다." },
         { status: 400 }
+      );
+    }
+
+    const slotConflict = await hasOverlappingPaidBooking(
+      booking.listingId,
+      booking.checkIn,
+      booking.checkOut,
+      bookingId
+    );
+    if (slotConflict) {
+      await prisma.paymentTransaction.create({
+        data: {
+          bookingId,
+          paymentId,
+          transactionId: portonePayment.transactionId || null,
+          amount: paidAmount,
+          status: "failed",
+          method: portonePayment.method?.type || null,
+          pgProvider: portonePayment.channel?.pgProvider || null,
+          failReason: "Slot already occupied by another paid booking",
+          rawResponse: JSON.stringify(portonePayment),
+        },
+      });
+      console.error(
+        "[payments/verify] Slot conflict after PG paid; bookingId=" + bookingId
+      );
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "해당 기간에 이미 결제가 완료된 예약이 있어 확정할 수 없습니다. 중복 결제가 의심되면 고객센터로 문의해 주세요.",
+        },
+        { status: 409 }
       );
     }
 

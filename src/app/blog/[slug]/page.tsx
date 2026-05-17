@@ -1,16 +1,13 @@
 import { notFound } from "next/navigation";
-import { unstable_noStore } from "next/cache";
-import Image from "next/image";
 import Link from "next/link";
-import { Header, Footer } from "@/components/layout";
 import BlogBody from "@/components/blog/BlogBody";
 import { getPostBySlug, getPosts } from "@/lib/blog";
 import { BASE_URL } from "@/lib/site-url";
+import BlogCoverImage from "@/components/blog/BlogCoverImage";
 
 type Props = { params: Promise<{ slug: string }> };
 
-/** 관리자에서 본문·이미지 수정 시 재배포 없이 바로 반영되도록 항상 최신 데이터 조회 */
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export async function generateStaticParams() {
   try {
@@ -68,7 +65,6 @@ function decodeSlug(raw: string): string {
 }
 
 export default async function BlogPostPage({ params }: Props) {
-  unstable_noStore();
   const resolved = await params;
   const rawSlug = resolved?.slug ?? "";
   const slug = decodeSlug(rawSlug);
@@ -114,7 +110,6 @@ export default async function BlogPostPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
-      <Header />
       <main className="min-h-screen pt-24">
         <article className="max-w-[720px] mx-auto px-6 py-10">
           <Link
@@ -144,7 +139,7 @@ export default async function BlogPostPage({ params }: Props) {
 
           {post.coverImage && (
             <div className="relative w-full aspect-video rounded-minbak overflow-hidden bg-minbak-light-gray mb-8">
-              <Image
+              <BlogCoverImage
                 src={post.coverImage}
                 alt={post.title}
                 fill
@@ -158,7 +153,6 @@ export default async function BlogPostPage({ params }: Props) {
           <BlogBody body={post.body} />
         </article>
       </main>
-      <Footer />
     </>
   );
 }

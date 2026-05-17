@@ -9,9 +9,12 @@ import {
   type ReactNode,
 } from "react";
 import { formatForGuest, formatForHost } from "@/lib/currency";
+import { useCurrencyAudience } from "./CurrencyAudienceContext";
 
 type CurrencyContextValue = {
+  /** 게스트 화면: KRW. 호스트(/host) 화면: 실수로 호출해도 JPY(저장 통화)로 표시 */
   formatForGuest: (amount: number) => string;
+  /** 항상 호스트용 JPY(저장 통화 기준) */
   formatForHost: (amount: number) => string;
   jpyToKrw: number | null;
 };
@@ -19,6 +22,7 @@ type CurrencyContextValue = {
 const CurrencyContext = createContext<CurrencyContextValue | null>(null);
 
 export function CurrencyProvider({ children }: { children: ReactNode }) {
+  const audience = useCurrencyAudience();
   const [jpyToKrw, setJpyToKrw] = useState<number | null>(null);
 
   useEffect(() => {
@@ -31,13 +35,18 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       .catch(() => {});
   }, []);
 
+  const opts = { jpyToKrw: jpyToKrw ?? undefined };
+
   const formatGuest = useCallback(
-    (amount: number) => formatForGuest(amount, { jpyToKrw: jpyToKrw ?? undefined }),
-    [jpyToKrw]
+    (amount: number) =>
+      audience === "host"
+        ? formatForHost(amount, opts)
+        : formatForGuest(amount, opts),
+    [audience, jpyToKrw]
   );
 
   const formatHost = useCallback(
-    (amount: number) => formatForHost(amount, { jpyToKrw: jpyToKrw ?? undefined }),
+    (amount: number) => formatForHost(amount, opts),
     [jpyToKrw]
   );
 

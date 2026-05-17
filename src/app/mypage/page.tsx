@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { Header, Footer } from "@/components/layout";
 import { getHostLocaleFromCookie, t } from "@/lib/host-i18n";
 import MypageContent from "./MypageContent";
 
@@ -24,12 +23,13 @@ export default async function MypagePage() {
   const [user, bookings] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
-        select: {
+      select: {
         id: true,
         name: true,
         email: true,
         image: true,
         phone: true,
+        password: true,
         accounts: {
           select: { provider: true },
         },
@@ -56,18 +56,20 @@ export default async function MypagePage() {
     redirect("/auth/signin?callbackUrl=/mypage");
   }
 
+  const { password: passwordHash, ...userForClient } = user;
+  const userProps = {
+    ...userForClient,
+    canChangePassword: passwordHash != null && passwordHash.length > 0,
+  };
+
   return (
-    <>
-      <Header />
-      <main className="min-h-screen pt-24 px-4 md:px-6 pb-16">
-        <div className="max-w-[1000px] mx-auto py-8">
-          <h1 className="text-[22px] md:text-[28px] font-semibold text-minbak-black mb-6">
-            {pageTitle}
-          </h1>
-          <MypageContent user={user} bookings={bookings} />
-        </div>
-      </main>
-      <Footer />
-    </>
+    <main className="min-h-screen pt-24 px-4 md:px-6 pb-16">
+      <div className="max-w-[1000px] mx-auto py-8">
+        <h1 className="text-[22px] md:text-[28px] font-semibold text-minbak-black mb-6">
+          {pageTitle}
+        </h1>
+        <MypageContent user={userProps} bookings={bookings} />
+      </div>
+    </main>
   );
 }

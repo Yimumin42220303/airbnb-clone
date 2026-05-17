@@ -1,4 +1,3 @@
-import { Header, Footer } from "@/components/layout";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -10,9 +9,7 @@ export const metadata = {
 
 export default function AboutPage() {
   return (
-    <>
-      <Header />
-      <main className="min-h-screen pt-24">
+    <main className="min-h-screen pt-24">
         {/* Hero */}
         <section className="bg-white border-b border-minbak-light-gray">
           <div className="max-w-[720px] mx-auto px-6 py-16 text-center">
@@ -254,9 +251,6 @@ export default function AboutPage() {
             </Link>
           </div>
         </section>
-
-        <Footer />
       </main>
-    </>
   );
 }

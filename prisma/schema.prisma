@@ -171,6 +171,9 @@ model Listing {
   beds24PropId  String?
   /// Beds24 룸 ID (roomId)
   beds24RoomId  String?
+  /// Beds24 계정 식별자 (관리자 전용). 값이 있으면 BEDS24_REFRESH_TOKEN_{accountKey} 환경변수 토큰 사용.
+  /// null(기본)이면 공용 BEDS24_REFRESH_TOKEN 으로 fallback → 기존 숙소 동작 유지.
+  beds24AccountKey String?
   /// Beds24 가격 컬럼 인덱스 (1~16). tokyominbak 레이트가 p1~p16 중 어디인지. null=4(p4)
   beds24OfferIndex Int?
   /// Beds24 가격 배율. 1=그대로, 0.5=-50%. Beds24 연동가격(価格from+オフセット) 미반환 시 수동 적용

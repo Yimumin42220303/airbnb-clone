@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Header, Footer } from "@/components/layout";
 import { prisma } from "@/lib/prisma";
 import { getPosts } from "@/lib/blog";
 
@@ -19,10 +18,8 @@ export default async function MockPage() {
   ]);
 
   return (
-    <>
-      <Header />
-      <main className="min-h-screen pt-24">
-        <div className="max-w-[640px] mx-auto px-6 py-10">
+    <main className="min-h-screen pt-24">
+      <div className="max-w-[640px] mx-auto px-6 py-10">
           <h1 className="text-minbak-h1 font-semibold text-minbak-black mb-2">
             목업 확인
           </h1>
@@ -164,9 +161,7 @@ export default async function MockPage() {
               npm run db:studio
             </code>
           </p>
-        </div>
-      </main>
-      <Footer />
-    </>
+      </div>
+    </main>
   );
 }

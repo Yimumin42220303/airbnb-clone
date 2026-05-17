@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Header, Footer } from "@/components/layout";
 import { useCurrency } from "@/components/currency/CurrencyProvider";
 import CancelBookingButton from "@/components/booking/CancelBookingButton";
 import StartMessageLink from "@/components/messages/StartMessageLink";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 import { formatPrice } from "@/lib/currency";
 import { POLICY_LABELS_KO, type CancellationPolicyType } from "@/lib/policies";
+import { cloudinaryLoader } from "@/lib/cloudinary-loader";
 
 /** 체크인 기준 N일 전 날짜를 "YYYY년 M월 D일" 형식으로 반환 */
 function deadlineDateStr(checkInYmd: string, daysBefore: number): string {
@@ -194,41 +194,33 @@ export default function BookingDetailContent() {
 
   if (loading) {
     return (
-      <>
-        <Header />
-        <main className="min-h-screen pt-24 px-4 sm:px-6">
-          <div className="max-w-[700px] mx-auto py-8 space-y-4">
-            <div className="h-6 w-32 bg-minbak-bg rounded-minbak animate-pulse" />
-            <div className="h-48 bg-minbak-bg rounded-minbak animate-pulse" />
-            <div className="h-32 bg-minbak-bg rounded-minbak animate-pulse" />
-          </div>
-        </main>
-        <Footer />
-      </>
+      <main className="min-h-screen pt-24 px-4 sm:px-6">
+        <div className="max-w-[700px] mx-auto py-8 space-y-4">
+          <div className="h-6 w-32 bg-minbak-bg rounded-minbak animate-pulse" />
+          <div className="h-48 bg-minbak-bg rounded-minbak animate-pulse" />
+          <div className="h-32 bg-minbak-bg rounded-minbak animate-pulse" />
+        </div>
+      </main>
     );
   }
 
   if (error || !data) {
     return (
-      <>
-        <Header />
-        <main className="min-h-screen pt-24 px-4 sm:px-6">
-          <div className="max-w-[560px] mx-auto py-12 text-center">
-            <p className="text-minbak-body text-minbak-gray mb-6">
-              {error === "unauthorized"
-                ? t("mybookings.loginPrompt")
-                : t("bookingDetail.notFound")}
-            </p>
-            <Link
-              href="/my-bookings"
-              className="inline-flex items-center min-h-[44px] px-6 py-2.5 rounded-minbak-full bg-minbak-primary text-white font-medium hover:bg-minbak-primary-hover transition-colors"
-            >
-              {t("mybookings.title")}
-            </Link>
-          </div>
-        </main>
-        <Footer />
-      </>
+      <main className="min-h-screen pt-24 px-4 sm:px-6">
+        <div className="max-w-[560px] mx-auto py-12 text-center">
+          <p className="text-minbak-body text-minbak-gray mb-6">
+            {error === "unauthorized"
+              ? t("mybookings.loginPrompt")
+              : t("bookingDetail.notFound")}
+          </p>
+          <Link
+            href="/my-bookings"
+            className="inline-flex items-center min-h-[44px] px-6 py-2.5 rounded-minbak-full bg-minbak-primary text-white font-medium hover:bg-minbak-primary-hover transition-colors"
+          >
+            {t("mybookings.title")}
+          </Link>
+        </div>
+      </main>
     );
   }
 
@@ -251,10 +243,8 @@ export default function BookingDetailContent() {
   const cleaningFee = listing.cleaningFee;
 
   return (
-    <>
-      <Header />
-      <main className="min-h-screen pt-24 px-4 sm:px-6 pb-12">
-        <div className="max-w-[700px] mx-auto py-8 space-y-5">
+    <main className="min-h-screen pt-24 px-4 sm:px-6 pb-12">
+      <div className="max-w-[700px] mx-auto py-8 space-y-5">
           {/* Back link */}
           <Link
             href="/my-bookings"
@@ -298,6 +288,7 @@ export default function BookingDetailContent() {
               >
                 {listing.imageUrl ? (
                   <Image
+                    loader={cloudinaryLoader}
                     src={listing.imageUrl}
                     alt={listing.title}
                     fill
@@ -472,9 +463,7 @@ export default function BookingDetailContent() {
               </Link>
             )}
           </div>
-        </div>
-      </main>
-      <Footer />
-    </>
+      </div>
+    </main>
   );
 }

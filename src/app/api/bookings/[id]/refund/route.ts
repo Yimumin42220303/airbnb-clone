@@ -14,6 +14,8 @@ import {
   bookingCancelledHost,
 } from "@/lib/email-templates";
 import { createNotification } from "@/lib/notifications";
+import { convertJpyToKrw } from "@/lib/currency";
+import { getJpyToKrwRate } from "@/lib/exchange-rate";
 
 /**
  * POST /api/bookings/[id]/refund
@@ -45,6 +47,7 @@ export async function POST(
             cancellationPolicy: true,
             title: true,
             location: true,
+            beds24AccountKey: true,
             user: { select: { name: true, email: true } },
           },
         },
@@ -77,7 +80,10 @@ export async function POST(
     // Beds24: 취소 시 캘린더 블록 해제 (실패해도 도쿄민박 취소는 진행)
     if (booking.beds24BookId) {
       try {
-        const beds24Result = await cancelBeds24Booking(booking.beds24BookId);
+        const beds24Result = await cancelBeds24Booking(
+          booking.beds24BookId,
+          booking.listing.beds24AccountKey ?? null
+        );
         if (!beds24Result.ok) console.error("[refund] Beds24 취소 실패:", beds24Result.error);
       } catch (e) {
         console.error("[refund] Beds24 취소 예외:", e);
@@ -101,7 +107,13 @@ export async function POST(
         data: { status: "cancelled", paymentStatus: "refunded", billingKey: null },
       });
 
-      sendCancellationEmails(booking, id, booking.totalPrice, "카드 미결제 상태: 전액 취소 (수수료 없음)");
+      const fxUnpaid = await getJpyToKrwRate();
+      sendCancellationEmails(
+        booking,
+        id,
+        convertJpyToKrw(booking.totalPrice, fxUnpaid),
+        "카드 미결제 상태: 전액 취소 (수수료 없음)"
+      );
 
       return NextResponse.json({
         ok: true,
@@ -131,11 +143,25 @@ export async function POST(
 
     const paidTransaction = booking.transactions[0];
     let portoneRefundDone = false;
+    const refundTransactionPaymentId = paidTransaction
+      ? `${paidTransaction.paymentId}:refund:${Date.now()}`
+      : null;
 
     const refundKrw =
       paidTransaction && refundRate > 0
         ? Math.round(paidTransaction.amount * refundRate)
         : 0;
+
+    /** 게스트 이메일은 KRW 표기 — PG 실제 환불액과 동일하게 맞춤 */
+    let refundAmountKrwForEmail = 0;
+    if (refundRate > 0) {
+      if (paidTransaction && refundKrw > 0) {
+        refundAmountKrwForEmail = refundKrw;
+      } else {
+        const fx = await getJpyToKrwRate();
+        refundAmountKrwForEmail = convertJpyToKrw(refundResult.amount, fx);
+      }
+    }
 
     if (paidTransaction && refundKrw > 0) {
       const isMockPayment = paidTransaction.paymentId.startsWith("mock_");
@@ -143,9 +169,9 @@ export async function POST(
         await prisma.paymentTransaction.create({
           data: {
             bookingId: id,
-            paymentId: paidTransaction.paymentId,
+            paymentId: refundTransactionPaymentId!,
             transactionId: null,
-            amount: refundAmount,
+            amount: refundKrw,
             status: "refunded",
             method: paidTransaction.method,
             pgProvider: paidTransaction.pgProvider,
@@ -165,9 +191,9 @@ export async function POST(
           await prisma.paymentTransaction.create({
             data: {
               bookingId: id,
-              paymentId: paidTransaction.paymentId,
+              paymentId: refundTransactionPaymentId!,
               transactionId: portoneRefundResult.cancellation?.id || null,
-              amount: refundAmount,
+              amount: refundKrw,
               status: "refunded",
               method: paidTransaction.method,
               pgProvider: paidTransaction.pgProvider,
@@ -196,9 +222,9 @@ export async function POST(
               await prisma.paymentTransaction.create({
                 data: {
                   bookingId: id,
-                  paymentId: paidTransaction.paymentId,
+                  paymentId: refundTransactionPaymentId!,
                   transactionId: null,
-                  amount: refundAmount,
+                  amount: refundKrw,
                   status: "refunded",
                   method: paidTransaction.method,
                   pgProvider: paidTransaction.pgProvider,
@@ -228,16 +254,17 @@ export async function POST(
       }
     }
 
+    const nextPaymentStatus = portoneRefundDone ? "refunded" : booking.paymentStatus;
     await prisma.booking.update({
       where: { id },
       data: {
         status: "cancelled",
-        ...(portoneRefundDone ? { paymentStatus: "refunded" } : {}),
+        paymentStatus: nextPaymentStatus,
         ...(booking.billingKey ? { billingKey: null } : {}),
       },
     });
 
-    sendCancellationEmails(booking, id, refundAmount, refundPolicy);
+    sendCancellationEmails(booking, id, refundAmountKrwForEmail, refundPolicy);
 
     return NextResponse.json({
       ok: true,
@@ -247,6 +274,9 @@ export async function POST(
       refundAmount,
       totalPrice: booking.totalPrice,
       portoneRefund: portoneRefundDone,
+      paymentStatus: nextPaymentStatus,
+      cancellationOutcome:
+        refundRate > 0 ? "cancelled_with_refund" : "cancelled_without_refund",
     });
   } catch (fatalErr) {
     const msg = fatalErr instanceof Error ? fatalErr.message : String(fatalErr);
@@ -258,10 +288,11 @@ export async function POST(
   }
 }
 
+/** @param refundAmountKrw 게스트 메일용 실제 환불 원화(포트원 취소 금액과 동일 기준) */
 function sendCancellationEmails(
   booking: { listing: { title?: string | null; location?: string | null; userId: string | null; user?: { name?: string | null; email?: string | null } | null }; user?: { name?: string | null; email?: string | null } | null; checkOut: Date; checkIn: Date; guests: number; totalPrice: number; listingId: string },
   id: string,
-  refundAmount: number,
+  refundAmountKrw: number,
   refundPolicy: string
 ) {
   try {
@@ -286,7 +317,7 @@ function sendCancellationEmails(
     const isSameEmail = hostEmail && booking.user?.email && hostEmail === booking.user.email;
 
     if (booking.user?.email && !isSameEmail) {
-      const guestMail = bookingCancelledGuest({ ...emailInfo, refundAmount, refundPolicy });
+      const guestMail = bookingCancelledGuest({ ...emailInfo, refundAmount: refundAmountKrw, refundPolicy });
       sendEmailAsync({ to: booking.user.email, ...guestMail });
     }
     if (hostEmail) {

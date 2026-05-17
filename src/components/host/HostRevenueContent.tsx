@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Header, Footer } from "@/components/layout";
 import { useHostTranslations } from "./HostLocaleProvider";
 import { useCurrency } from "@/components/currency/CurrencyProvider";
 
@@ -178,9 +177,7 @@ export default function HostRevenueContent({ listings, userId }: Props) {
   const totalPages = data ? Math.max(1, Math.ceil(data.totalCount / (data.limit || LIMIT))) : 0;
 
   return (
-    <>
-      <Header />
-      <main className="min-h-screen pt-32 md:pt-40 px-6">
+    <main className="min-h-screen pt-32 md:pt-40 px-6">
         <div className="max-w-[900px] mx-auto py-8">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-minbak-h2 font-semibold text-minbak-black">{t("revenue.title")}</h1>
@@ -414,8 +411,6 @@ export default function HostRevenueContent({ listings, userId }: Props) {
             </>
           )}
         </div>
-        <Footer />
       </main>
-    </>
   );
 }

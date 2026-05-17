@@ -4,12 +4,12 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Header } from "@/components/layout";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import HostCalendarBookingActions from "./HostCalendarBookingActions";
 import { useHostTranslations } from "./HostLocaleProvider";
 import { useCurrency } from "@/components/currency/CurrencyProvider";
 import { toISODateString } from "@/lib/date-utils";
+import { cloudinaryLoader } from "@/lib/cloudinary-loader";
 
 const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 
@@ -420,9 +420,7 @@ export default function HostCalendarView() {
   }
 
   return (
-    <>
-      <Header />
-      <main className="min-h-screen pt-4 md:pt-8">
+    <main className="min-h-screen pt-4 md:pt-8">
         <div className="min-h-[calc(100vh-5rem)] md:min-h-[calc(100vh-8rem)]">
           {/* Calendar area (full width) */}
           <div className="overflow-x-auto bg-minbak-bg p-4 min-w-0">
@@ -883,7 +881,6 @@ export default function HostCalendarView() {
           </div>
         </div>
       </main>
-    </>
   );
 }
 
@@ -931,6 +928,7 @@ function CalendarRow({
       >
         <div className="relative w-14 h-14 flex-shrink-0 rounded overflow-hidden">
           <Image
+            loader={cloudinaryLoader}
             src={listing.imageUrl}
             alt=""
             fill

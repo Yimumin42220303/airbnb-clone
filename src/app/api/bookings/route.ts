@@ -103,11 +103,19 @@ export async function POST(request: Request) {
       );
     }
 
+    const guestsNum = Number(guests);
+    if (!Number.isFinite(guestsNum) || !Number.isInteger(guestsNum) || guestsNum < 1) {
+      return NextResponse.json(
+        { error: "인원 수가 올바르지 않습니다." },
+        { status: 400 }
+      );
+    }
+
     const result = await createBooking({
       listingId: String(listingId),
       checkIn: String(checkIn),
       checkOut: String(checkOut),
-      guests: Number(guests),
+      guests: guestsNum,
       userId: (session as { userId?: string } | null)?.userId,
       guestName: guestName != null ? String(guestName).trim() || undefined : undefined,
       guestPhone: guestPhone != null ? String(guestPhone).trim() || undefined : undefined,

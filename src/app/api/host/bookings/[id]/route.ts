@@ -42,7 +42,7 @@ export async function PATCH(
   const booking = await prisma.booking.findUnique({
     where: { id },
     include: {
-      listing: { select: { userId: true, title: true, hostDisplayName: true, location: true } },
+      listing: { select: { userId: true, title: true, hostDisplayName: true, location: true, beds24AccountKey: true } },
       user: { select: { name: true, email: true } },
       transactions: {
         where: { status: "paid" },
@@ -106,7 +106,7 @@ export async function PATCH(
     createNotification({
       userId: booking.userId,
       type: "booking_approved",
-      title: "호스트가 예약을 승인했어요. 24시간 이내에 결제해 주세요.",
+      title: "호스트가 예약을 승인했어요. 48시간(2일) 이내에 결제해 주세요.",
       linkPath: `/booking/${id}/pay`,
       linkLabel: "결제하기",
       bookingId: id,
@@ -202,7 +202,10 @@ export async function PATCH(
     // Beds24: 취소 시 캘린더 블록 해제 (실패해도 도쿄민박 취소는 진행)
     if (booking.beds24BookId) {
       try {
-        const beds24Result = await cancelBeds24Booking(booking.beds24BookId);
+        const beds24Result = await cancelBeds24Booking(
+          booking.beds24BookId,
+          booking.listing.beds24AccountKey ?? null
+        );
         if (!beds24Result.ok) console.error("[host-booking] Beds24 취소 실패:", beds24Result.error);
       } catch (e) {
         console.error("[host-booking] Beds24 취소 예외:", e);
@@ -212,6 +215,9 @@ export async function PATCH(
     // 결제 완료된 예약이면 호스트 사유로 100% 전액 환불
     const paidTransaction = booking.transactions[0];
     let refundDone = false;
+    const refundTransactionPaymentId = paidTransaction
+      ? `${paidTransaction.paymentId}:refund:${Date.now()}`
+      : null;
     if (paidTransaction && booking.paymentStatus === "paid") {
       const isMockPayment = paidTransaction.paymentId.startsWith("mock_");
       if (isMockPayment) {
@@ -219,9 +225,9 @@ export async function PATCH(
         await prisma.paymentTransaction.create({
           data: {
             bookingId: id,
-            paymentId: paidTransaction.paymentId,
+            paymentId: refundTransactionPaymentId!,
             transactionId: null,
-            amount: booking.totalPrice,
+            amount: paidTransaction.amount,
             status: "refunded",
             method: paidTransaction.method,
             pgProvider: paidTransaction.pgProvider,
@@ -243,9 +249,9 @@ export async function PATCH(
           await prisma.paymentTransaction.create({
             data: {
               bookingId: id,
-              paymentId: paidTransaction.paymentId,
+              paymentId: refundTransactionPaymentId!,
               transactionId: refundResult.cancellation?.id || null,
-              amount: booking.totalPrice,
+              amount: paidTransaction.amount,
               status: "refunded",
               method: paidTransaction.method,
               pgProvider: paidTransaction.pgProvider,
@@ -273,9 +279,9 @@ export async function PATCH(
               await prisma.paymentTransaction.create({
                 data: {
                   bookingId: id,
-                  paymentId: paidTransaction.paymentId,
+                  paymentId: refundTransactionPaymentId!,
                   transactionId: null,
-                  amount: booking.totalPrice,
+                  amount: paidTransaction.amount,
                   status: "refunded",
                   method: paidTransaction.method,
                   pgProvider: paidTransaction.pgProvider,
@@ -305,12 +311,13 @@ export async function PATCH(
       }
     }
 
+    const nextPaymentStatus = refundDone ? "refunded" : booking.paymentStatus;
     await prisma.booking.update({
       where: { id },
       data: {
         status: "cancelled",
         rejectedByHost: action === "reject",
-        ...(refundDone ? { paymentStatus: "refunded" } : {}),
+        paymentStatus: nextPaymentStatus,
       },
     });
 

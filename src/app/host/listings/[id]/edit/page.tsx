@@ -5,6 +5,7 @@ import { getAdminUser } from "@/lib/admin";
 import { isDevSkipAuth } from "@/lib/dev-auth";
 import { getListingByIdForEdit } from "@/lib/listings";
 import { prisma } from "@/lib/prisma";
+import { ensureDefaultAmenitiesExist } from "@/lib/ensure-amenities";
 import EditListingForm from "./EditListingForm";
 
 interface Props {
@@ -44,6 +45,7 @@ export default async function EditListingPage({ params }: Props) {
       ? listing.images.map((i) => i.url)
       : [listing.imageUrl];
 
+  await ensureDefaultAmenitiesExist();
   const [amenities, listingAmenities] = await Promise.all([
     prisma.amenity.findMany({
       orderBy: { name: "asc" },
@@ -96,6 +98,7 @@ export default async function EditListingPage({ params }: Props) {
         beds24Enabled: listing.beds24Enabled ?? !!(listing.beds24PropId?.trim() && listing.beds24RoomId?.trim()),
         beds24PropId: listing.beds24PropId ?? null,
         beds24RoomId: listing.beds24RoomId ?? null,
+        beds24AccountKey: listing.beds24AccountKey ?? null,
         beds24PriceMultiplier: listing.beds24PriceMultiplier ?? null,
         beds24JanuaryFactor: (listing as { beds24JanuaryFactor?: number }).beds24JanuaryFactor ?? 1,
         beds24FebruaryFactor: (listing as { beds24FebruaryFactor?: number }).beds24FebruaryFactor ?? 1,

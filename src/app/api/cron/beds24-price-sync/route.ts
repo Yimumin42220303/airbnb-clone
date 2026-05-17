@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getBeds24CalendarPrices } from "@/lib/beds24";
+import { requireCronAuth } from "@/lib/cron-auth";
 
 /**
  * POST /api/cron/beds24-price-sync
@@ -10,11 +11,8 @@ import { getBeds24CalendarPrices } from "@/lib/beds24";
  * ListingAvailability.pricePerNight에 저장합니다.
  */
 export async function POST(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authError = requireCronAuth(request);
+  if (authError) return authError;
 
   const listings = await prisma.listing.findMany({
     where: {
@@ -25,6 +23,7 @@ export async function POST(request: Request) {
       id: true,
       beds24PropId: true,
       beds24RoomId: true,
+      beds24AccountKey: true,
     },
   });
 
@@ -52,7 +51,8 @@ export async function POST(request: Request) {
         propId,
         roomId,
         fromDate,
-        toDate
+        toDate,
+        listing.beds24AccountKey ?? null
       );
 
       let updated = 0;

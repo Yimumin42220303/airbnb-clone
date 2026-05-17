@@ -38,17 +38,17 @@ try {
   process.exit(1);
 }
 
-const r = spawnSync(
-  "vercel",
-  ["deploy", "--prod", "--yes"],
-  {
-    stdio: "inherit",
-    shell: true,
-    env: {
-      ...process.env,
-      VERCEL_ORG_ID: orgId,
-      VERCEL_PROJECT_ID: projectId,
-    },
-  }
-);
+const token = process.env.VERCEL_TOKEN?.trim();
+const vercelArgs = ["deploy", "--prod", "--yes"];
+if (token) vercelArgs.push("--token", token);
+
+const r = spawnSync("vercel", vercelArgs, {
+  stdio: "inherit",
+  shell: true,
+  env: {
+    ...process.env,
+    VERCEL_ORG_ID: orgId,
+    VERCEL_PROJECT_ID: projectId,
+  },
+});
 process.exit(r.status !== undefined ? r.status : 1);

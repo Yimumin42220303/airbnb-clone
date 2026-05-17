@@ -60,6 +60,8 @@ export async function PATCH(
     }
     // isPromoted(프로모션대상)는 관리자만 설정 가능. 호스트는 변경 불가(undefined로 유지)
     const isPromoted = isAdmin && body.isPromoted != null ? body.isPromoted : undefined;
+    // Beds24 Account Key 도 관리자만 변경 가능 (일반 호스트 요청은 undefined 로 유지 → 기존 값 보존)
+    const beds24AccountKey = isAdmin && body.beds24AccountKey !== undefined ? body.beds24AccountKey : undefined;
     const result = await updateListing(
       id,
       userId,
@@ -103,6 +105,7 @@ export async function PATCH(
         beds24Enabled: body.beds24Enabled,
         beds24PropId: body.beds24PropId,
         beds24RoomId: body.beds24RoomId,
+        beds24AccountKey,
         beds24PriceMultiplier:
           body.beds24PriceMultiplier != null
             ? (() => {

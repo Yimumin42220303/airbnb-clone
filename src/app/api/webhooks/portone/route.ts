@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getPayment } from "@/lib/portone";
+import { getPayment, verifyWebhookPayload } from "@/lib/portone";
 import { syncBookingToBeds24 } from "@/lib/bookings";
 import { createScheduledMessagesForBooking } from "@/lib/scheduled-messages";
+import { onPaymentVerified } from "@/lib/payment-complete";
 import { getJpyToKrwRate } from "@/lib/exchange-rate";
 import { STORED_CURRENCY, convertJpyToKrw } from "@/lib/currency";
+import { hasOverlappingPaidBooking } from "@/lib/availability";
 
 /**
  * POST /api/webhooks/portone
@@ -15,9 +17,29 @@ import { STORED_CURRENCY, convertJpyToKrw } from "@/lib/currency";
  * PAID 금액 검증 시 동일 통화로 변환 후 비교해야 함.
  */
 export async function POST(request: Request) {
+  const rawBody = await request.text();
+  if (!rawBody) {
+    return NextResponse.json({ error: "Empty body" }, { status: 400 });
+  }
+
+  if (process.env.PORTONE_WEBHOOK_SECRET?.trim()) {
+    try {
+      await verifyWebhookPayload(
+        rawBody,
+        Object.fromEntries(request.headers.entries())
+      );
+    } catch (err) {
+      console.error("Webhook: signature verification failed:", err);
+      return NextResponse.json(
+        { error: "Invalid webhook signature" },
+        { status: 401 }
+      );
+    }
+  }
+
   let body: { type?: string; data?: { paymentId?: string } };
   try {
-    body = await request.json();
+    body = JSON.parse(rawBody) as { type?: string; data?: { paymentId?: string } };
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
@@ -78,6 +100,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, mismatch: true });
     }
 
+    const slotConflict = await hasOverlappingPaidBooking(
+      booking.listingId,
+      booking.checkIn,
+      booking.checkOut,
+      booking.id
+    );
+    if (slotConflict) {
+      console.error(
+        "Webhook: slot conflict, skip paid update bookingId=" + booking.id
+      );
+      await prisma.paymentTransaction.update({
+        where: { id: transaction.id },
+        data: {
+          status: "failed",
+          failReason: "Slot overlap with another paid booking (webhook)",
+          rawResponse: JSON.stringify(portonePayment),
+        },
+      });
+      return NextResponse.json({ ok: true, skipped: true, reason: "slot_conflict" });
+    }
+
     await prisma.$transaction([
       prisma.paymentTransaction.update({
         where: { id: transaction.id },
@@ -94,13 +137,9 @@ export async function POST(request: Request) {
       }),
     ]);
 
-    // Beds24 캘린더에 예약 반영 (웹훅 결제 확정 시)
-    syncBookingToBeds24(booking.id).then((r) => {
-      if (!r.ok) console.error("[Beds24] 웹훅 결제 확정 동기화 실패:", r.error);
-    });
-
-    createScheduledMessagesForBooking(booking.id).catch((err) => {
-      console.error("[ScheduledMsg] 웹훅 스케줄 생성 실패:", err);
+    // 대화방·자동 메시지·이메일·알림·Beds24·스케줄 메시지 (verify와 동일 경로)
+    onPaymentVerified(booking.id).catch((err) => {
+      console.error("[Webhook] onPaymentVerified error:", err);
     });
 
     return NextResponse.json({ ok: true, action: "paid" });

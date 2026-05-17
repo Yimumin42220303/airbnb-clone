@@ -48,6 +48,14 @@ export function formatPrice(amount: number, currency: DisplayCurrency): string {
 export type CurrencyOptions = { jpyToKrw?: number };
 
 /**
+ * 서버 컴포넌트/API 등: DB 저장 금액을 게스트에게 보여 줄 때 KRW 문자열 (환율 API 사용).
+ */
+export async function formatStoredForGuestView(amountStored: number): Promise<string> {
+  const { getJpyToKrwRate } = await import("./exchange-rate");
+  return formatForGuest(amountStored, { jpyToKrw: await getJpyToKrwRate() });
+}
+
+/**
  * 게스트용: KRW로 표시
  * (저장=KRW이면 그대로, 저장=JPY면 변환)
  */
@@ -78,4 +86,27 @@ export function formatPriceByRole(
   options?: CurrencyOptions
 ): string {
   return role === "host" ? formatForHost(amount, options) : formatForGuest(amount, options);
+}
+
+/**
+ * 게스트에게 보여 줄 예약 총액 문자열.
+ * 결제 완료 시 PortOne에 기록된 KRW(트랜잭션)와 동일하게 표시하고,
+ * 미결제 시에는 저장 통화(JPY)를 당일 환율로 KRW 환산해 표시한다.
+ */
+export async function formatBookingTotalForGuestDisplay(params: {
+  totalPriceStored: number;
+  paymentStatus: string;
+  /** status=paid 트랜잭션의 amount (KRW). 없으면 결제완료여도 JPY→KRW 추정으로 폴백 */
+  paidAmountKrw: number | null;
+}): Promise<string> {
+  const { getJpyToKrwRate } = await import("./exchange-rate");
+  if (
+    params.paymentStatus === "paid" &&
+    params.paidAmountKrw != null &&
+    params.paidAmountKrw > 0
+  ) {
+    return formatPrice(params.paidAmountKrw, "KRW");
+  }
+  const rate = await getJpyToKrwRate();
+  return formatForGuest(params.totalPriceStored, { jpyToKrw: rate });
 }

@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import { useCurrency } from "@/components/currency/CurrencyProvider";
 import Image from "next/image";
 import { MapPin, ChevronDown, ChevronUp } from "lucide-react";
-import { Header, Footer } from "@/components/layout";
 import BookingForm from "@/components/listing/BookingForm";
 import BookingTypeBadge from "@/components/listing/BookingTypeBadge";
 import CancellationPolicyBadge from "@/components/listing/CancellationPolicyBadge";
@@ -14,6 +13,7 @@ import ReviewSection from "@/components/listing/ReviewSection";
 import ListingBadge, { computeBadges } from "@/components/listing/ListingBadge";
 import WishlistHeart from "@/components/wishlist/WishlistHeart";
 import ShareListingButton from "@/components/listing/ShareListingButton";
+import ListingChannelInquiryButton from "@/components/channel/ListingChannelInquiryButton";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 import { getAmenityLabel } from "@/lib/host-i18n";
 
@@ -149,7 +149,6 @@ export default function ListingDetailContent({
 
   return (
     <>
-      <Header />
       <main className="min-h-screen bg-white">
         {/* 상단: 숙소명 · 위치 · 평점 · 찜 (minbak.tokyo 상단 영역) */}
         <div className="bg-white border-b border-[#ebebeb] pt-6 md:pt-8">
@@ -410,13 +409,21 @@ export default function ListingDetailContent({
                         </span>
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[16px] font-semibold text-[#222]">
-                        {t("listingDetail.hostedBy", { name: listing.hostName })}
-                      </p>
-                      <p className="text-[14px] text-[#717171] mt-1 leading-relaxed">
-                        {t("listingDetail.hostContact")}
-                      </p>
+                    <div className="flex-1 min-w-0 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                      <div className="min-w-0">
+                        <p className="text-[16px] font-semibold text-[#222]">
+                          {t("listingDetail.hostedBy", { name: listing.hostName })}
+                        </p>
+                        <p className="text-[14px] text-[#717171] mt-1 leading-relaxed">
+                          {t("listingDetail.hostContact")}
+                        </p>
+                      </div>
+                      <ListingChannelInquiryButton
+                        listingId={listing.id}
+                        listingTitle={listing.title}
+                        label={t("listingDetail.inquiryAboutListing")}
+                        className="shrink-0 self-start"
+                      />
                     </div>
                   </div>
                 </DetailSection>
@@ -509,7 +516,6 @@ export default function ListingDetailContent({
         </div>
         {/* 모바일: 스티키 바 노출 시 하단 여백(스크롤 끝에서 콘텐츠 가림 방지) */}
         <div className="h-36 lg:hidden" aria-hidden />
-        <Footer />
       </main>
       {/* 모바일: 예약 폼이 화면에 안 보일 때만 스티키 바 표시. 금액 있으면 예약하기, 없으면 날짜 선택 유도 */}
       {!isBookingFormInView && (

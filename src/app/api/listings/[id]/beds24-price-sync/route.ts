@@ -27,6 +27,7 @@ export async function POST(
       beds24Enabled: true,
       beds24PropId: true,
       beds24RoomId: true,
+      beds24AccountKey: true,
     },
   });
   if (!listing) {
@@ -66,7 +67,8 @@ export async function POST(
       propId,
       roomId,
       fromDate,
-      toDate
+      toDate,
+      listing.beds24AccountKey ?? null
     );
 
     let updated = 0;

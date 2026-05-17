@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 /**
  * 블로그 본문 렌더링. [IMG:url] 형식은 이미지로 치환.
  * url은 https://, http://, / 로 시작하는 것만 허용 (XSS 방지).
@@ -67,14 +65,13 @@ export default function BlogBody({ body, className = "" }: BlogBodyProps) {
             key={i}
             className="my-6 rounded-minbak overflow-hidden bg-minbak-light-gray"
           >
-            <Image
+            {/* next/image는 remotePatterns 밖 호스트에서 런타임 오류(500)가 날 수 있어 img 사용 */}
+            <img
               src={seg.url}
               alt=""
-              width={800}
-              height={450}
-              className="w-full h-auto object-contain"
-              sizes="(max-width: 800px) 100vw, 800px"
-              unoptimized
+              className="w-full h-auto max-w-full object-contain"
+              loading="lazy"
+              decoding="async"
             />
           </figure>
         )

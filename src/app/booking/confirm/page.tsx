@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getListingById } from "@/lib/listings";
 import { getNightlyAvailability } from "@/lib/availability";
-import { Header, Footer } from "@/components/layout";
 import BookingConfirmContent from "./BookingConfirmContent";
 
 type Props = {
@@ -77,28 +76,24 @@ export default async function BookingConfirmPage({ searchParams }: Props) {
   const userEmail = user?.email ?? null;
 
   return (
-    <>
-      <Header />
-      <main className="min-h-screen bg-white pt-24 md:pt-28 pb-16">
-        <BookingConfirmContent
-          listingId={listingId}
-          listingTitle={listing.title}
-          listingLocation={listing.location}
-          listingImageUrl={listing.imageUrl}
-          pricePerNight={listing.pricePerNight}
-          checkIn={checkInStr}
-          checkOut={checkOutStr}
-          checkInTime={listing.checkInTime}
-          checkOutTime={listing.checkOutTime}
-          guests={guests}
-          nights={nights}
-          totalPrice={totalPrice}
-          userEmail={userEmail}
-          cancellationPolicy={listing.cancellationPolicy}
-          instantBooking={listing.instantBooking}
-        />
-      </main>
-      <Footer />
-    </>
+    <main className="min-h-screen bg-white pt-24 md:pt-28 pb-16">
+      <BookingConfirmContent
+        listingId={listingId}
+        listingTitle={listing.title}
+        listingLocation={listing.location}
+        listingImageUrl={listing.imageUrl}
+        pricePerNight={listing.pricePerNight}
+        checkIn={checkInStr}
+        checkOut={checkOutStr}
+        checkInTime={listing.checkInTime}
+        checkOutTime={listing.checkOutTime}
+        guests={guests}
+        nights={nights}
+        totalPrice={totalPrice}
+        userEmail={userEmail}
+        cancellationPolicy={listing.cancellationPolicy}
+        instantBooking={listing.instantBooking}
+      />
+    </main>
   );
 }

@@ -1,11 +1,8 @@
 import Link from "next/link";
-import Image from "next/image";
-import { unstable_noStore } from "next/cache";
-import { Header, Footer } from "@/components/layout";
 import { getPosts } from "@/lib/blog";
+import BlogCoverImage from "@/components/blog/BlogCoverImage";
 
-/** 관리자에서 글 추가·삭제 시 재배포 없이 목록에 바로 반영되도록 항상 최신 데이터 조회 */
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export const metadata = {
   title: "블로그",
@@ -20,14 +17,11 @@ export const metadata = {
 };
 
 export default async function BlogListPage() {
-  unstable_noStore();
   const posts = await getPosts({ publishedOnly: true });
 
   return (
-    <>
-      <Header />
-      <main className="min-h-screen pt-24">
-        <div className="max-w-[900px] mx-auto px-6 py-10">
+    <main className="min-h-screen pt-24">
+      <div className="max-w-[900px] mx-auto px-6 py-10">
           <h1 className="text-minbak-h1 font-semibold text-minbak-black mb-2">
             블로그
           </h1>
@@ -50,7 +44,7 @@ export default async function BlogListPage() {
                     <div className="flex flex-col sm:flex-row">
                       {post.coverImage && (
                         <div className="relative w-full sm:w-56 h-40 sm:h-auto sm:min-h-[180px] flex-shrink-0 bg-minbak-light-gray">
-                          <Image
+                          <BlogCoverImage
                             src={post.coverImage}
                             alt=""
                             fill
@@ -90,9 +84,7 @@ export default async function BlogListPage() {
               ))}
             </ul>
           )}
-        </div>
-      </main>
-      <Footer />
-    </>
+      </div>
+    </main>
   );
 }

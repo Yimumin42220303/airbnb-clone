@@ -1,5 +1,6 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
-import { getNightlyAvailability } from "./availability";
+import { getNightlyAvailability, hasOverlappingPaidBooking } from "./availability";
 import { hasExternalBlockedOverlap } from "./ical";
 import { postBeds24Booking } from "./beds24";
 
@@ -23,28 +24,45 @@ export function getNights(checkIn: Date, checkOut: Date): number {
 }
 
 /**
- * 해당 기간에 겹치는 예약이 있는지
- */
-async function hasOverlappingBooking(
-  listingId: string,
-  checkIn: Date,
-  checkOut: Date
-): Promise<boolean> {
-  const overlap = await prisma.booking.findFirst({
-    where: {
-      listingId,
-      status: { not: "cancelled" },
-      checkIn: { lt: checkOut },
-      checkOut: { gt: checkIn },
-    },
-  });
-  return !!overlap;
-}
-
-/**
  * 예약 생성 (검증 포함)
  */
 export async function createBooking(input: CreateBookingInput) {
+  try {
+    return await createBookingCore(input);
+  } catch (err) {
+    console.error("[createBooking]", err instanceof Error ? err.message : err);
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      const meta = (err.meta as Record<string, unknown> | undefined) ?? {};
+      console.error("[createBooking] Prisma code:", err.code, "meta:", JSON.stringify(meta));
+      if (err.code === "P2002") {
+        return {
+          ok: false as const,
+          error: "동일한 예약이 이미 처리되었을 수 있습니다. 나의 예약에서 확인해 주세요.",
+        };
+      }
+      if (err.code === "P2003") {
+        return {
+          ok: false as const,
+          error: "예약 정보가 올바르지 않습니다. 다시 로그인 후 시도해 주세요.",
+        };
+      }
+    }
+    if (err instanceof Prisma.PrismaClientValidationError) {
+      console.error("[createBooking] Validation:", err.message.slice(0, 500));
+      return {
+        ok: false as const,
+        error: "입력값이 올바르지 않습니다. 날짜·인원을 다시 확인해 주세요.",
+      };
+    }
+    return {
+      ok: false as const,
+      error:
+        "예약 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요. 문제가 계속되면 고객센터로 문의해 주세요.",
+    };
+  }
+}
+
+async function createBookingCore(input: CreateBookingInput) {
   const checkIn = new Date(input.checkIn);
   const checkOut = new Date(input.checkOut);
 
@@ -59,8 +77,8 @@ export async function createBooking(input: CreateBookingInput) {
   if (checkIn < today) {
     return { ok: false as const, error: "체크인은 오늘 이후로 선택해 주세요." };
   }
-  if (input.guests < 1) {
-    return { ok: false as const, error: "인원은 1명 이상이어야 합니다." };
+  if (!Number.isFinite(input.guests) || input.guests < 1 || !Number.isInteger(input.guests)) {
+    return { ok: false as const, error: "인원 수가 올바르지 않습니다." };
   }
 
   const listing = await prisma.listing.findUnique({
@@ -83,7 +101,7 @@ export async function createBooking(input: CreateBookingInput) {
     return { ok: false as const, error: `최대 ${maxNights}박까지 예약 가능합니다.` };
   }
 
-  const overlapping = await hasOverlappingBooking(
+  const overlapping = await hasOverlappingPaidBooking(
     input.listingId,
     checkIn,
     checkOut
@@ -128,6 +146,18 @@ export async function createBooking(input: CreateBookingInput) {
       return { ok: false as const, error: "예약을 처리할 수 없습니다. (게스트 계정 없음)" };
     }
     userId = guest.id;
+  } else {
+    const userExists = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+    if (!userExists) {
+      console.error("[createBooking] userId not found in DB:", userId);
+      return {
+        ok: false as const,
+        error: "사용자 정보를 찾을 수 없습니다. 다시 로그인 후 시도해 주세요.",
+      };
+    }
   }
 
   const nights = nightlyPrices.length;
@@ -137,9 +167,25 @@ export async function createBooking(input: CreateBookingInput) {
   const extraFeePerNight = extraGuestFee ?? listing.extraGuestFee ?? 0;
   const extraTotal = extraGuests * extraFeePerNight * nights;
 
-  const totalPrice = baseTotalPrice + extraTotal;
+  const totalPrice = Math.round(baseTotalPrice + extraTotal);
+  if (!Number.isFinite(totalPrice) || totalPrice < 0) {
+    return {
+      ok: false as const,
+      error: "요금을 계산할 수 없습니다. 날짜·인원을 다시 선택한 뒤 시도해 주세요.",
+    };
+  }
 
   const isInstant = listing.instantBooking === true;
+
+  console.log("[createBooking] create payload:", JSON.stringify({
+    listingId: input.listingId,
+    userId,
+    checkIn: checkIn.toISOString(),
+    checkOut: checkOut.toISOString(),
+    guests: input.guests,
+    totalPrice,
+    status: isInstant ? "confirmed" : "pending",
+  }));
 
   const booking = await prisma.booking.create({
     data: {
@@ -188,7 +234,12 @@ export async function syncBookingToBeds24(
     where: { id: bookingId },
     include: {
       listing: {
-        select: { beds24Enabled: true, beds24PropId: true, beds24RoomId: true },
+        select: {
+          beds24Enabled: true,
+          beds24PropId: true,
+          beds24RoomId: true,
+          beds24AccountKey: true,
+        },
       },
       user: { select: { name: true, email: true } },
     },
@@ -211,6 +262,7 @@ export async function syncBookingToBeds24(
     guestEmail: booking.user?.email ?? undefined,
     guestPhone: booking.guestPhone ?? undefined,
     externalId: booking.id,
+    accountKey: booking.listing.beds24AccountKey ?? null,
   });
   if (result.ok && result.bookId != null) {
     await prisma.booking.update({

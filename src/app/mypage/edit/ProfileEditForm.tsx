@@ -4,8 +4,20 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { toast } from "sonner";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 import { FormFieldWithError } from "@/components/ui/FormFieldWithError";
+import type { HostTranslationKey } from "@/lib/host-i18n";
+
+const PASSWORD_ERROR_CODES: Partial<Record<string, HostTranslationKey>> = {
+  NOT_EMAIL_ACCOUNT: "profileEdit.errPasswordNotEmailAccount",
+  WRONG_CURRENT_PASSWORD: "profileEdit.errPasswordWrongCurrent",
+  WEAK_PASSWORD: "profileEdit.errPasswordWeak",
+  PASSWORD_TOO_LONG: "profileEdit.errPasswordTooLong",
+  MISMATCH: "profileEdit.errPasswordMismatch",
+  MISSING_FIELDS: "profileEdit.errPasswordMissing",
+  SAME_AS_CURRENT: "profileEdit.errPasswordSameAsCurrent",
+};
 
 type UserData = {
   id: string;
@@ -17,9 +29,10 @@ type UserData = {
 
 type Props = {
   user: UserData;
+  canChangePassword: boolean;
 };
 
-export default function ProfileEditForm({ user }: Props) {
+export default function ProfileEditForm({ user, canChangePassword }: Props) {
   const router = useRouter();
   const { t } = useHostTranslations();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -31,6 +44,11 @@ export default function ProfileEditForm({ user }: Props) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [nameError, setNameError] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [pwdLoading, setPwdLoading] = useState(false);
+  const [pwdError, setPwdError] = useState("");
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -103,6 +121,46 @@ export default function ProfileEditForm({ user }: Props) {
       setError(t("mypage.networkError"));
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handlePasswordSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setPwdError("");
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPwdError(t("profileEdit.errPasswordMissing"));
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPwdError(t("profileEdit.errPasswordMismatch"));
+      return;
+    }
+    setPwdLoading(true);
+    try {
+      const res = await fetch("/api/account/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+          confirmPassword,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const code = typeof data.code === "string" ? data.code : "";
+        const key = PASSWORD_ERROR_CODES[code];
+        setPwdError(key ? t(key) : (data.error as string) || t("profileEdit.passwordGenericError"));
+        return;
+      }
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      toast.success(t("profileEdit.passwordChanged"));
+    } catch {
+      setPwdError(t("mypage.networkError"));
+    } finally {
+      setPwdLoading(false);
     }
   }
 
@@ -215,6 +273,94 @@ export default function ProfileEditForm({ user }: Props) {
           </div>
         </div>
       </div>
+
+      {canChangePassword && (
+        <div
+          id="password"
+          className="bg-white border border-minbak-light-gray rounded-minbak p-6 scroll-mt-28"
+        >
+          <h2 className="text-[16px] font-semibold text-minbak-black mb-1">
+            {t("profileEdit.passwordSection")}
+          </h2>
+          <p className="text-minbak-caption text-minbak-gray mb-4">
+            {t("profileEdit.passwordSectionHint")}
+          </p>
+          <form onSubmit={handlePasswordSubmit} className="space-y-4">
+            <div>
+              <label
+                htmlFor="current-password"
+                className="block text-minbak-caption font-medium text-minbak-black mb-1.5"
+              >
+                {t("profileEdit.currentPassword")}
+              </label>
+              <input
+                id="current-password"
+                type="password"
+                autoComplete="current-password"
+                value={currentPassword}
+                onChange={(e) => {
+                  setCurrentPassword(e.target.value);
+                  setPwdError("");
+                }}
+                className="w-full min-h-[44px] px-4 py-2.5 border border-minbak-light-gray rounded-minbak text-minbak-body text-minbak-black focus:outline-none focus:ring-2 focus:ring-minbak-primary focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="new-password"
+                className="block text-minbak-caption font-medium text-minbak-black mb-1.5"
+              >
+                {t("profileEdit.newPassword")}
+              </label>
+              <input
+                id="new-password"
+                type="password"
+                autoComplete="new-password"
+                value={newPassword}
+                onChange={(e) => {
+                  setNewPassword(e.target.value);
+                  setPwdError("");
+                }}
+                className="w-full min-h-[44px] px-4 py-2.5 border border-minbak-light-gray rounded-minbak text-minbak-body text-minbak-black focus:outline-none focus:ring-2 focus:ring-minbak-primary focus:border-transparent"
+              />
+              <p className="mt-1 text-minbak-caption text-minbak-gray">
+                {t("profileEdit.newPasswordHint")}
+              </p>
+            </div>
+            <div>
+              <label
+                htmlFor="confirm-password"
+                className="block text-minbak-caption font-medium text-minbak-black mb-1.5"
+              >
+                {t("profileEdit.confirmPassword")}
+              </label>
+              <input
+                id="confirm-password"
+                type="password"
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  setPwdError("");
+                }}
+                className="w-full min-h-[44px] px-4 py-2.5 border border-minbak-light-gray rounded-minbak text-minbak-body text-minbak-black focus:outline-none focus:ring-2 focus:ring-minbak-primary focus:border-transparent"
+              />
+            </div>
+            {pwdError && (
+              <p className="text-minbak-body text-red-600 font-medium" role="alert">
+                {pwdError}
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={pwdLoading}
+              className="min-h-[44px] px-6 py-2.5 rounded-minbak text-minbak-body font-medium text-white bg-minbak-black hover:bg-minbak-black/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {pwdLoading ? t("profileEdit.changingPassword") : t("profileEdit.changePassword")}
+            </button>
+          </form>
+        </div>
+      )}
 
       {error && (
         <p className="text-minbak-body text-red-600 font-medium">{error}</p>

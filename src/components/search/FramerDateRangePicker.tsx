@@ -117,13 +117,13 @@ function MonthBlock({
           <button
             type="button"
             onClick={onPrev}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f0f0f0] transition-colors cursor-pointer"
+            className="flex items-center justify-center rounded-xl min-h-[44px] min-w-[44px] shrink-0 bg-[#E31C23] text-white shadow-sm hover:bg-[#c91820] transition-colors active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E31C23]"
             aria-label="이전 달"
           >
-            <ChevronLeft className="w-5 h-5 text-minbak-black" />
+            <ChevronLeft className="w-7 h-7" strokeWidth={2.75} aria-hidden />
           </button>
         ) : (
-          <div className="w-8 h-8" />
+          <div className="min-h-[44px] min-w-[44px] shrink-0" aria-hidden />
         )}
         <p
           className="font-bold text-[18px] text-minbak-black"
@@ -136,13 +136,13 @@ function MonthBlock({
           <button
             type="button"
             onClick={onNext}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f0f0f0] transition-colors cursor-pointer"
+            className="flex items-center justify-center rounded-xl min-h-[44px] min-w-[44px] shrink-0 bg-[#E31C23] text-white shadow-sm hover:bg-[#c91820] transition-colors active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E31C23]"
             aria-label="다음 달"
           >
-            <ChevronRight className="w-5 h-5 text-minbak-black" />
+            <ChevronRight className="w-7 h-7" strokeWidth={2.75} aria-hidden />
           </button>
         ) : (
-          <div className="w-8 h-8" />
+          <div className="min-h-[44px] min-w-[44px] shrink-0" aria-hidden />
         )}
       </div>
       {/* 요일 헤더와 날짜를 하나의 그리드로 묶어 열 정렬 보장. 모바일은 행 간격·셀 높이 넉넉히 */}

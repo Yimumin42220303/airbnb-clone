@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import { cloudinaryLoader } from "@/lib/cloudinary-loader";
 import { useRouter } from "next/navigation";
-import { Header, Footer } from "@/components/layout";
 import { Button } from "@/components/ui";
 import Link from "next/link";
 import DeleteListingButton from "@/components/host/DeleteListingButton";
@@ -61,6 +61,8 @@ type Props = {
     beds24Enabled?: boolean;
     beds24PropId?: string | null;
     beds24RoomId?: string | null;
+    /** 관리자 전용. 비어 있으면 공용 토큰(BEDS24_REFRESH_TOKEN) 사용 */
+    beds24AccountKey?: string | null;
     beds24PriceMultiplier?: number | null;
     beds24JanuaryFactor?: number;
     beds24FebruaryFactor?: number;
@@ -142,6 +144,7 @@ export default function EditListingForm({
     beds24Enabled: initial.beds24Enabled ?? !!(initial.beds24PropId?.trim() && initial.beds24RoomId?.trim()),
     beds24PropId: initial.beds24PropId ?? "",
     beds24RoomId: initial.beds24RoomId ?? "",
+    beds24AccountKey: initial.beds24AccountKey ?? "",
     beds24PriceMultiplier: initial.beds24PriceMultiplier != null ? String(initial.beds24PriceMultiplier) : "1",
     beds24JanuaryFactor: String(initial.beds24JanuaryFactor ?? 1),
     beds24FebruaryFactor: String(initial.beds24FebruaryFactor ?? 1),
@@ -242,9 +245,24 @@ export default function EditListingForm({
   function addNewImageFiles(files: FileList | null) {
     if (!files?.length) return;
     const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    const toAdd = Array.from(files).filter((f) => allowed.includes(f.type) && f.size <= 4 * 1024 * 1024);
-    const maxToAdd = Math.max(0, 100 - existingImageUrls.length);
-    setNewImageFiles((prev) => [...prev, ...toAdd].slice(0, maxToAdd));
+    const maxBytes = 4 * 1024 * 1024;
+    const picked = Array.from(files);
+    const toAdd = picked.filter((f) => allowed.includes(f.type) && f.size <= maxBytes);
+    if (picked.length > 0 && toAdd.length === 0) {
+      toast.error(t("edit.imageAddRejectedAll"));
+      return;
+    }
+    const maxNewSlots = Math.max(0, 100 - existingImageUrls.length);
+    setNewImageFiles((prev) => {
+      const merged = [...prev, ...toAdd].slice(0, maxNewSlots);
+      const dropped = prev.length + toAdd.length - merged.length;
+      if (dropped > 0) {
+        queueMicrotask(() => {
+          toast.message(t("edit.imageAddCapTrimmed", { n: dropped }));
+        });
+      }
+      return merged;
+    });
   }
 
   const allThumbnails = [
@@ -283,10 +301,13 @@ export default function EditListingForm({
   async function persistBeds24SettingsToServer(): Promise<
     { ok: true } | { ok: false; error: string }
   > {
-    const payload = {
+    const payload: Record<string, unknown> = {
       beds24Enabled: form.beds24Enabled,
       beds24PropId: form.beds24PropId?.trim() || null,
       beds24RoomId: form.beds24RoomId?.trim() || null,
+      ...(isAdmin
+        ? { beds24AccountKey: form.beds24AccountKey?.trim() ? form.beds24AccountKey.trim().toUpperCase() : null }
+        : {}),
       beds24PriceMultiplier: (() => {
         const v = parseFloat(form.beds24PriceMultiplier);
         return !isNaN(v) && v > 0 ? v : null;
@@ -409,6 +430,9 @@ export default function EditListingForm({
         beds24Enabled: form.beds24Enabled,
         beds24PropId: form.beds24PropId?.trim() || null,
         beds24RoomId: form.beds24RoomId?.trim() || null,
+        ...(isAdmin
+          ? { beds24AccountKey: form.beds24AccountKey?.trim() ? form.beds24AccountKey.trim().toUpperCase() : null }
+          : {}),
         beds24PriceMultiplier: (() => {
           const v = parseFloat(form.beds24PriceMultiplier);
           return !isNaN(v) && v > 0 ? v : null;
@@ -470,9 +494,7 @@ export default function EditListingForm({
   }
 
   return (
-    <>
-      <Header />
-      <main className="min-h-screen pt-4 md:pt-8 px-4 md:px-6">
+    <main className="min-h-screen pt-4 md:pt-8 px-4 md:px-6">
         <div className="max-w-[600px] mx-auto py-8">
           <div className="mb-6">
             <Link
@@ -652,6 +674,7 @@ export default function EditListingForm({
                       onDrop={() => handleImageDrop(globalIndex)}
                     >
                       <Image
+                        loader={cloudinaryLoader}
                         src={src}
                         alt={isExisting ? t("edit.existingImageN", { n: thumb.index + 1 }) : t("edit.newImageN", { n: thumb.index + 1 })}
                         width={96}
@@ -1386,6 +1409,36 @@ export default function EditListingForm({
                       className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body"
                     />
                   </label>
+                  {isAdmin && (
+                    <label className="block">
+                      <span className="text-minbak-caption font-medium text-minbak-black block mb-1">
+                        Beds24 Account Key <span className="text-minbak-gray">(관리자 전용)</span>
+                      </span>
+                      <p className="text-minbak-caption text-minbak-gray mb-1">
+                        비워두면 공용 토큰(<code>BEDS24_REFRESH_TOKEN</code>) 사용. 값 지정 시 Vercel env의
+                        {" "}
+                        <code>BEDS24_REFRESH_TOKEN_&#123;KEY&#125;</code>를 사용합니다. 영문 대문자/숫자/밑줄만.
+                      </p>
+                      <input
+                        type="text"
+                        value={form.beds24AccountKey}
+                        onChange={(e) => setForm((f) => ({ ...f, beds24AccountKey: e.target.value.toUpperCase() }))}
+                        placeholder="HOST_TANAKA"
+                        pattern="[A-Z0-9_]*"
+                        maxLength={64}
+                        className="w-full px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body font-mono"
+                      />
+                      {form.beds24AccountKey?.trim() ? (
+                        <p className="text-minbak-caption text-minbak-gray mt-1">
+                          사용 env 키: <code>BEDS24_REFRESH_TOKEN_{form.beds24AccountKey.trim().toUpperCase()}</code>
+                        </p>
+                      ) : (
+                        <p className="text-minbak-caption text-minbak-gray mt-1">
+                          fallback 사용: <code>BEDS24_REFRESH_TOKEN</code>
+                        </p>
+                      )}
+                    </label>
+                  )}
                   <div>
                     <span className="text-minbak-caption font-medium text-minbak-black block mb-1">{t("edit.beds24PriceMultiplierMonthly")}</span>
                     <p className="text-minbak-caption text-minbak-gray mb-2">{t("edit.beds24PriceMultiplierHint")}</p>
@@ -1574,8 +1627,6 @@ export default function EditListingForm({
             </div>
           </form>
         </div>
-        <Footer />
       </main>
-    </>
   );
 }

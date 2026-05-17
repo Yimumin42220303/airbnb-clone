@@ -4,7 +4,7 @@ import { getListingBlockedDateKeys, getListingCheckoutOnlyDateKeys } from "@/lib
 /**
  * GET /api/listings/[id]/blocked-dates?from=YYYY-MM-DD&to=YYYY-MM-DD
  * 캘린더 표시용: 해당 기간 내 예약 불가한 날짜 목록 (우리 예약 + 설정 + 외부 ICS)
- * + 체크아웃만 가능한 날짜 목록 (우리 예약·외부 ICS 체크아웃일)
+ * + 체크아웃만 가능한 날짜 목록 (우리·ICS 체크인일 등; 퇴실일 당일은 당일 턴오버로 체크인 가능하므로 제외)
  */
 export async function GET(
   request: NextRequest,

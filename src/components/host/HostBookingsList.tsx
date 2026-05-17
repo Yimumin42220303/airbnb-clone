@@ -7,6 +7,7 @@ import StartMessageLink from "@/components/messages/StartMessageLink";
 import { useHostTranslations } from "./HostLocaleProvider";
 import { useCurrency } from "@/components/currency/CurrencyProvider";
 import type { HostTranslationKey } from "@/lib/host-i18n";
+import { cloudinaryLoader } from "@/lib/cloudinary-loader";
 
 type BookingItem = {
   id: string;
@@ -56,6 +57,7 @@ export default function HostBookingsList({ bookings }: Props) {
               aria-hidden
             >
               <Image
+                loader={cloudinaryLoader}
                 src={b.listing.imageUrl}
                 alt=""
                 width={112}

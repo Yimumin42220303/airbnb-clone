@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
+import { cloudinaryLoader } from "@/lib/cloudinary-loader";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -290,6 +291,7 @@ export default function MessageThread({
                       className="block mb-1 rounded-minbak overflow-hidden max-w-[240px] w-full relative h-[200px]"
                     >
                       <Image
+                        loader={cloudinaryLoader}
                         src={m.imageUrl}
                         alt="첨부 이미지"
                         fill

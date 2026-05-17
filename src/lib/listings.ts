@@ -1,8 +1,14 @@
+import { cache } from "react";
 import { prisma } from "./prisma";
 import type { Prisma } from "@prisma/client";
-import { getDateKeysBetween, getListingBlockedDateKeys } from "./availability";
+import {
+  getDateKeysBetween,
+  getListingBlockedDateKeys,
+  listingSlotOccupiedWhere,
+} from "./availability";
 import { STORED_CURRENCY, convertKrwToJpy } from "./currency";
 import { mapWithConcurrency } from "./map-with-concurrency";
+import { getNights } from "./bookings";
 
 /** 날짜 필터 시 숙소별 iCal/Beds24 조회 동시 실행 상한 */
 const LISTING_AVAILABILITY_CHECK_CONCURRENCY = 6;
@@ -58,10 +64,10 @@ export async function getListings(filters?: ListingFilters) {
     if (!isNaN(checkIn.getTime()) && !isNaN(checkOut.getTime())) {
       checkInDate = checkIn;
       checkOutDate = checkOut;
-      // 해당 기간에 겹치는 예약(취소 제외)이 없는 숙소만
+      // 해당 기간에 결제 완료 확정 예약과 겹치지 않는 숙소만
       where.bookings = {
         none: {
-          status: { not: "cancelled" },
+          ...listingSlotOccupiedWhere,
           checkIn: { lt: checkOut },
           checkOut: { gt: checkIn },
         },
@@ -75,6 +81,31 @@ export async function getListings(filters?: ListingFilters) {
             available: false,
           },
         };
+      }
+      // 최소/최대 숙박 일수 필터: 요청한 박수가 숙소 정책 범위 밖이면 결과에서 제외.
+      // null(미설정)은 제약 없음으로 간주. (예약 시점 검증 getNights 와 동일한 박수)
+      const nightsCount = getNights(checkIn, checkOut);
+      if (nightsCount >= 1) {
+        const stayConditions: Prisma.ListingWhereInput[] = [
+          {
+            OR: [
+              { minStayNights: null },
+              { minStayNights: { lte: nightsCount } },
+            ],
+          },
+          {
+            OR: [
+              { maxStayNights: null },
+              { maxStayNights: { gte: nightsCount } },
+            ],
+          },
+        ];
+        const existingAnd = where.AND;
+        where.AND = existingAnd
+          ? Array.isArray(existingAnd)
+            ? [...existingAnd, ...stayConditions]
+            : [existingAnd, ...stayConditions]
+          : stayConditions;
       }
     }
   }
@@ -92,10 +123,20 @@ export async function getListings(filters?: ListingFilters) {
     include: {
       category: true,
       listingAmenities: { include: { amenity: true } },
-      reviews: true,
-      images: { orderBy: { sortOrder: "asc" } },
+      _count: { select: { reviews: true } },
+      images: { orderBy: { sortOrder: "asc" }, take: 1 },
     },
   });
+
+  const listingIds = listings.map((l) => l.id);
+  const ratingAggs = listingIds.length > 0
+    ? await prisma.review.groupBy({
+        by: ["listingId"],
+        where: { listingId: { in: listingIds } },
+        _avg: { rating: true },
+      })
+    : [];
+  const ratingMap = new Map(ratingAggs.map((r) => [r.listingId, r._avg.rating]));
 
   // iCal 등 외부 blocked 날짜 필터 (Prisma로는 불가)
   let filteredListings = listings;
@@ -121,11 +162,9 @@ export async function getListings(filters?: ListingFilters) {
   }
 
   let mapped = filteredListings.map((l) => {
-    const reviewCount = l.reviews.length;
-    const rating =
-      reviewCount > 0
-        ? l.reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
-        : null;
+    const reviewCount = l._count.reviews;
+    const avgRating = ratingMap.get(l.id) ?? null;
+    const rating = avgRating !== null ? Math.round(avgRating * 100) / 100 : null;
     const coverUrl =
       l.images.length > 0 ? l.images[0].url : l.imageUrl;
     return {
@@ -134,7 +173,7 @@ export async function getListings(filters?: ListingFilters) {
       location: l.location,
       imageUrl: coverUrl,
       price: l.pricePerNight,
-      rating: rating !== null ? Math.round(rating * 100) / 100 : undefined,
+      rating: rating !== null ? rating : undefined,
       reviewCount: reviewCount > 0 ? reviewCount : undefined,
       category: l.category ? { id: l.category.id, name: l.category.name } : undefined,
       amenities: l.listingAmenities.map((la) => la.amenity.name),
@@ -222,6 +261,7 @@ export async function getListingByIdForEdit(id: string) {
     beds24PropId: listing.beds24PropId ?? null,
     beds24RoomId: listing.beds24RoomId ?? null,
     beds24OfferIndex: listing.beds24OfferIndex ?? null,
+    beds24AccountKey: listing.beds24AccountKey ?? null,
     beds24PriceMultiplier: listing.beds24PriceMultiplier ?? null,
     beds24JanuaryFactor: listing.beds24JanuaryFactor ?? 1,
     beds24FebruaryFactor: listing.beds24FebruaryFactor ?? 1,
@@ -245,36 +285,39 @@ export async function getListingByIdForEdit(id: string) {
 
 /**
  * 숙소 상세 조회 (ID) — 승인된 숙소만. 게스트용 상세/예약 확인에서 사용.
+ * React cache: 동일 요청 내 generateMetadata + page 등 중복 호출 시 DB 1회만 조회.
  */
-export async function getListingById(id: string) {
-  const listing = await prisma.listing.findFirst({
-    where: { id, status: "approved", hidden: false },
-    include: {
-      user: { select: { name: true, image: true } },
-      category: true,
-      listingAmenities: { include: { amenity: true } },
-      reviews: {
-        orderBy: { createdAt: "desc" },
-        include: {
-          user: { select: { name: true, createdAt: true } },
-          images: { orderBy: { sortOrder: "asc" } },
-        },
-      },
-      images: { orderBy: { sortOrder: "asc" } },
-    },
-  });
-
-  if (!listing) return null;
-
+export const getListingById = cache(async function getListingById(id: string) {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const recentBookingCount = await prisma.booking.count({
-    where: {
-      listingId: id,
-      status: "confirmed",
-      createdAt: { gte: thirtyDaysAgo },
-    },
-  });
+
+  const [listing, recentBookingCount] = await Promise.all([
+    prisma.listing.findFirst({
+      where: { id, status: "approved", hidden: false },
+      include: {
+        user: { select: { name: true, image: true } },
+        category: true,
+        listingAmenities: { include: { amenity: true } },
+        reviews: {
+          orderBy: { createdAt: "desc" },
+          include: {
+            user: { select: { name: true, createdAt: true } },
+            images: { orderBy: { sortOrder: "asc" } },
+          },
+        },
+        images: { orderBy: { sortOrder: "asc" } },
+      },
+    }),
+    prisma.booking.count({
+      where: {
+        listingId: id,
+        status: "confirmed",
+        createdAt: { gte: thirtyDaysAgo },
+      },
+    }),
+  ]);
+
+  if (!listing) return null;
 
   const reviewCount = listing.reviews.length;
   const rating =
@@ -353,7 +396,7 @@ export async function getListingById(id: string) {
       };
     }),
   };
-}
+});
 
 export type CreateListingInput = {
   title: string;
@@ -519,6 +562,8 @@ export type UpdateListingInput = Partial<
     beds24PropId?: string | null;
     beds24RoomId?: string | null;
     beds24OfferIndex?: number | null;
+    /** Beds24 계정 식별자 (관리자 전용). 값이 있으면 BEDS24_REFRESH_TOKEN_{key} 사용 */
+    beds24AccountKey?: string | null;
     /** Beds24 가격 배율. 1=그대로, 0.5=-50% */
     beds24PriceMultiplier?: number | null;
     /** Beds24 가격 배율 월별 (미설정 시 beds24PriceMultiplier 또는 1) */
@@ -638,6 +683,23 @@ export async function updateListing(
   if (input.beds24Enabled !== undefined) data.beds24Enabled = input.beds24Enabled;
   if (input.beds24PropId !== undefined) data.beds24PropId = input.beds24PropId?.trim() || null;
   if (input.beds24RoomId !== undefined) data.beds24RoomId = input.beds24RoomId?.trim() || null;
+  if (input.beds24AccountKey !== undefined) {
+    // 관리자 전용 필드. API 레이어에서 권한 검증 후 호출되므로 여기서는 값 정규화만 수행.
+    const raw = input.beds24AccountKey;
+    if (raw == null || (typeof raw === "string" && raw.trim() === "")) {
+      data.beds24AccountKey = null;
+    } else if (typeof raw === "string") {
+      const normalized = raw.trim().toUpperCase();
+      if (/^[A-Z0-9_]{1,64}$/.test(normalized)) {
+        data.beds24AccountKey = normalized;
+      } else {
+        return {
+          ok: false as const,
+          error: "Beds24 Account Key는 영문 대문자, 숫자, 밑줄(_) 1~64자만 허용됩니다.",
+        };
+      }
+    }
+  }
   if (input.beds24OfferIndex !== undefined) {
     const v = input.beds24OfferIndex;
     data.beds24OfferIndex = v != null ? Math.min(16, Math.max(1, Number(v))) : null;

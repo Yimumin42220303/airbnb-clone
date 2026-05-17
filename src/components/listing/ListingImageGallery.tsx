@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { X, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
-import { optimizeCloudinaryUrl } from "@/lib/cloudinary-optimize";
+import { cloudinaryLoader } from "@/lib/cloudinary-loader";
 
 type ImageItem = { id: string; url: string; sortOrder: number };
 
@@ -24,7 +24,8 @@ export default function ListingImageGallery({ images, title }: Props) {
     return (
       <div className="relative aspect-video w-full bg-minbak-light-gray overflow-hidden">
             <Image
-              src={optimizeCloudinaryUrl(images[0].url, 1200)}
+              loader={cloudinaryLoader}
+              src={images[0].url}
               alt={title}
               fill
               className="object-contain cursor-pointer bg-black/5"
@@ -71,7 +72,8 @@ export default function ListingImageGallery({ images, title }: Props) {
               }}
             >
               <Image
-                src={optimizeCloudinaryUrl(img.url, 800)}
+                loader={cloudinaryLoader}
+                src={img.url}
                 alt={i === 0 ? title : `${title} ${i + 1}`}
                 fill
                 className="object-cover"
@@ -94,7 +96,8 @@ export default function ListingImageGallery({ images, title }: Props) {
               }}
             >
               <Image
-                src={optimizeCloudinaryUrl(main.url, 1200)}
+                loader={cloudinaryLoader}
+                src={main.url}
                 alt={title}
                 fill
                 className="object-cover"
@@ -115,7 +118,8 @@ export default function ListingImageGallery({ images, title }: Props) {
                   }}
                 >
                   <Image
-                    src={optimizeCloudinaryUrl(img.url, 600)}
+                    loader={cloudinaryLoader}
+                    src={img.url}
                     alt={`${title} ${i + 2}`}
                     fill
                     className="object-cover"
@@ -242,7 +246,8 @@ function Lightbox({
         onClick={(e) => e.stopPropagation()} // 실제 이미지 영역 클릭 시에는 닫히지 않도록
       >
         <Image
-          src={optimizeCloudinaryUrl(img.url, 1200)}
+          loader={cloudinaryLoader}
+          src={img.url}
           alt={`${title} - ${currentIndex + 1}`}
           fill
           className="object-contain"
@@ -315,7 +320,8 @@ function AllPhotosOverlay({
               >
                 <div className="relative w-full" style={aspectStyle}>
                   <Image
-                    src={optimizeCloudinaryUrl(img.url, 800)}
+                    loader={cloudinaryLoader}
+                    src={img.url}
                     alt={`${title} 추가 사진 ${index + 1}`}
                     fill
                     className="object-cover"

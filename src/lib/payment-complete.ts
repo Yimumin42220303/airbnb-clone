@@ -11,9 +11,53 @@ import {
 import { createNotification } from "@/lib/notifications";
 import { sendPushToUser } from "@/lib/web-push";
 import { sendDiscordMessage } from "@/lib/discord";
-import { getOfficialUserId } from "@/lib/official-account";
+import { ensureOfficialUserId } from "@/lib/official-account";
+
+/** 즉시예약 + 결제 완료 시 도쿄민박 공식 계정 자동 발송 문구 */
+export const INSTANT_BOOKING_PAYMENT_WELCOME_BODY =
+  "결제가 정상적으로 완료되었으며, 예약이 확정되었습니다. 3일내에 호스트가 체크인 안내를 전달드릴 예정입니다. 호스트로부터의 메시지를 기다려 주세요.😊(여기서 언제든지 호스트에게 메시지를 보낼수 있어요)";
 import { syncBookingToBeds24 } from "@/lib/bookings";
 import { createScheduledMessagesForBooking } from "@/lib/scheduled-messages";
+
+/**
+ * 즉시예약·결제완료인데 환영 메시지가 없는 경우 보완 (웹훅/verify 레이스·구버그 대비).
+ */
+export async function ensureInstantBookingWelcomeMessage(
+  bookingId: string
+): Promise<void> {
+  const row = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    select: {
+      paymentStatus: true,
+      status: true,
+      listing: { select: { instantBooking: true } },
+    },
+  });
+  if (!row?.listing.instantBooking) return;
+  if (row.paymentStatus !== "paid") return;
+  if (row.status === "cancelled") return;
+
+  let conversation = await prisma.conversation.findUnique({
+    where: { bookingId },
+    include: { _count: { select: { messages: true } } },
+  });
+  if (!conversation) {
+    conversation = await prisma.conversation.create({
+      data: { bookingId },
+      include: { _count: { select: { messages: true } } },
+    });
+  }
+  if (conversation._count.messages > 0) return;
+
+  const officialUserId = await ensureOfficialUserId();
+  await prisma.message.create({
+    data: {
+      conversationId: conversation.id,
+      senderId: officialUserId,
+      body: INSTANT_BOOKING_PAYMENT_WELCOME_BODY,
+    },
+  });
+}
 
 export async function onPaymentVerified(bookingId: string): Promise<string | null> {
   let conversationId: string | null = null;
@@ -40,33 +84,29 @@ export async function onPaymentVerified(bookingId: string): Promise<string | nul
   try {
     let conversation = await prisma.conversation.findUnique({
       where: { bookingId },
+      include: { _count: { select: { messages: true } } },
     });
     if (!conversation) {
       conversation = await prisma.conversation.create({
         data: { bookingId },
+        include: { _count: { select: { messages: true } } },
       });
     }
     conversationId = conversation.id;
 
-    const isInstantBooking = fullBooking.listing.instantBooking === true;
-    if (!isInstantBooking) {
-      await prisma.message.create({
-        data: {
-          conversationId: conversation.id,
-          senderId: fullBooking.listing.userId,
-          body: "예약감사합니다. 3일내에 체크인방법에대해 안내드릴예정이니 조금 기다려주세요.",
-        },
-      });
-    } else {
-      const officialUserId = await getOfficialUserId();
-      if (officialUserId) {
+    // 웹훅·verify 동시 도착 시 중복 방지: 이미 메시지가 있으면 건너뜀
+    if (conversation._count.messages === 0) {
+      const isInstantBooking = fullBooking.listing.instantBooking === true;
+      if (!isInstantBooking) {
         await prisma.message.create({
           data: {
             conversationId: conversation.id,
-            senderId: officialUserId,
-            body: "결제가 정상적으로 완료되었으며, 예약이 확정되었습니다. 3일내에 호스트가 체크인 안내를 전달드릴 예정입니다. 호스트로부터의 메시지를 기다려 주세요.😊(여기서 언제든지 호스트에게 메시지를 보낼수 있어요)  ",
+            senderId: fullBooking.listing.userId,
+            body: "예약감사합니다. 3일내에 체크인방법에대해 안내드릴예정이니 조금 기다려주세요.",
           },
         });
+      } else {
+        await ensureInstantBookingWelcomeMessage(bookingId);
       }
     }
   } catch (err) {

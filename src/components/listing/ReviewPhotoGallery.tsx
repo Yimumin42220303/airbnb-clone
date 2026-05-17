@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import Image from "next/image";
+import { cloudinaryLoader } from "@/lib/cloudinary-loader";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
 type Props = {
@@ -37,6 +38,7 @@ export default function ReviewPhotoGallery({ images }: Props) {
             className="relative flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border border-[#ebebeb] hover:border-[#999] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#222]"
           >
             <Image
+              loader={cloudinaryLoader}
               src={url}
               alt={`리뷰 사진 ${i + 1}`}
               fill
@@ -88,6 +90,7 @@ export default function ReviewPhotoGallery({ images }: Props) {
             onClick={(e) => e.stopPropagation()}
           >
             <Image
+              loader={cloudinaryLoader}
               src={images[lightboxIdx]}
               alt={`리뷰 사진 ${lightboxIdx + 1}`}
               fill

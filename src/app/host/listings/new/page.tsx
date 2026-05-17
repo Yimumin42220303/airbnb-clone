@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getAdminUser } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-import { Header, Footer } from "@/components/layout";
+import { ensureDefaultAmenitiesExist } from "@/lib/ensure-amenities";
 import NewListingForm from "./NewListingForm";
 
 /**
@@ -19,18 +19,15 @@ export default async function NewListingPage() {
   const admin = await getAdminUser();
   const isAdmin = !!admin;
 
+  await ensureDefaultAmenitiesExist();
   const amenities = await prisma.amenity.findMany({
     orderBy: { name: "asc" },
     select: { id: true, name: true },
   });
 
   return (
-    <>
-      <Header />
-      <main className="min-h-screen pt-4 md:pt-8 px-4 md:px-6 pb-16">
-        <NewListingForm amenities={amenities} isAdmin={isAdmin} />
-      </main>
-      <Footer />
-    </>
+    <main className="min-h-screen pt-4 md:pt-8 px-4 md:px-6 pb-16">
+      <NewListingForm amenities={amenities} isAdmin={isAdmin} />
+    </main>
   );
 }

@@ -1,3 +1,5 @@
+import { Webhook } from "@portone/server-sdk";
+
 /**
  * Portone Server-side API utilities
  *
@@ -10,6 +12,14 @@ function getApiSecret(): string {
   const secret = process.env.PORTONE_API_SECRET;
   if (!secret) {
     throw new Error("PORTONE_API_SECRET is not set");
+  }
+  return secret;
+}
+
+function getWebhookSecret(): string {
+  const secret = process.env.PORTONE_WEBHOOK_SECRET?.trim();
+  if (!secret) {
+    throw new Error("PORTONE_WEBHOOK_SECRET is not set");
   }
   return secret;
 }
@@ -71,6 +81,14 @@ export async function getPayment(paymentId: string): Promise<PortonePayment> {
   };
 }
 
+export async function verifyWebhookPayload(
+  payload: string,
+  headers: Record<string, string | string[] | undefined>
+): Promise<void> {
+  const secret = getWebhookSecret();
+  await Webhook.verify(secret, payload, headers);
+}
+
 /**
  * 빌링키로 결제 실행 (카드 등록 후 자동 결제 시 사용)
  * @see https://developers.portone.io/api/rest-v2/billingKey.pay
@@ -113,7 +131,12 @@ export async function payWithBillingKey(params: {
     );
   }
 
-  return res.json();
+  const raw = await res.json();
+  return {
+    ...raw,
+    totalAmount: raw.totalAmount ?? raw.amount?.total ?? params.amount,
+    transactionId: raw.transactionId ?? raw.pgTxId ?? undefined,
+  };
 }
 
 /**

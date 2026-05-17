@@ -4,6 +4,10 @@ import { payWithBillingKey } from "@/lib/portone";
 import { sendEmailAsync, BASE_URL } from "@/lib/email";
 import { syncBookingToBeds24 } from "@/lib/bookings";
 import { createScheduledMessagesForBooking } from "@/lib/scheduled-messages";
+import { requireCronAuth } from "@/lib/cron-auth";
+import { STORED_CURRENCY, convertJpyToKrw } from "@/lib/currency";
+import { getJpyToKrwRate } from "@/lib/exchange-rate";
+import { hasOverlappingPaidBooking } from "@/lib/availability";
 import {
   paymentConfirmationGuest,
   paymentConfirmationHost,
@@ -17,17 +21,12 @@ import {
  * 빌링키 등록 후 결제 대기 중인 예약 중 자동 결제 예정일이 도래한 건을 처리합니다.
  */
 export async function POST(request: Request) {
-  // Cron Secret 검증
-  const authHeader = request.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    );
-  }
+  const authError = requireCronAuth(request);
+  if (authError) return authError;
 
   const now = new Date();
+  const jpyToKrwRate =
+    STORED_CURRENCY === "JPY" ? await getJpyToKrwRate() : undefined;
 
   // 자동 결제 대상 조회: deferred + pending + scheduledPaymentDate <= now + 취소되지 않은 건
   const bookings = await prisma.booking.findMany({
@@ -58,13 +57,41 @@ export async function POST(request: Request) {
 
   for (const booking of bookings) {
     const paymentId = `deferred_${booking.id}_${Date.now()}`;
+    const amountKrw =
+      STORED_CURRENCY === "JPY"
+        ? convertJpyToKrw(booking.totalPrice, jpyToKrwRate)
+        : booking.totalPrice;
+
+    const slotConflict = await hasOverlappingPaidBooking(
+      booking.listingId,
+      booking.checkIn,
+      booking.checkOut,
+      booking.id
+    );
+    if (slotConflict) {
+      console.error(
+        `[Cron] Deferred payment skipped (slot conflict): booking ${booking.id}`
+      );
+      await prisma.booking.update({
+        where: { id: booking.id },
+        data: { status: "cancelled", paymentStatus: "failed" },
+      });
+      results.push({
+        bookingId: booking.id,
+        success: false,
+        error:
+          "해당 기간에 이미 확정된 예약이 있어 자동 결제를 진행할 수 없습니다.",
+      });
+      continue;
+    }
 
     try {
       const portoneResult = await payWithBillingKey({
         billingKey: booking.billingKey!,
         paymentId,
-        amount: booking.totalPrice,
+        amount: amountKrw,
         orderName: booking.listing.title.slice(0, 50),
+        currency: "KRW",
       });
 
       // 결제 성공: 트랜잭션 기록 + 상태 업데이트
@@ -74,7 +101,7 @@ export async function POST(request: Request) {
             bookingId: booking.id,
             paymentId,
             transactionId: portoneResult.transactionId || null,
-            amount: booking.totalPrice,
+            amount: portoneResult.totalAmount || amountKrw,
             status: "paid",
             method: portoneResult.method?.type || "CARD",
             pgProvider: portoneResult.channel?.pgProvider || null,
@@ -151,7 +178,7 @@ export async function POST(request: Request) {
           data: {
             bookingId: booking.id,
             paymentId,
-            amount: booking.totalPrice,
+            amount: amountKrw,
             status: "failed",
             failReason:
               err instanceof Error ? err.message : "Unknown error",

@@ -6,6 +6,7 @@ import { onPaymentVerified } from "@/lib/payment-complete";
 import { sendChannelTalkNotification } from "@/lib/channel-api";
 import { getJpyToKrwRate } from "@/lib/exchange-rate";
 import { STORED_CURRENCY, convertJpyToKrw } from "@/lib/currency";
+import { hasOverlappingPaidBooking } from "@/lib/availability";
 
 /**
  * POST /api/payments/mock-verify
@@ -68,6 +69,23 @@ export async function POST(request: Request) {
 
     if (booking.paymentStatus === "paid") {
       return NextResponse.json({ ok: true, alreadyPaid: true });
+    }
+
+    const slotConflict = await hasOverlappingPaidBooking(
+      booking.listingId,
+      booking.checkIn,
+      booking.checkOut,
+      bookingId
+    );
+    if (slotConflict) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "해당 기간에 이미 결제가 완료된 예약이 있어 확정할 수 없습니다.",
+        },
+        { status: 409 }
+      );
     }
 
     const mockPaymentId = `mock_${bookingId}_${Date.now()}`;

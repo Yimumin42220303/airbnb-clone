@@ -12,6 +12,7 @@ import OpenAI from "openai";
 import { getTopicForDate } from "@/lib/blog-daily-topics";
 import { BLOG_DAILY_SYSTEM_PROMPT } from "@/lib/blog-daily-prompt";
 import { BASE_URL } from "@/lib/site-url";
+import { requireCronAuth } from "@/lib/cron-auth";
 
 function getOpenAI() {
   const key = process.env.OPENAI_API_KEY;
@@ -31,11 +32,8 @@ function extractJson(text: string): string {
 }
 
 export async function POST(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authError = requireCronAuth(request);
+  if (authError) return authError;
 
   const apiKey = process.env.BLOG_AUTO_PUBLISH_API_KEY;
   if (!apiKey || apiKey.length < 16) {

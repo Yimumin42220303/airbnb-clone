@@ -2,7 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { optimizeCloudinaryUrl } from "@/lib/cloudinary-optimize";
+import { cloudinaryLoader } from "@/lib/cloudinary-loader";
 import WishlistHeart from "@/components/wishlist/WishlistHeart";
 import { useCurrency } from "@/components/currency/CurrencyProvider";
 import ListingBadge, { computeBadges } from "@/components/listing/ListingBadge";
@@ -71,6 +71,7 @@ export default function ListingCard({
   return (
     <Link
       href={listingHref}
+      prefetch
       className={cn(
         "group block flex-shrink-0 rounded-lg overflow-hidden bg-white transition-all duration-200 hover:shadow-minbak focus-visible:ring-2 focus-visible:ring-minbak-primary focus-visible:ring-offset-2 focus-visible:outline-none active:opacity-95",
         className
@@ -85,7 +86,8 @@ export default function ListingCard({
     >
       <div className="relative w-full h-[240px] sm:h-[280px] md:h-[320px] overflow-hidden">
         <Image
-          src={optimizeCloudinaryUrl(imageUrl, 800)}
+          loader={cloudinaryLoader}
+          src={imageUrl}
           alt={imageAlt ?? title}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1240px) 33vw, 25vw"

@@ -129,6 +129,7 @@ Beds24 API 연동이 설정된 숙소에서 도쿄민박 예약이 확정되면,
 | 도쿄민박 예약이 Beds24에 안 보임 | Export URL이 Beds24에 등록됐는지 | Beds24 カレンダー取り込み에 URL 재등록 |
 | Beds24 예약이 도쿄민박에서 막히지 않음 | Import URL 저장 여부 | Import URL 입력 후 반드시 **저장** |
 | API 연동 시 블록이 안 됨 | Prop ID·Room ID·BEDS24_REFRESH_TOKEN | 값 확인, **연동 테스트(디버그)** 링크로 점검 |
+| 신규 호스트 숙소가 다른 토큰을 써야 할 때 | 호스트 전용 Beds24 계정인지 | **8. 멀티 계정 (호스트별 Beds24 계정)** 섹션 참고 |
 | 날짜가 하루 어긋남 | 타임존 | Beds24·도쿄민박 모두 JST 기준 확인 |
 
 ### 연동 테스트 (Beds24 API)
@@ -144,4 +145,75 @@ Beds24 API를 사용 중이라면:
 
 - [Beds24 連携手順 (일본어)](./Beds24-連携手順.md)
 - [OTA 중복예약방지 iCal 설계](./OTA-중복예약방지-iCal-설계.md)
-- [환경변수 목록](./환경변수-목록.md) — BEDS24_REFRESH_TOKEN
+- [환경변수 목록](./환경변수-목록.md) — BEDS24_REFRESH_TOKEN / BEDS24_REFRESH_TOKEN_{KEY}
+
+---
+
+## 8. 멀티 계정 (호스트별 Beds24 계정)
+
+호스트가 각자의 Beds24 계정을 소유하고, 마스터 계정으로 공유(Account Access)가 불가능한 경우 사용합니다.
+기존 공용 토큰(`BEDS24_REFRESH_TOKEN`) 방식과 **완전히 호환**되며, 기존 숙소는 아무 조작 없이 기존대로 동작합니다.
+
+### 동작 원리
+
+- 숙소의 `beds24AccountKey` (관리자 전용 필드) 가 비어 있으면 공용 `BEDS24_REFRESH_TOKEN` 사용 (기존 숙소 동작 유지)
+- 값이 `HOST_TANAKA` 면 Vercel env 의 `BEDS24_REFRESH_TOKEN_HOST_TANAKA` 사용
+- 해당 env 가 없으면 자동으로 공용 `BEDS24_REFRESH_TOKEN` 으로 fallback
+- (선택) 호스트가 많아지면 `BEDS24_REFRESH_TOKENS_JSON` 한 env 에 JSON 번들로 묶을 수 있음
+
+### 신규 호스트 계정 등록 절차
+
+1. **호스트 쪽 (Beds24)**
+   - Beds24 로그인 → `Settings > Apps & Integrations > API (V2)` → `Generate Invite Code`
+   - Scope: `read:bookings, write:bookings, read:inventory, write:inventory, read:properties`
+   - Property Access: **All owned** 권장 (추후 숙소 추가 시 토큰 재발급 불필요)
+   - Invite Code 는 수 분 내 만료 → 즉시 운영자에게 전달
+
+2. **운영자 쪽 (Refresh Token 발급)**
+
+```bash
+curl -X GET "https://beds24.com/api/v2/authentication/setup" \
+  -H "code: {INVITE_CODE}" \
+  -H "deviceName: tokyominbak-{HOSTNAME}"
+```
+
+응답의 `refreshToken` 을 복사 (JSON 이스케이프 `\/` → `/` 로 치환).
+
+3. **운영자 쪽 (Vercel env 등록)**
+
+Vercel 대시보드 → `Settings > Environment Variables`:
+
+```
+KEY:   BEDS24_REFRESH_TOKEN_HOST_TANAKA   (대문자/숫자/밑줄만)
+VALUE: (위에서 발급받은 refreshToken)
+ENV:   Production, Preview 모두 체크
+```
+
+이후 `npm run deploy:cli` 또는 Vercel 대시보드에서 **재배포** 1회 필수.
+
+4. **운영자 쪽 (숙소 편집)**
+   - `/host/listings/{id}/edit` 접속 (관리자 계정)
+   - Beds24 섹션에서 Prop ID / Room ID 입력
+   - **Beds24 Account Key (관리자 전용)** 필드에 `HOST_TANAKA` 입력 → 저장
+   - 저장 후 같은 화면의 **「연동 테스트(디버그)」** 링크 클릭
+   - 응답의 `hasTokenForAccount: true`, `availabilityStatus: 200`, `blockedCount >= 0` 확인
+
+### 디버그 응답 필드 (멀티 계정 관련)
+
+| 필드 | 의미 |
+|------|------|
+| `accountKey` | 해당 숙소에 지정된 Account Key (없으면 `null`) |
+| `tokenEnvName` | 실제 사용되는 env 키 이름 (예: `BEDS24_REFRESH_TOKEN_HOST_TANAKA`) |
+| `hasTokenForAccount` | 해당 env 키가 Vercel/로컬에 세팅돼 있는지 (`true/false/null`) |
+| `usingFallbackToken` | 공용 `BEDS24_REFRESH_TOKEN` 으로 fallback 중인지 |
+| `hasToken` | 최종적으로 어떤 토큰이든 사용 가능한 상태인지 |
+
+### 케이스별 동작 요약
+
+| 케이스 | Account Key | env 상태 | 실제 사용 토큰 |
+|--------|-------------|----------|---------------|
+| 기존 숙소 (변경 없음) | `null` | 공용 토큰만 설정 | `BEDS24_REFRESH_TOKEN` |
+| 신규 호스트, env 설정 완료 | `HOST_X` | `BEDS24_REFRESH_TOKEN_HOST_X` 존재 | `BEDS24_REFRESH_TOKEN_HOST_X` |
+| Account Key 입력했지만 env 누락 | `HOST_X` | env 없음 | `BEDS24_REFRESH_TOKEN` (자동 fallback) |
+
+> **주의**: env 신규 추가 시 **반드시 재배포** 후에만 반영됩니다. Vercel 대시보드에서 env 추가만 해도 기존 배포에는 적용되지 않습니다.

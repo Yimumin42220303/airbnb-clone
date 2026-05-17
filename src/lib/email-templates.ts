@@ -178,12 +178,12 @@ export function bookingAcceptedGuest(info: BookingEmailInfo) {
 export function paymentRequestGuest(info: BookingEmailInfo) {
   const body = `
     <p>${info.guestName}님, 호스트가 예약을 승인했습니다! \uD83C\uDF89</p>
-    <p><strong>내 예약</strong> 페이지에서 <strong>24시간 이내에 결제하기</strong> 버튼을 눌러 결제를 완료해 주세요.</p>
+    <p><strong>내 예약</strong> 페이지에서 <strong>48시간(2일) 이내에 결제하기</strong> 버튼을 눌러 결제를 완료해 주세요.</p>
     <p>결제가 완료되면 예약이 최종 확정됩니다.</p>
     ${bookingTable(info)}
     <div style="background:#eff6ff;border-radius:8px;padding:12px 16px;margin:16px 0;">
       <p style="margin:0;font-size:14px;color:#1d4ed8;font-weight:600;">
-        24시간 이내에 결제하지 않으면 예약이 자동 취소됩니다.
+        48시간(2일) 이내에 결제하지 않으면 예약이 자동 취소됩니다.
       </p>
     </div>
     ${actionButton(info.baseUrl + "/my-bookings", "내 예약 보기")}
@@ -197,7 +197,7 @@ export function paymentRequestGuest(info: BookingEmailInfo) {
 export function paymentRequestHost(info: BookingEmailInfo & { hostName: string }) {
   const body = `
     <p>${info.hostName}\u69D8\u3001\u4E88\u7D04\u3092\u627F\u8A8D\u3057\u307E\u3057\u305F\u3002</p>
-    <p>\u30B2\u30B9\u30C8\u306B\u6C7A\u6E08\u30EA\u30AF\u30A8\u30B9\u30C8\u3092\u9001\u4FE1\u3057\u307E\u3057\u305F\u3002\u30B2\u30B9\u30C8\u304C24\u6642\u9593\u4EE5\u5185\u306B\u6C7A\u6E08\u3092\u5B8C\u4E86\u3059\u308B\u3068\u3001\u4E88\u7D04\u304C\u78BA\u5B9A\u3057\u307E\u3059\u3002</p>
+    <p>\u30B2\u30B9\u30C8\u306B\u6C7A\u6E08\u30EA\u30AF\u30A8\u30B9\u30C8\u3092\u9001\u4FE1\u3057\u307E\u3057\u305F\u3002\u30B2\u30B9\u30C8\u304C48\u6642\u9593\uFF082\u65E5\u9593\uFF09\u4EE5\u5185\u306B\u6C7A\u6E08\u3092\u5B8C\u4E86\u3059\u308B\u3068\u3001\u4E88\u7D04\u304C\u78BA\u5B9A\u3057\u307E\u3059\u3002</p>
     ${bookingTableJa(info)}
     <p><strong>\u4E88\u7D04\u8005:</strong> ${info.guestName} (${info.guestEmail})</p>
     ${actionButton(info.baseUrl + "/host/bookings", "\u4E88\u7D04\u7BA1\u7406")}`;
@@ -367,13 +367,13 @@ export function instantPaymentReminderGuest(info: BookingEmailInfo & { deadlineT
     </div>
     ${actionButton(info.baseUrl + "/booking/" + info.bookingId + "/pay", "지금 결제하기")}`;
   return {
-    subject: "[도쿄민박] 결제 기한 임박 (15분 남음) - " + info.listingTitle,
+    subject: "[도쿄민박] 결제 기한 임박 - " + info.listingTitle,
     html: layout("결제 기한 임박", body),
   };
 }
 
 export function unpaidAutoCancelGuest(info: BookingEmailInfo & { deadlineLabel?: string }) {
-  const label = info.deadlineLabel || "24시간";
+  const label = info.deadlineLabel || "48시간";
   const body = `
     <p>${info.guestName}님, 결제 기한(${label})이 만료되어 예약이 자동 취소되었습니다.</p>
     ${bookingTable(info)}
@@ -386,8 +386,15 @@ export function unpaidAutoCancelGuest(info: BookingEmailInfo & { deadlineLabel?:
   };
 }
 
+const DEADLINE_LABEL_JA: Record<string, string> = {
+  "1시간": "1時間",
+  "24시간": "24時間",
+  "48시간": "48時間",
+};
+
 export function unpaidAutoCancelHost(info: BookingEmailInfo & { hostName: string; deadlineLabel?: string }) {
-  const label = info.deadlineLabel === "1시간" ? "1時間" : "24時間";
+  const koLabel = info.deadlineLabel || "48시간";
+  const label = DEADLINE_LABEL_JA[koLabel] ?? "48時間";
   const body = `
     <p>${info.hostName}様、ゲストが${label}以内に決済を完了しなかったため、予約が自動キャンセルされました。</p>
     <p>該当日程に新しい予約を受け付けることができます。</p>

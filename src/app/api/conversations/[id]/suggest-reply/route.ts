@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import OpenAI from "openai";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { formatForGuest } from "@/lib/currency";
+import { formatForHost } from "@/lib/currency";
 
 function getOpenAI() {
   const key = process.env.OPENAI_API_KEY;
@@ -87,7 +87,7 @@ export async function POST(
   const guestName = guest.name || guest.email || "게스트";
   const checkIn = booking.checkIn.toISOString().slice(0, 10);
   const checkOut = booking.checkOut.toISOString().slice(0, 10);
-  const totalPrice = formatForGuest(booking.totalPrice);
+  const totalPrice = formatForHost(booking.totalPrice);
   const statusLabel =
     booking.status === "pending"
       ? "승인대기중"

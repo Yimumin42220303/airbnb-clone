@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
-import { Header, Footer } from "@/components/layout";
 import PayButton from "./PayButton";
 import { useCurrency } from "@/components/currency/CurrencyProvider";
 import BookingStepIndicator, {
@@ -11,8 +10,7 @@ import BookingStepIndicator, {
 } from "@/components/booking/BookingStepIndicator";
 import { CONTACT_EMAIL } from "@/lib/constants";
 
-const INSTANT_DEADLINE_MS = 60 * 60 * 1000;
-const APPROVAL_DEADLINE_MS = 24 * 60 * 60 * 1000;
+const PAY_DEADLINE_MS = 48 * 60 * 60 * 1000;
 
 function formatDeadline(deadline: Date): string {
   return deadline.toLocaleString("ko-KR", {
@@ -125,108 +123,94 @@ export default function BookingPayContent() {
 
   if (loading || (booking && booking.paymentStatus === "paid")) {
     return (
-      <>
-        <Header />
-        <main className="min-h-screen pt-24 px-4 sm:px-6">
-          <div className="max-w-[600px] mx-auto py-8">
-            <p className="text-minbak-body text-minbak-gray">불러오는 중...</p>
-          </div>
-        </main>
-        <Footer />
-      </>
+      <main className="min-h-screen pt-24 px-4 sm:px-6">
+        <div className="max-w-[600px] mx-auto py-8">
+          <p className="text-minbak-body text-minbak-gray">불러오는 중...</p>
+        </div>
+      </main>
     );
   }
 
   if (unauthorized) {
     return (
-      <>
-        <Header />
-        <main className="min-h-screen pt-24 px-4 sm:px-6">
-          <div className="max-w-[600px] mx-auto py-8">
-            <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
-              결제
-            </h1>
-            <p className="text-minbak-body text-minbak-gray">
-              로그인하면 결제를 진행할 수 있습니다.{" "}
-              <Link
-                href={`/auth/signin?callbackUrl=/booking/${id}/pay`}
-                className="text-minbak-primary hover:underline"
-              >
-                Google로 로그인
-              </Link>
-            </p>
-          </div>
-        </main>
-        <Footer />
-      </>
+      <main className="min-h-screen pt-24 px-4 sm:px-6">
+        <div className="max-w-[600px] mx-auto py-8">
+          <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
+            결제
+          </h1>
+          <p className="text-minbak-body text-minbak-gray">
+            로그인하면 결제를 진행할 수 있습니다.{" "}
+            <Link
+              href={`/auth/signin?callbackUrl=/booking/${id}/pay`}
+              className="text-minbak-primary hover:underline"
+            >
+              Google로 로그인
+            </Link>
+          </p>
+        </div>
+      </main>
     );
   }
 
   if (error || !booking) {
     return (
-      <>
-        <Header />
-        <main className="min-h-screen pt-24 px-4 sm:px-6">
-          <div className="max-w-[600px] mx-auto py-8">
-            <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
-              결제
-            </h1>
-            <p className="text-minbak-body text-minbak-gray mb-4">
-              {error || "예약을 찾을 수 없거나 결제할 수 없는 상태입니다."}
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                href="/my-bookings"
-                className="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 rounded-minbak-full bg-minbak-primary text-white font-medium hover:bg-minbak-primary-hover"
-              >
-                내 예약으로
-              </Link>
-              <button
-                type="button"
-                onClick={() => window.location.reload()}
-                className="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 rounded-minbak-full border border-minbak-light-gray text-minbak-black font-medium hover:bg-minbak-bg"
-              >
-                다시 시도
-              </button>
-              <a
-                href={CONTACT_EMAIL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 rounded-minbak-full border border-minbak-light-gray text-minbak-black font-medium hover:bg-minbak-bg"
-              >
-                문의하기
-              </a>
-            </div>
-          </div>
-        </main>
-        <Footer />
-      </>
-    );
-  }
-
-  // 호스트 승인 전이거나 취소된 예약
-  if (booking.status === "pending" || booking.status === "cancelled") {
-    return (
-      <>
-        <Header />
-        <main className="min-h-screen pt-24 px-4 sm:px-6">
-          <div className="max-w-[600px] mx-auto py-8">
-            <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
-              결제
-            </h1>
-            <p className="text-minbak-body text-minbak-gray mb-4">
-              이 예약은 결제할 수 없는 상태입니다.
-            </p>
+      <main className="min-h-screen pt-24 px-4 sm:px-6">
+        <div className="max-w-[600px] mx-auto py-8">
+          <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
+            결제
+          </h1>
+          <p className="text-minbak-body text-minbak-gray mb-4">
+            {error || "예약을 찾을 수 없거나 결제할 수 없는 상태입니다."}
+          </p>
+          <div className="flex flex-wrap gap-3">
             <Link
               href="/my-bookings"
               className="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 rounded-minbak-full bg-minbak-primary text-white font-medium hover:bg-minbak-primary-hover"
             >
               내 예약으로
             </Link>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 rounded-minbak-full border border-minbak-light-gray text-minbak-black font-medium hover:bg-minbak-bg"
+            >
+              다시 시도
+            </button>
+            <a
+              href={CONTACT_EMAIL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 rounded-minbak-full border border-minbak-light-gray text-minbak-black font-medium hover:bg-minbak-bg"
+            >
+              문의하기
+            </a>
           </div>
-        </main>
-        <Footer />
-      </>
+        </div>
+      </main>
+    );
+  }
+
+  // 호스트 승인 전이거나 취소된 예약
+  if (booking.status === "pending" || booking.status === "cancelled") {
+    return (
+      <main className="min-h-screen pt-24 px-4 sm:px-6">
+        <div className="max-w-[600px] mx-auto py-8">
+          <h1 className="text-minbak-h2 font-semibold text-minbak-black mb-6">
+            결제
+          </h1>
+          <p className="text-minbak-body text-minbak-gray mb-4">
+            {booking.status === "cancelled"
+              ? "결제 기한(48시간)이 만료되어 예약이 자동 취소되었습니다."
+              : "이 예약은 결제할 수 없는 상태입니다."}
+          </p>
+          <Link
+            href="/my-bookings"
+            className="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 rounded-minbak-full bg-minbak-primary text-white font-medium hover:bg-minbak-primary-hover"
+          >
+            내 예약으로
+          </Link>
+        </div>
+      </main>
     );
   }
 
@@ -236,10 +220,8 @@ export default function BookingPayContent() {
   );
 
   return (
-    <>
-      <Header />
-      <main className="min-h-screen pt-24 px-4 sm:px-6">
-        <div className="max-w-[600px] mx-auto py-8">
+    <main className="min-h-screen pt-24 px-4 sm:px-6">
+      <div className="max-w-[600px] mx-auto py-8">
           <div className="mb-6 p-4 bg-white border border-minbak-light-gray rounded-minbak">
             <BookingStepIndicator
               {...getBookingStepState(booking.status, booking.paymentStatus)}
@@ -255,19 +237,20 @@ export default function BookingPayContent() {
               : "호스트가 승인한 예약입니다. 결제를 완료하면 예약이 확정됩니다."}
           </p>
           {booking.confirmedAt && (() => {
-            const deadlineMs = booking.listing.instantBooking ? INSTANT_DEADLINE_MS : APPROVAL_DEADLINE_MS;
-            const deadline = new Date(new Date(booking.confirmedAt).getTime() + deadlineMs);
+            const deadline = new Date(
+              new Date(booking.confirmedAt).getTime() + PAY_DEADLINE_MS
+            );
             const isExpired = Date.now() > deadline.getTime();
             return isExpired ? (
               <div className="rounded-lg px-4 py-3 mb-4 bg-red-50">
                 <p className="text-sm font-semibold text-red-700">
-                  결제 기한이 만료되었습니다. 예약이 곧 자동 취소됩니다.
+                  결제 기한(48시간)이 만료되었습니다. 예약이 자동 취소됩니다.
                 </p>
               </div>
             ) : (
               <div className="rounded-lg px-4 py-3 mb-4 bg-amber-50">
                 <p className="text-sm font-semibold text-amber-800">
-                  결제 기한: {formatDeadline(deadline)}까지
+                  결제 기한(48시간·2일): {formatDeadline(deadline)}까지
                 </p>
                 <p className="text-xs mt-0.5 text-amber-700">
                   기한 내 결제하지 않으면 예약이 자동 취소됩니다.
@@ -348,8 +331,6 @@ export default function BookingPayContent() {
             </p>
           </div>
         </div>
-      </main>
-      <Footer />
-    </>
+    </main>
   );
 }

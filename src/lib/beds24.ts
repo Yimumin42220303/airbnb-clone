@@ -16,20 +16,71 @@ import { romanize as romanizeKorean } from "@romanize/korean";
 const BEDS24_BASE = "https://beds24.com/api/v2";
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6시간 (Beds24 권장)
 
-let accessTokenCache: {
-  token: string;
-  expiresAt: number;
-} | null = null;
+/**
+ * Beds24 Account Key → Refresh Token 다층 조회.
+ *
+ * 우선순위:
+ *  1. env 개별 키: `BEDS24_REFRESH_TOKEN_{accountKey}` (1단계, 현재 사용)
+ *  2. env JSON bundle: `BEDS24_REFRESH_TOKENS_JSON` (2단계, 미래 대비 자리만 확보)
+ *  3. 공용: `BEDS24_REFRESH_TOKEN` (fallback, 기존 숙소 동작 유지)
+ *
+ * accountKey 는 `[A-Z0-9_]+` 만 허용 (PATCH API 에서도 검증).
+ */
+export function resolveBeds24RefreshToken(accountKey?: string | null): string | null {
+  const normalized = typeof accountKey === "string" ? accountKey.trim() : "";
+  if (normalized && /^[A-Z0-9_]+$/.test(normalized)) {
+    // Priority 1: env 개별 키
+    const individual = process.env[`BEDS24_REFRESH_TOKEN_${normalized}`]?.trim();
+    if (individual) return individual;
+
+    // Priority 2: env JSON bundle (호스트 수가 늘어날 때를 대비, 지금은 자리만)
+    const bundleRaw = process.env.BEDS24_REFRESH_TOKENS_JSON;
+    if (bundleRaw) {
+      try {
+        const bundle = JSON.parse(bundleRaw) as Record<string, unknown>;
+        const fromBundle = bundle?.[normalized];
+        if (typeof fromBundle === "string" && fromBundle.trim()) {
+          return fromBundle.trim();
+        }
+      } catch {
+        /* JSON 파싱 실패는 조용히 fallback */
+      }
+    }
+  }
+  // Priority 3: 기존 공용 토큰 (기존 숙소·미지정 숙소)
+  return process.env.BEDS24_REFRESH_TOKEN?.trim() || null;
+}
 
 /**
- * Access Token 획득 (Refresh Token으로 갱신)
+ * Beds24 Account Key 가 실제로 env 에 매핑돼 있는지 확인 (디버그 UI 용).
  */
-async function getAccessToken(): Promise<string | null> {
-  const refreshToken = process.env.BEDS24_REFRESH_TOKEN?.trim();
+export function getBeds24TokenEnvName(accountKey?: string | null): string | null {
+  const normalized = typeof accountKey === "string" ? accountKey.trim() : "";
+  if (!normalized) return "BEDS24_REFRESH_TOKEN";
+  if (!/^[A-Z0-9_]+$/.test(normalized)) return null;
+  return `BEDS24_REFRESH_TOKEN_${normalized}`;
+}
+
+/** refreshToken 값 자체를 키로 하는 Access Token 캐시 (멀티 계정 안전) */
+const accessTokenCache = new Map<
+  string,
+  {
+    token: string;
+    expiresAt: number;
+  }
+>();
+
+/**
+ * Access Token 획득 (Refresh Token 으로 갱신).
+ * accountKey 가 주어지면 해당 계정 토큰을, 없으면 기존 공용 토큰을 사용.
+ */
+async function getAccessToken(accountKey?: string | null): Promise<string | null> {
+  const refreshToken = resolveBeds24RefreshToken(accountKey);
   if (!refreshToken) return null;
 
-  if (accessTokenCache && Date.now() < accessTokenCache.expiresAt - 60_000) {
-    return accessTokenCache.token;
+  const cached = accessTokenCache.get(refreshToken);
+  if (cached && Date.now() < cached.expiresAt - 60_000) {
+    return cached.token;
   }
 
   try {
@@ -43,20 +94,19 @@ async function getAccessToken(): Promise<string | null> {
     });
     if (!res.ok) {
       console.error("[Beds24] token refresh failed:", res.status, await res.text());
-      accessTokenCache = null;
+      accessTokenCache.delete(refreshToken);
       return null;
     }
     const data = (await res.json()) as { token?: string; expiresIn?: number };
     if (!data.token) return null;
     const expiresIn = typeof data.expiresIn === "number" ? data.expiresIn : 86400;
-    accessTokenCache = {
+    accessTokenCache.set(refreshToken, {
       token: data.token,
       expiresAt: Date.now() + expiresIn * 1000,
-    };
+    });
     return data.token;
   } catch (err) {
     console.error("[Beds24] token refresh error:", err instanceof Error ? err.message : err);
-    accessTokenCache = null;
     return null;
   }
 }
@@ -133,9 +183,10 @@ export async function getBeds24BlockedDateKeys(
   propId: string,
   roomId: string,
   fromDate: Date,
-  toDate: Date
+  toDate: Date,
+  accountKey?: string | null
 ): Promise<Set<string>> {
-  const token = await getAccessToken();
+  const token = await getAccessToken(accountKey);
   if (!token) return new Set();
 
   const from = toBeds24Date(fromDate);
@@ -179,8 +230,19 @@ export async function getBeds24BlockedDateKeys(
 /** 캐시: propId+roomId+날짜범위 → blocked keys (6h TTL) */
 const blockedCache = new Map<string, { keys: Set<string>; expiresAt: number }>();
 
-function blockedCacheKey(propId: string, roomId: string, from: string, to: string): string {
-  return `${propId}:${roomId}:${from}:${to}`;
+/** 캐시: propId+roomId+날짜범위 → 일별 가격 (10분 TTL) */
+const PRICE_CACHE_TTL_MS = 10 * 60 * 1000;
+const priceCache = new Map<string, { prices: Map<string, number>; expiresAt: number }>();
+
+function blockedCacheKey(
+  propId: string,
+  roomId: string,
+  from: string,
+  to: string,
+  accountKey?: string | null
+): string {
+  const acct = (accountKey ?? "").trim();
+  return `${acct}:${propId}:${roomId}:${from}:${to}`;
 }
 
 /** YYYY-MM-DD 형식으로 변환 */
@@ -245,9 +307,17 @@ export async function getBeds24CalendarPrices(
   propId: string,
   roomId: string,
   fromDate: Date,
-  toDate: Date
+  toDate: Date,
+  accountKey?: string | null
 ): Promise<Map<string, number>> {
-  const token = await getAccessToken();
+  const acct = (accountKey ?? "").trim();
+  const priceCacheKey = `price:${acct}:${propId}:${roomId}:${toBeds24Date(fromDate)}:${toBeds24Date(toDate)}`;
+  const cachedPrice = priceCache.get(priceCacheKey);
+  if (cachedPrice && Date.now() < cachedPrice.expiresAt) {
+    return new Map(cachedPrice.prices);
+  }
+
+  const token = await getAccessToken(accountKey);
   const result = new Map<string, number>();
   if (!token) return result;
 
@@ -309,6 +379,9 @@ export async function getBeds24CalendarPrices(
   } catch (err) {
     console.error("[Beds24] calendar error:", err instanceof Error ? err.message : err);
   }
+  if (result.size > 0) {
+    priceCache.set(priceCacheKey, { prices: new Map(result), expiresAt: Date.now() + PRICE_CACHE_TTL_MS });
+  }
   return result;
 }
 
@@ -316,16 +389,17 @@ export async function getBeds24BlockedDateKeysCached(
   propId: string,
   roomId: string,
   fromDate: Date,
-  toDate: Date
+  toDate: Date,
+  accountKey?: string | null
 ): Promise<Set<string>> {
   const from = toBeds24Date(fromDate);
   const to = toBeds24Date(toDate);
-  const key = blockedCacheKey(propId, roomId, from, to);
+  const key = blockedCacheKey(propId, roomId, from, to, accountKey);
   const cached = blockedCache.get(key);
   if (cached && Date.now() < cached.expiresAt) {
     return new Set(cached.keys);
   }
-  const keys = await getBeds24BlockedDateKeys(propId, roomId, fromDate, toDate);
+  const keys = await getBeds24BlockedDateKeys(propId, roomId, fromDate, toDate, accountKey);
   blockedCache.set(key, {
     keys: new Set(keys),
     expiresAt: Date.now() + CACHE_TTL_MS,
@@ -335,20 +409,17 @@ export async function getBeds24BlockedDateKeysCached(
 
 /**
  * Beds24 availability에서 false인 날(숙박 불가 밤) 집합으로부터,
- * ICS `getExternalCheckoutOnlyDateKeys`와 같은 의미의 "체크아웃만 가능" 날짜 키를 만든다.
- * 연속 블록의 첫날 = 체크인일(전 게스트 오전 체크아웃 가능), 마지막 밤 다음날 = 퇴실일.
+ * ICS `getExternalCheckoutOnlyDateKeys`와 비슷한 "체크아웃만 가능" 후보를 만든다.
+ * 연속 블록의 첫날(막힌 밤의 첫날)은 다른 예약의 체크인일로 취급해 체크아웃 선택에만 쓰인다.
+ *
+ * 마지막 막힌 밤의 **다음날**은 ICS처럼 넣지 않는다. 그날 밤이 Beds24에서 예약 가능이면
+ * 새 체크인이 허용되는 것이므로 `checkoutOnly`로 두면 체크인이 막히는 오류가 난다.
  */
 export function deriveBeds24CheckoutOnlyDateKeys(blocked: Set<string>): Set<string> {
   if (blocked.size === 0) return new Set();
   const sorted = Array.from(blocked).filter((k) => /^\d{4}-\d{2}-\d{2}$/.test(k)).sort();
   if (sorted.length === 0) return new Set();
   const out = new Set<string>();
-
-  const addDays = (key: string, delta: number): string => {
-    const [y, m, d] = key.split("-").map(Number);
-    const dt = new Date(Date.UTC(y, m - 1, d + delta));
-    return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}-${String(dt.getUTCDate()).padStart(2, "0")}`;
-  };
 
   const dayDiff = (a: string, b: string): number => {
     const [y1, m1, d1] = a.split("-").map(Number);
@@ -365,7 +436,6 @@ export function deriveBeds24CheckoutOnlyDateKeys(blocked: Set<string>): Set<stri
     const endOfRun = !curr || dayDiff(prev, curr) !== 1;
     if (endOfRun) {
       out.add(runStart);
-      out.add(addDays(prev, 1));
       if (curr) runStart = curr;
     }
   }
@@ -387,6 +457,8 @@ export type Beds24PostBookingInput = {
   guestPhone?: string;
   /** 외부 예약 ID (당 OTA 예약 ID, 추적용) */
   externalId?: string;
+  /** Beds24 계정 식별자 (관리자 설정, null=공용 토큰) */
+  accountKey?: string | null;
 };
 
 /**
@@ -399,7 +471,7 @@ export async function postBeds24Booking(input: Beds24PostBookingInput): Promise<
   error?: string;
   bookId?: string | number;
 }> {
-  const token = await getAccessToken();
+  const token = await getAccessToken(input.accountKey);
   if (!token) {
     return { ok: false, error: "Beds24 인증 정보가 없습니다." };
   }
@@ -468,8 +540,11 @@ export async function postBeds24Booking(input: Beds24PostBookingInput): Promise<
  * Beds24 예약 취소(삭제). 캘린더 블록 해제.
  * DELETE /bookings?id={bookId}
  */
-export async function cancelBeds24Booking(bookId: string): Promise<{ ok: boolean; error?: string }> {
-  const token = await getAccessToken();
+export async function cancelBeds24Booking(
+  bookId: string,
+  accountKey?: string | null
+): Promise<{ ok: boolean; error?: string }> {
+  const token = await getAccessToken(accountKey);
   if (!token) {
     return { ok: false, error: "Beds24 인증 정보가 없습니다." };
   }

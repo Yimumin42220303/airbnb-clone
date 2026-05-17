@@ -1,20 +1,22 @@
 import type { Metadata } from "next";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
 import SessionProvider from "@/components/auth/SessionProvider";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import HostLocaleProvider from "@/components/host/HostLocaleProvider";
+import CurrencyAudienceFromRoute from "@/components/currency/CurrencyAudienceFromRoute";
 import { CurrencyProvider } from "@/components/currency/CurrencyProvider";
 import Toaster from "@/components/ui/Toaster";
 import BottomNav from "@/components/layout/BottomNav";
+import { Header, Footer } from "@/components/layout";
 import ChannelTalk from "@/components/channel/ChannelTalk";
 import { BASE_URL } from "@/lib/site-url";
-import { getHostLocaleFromCookie, getLocaleFromAcceptLanguage } from "@/lib/host-i18n";
+import { getHostLocaleFromCookie } from "@/lib/host-i18n";
 
 const notoSansKr = Noto_Sans_KR({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "600", "700"],
   variable: "--font-noto-sans-kr",
   display: "swap",
 });
@@ -80,12 +82,11 @@ export default async function RootLayout({
 }>) {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();
-  const localeFromCookie = getHostLocaleFromCookie(cookieHeader);
   const hasLocaleCookie = cookieHeader.includes("host-locale=");
-  const headersList = await headers();
-  const acceptLanguage = headersList.get("accept-language");
-  const localeFromBrowser = getLocaleFromAcceptLanguage(acceptLanguage);
-  const initialLocale = hasLocaleCookie ? localeFromCookie : localeFromBrowser;
+  /** 쿠키 없을 때는 ko로 두고, 클라이언트(HostLocaleProvider)가 쿠키·브라우저에 맞게 보정(헤더 조회 생략으로 요청 비용 감소) */
+  const initialLocale = hasLocaleCookie
+    ? getHostLocaleFromCookie(cookieHeader)
+    : "ko";
 
   return (
     <html lang={initialLocale === "ja" ? "ja" : "ko"} className={`h-full ${notoSansKr.variable}`}>
@@ -135,16 +136,20 @@ export default async function RootLayout({
         />
         <ErrorBoundary>
           <SessionProvider>
+            <CurrencyAudienceFromRoute>
             <CurrencyProvider>
             <HostLocaleProvider initialLocale={initialLocale}>
+              <Header />
               <div className="pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-0">
                 {children}
               </div>
+              <Footer />
               <BottomNav />
               <ChannelTalk />
               <Toaster />
             </HostLocaleProvider>
             </CurrencyProvider>
+            </CurrencyAudienceFromRoute>
           </SessionProvider>
         </ErrorBoundary>
       </body>

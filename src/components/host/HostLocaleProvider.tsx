@@ -1,7 +1,12 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, useMemo, useEffect } from "react";
-import { t, type HostLocale, type HostTranslationKey } from "@/lib/host-i18n";
+import {
+  t,
+  getLocaleFromAcceptLanguage,
+  type HostLocale,
+  type HostTranslationKey,
+} from "@/lib/host-i18n";
 
 const COOKIE_NAME = "host-locale";
 const COOKIE_MAX_AGE = 365 * 24 * 60 * 60;
@@ -28,10 +33,15 @@ export default function HostLocaleProvider({
     const value = match?.[1]?.trim();
     if (value === "ja" || value === "ko") {
       setLocaleState(value);
-    } else {
-      // クッキーがなければサーバーで判定した initialLocale をクッキーに保存
-      document.cookie = `${COOKIE_NAME}=${initialLocale}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
+      return;
     }
+    // 쿠키 없음: 서버는 Accept-Language를 읽지 않으므로(nav 성능) 클라이언트에서 언어 결정
+    const fromNav =
+      typeof navigator !== "undefined"
+        ? getLocaleFromAcceptLanguage(navigator.language)
+        : initialLocale;
+    setLocaleState(fromNav);
+    document.cookie = `${COOKIE_NAME}=${fromNav}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
   }, [initialLocale]);
 
   useEffect(() => {

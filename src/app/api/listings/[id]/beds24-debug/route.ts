@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { resolveBeds24RefreshToken, getBeds24TokenEnvName } from "@/lib/beds24";
 
 export async function GET(
   request: NextRequest,
@@ -21,7 +22,14 @@ export async function GET(
   const { id: listingId } = await params;
   const listing = await prisma.listing.findUnique({
     where: { id: listingId },
-    select: { userId: true, beds24Enabled: true, beds24PropId: true, beds24RoomId: true, beds24PriceMultiplier: true },
+    select: {
+      userId: true,
+      beds24Enabled: true,
+      beds24PropId: true,
+      beds24RoomId: true,
+      beds24AccountKey: true,
+      beds24PriceMultiplier: true,
+    },
   });
   if (!listing) {
     return NextResponse.json({ error: "숙소를 찾을 수 없습니다." }, { status: 404 });
@@ -44,13 +52,21 @@ export async function GET(
     return t.toISOString().slice(0, 10);
   })();
 
+  const accountKey = listing.beds24AccountKey ?? null;
+  const tokenEnvName = getBeds24TokenEnvName(accountKey);
+  const resolvedToken = resolveBeds24RefreshToken(accountKey);
   const debug: Record<string, unknown> = {
     listingId,
     beds24Enabled: listing.beds24Enabled,
     beds24PropId: listing.beds24PropId,
     beds24RoomId: listing.beds24RoomId,
     beds24PriceMultiplier: listing.beds24PriceMultiplier,
-    hasToken: !!process.env.BEDS24_REFRESH_TOKEN?.trim(),
+    // 멀티 계정 토큰 진단 정보
+    accountKey,
+    tokenEnvName,
+    hasTokenForAccount: accountKey ? !!process.env[`BEDS24_REFRESH_TOKEN_${accountKey}`]?.trim() : null,
+    hasToken: !!resolvedToken,
+    usingFallbackToken: accountKey ? !process.env[`BEDS24_REFRESH_TOKEN_${accountKey}`]?.trim() : true,
     dateRange: { from: fromStr, to: toStr },
   };
 
@@ -68,9 +84,11 @@ export async function GET(
   }
 
   try {
-    const token = process.env.BEDS24_REFRESH_TOKEN?.trim();
+    const token = resolvedToken;
     if (!token) {
-      debug.error = "BEDS24_REFRESH_TOKEN 없음";
+      debug.error = accountKey
+        ? `${tokenEnvName} 및 공용 BEDS24_REFRESH_TOKEN 모두 없음`
+        : "BEDS24_REFRESH_TOKEN 없음";
       return NextResponse.json({ ok: false, debug }, { status: 500 });
     }
 
@@ -121,7 +139,7 @@ export async function GET(
     }
 
     const { getBeds24BlockedDateKeys } = await import("@/lib/beds24");
-    const blocked = await getBeds24BlockedDateKeys(propId, roomId, fromDate, toDate);
+    const blocked = await getBeds24BlockedDateKeys(propId, roomId, fromDate, toDate, accountKey);
     const blockedList = Array.from(blocked).sort();
     debug.blockedCount = blockedList.length;
     debug.blockedDates = blockedList.slice(0, 50);
@@ -137,7 +155,7 @@ export async function GET(
     // 가격 동기화 테스트: calendar API 호출 (항상 price1 사용)
     try {
       const { getBeds24CalendarPrices } = await import("@/lib/beds24");
-      const prices = await getBeds24CalendarPrices(propId, roomId, fromDate, toDate);
+      const prices = await getBeds24CalendarPrices(propId, roomId, fromDate, toDate, accountKey);
       debug.priceSync = {
         priceKey: "price1",
         fetchedCount: prices.size,

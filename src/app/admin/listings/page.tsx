@@ -1,8 +1,7 @@
 import Link from "next/link";
-import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/currency";
-import { optimizeCloudinaryUrl } from "@/lib/cloudinary-optimize";
+import CloudinaryImage from "@/components/ui/CloudinaryImage";
 import AdminListingActions from "@/components/admin/AdminListingActions";
 
 export default async function AdminListingsPage() {
@@ -45,8 +44,8 @@ export default async function AdminListingsPage() {
               href={l.status === "approved" ? `/listing/${l.id}` : `/host/listings/${l.id}/edit`}
               className="relative w-24 h-20 flex-shrink-0 rounded-minbak overflow-hidden block"
             >
-              <Image
-                src={optimizeCloudinaryUrl(l.imageUrl, 192)}
+              <CloudinaryImage
+                src={l.imageUrl}
                 alt={l.title}
                 fill
                 className="object-cover"

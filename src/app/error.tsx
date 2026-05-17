@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { Header, Footer } from "@/components/layout";
 import { Home, Search, RefreshCw } from "lucide-react";
 
 export default function Error({
@@ -17,9 +16,7 @@ export default function Error({
   }, [error]);
 
   return (
-    <>
-      <Header />
-      <main className="min-h-screen pt-[176px] md:pt-[192px] pb-12 px-4 md:px-6">
+    <main className="min-h-screen pt-[176px] md:pt-[192px] pb-12 px-4 md:px-6">
         <div className="max-w-[560px] mx-auto text-center">
           <h1 className="text-minbak-h2 md:text-minbak-h1 font-bold text-minbak-black mb-2">
             일시적인 오류가 발생했어요
@@ -53,7 +50,5 @@ export default function Error({
           </div>
         </div>
       </main>
-      <Footer />
-    </>
   );
 }

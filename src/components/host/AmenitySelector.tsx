@@ -21,9 +21,7 @@ export default function AmenitySelector({
   description = "해당하는 항목을 선택해 주세요.",
   variant = "default",
 }: Props) {
-  const { locale } = useHostTranslations();
-  if (amenities.length === 0) return null;
-
+  const { locale, t } = useHostTranslations();
   const sectionClass =
     variant === "compact"
       ? "border border-minbak-light-gray rounded-minbak bg-white p-4 space-y-3"
@@ -32,6 +30,17 @@ export default function AmenitySelector({
     variant === "compact"
       ? "px-3 py-1.5 rounded-full text-[13px] border"
       : "px-4 py-2 rounded-minbak border text-minbak-body transition-colors";
+
+  if (amenities.length === 0) {
+    return (
+      <section className={sectionClass}>
+        <h2 className="text-minbak-body font-semibold text-minbak-black">{title}</h2>
+        <p className="text-minbak-caption text-amber-800 bg-amber-50 border border-amber-200 rounded-minbak px-3 py-2">
+          {t("amenities.selectorEmpty")}
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className={sectionClass}>
