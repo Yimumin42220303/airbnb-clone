@@ -47,3 +47,17 @@ next-env.d.ts
 
 # db backups
 /backups
+
+# IDE / 워크스페이스 로컬 설정 (Cursor 등) — 프로젝트 룰(.cursor/rules)은 공유한다.
+.cursor/settings.json
+.cursor/state/
+.cursor/cache/
+
+# AEO 일회성 검수 출력 (npx tsx scripts/qa-listing-aeo.ts 실행 시 매번 갱신)
+qa-aeo-output.md
+qa-aeo-output.txt
+
+# 빌드/디버그 로그 (npm run build 등 실행 시 생성되는 일회성 로그)
+build-output.log
+build-output-main-head.log
+*.build.log

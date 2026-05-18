@@ -6,17 +6,55 @@ import { authOptions } from "@/lib/auth";
 import { getListingById } from "@/lib/listings";
 import { prisma } from "@/lib/prisma";
 import { getWishlistListingIds } from "@/lib/wishlist";
-import { formatStoredForGuestView } from "@/lib/currency";
 import { canUserReview } from "@/lib/reviews";
 import ListingDetailContent from "./ListingDetailContent";
+import ListingAeoSection from "@/components/listing/aeo/ListingAeoSection";
 import { BASE_URL } from "@/lib/site-url";
 import { getHostLocaleFromCookie, t } from "@/lib/host-i18n";
+import {
+  buildListingAeo,
+  buildListingTitle,
+  buildListingMetaDescription,
+  buildAutoFaq,
+  buildLodgingJsonLd,
+  buildBreadcrumbJsonLd,
+  buildFaqJsonLd,
+  type AeoListingInput,
+} from "@/lib/aeo";
 
 export const revalidate = 60;
 
 interface PageProps {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+/** getListingById 결과 → AEO 입력 (가벼운 어댑터) */
+function toAeoInput(l: Awaited<ReturnType<typeof getListingById>>): AeoListingInput {
+  if (!l) throw new Error("listing required");
+  return {
+    id: l.id,
+    title: l.title,
+    location: l.location,
+    description: l.description,
+    imageUrl: l.imageUrl,
+    pricePerNight: l.pricePerNight,
+    maxGuests: l.maxGuests,
+    baseGuests: l.baseGuests ?? 2,
+    bedrooms: l.bedrooms,
+    beds: l.beds,
+    baths: l.baths,
+    areaSqm: l.areaSqm ?? null,
+    bathroomToiletSeparate: l.bathroomToiletSeparate ?? false,
+    propertyType: l.propertyType ?? null,
+    amenities: l.amenities,
+    rating: l.rating,
+    reviewCount: l.reviewCount,
+    minStayNights: l.minStayNights ?? null,
+    maxStayNights: l.maxStayNights ?? null,
+    checkInTime: l.checkInTime ?? null,
+    checkOutTime: l.checkOutTime ?? null,
+  };
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -30,22 +68,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const listing = await getListingById(id);
   if (!listing) notFound();
 
+  const aeoInput = toAeoInput(listing);
+  const aeo = buildListingAeo(aeoInput);
+  const title = buildListingTitle(aeoInput, aeo);
+  const description = buildListingMetaDescription(aeoInput, aeo);
+  const url = `${BASE_URL}/listing/${id}`;
+
   const cookieStore = await cookies();
   const locale = getHostLocaleFromCookie(cookieStore.toString());
 
-  const url = `${BASE_URL}/listing/${id}`;
-  const perNightLabel = locale === "ja" ? "1泊" : "1박";
-  const perNightMeta = await formatStoredForGuestView(listing.pricePerNight);
-  const description =
-    listing.description?.trim().slice(0, 160) ||
-    `${listing.title} · ${listing.location} · ${perNightLabel} ${perNightMeta}`;
-
   return {
-    title: listing.title,
+    title,
     description,
     alternates: { canonical: url },
     openGraph: {
-      title: listing.title,
+      title,
       description,
       url,
       type: "website",
@@ -56,8 +93,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     twitter: {
       card: listing.imageUrl ? "summary_large_image" : "summary",
-      title: listing.title,
+      title,
       description,
+      ...(listing.imageUrl && { images: [listing.imageUrl] }),
     },
   };
 }
@@ -93,7 +131,6 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
     userId
       ? canUserReview(id, userId).then(async (perm) => {
           if (!perm.isAdmin && perm.allowed) {
-            // Check if already reviewed
             const existing = await prisma.review.findFirst({
               where: { listingId: id, userId },
             });
@@ -104,68 +141,50 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
       : Promise.resolve({ canReview: false, hasReviewed: false }),
   ]);
 
-  const perNightJsonLd = await formatStoredForGuestView(listing.pricePerNight);
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Accommodation",
-    name: listing.title,
-    description:
-      listing.description?.trim() ||
-      `${listing.title} · ${listing.location}. 1박 ${perNightJsonLd}`,
-    image: listing.imageUrl,
-    address: {
-      "@type": "PostalAddress",
-      addressLocality: listing.location,
-    },
-    amenityFeature: listing.amenities.map((name) => ({
-      "@type": "LocationFeatureSpecification",
-      name,
-      value: true,
-    })),
-    maxOccupancy: listing.maxGuests,
-    numberOfRooms: listing.bedrooms,
-    numberOfBeds: listing.beds,
-    numberOfBathroomsTotal: listing.baths,
-    offers: {
-      "@type": "Offer",
-      price: listing.pricePerNight,
-      priceCurrency: "KRW",
-      availability: "https://schema.org/InStock",
-    },
-    aggregateRating:
-      listing.rating != null && listing.reviewCount > 0
-        ? {
-            "@type": "AggregateRating",
-            ratingValue: listing.rating,
-            reviewCount: listing.reviewCount,
-            bestRating: 5,
-          }
-        : undefined,
-    url: `${BASE_URL}/listing/${id}`,
-  };
+  // ---------- AEO 데이터 일괄 산출 ----------
+  const aeoInput = toAeoInput(listing);
+  const aeo = buildListingAeo(aeoInput);
+  const metaDescription = buildListingMetaDescription(aeoInput, aeo);
+  const faq = buildAutoFaq(aeoInput, aeo);
 
+  // ---------- JSON-LD ----------
   const cookieStore = await cookies();
   const locale = getHostLocaleFromCookie(cookieStore.toString());
-  const breadcrumbLd = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: t(locale, "listingDetail.home"), item: BASE_URL },
-      { "@type": "ListItem", position: 2, name: t(locale, "listingDetail.searchListings"), item: `${BASE_URL}/search` },
-      { "@type": "ListItem", position: 3, name: listing.title },
-    ],
-  };
+  const lodgingLd = buildLodgingJsonLd(
+    aeoInput,
+    aeo,
+    metaDescription,
+    listing.reviews?.map((r) => ({
+      rating: r.rating,
+      body: r.body,
+      userName: r.userName ?? null,
+      createdAt: r.createdAt,
+    })),
+    { baseUrl: BASE_URL, includeReviews: true, reviewLimit: 5 }
+  );
+  const breadcrumbLd = buildBreadcrumbJsonLd(aeoInput, aeo, BASE_URL, {
+    home: t(locale, "listingDetail.home"),
+    search: t(locale, "listingDetail.searchListings"),
+  });
+  const faqLd = buildFaqJsonLd(faq);
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(lodgingLd) }}
       />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
+      {faqLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
+        />
+      )}
+
       <ListingDetailContent
         listing={listing}
         isSaved={wishlistIds.includes(id)}
@@ -175,6 +194,11 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
         initialGuests={initialGuests > 0 ? initialGuests : undefined}
         canReview={reviewPermission.canReview}
         hasReviewed={reviewPermission.hasReviewed}
+        aeoSection={
+          <div className="max-w-[1240px] mx-auto px-4 md:px-6">
+            <ListingAeoSection listing={aeoInput} />
+          </div>
+        }
       />
     </>
   );

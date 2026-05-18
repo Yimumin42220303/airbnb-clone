@@ -81,6 +81,8 @@ type Props = {
   initialGuests?: number;
   canReview?: boolean;
   hasReviewed?: boolean;
+  /** SSR로 전달되는 AEO 통합 섹션 (요약·FAQ·적합성 안내·태그·내부링크) */
+  aeoSection?: React.ReactNode;
 };
 
 const DESCRIPTION_PREVIEW_LENGTH = 200;
@@ -111,6 +113,7 @@ export default function ListingDetailContent({
   initialCheckIn,
   initialCheckOut,
   initialGuests,
+  aeoSection,
 }: Props) {
   const { formatForGuest } = useCurrency();
   const { t, locale } = useHostTranslations();
@@ -514,6 +517,8 @@ export default function ListingDetailContent({
             </div>
           </div>
         </div>
+        {/* AEO 통합 섹션 (요약·FAQ·적합성 안내·태그·내부링크) — SSR 텍스트 */}
+        {aeoSection}
         {/* 모바일: 스티키 바 노출 시 하단 여백(스크롤 끝에서 콘텐츠 가림 방지) */}
         <div className="h-36 lg:hidden" aria-hidden />
       </main>
