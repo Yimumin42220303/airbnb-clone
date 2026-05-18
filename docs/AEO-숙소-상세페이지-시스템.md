@@ -378,3 +378,16 @@ export default function robots(): MetadataRoute.Robots {
 - Google Rich Results Test: `https://search.google.com/test/rich-results?url=...`
 - Schema Markup Validator: `https://validator.schema.org/`
 - 두 도구 모두에서 LodgingBusiness / FAQPage / BreadcrumbList 가 모두 통과해야 한다.
+
+---
+
+## 12. 배포 이력
+
+| 구분 | 내용 |
+|------|------|
+| **1차 배포** | **완료** (2026-05-18) |
+| **커밋** | `da5e0ed` — `feat: 숙소 상세 AEO 1차 배포 (메타·SSR·JSON-LD·robots)` |
+| **프로덕션** | https://tokyominbak.net (`npm run deploy:cli`) |
+| **범위** | 숙소 상세 메타·AEO SSR 섹션·JSON-LD 3종·`robots.ts` AI 크롤러 정책 |
+| **미포함** | DB migration/seed, Beds24·예약·재고·요금·cron·webhook 변경 없음 |
+| **검증** | 대표 숙소 3건 title/meta/H1·AEO 섹션·JSON-LD·무리뷰 숙소 rating 제외·`/robots.txt`·`/sitemap.xml` 정상 |
