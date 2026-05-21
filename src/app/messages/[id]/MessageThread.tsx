@@ -23,7 +23,8 @@ type Message = {
   bodyDisplay?: string;
 };
 
-const POLL_INTERVAL_MS = 6_000;
+/** 폴링 과다 시 Vercel Fluid(CPU) 시간이 급증하므로 12초 + 백그라운드에서는 중지 */
+const POLL_INTERVAL_MS = 12_000;
 const TEMP_ID_PREFIX = "temp-";
 
 /** 호스트 승인·미결제 시 이 메시지 본문 아래에 결제 버튼 노출 */
@@ -130,8 +131,30 @@ export default function MessageThread({
   }, [conversationId, router]);
 
   useEffect(() => {
-    const t = setInterval(fetchNewMessages, POLL_INTERVAL_MS);
-    return () => clearInterval(t);
+    let timer: ReturnType<typeof setInterval> | undefined;
+    function startPolling() {
+      if (timer) clearInterval(timer);
+      if (document.hidden) return;
+      timer = setInterval(fetchNewMessages, POLL_INTERVAL_MS);
+    }
+    fetchNewMessages();
+    startPolling();
+    function onVisibilityChange() {
+      if (document.hidden) {
+        if (timer) {
+          clearInterval(timer);
+          timer = undefined;
+        }
+      } else {
+        fetchNewMessages();
+        startPolling();
+      }
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      if (timer) clearInterval(timer);
+    };
   }, [fetchNewMessages]);
 
   // 탭 포커스 시 한 번 즉시 갱신
