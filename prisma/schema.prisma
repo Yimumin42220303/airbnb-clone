@@ -207,6 +207,8 @@ model Listing {
   availability ListingAvailability[]
   wishlists    Wishlist[]
   scheduledMessageTemplateListings ScheduledMessageTemplateListing[]
+  /// AI 리뷰 요약 캐시(옵션). Listing 행 자체를 변경하지 않는 보조 테이블과 1:1
+  reviewSummary                    ListingReviewSummary?
 
   @@index([userId]) // 호스트별 숙소 조회 최적화
 }
@@ -462,10 +464,11 @@ model ScheduledMessage {
   @@index([status, scheduledAt])
 }
 
-// AI 리뷰 요약 캐시 (온디맨드 생성, 24시간 유효)
+// AI 리뷰 요약 캐시 (온디맨드 생성, 24시간 유효). 숙소/예약 본문과 분리된 보조 데이터만 보관.
 model ListingReviewSummary {
   id                 String   @id @default(cuid())
   listingId          String   @unique
+  listing            Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
   prosJson           String   // JSON array of strings (좋은 점)
   consJson           String   // JSON array of strings (아쉬운 점)
   recommendedForJson  String?  // JSON array of strings (이런 분에게 추천해요)

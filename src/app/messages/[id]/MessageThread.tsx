@@ -8,6 +8,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 import MessagePlusMenu from "@/components/message/MessagePlusMenu";
+import MessageBodyWithLinks from "@/components/message/MessageBodyWithLinks";
 import ScheduledTimelineModal from "@/components/host/ScheduledTimelineModal";
 
 type Message = {
@@ -302,9 +303,11 @@ export default function MessageThread({
                     </a>
                   )}
                   {(m.bodyDisplay ?? m.body) && (
-                    <p className="text-minbak-body whitespace-pre-wrap break-words">
-                      {m.bodyDisplay ?? m.body}
-                    </p>
+                    <MessageBodyWithLinks
+                      text={m.bodyDisplay ?? m.body}
+                      isFromMe={m.isFromMe}
+                      className="text-minbak-body whitespace-pre-wrap break-words"
+                    />
                   )}
                   <p
                     className={`text-minbak-caption mt-0.5 ${
