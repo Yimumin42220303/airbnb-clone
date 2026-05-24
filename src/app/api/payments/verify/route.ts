@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getPayment } from "@/lib/portone";
 import { onPaymentVerified } from "@/lib/payment-complete";
 import { sendChannelTalkNotification } from "@/lib/channel-api";
+import { triggerMetaPurchaseConversion } from "@/lib/meta-purchase";
 import { getJpyToKrwRate } from "@/lib/exchange-rate";
 import { STORED_CURRENCY, convertJpyToKrw } from "@/lib/currency";
 import { hasOverlappingPaidBooking } from "@/lib/availability";
@@ -47,6 +48,7 @@ export async function POST(request: Request) {
 
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
+      include: { user: { select: { email: true } } },
     });
     if (!booking) {
       return NextResponse.json(
@@ -207,6 +209,14 @@ export async function POST(request: Request) {
       console.error("[Payment Verify] post-complete error:", postErr);
     }
 
+    const metaPurchase = triggerMetaPurchaseConversion({
+      bookingId,
+      listingId: booking.listingId,
+      value: booking.totalPrice,
+      request,
+      userEmail: booking.user?.email ?? null,
+    });
+
     // 채널톡 봇 알림 (실패해도 결제 완료 응답은 유지)
     try {
       await sendChannelTalkNotification(
@@ -223,6 +233,8 @@ export async function POST(request: Request) {
       bookingStatus: "confirmed",
       conversationId,
       verifiedAt: now.toISOString(),
+      metaPurchaseEventId: metaPurchase.eventId,
+      purchaseValue: metaPurchase.value,
     });
   } catch (err) {
     console.error("[POST /api/payments/verify] Unhandled error:", err);

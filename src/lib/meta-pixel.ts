@@ -12,6 +12,13 @@ export type MetaViewContentPayload = {
   content_type?: string;
 };
 
+/** Meta Purchase 이벤트 페이로드 (브라우저 Pixel) */
+export type MetaPurchasePayload = {
+  value: number;
+  currency?: string;
+  eventId: string;
+};
+
 /** 숙소 상세 조회 시 Meta ViewContent 전송 */
 export function trackMetaViewContent(payload: MetaViewContentPayload) {
   try {
@@ -28,6 +35,29 @@ export function trackMetaViewContent(payload: MetaViewContentPayload) {
 
     if (process.env.NODE_ENV === "development") {
       console.log("[meta-pixel] ViewContent", payload);
+    }
+  } catch {
+    // silently ignore analytics errors
+  }
+}
+
+/** 결제 완료 Purchase — eventID로 CAPI와 중복 집계 방지 */
+export function trackMetaPurchase(payload: MetaPurchasePayload) {
+  try {
+    if (typeof window === "undefined" || typeof window.fbq !== "function") return;
+
+    window.fbq(
+      "track",
+      "Purchase",
+      {
+        value: payload.value,
+        currency: payload.currency ?? "JPY",
+      },
+      { eventID: payload.eventId }
+    );
+
+    if (process.env.NODE_ENV === "development") {
+      console.log("[meta-pixel] Purchase", payload);
     }
   } catch {
     // silently ignore analytics errors

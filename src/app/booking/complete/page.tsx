@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import BookingStepIndicator, {
   getBookingStepState,
 } from "@/components/booking/BookingStepIndicator";
+import BookingCompletePurchaseTracker from "./BookingCompletePurchaseTracker";
 
 export const dynamic = "force-dynamic";
 
@@ -111,6 +112,9 @@ export default async function BookingCompletePage({ searchParams }: Props) {
 
   return (
     <main className="min-h-screen pt-24 px-4 sm:px-6">
+        {id && isPaid && (
+          <BookingCompletePurchaseTracker bookingId={id} isPaid={isPaid} />
+        )}
         <div className="max-w-[560px] mx-auto py-12">
           {/* 진행 스텝: 예약이 있고 pending/confirmed일 때만 */}
           {booking && (isPending || isConfirmed) && (

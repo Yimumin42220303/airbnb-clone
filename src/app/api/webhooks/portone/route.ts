@@ -4,6 +4,7 @@ import { getPayment, verifyWebhookPayload } from "@/lib/portone";
 import { syncBookingToBeds24 } from "@/lib/bookings";
 import { createScheduledMessagesForBooking } from "@/lib/scheduled-messages";
 import { onPaymentVerified } from "@/lib/payment-complete";
+import { triggerMetaPurchaseConversion } from "@/lib/meta-purchase";
 import { getJpyToKrwRate } from "@/lib/exchange-rate";
 import { STORED_CURRENCY, convertJpyToKrw } from "@/lib/currency";
 import { hasOverlappingPaidBooking } from "@/lib/availability";
@@ -140,6 +141,13 @@ export async function POST(request: Request) {
     // 대화방·자동 메시지·이메일·알림·Beds24·스케줄 메시지 (verify와 동일 경로)
     onPaymentVerified(booking.id).catch((err) => {
       console.error("[Webhook] onPaymentVerified error:", err);
+    });
+
+    triggerMetaPurchaseConversion({
+      bookingId: booking.id,
+      listingId: booking.listingId,
+      value: booking.totalPrice,
+      request,
     });
 
     return NextResponse.json({ ok: true, action: "paid" });

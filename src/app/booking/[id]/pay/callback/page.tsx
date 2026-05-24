@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import Link from "next/link";
+import { stashMetaPurchasePending } from "@/lib/meta-purchase";
 
 function CallbackContent() {
   const router = useRouter();
@@ -38,9 +39,26 @@ function CallbackContent() {
       body: JSON.stringify({ paymentId, bookingId }),
     })
       .then((res) => res.json())
-      .then((data: { ok?: boolean; error?: string; conversationId?: string }) => {
+      .then((data: {
+        ok?: boolean;
+        error?: string;
+        conversationId?: string;
+        metaPurchaseEventId?: string;
+        purchaseValue?: number;
+      }) => {
         if (cancelled) return;
         if (data.ok) {
+          if (
+            data.metaPurchaseEventId &&
+            typeof data.purchaseValue === "number"
+          ) {
+            stashMetaPurchasePending({
+              eventId: data.metaPurchaseEventId,
+              value: data.purchaseValue,
+              currency: "JPY",
+              bookingId,
+            });
+          }
           if (data.conversationId) {
             router.replace(`/messages/${data.conversationId}`);
           } else {

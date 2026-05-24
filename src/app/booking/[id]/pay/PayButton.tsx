@@ -6,6 +6,7 @@ import { STORED_CURRENCY, convertJpyToKrw } from "@/lib/currency";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
 import { CONTACT_EMAIL } from "@/lib/constants";
+import { stashMetaPurchasePending } from "@/lib/meta-purchase";
 
 const PORTONE_STORE_ID = (process.env.NEXT_PUBLIC_PORTONE_STORE_ID ?? "").trim();
 const PORTONE_CHANNEL_KEY = (process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY ?? "").trim();
@@ -89,8 +90,25 @@ export default function PayButton({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bookingId }),
       });
-      const data = (await res.json()) as { ok?: boolean; error?: string; conversationId?: string };
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        conversationId?: string;
+        metaPurchaseEventId?: string;
+        purchaseValue?: number;
+      };
       if (res.ok && data.ok) {
+        if (
+          data.metaPurchaseEventId &&
+          typeof data.purchaseValue === "number"
+        ) {
+          stashMetaPurchasePending({
+            eventId: data.metaPurchaseEventId,
+            value: data.purchaseValue,
+            currency: "JPY",
+            bookingId,
+          });
+        }
         if (data.conversationId) {
           router.push(`/messages/${data.conversationId}`);
         } else {
@@ -274,7 +292,13 @@ export default function PayButton({
               return;
             }
 
-            let verifyData: { ok?: boolean; error?: string; conversationId?: string };
+            let verifyData: {
+              ok?: boolean;
+              error?: string;
+              conversationId?: string;
+              metaPurchaseEventId?: string;
+              purchaseValue?: number;
+            };
             try {
               verifyData = await verifyRes.json();
             } catch {
@@ -284,6 +308,17 @@ export default function PayButton({
               return;
             }
             if (verifyRes.ok && verifyData.ok) {
+              if (
+                verifyData.metaPurchaseEventId &&
+                typeof verifyData.purchaseValue === "number"
+              ) {
+                stashMetaPurchasePending({
+                  eventId: verifyData.metaPurchaseEventId,
+                  value: verifyData.purchaseValue,
+                  currency: "JPY",
+                  bookingId,
+                });
+              }
               // 결제 성공 시 호스트와의 메시지창으로 바로 이동 (대화방 있으면)
               if (verifyData.conversationId) {
                 router.push(`/messages/${verifyData.conversationId}`);

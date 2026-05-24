@@ -9,6 +9,7 @@ import { ensureInstantBookingWelcomeMessage } from "@/lib/payment-complete";
 import { UNPAID_DEADLINE_HOURS } from "@/lib/unpaid-deadline";
 import MessageThread from "./MessageThread";
 import MessageAutoTranslateToggle from "./MessageAutoTranslateToggle";
+import MetaPixelPurchase from "@/components/analytics/MetaPixelPurchase";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -188,6 +189,9 @@ export default async function ConversationPage({ params }: Props) {
 
   return (
     <main className="min-h-screen pt-24 px-4 sm:px-6">
+      {isGuest && booking.paymentStatus === "paid" && (
+        <MetaPixelPurchase bookingId={booking.id} />
+      )}
       <div className="max-w-[600px] mx-auto py-8">
           <div className="mb-4">
             <Link

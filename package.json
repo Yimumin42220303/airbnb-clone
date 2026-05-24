@@ -31,6 +31,7 @@
     "deploy:watch": "node scripts/watch-and-deploy.js",
     "test:email-auth": "node scripts/test-email-auth.js",
     "setup:resend": "node scripts/setup-resend-env.js",
+    "setup:meta-capi": "node scripts/setup-meta-capi-env.js",
     "beds24:diagnose": "node scripts/beds24-diagnose.js",
     "push:vapid-keys": "web-push generate-vapid-keys"
   },

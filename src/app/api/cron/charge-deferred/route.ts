@@ -13,6 +13,7 @@ import {
   paymentConfirmationHost,
   deferredPaymentFailedGuest,
 } from "@/lib/email-templates";
+import { triggerMetaPurchaseConversion } from "@/lib/meta-purchase";
 
 /**
  * POST /api/cron/charge-deferred
@@ -164,6 +165,14 @@ export async function POST(request: Request) {
         });
         sendEmailAsync({ to: hostEmail, ...hostMail });
       }
+
+      triggerMetaPurchaseConversion({
+        bookingId: booking.id,
+        listingId: booking.listingId,
+        value: booking.totalPrice,
+        request,
+        userEmail: booking.user?.email ?? null,
+      });
 
       results.push({ bookingId: booking.id, success: true });
     } catch (err) {
