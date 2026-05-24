@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
+import { Suspense } from "react";
 import { Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
 import SessionProvider from "@/components/auth/SessionProvider";
@@ -11,6 +12,8 @@ import Toaster from "@/components/ui/Toaster";
 import BottomNav from "@/components/layout/BottomNav";
 import { Header, Footer } from "@/components/layout";
 import ChannelTalk from "@/components/channel/ChannelTalk";
+import MetaPixelScript from "@/components/analytics/MetaPixelScript";
+import MetaPixelPageView from "@/components/analytics/MetaPixelPageView";
 import { BASE_URL } from "@/lib/site-url";
 import { getHostLocaleFromCookie } from "@/lib/host-i18n";
 
@@ -90,7 +93,13 @@ export default async function RootLayout({
 
   return (
     <html lang={initialLocale === "ja" ? "ja" : "ko"} className={`h-full ${notoSansKr.variable}`}>
+      <head>
+        <MetaPixelScript />
+      </head>
       <body className="min-h-full antialiased font-sans">
+        <Suspense fallback={null}>
+          <MetaPixelPageView />
+        </Suspense>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
