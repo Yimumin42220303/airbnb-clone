@@ -14,6 +14,7 @@ import ListingBadge, { computeBadges } from "@/components/listing/ListingBadge";
 import WishlistHeart from "@/components/wishlist/WishlistHeart";
 import ShareListingButton from "@/components/listing/ShareListingButton";
 import ListingChannelInquiryButton from "@/components/channel/ListingChannelInquiryButton";
+import MetaPixelViewContent from "@/components/analytics/MetaPixelViewContent";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 import { getAmenityLabel } from "@/lib/host-i18n";
 
@@ -152,6 +153,14 @@ export default function ListingDetailContent({
 
   return (
     <>
+      <MetaPixelViewContent
+        listingId={listing.id}
+        contentName={listing.title}
+        contentCategory={listing.location}
+        pricePerNight={listing.pricePerNight}
+        totalPrice={priceSummary?.totalPrice}
+        waitForTotalPrice={!!(initialCheckIn && initialCheckOut)}
+      />
       <main className="min-h-screen bg-white">
         {/* 상단: 숙소명 · 위치 · 평점 · 찜 (minbak.tokyo 상단 영역) */}
         <div className="bg-white border-b border-[#ebebeb] pt-6 md:pt-8">
