@@ -32,6 +32,10 @@
     "test:email-auth": "node scripts/test-email-auth.js",
     "setup:resend": "node scripts/setup-resend-env.js",
     "setup:meta-capi": "node scripts/setup-meta-capi-env.js",
+    "verify:meta-production-env": "node scripts/verify-meta-production-env.js",
+    "meta:catalog-build": "node scripts/run-meta-catalog-cron.js",
+    "test:meta-pixel": "node scripts/verify-meta-pixel.js",
+    "test:meta-catalog": "node scripts/verify-meta-catalog.js",
     "beds24:diagnose": "node scripts/beds24-diagnose.js",
     "push:vapid-keys": "web-push generate-vapid-keys"
   },

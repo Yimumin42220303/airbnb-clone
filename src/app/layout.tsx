@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { Suspense } from "react";
 import { Noto_Sans_KR } from "next/font/google";
+import { getServerSession } from "next-auth";
 import "./globals.css";
 import SessionProvider from "@/components/auth/SessionProvider";
+import { authOptions } from "@/lib/auth";
+import { hashMetaUserData } from "@/lib/meta-payload-validator";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import HostLocaleProvider from "@/components/host/HostLocaleProvider";
 import CurrencyAudienceFromRoute from "@/components/currency/CurrencyAudienceFromRoute";
@@ -14,6 +17,7 @@ import { Header, Footer } from "@/components/layout";
 import ChannelTalk from "@/components/channel/ChannelTalk";
 import MetaPixelScript from "@/components/analytics/MetaPixelScript";
 import MetaPixelPageView from "@/components/analytics/MetaPixelPageView";
+import MetaPixelDebugInit from "@/components/analytics/MetaPixelDebugInit";
 import { BASE_URL } from "@/lib/site-url";
 import { getHostLocaleFromCookie } from "@/lib/host-i18n";
 
@@ -91,15 +95,21 @@ export default async function RootLayout({
     ? getHostLocaleFromCookie(cookieHeader)
     : "ko";
 
+  const session = await getServerSession(authOptions);
+  const hashedEmail = session?.user?.email?.trim()
+    ? hashMetaUserData(session.user.email)
+    : null;
+
   return (
     <html lang={initialLocale === "ja" ? "ja" : "ko"} className={`h-full ${notoSansKr.variable}`}>
       <head>
-        <MetaPixelScript />
+        <MetaPixelScript hashedEmail={hashedEmail} />
       </head>
       <body className="min-h-full antialiased font-sans">
         <Suspense fallback={null}>
           <MetaPixelPageView />
         </Suspense>
+        <MetaPixelDebugInit />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

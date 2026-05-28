@@ -10,8 +10,9 @@ import {
 const unpaidNotDeferred = { paymentMethod: { not: "deferred" as const } };
 
 /**
- * POST /api/cron/cancel-unpaid
+ * GET|POST /api/cron/cancel-unpaid
  *
+ * Vercel Cron은 GET으로 호출합니다. POST는 수동·Deploy Hook용.
  * Vercel Cron: 현재 Hobby 플랜 제한으로 일 1회 실행.
  * 실시간 만료 처리는 cancelExpiredBookings()의 온디맨드 호출이 함께 보완합니다.
  *
@@ -99,3 +100,5 @@ export async function POST(request: Request) {
     cancelled: cancelCount,
   });
 }
+
+export { POST as GET };

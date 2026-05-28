@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { onPaymentVerified } from "@/lib/payment-complete";
 import { sendChannelTalkNotification } from "@/lib/channel-api";
-import { triggerMetaPurchaseConversion } from "@/lib/meta-purchase";
+import { triggerMetaPurchaseConversionAsync } from "@/lib/meta-purchase";
 import { getJpyToKrwRate } from "@/lib/exchange-rate";
 import { STORED_CURRENCY, convertJpyToKrw } from "@/lib/currency";
 import { hasOverlappingPaidBooking } from "@/lib/availability";
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
 
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { user: { select: { email: true } } },
+      include: { user: { select: { email: true, phone: true } } },
     });
     if (!booking) {
       return NextResponse.json(
@@ -133,12 +133,13 @@ export async function POST(request: Request) {
       // 로그는 channel-api 내부에서 처리
     }
 
-    const metaPurchase = triggerMetaPurchaseConversion({
+    const metaPurchase = await triggerMetaPurchaseConversionAsync({
       bookingId,
       listingId: booking.listingId,
       value: booking.totalPrice,
       request,
       userEmail: booking.user?.email ?? null,
+      userPhone: booking.guestPhone ?? booking.user?.phone ?? null,
     });
 
     return NextResponse.json({
@@ -147,9 +148,12 @@ export async function POST(request: Request) {
       bookingStatus: "confirmed",
       conversationId,
       verifiedAt: now.toISOString(),
+      listingId: booking.listingId,
       mock: true,
       metaPurchaseEventId: metaPurchase.eventId,
       purchaseValue: metaPurchase.value,
+      capiStatus: metaPurchase.capiStatus,
+      ...(metaPurchase.capiError ? { capiError: metaPurchase.capiError } : {}),
     });
   } catch (err) {
     console.error("[POST /api/payments/mock-verify] Error:", err);

@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import Link from "next/link";
 import { stashMetaPurchasePending } from "@/lib/meta-purchase";
+import { logMetaPurchaseFromVerifyResponse } from "@/lib/meta-pixel-debug";
 
 function CallbackContent() {
   const router = useRouter();
@@ -45,9 +46,19 @@ function CallbackContent() {
         conversationId?: string;
         metaPurchaseEventId?: string;
         purchaseValue?: number;
+        listingId?: string;
+        capiStatus?: "success" | "skipped" | "failed";
+        capiError?: string;
       }) => {
         if (cancelled) return;
         if (data.ok) {
+          logMetaPurchaseFromVerifyResponse({
+            bookingId,
+            metaPurchaseEventId: data.metaPurchaseEventId,
+            purchaseValue: data.purchaseValue,
+            capiStatus: data.capiStatus,
+            capiError: data.capiError,
+          });
           if (
             data.metaPurchaseEventId &&
             typeof data.purchaseValue === "number"
@@ -57,6 +68,7 @@ function CallbackContent() {
               value: data.purchaseValue,
               currency: "JPY",
               bookingId,
+              listingId: data.listingId,
             });
           }
           if (data.conversationId) {

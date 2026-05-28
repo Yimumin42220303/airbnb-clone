@@ -9,3 +9,5 @@ export async function POST(request: Request) {
   const sent = await processScheduledMessages(50);
   return NextResponse.json({ ok: true, sent });
 }
+
+export { POST as GET };

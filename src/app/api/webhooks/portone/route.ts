@@ -143,11 +143,17 @@ export async function POST(request: Request) {
       console.error("[Webhook] onPaymentVerified error:", err);
     });
 
+    const bookingUser = await prisma.user.findUnique({
+      where: { id: booking.userId },
+      select: { email: true, phone: true },
+    });
     triggerMetaPurchaseConversion({
       bookingId: booking.id,
       listingId: booking.listingId,
       value: booking.totalPrice,
       request,
+      userEmail: bookingUser?.email ?? null,
+      userPhone: booking.guestPhone ?? bookingUser?.phone ?? null,
     });
 
     return NextResponse.json({ ok: true, action: "paid" });

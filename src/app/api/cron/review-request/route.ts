@@ -74,3 +74,5 @@ export async function POST(request: Request) {
     reviewRequestSent: sent,
   });
 }
+
+export { POST as GET };

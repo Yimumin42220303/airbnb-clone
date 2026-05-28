@@ -16,6 +16,7 @@ import { formatDateKR } from "@/lib/date-utils";
 import { useCurrency } from "@/components/currency/CurrencyProvider";
 import { FormFieldWithError, FormFieldGroupWithError } from "@/components/ui/FormFieldWithError";
 import { cloudinaryLoader } from "@/lib/cloudinary-loader";
+import { trackMetaSchedule } from "@/lib/meta-pixel";
 
 /** HH:mm → "오전 10:00시" / "오후 3:00시" 형태로 표시 (예약 정보 문구용) */
 function formatTimeLabel(timeStr: string): string {
@@ -143,6 +144,13 @@ export default function BookingConfirmContent({
         setError("예약 요청에 실패했습니다. 다시 시도해 주세요.");
         return;
       }
+
+      trackMetaSchedule({
+        content_ids: [listingId],
+        value: totalPrice,
+        currency: "JPY",
+      });
+
       if (instantBooking) {
         router.push(`/booking/${data.id}/pay`);
         return;

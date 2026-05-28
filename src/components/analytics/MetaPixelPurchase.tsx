@@ -30,6 +30,8 @@ export default function MetaPixelPurchase({ bookingId }: Props) {
       value: pending.value,
       currency: pending.currency,
       eventId: pending.eventId,
+      content_ids: pending.listingId ? [pending.listingId] : [],
+      content_type: "product",
     });
     clearMetaPurchasePending();
     firedRef.current = true;

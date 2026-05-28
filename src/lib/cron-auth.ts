@@ -10,8 +10,11 @@ export function requireCronAuth(request: Request) {
     );
   }
 
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${cronSecret}`) {
+  const authHeader = request.headers.get("authorization")?.trim();
+  const token = authHeader?.startsWith("Bearer ")
+    ? authHeader.slice("Bearer ".length).trim()
+    : null;
+  if (token !== cronSecret) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -145,3 +145,5 @@ export async function POST(request: Request) {
     post: result,
   });
 }
+
+export { POST as GET };

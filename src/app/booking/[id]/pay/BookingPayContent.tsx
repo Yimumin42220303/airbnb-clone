@@ -9,6 +9,7 @@ import BookingStepIndicator, {
   getBookingStepState,
 } from "@/components/booking/BookingStepIndicator";
 import { CONTACT_EMAIL } from "@/lib/constants";
+import MetaPixelInitiateCheckout from "@/components/analytics/MetaPixelInitiateCheckout";
 
 const PAY_DEADLINE_MS = 48 * 60 * 60 * 1000;
 
@@ -221,6 +222,10 @@ export default function BookingPayContent() {
 
   return (
     <main className="min-h-screen pt-24 px-4 sm:px-6">
+      <MetaPixelInitiateCheckout
+        listingId={booking.listing.id}
+        totalPriceJpy={booking.totalPrice}
+      />
       <div className="max-w-[600px] mx-auto py-8">
           <div className="mb-6 p-4 bg-white border border-minbak-light-gray rounded-minbak">
             <BookingStepIndicator
@@ -275,6 +280,7 @@ export default function BookingPayContent() {
           </div>
           <PayButton
             bookingId={id}
+            listingId={booking.listing.id}
             totalPrice={booking.totalPrice}
             listingTitle={booking.listing.title}
             userName={booking.guestName ?? me?.name ?? undefined}

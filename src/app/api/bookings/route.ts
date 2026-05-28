@@ -28,7 +28,9 @@ export async function GET() {
     );
   }
 
-  await cancelExpiredBookings({ userId }).catch(() => {});
+  await cancelExpiredBookings({ userId }).catch((err) => {
+    console.error("[GET /api/bookings] cancelExpiredBookings:", err);
+  });
 
   const [bookings, reviewedListingIds] = await Promise.all([
     prisma.booking.findMany({

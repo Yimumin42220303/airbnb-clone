@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
 import { CONTACT_EMAIL } from "@/lib/constants";
 import { stashMetaPurchasePending } from "@/lib/meta-purchase";
+import { logMetaPurchaseFromVerifyResponse } from "@/lib/meta-pixel-debug";
 
 const PORTONE_STORE_ID = (process.env.NEXT_PUBLIC_PORTONE_STORE_ID ?? "").trim();
 const PORTONE_CHANNEL_KEY = (process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY ?? "").trim();
@@ -48,6 +49,7 @@ function normalizePhone(v: string | undefined): string | undefined {
 
 export default function PayButton({
   bookingId,
+  listingId,
   totalPrice,
   listingTitle,
   userName,
@@ -56,6 +58,7 @@ export default function PayButton({
   checkIn,
 }: {
   bookingId: string;
+  listingId: string;
   totalPrice: number;
   listingTitle?: string;
   userName?: string;
@@ -96,8 +99,18 @@ export default function PayButton({
         conversationId?: string;
         metaPurchaseEventId?: string;
         purchaseValue?: number;
+        listingId?: string;
+        capiStatus?: "success" | "skipped" | "failed";
+        capiError?: string;
       };
       if (res.ok && data.ok) {
+        logMetaPurchaseFromVerifyResponse({
+          bookingId,
+          metaPurchaseEventId: data.metaPurchaseEventId,
+          purchaseValue: data.purchaseValue,
+          capiStatus: data.capiStatus,
+          capiError: data.capiError,
+        });
         if (
           data.metaPurchaseEventId &&
           typeof data.purchaseValue === "number"
@@ -107,6 +120,7 @@ export default function PayButton({
             value: data.purchaseValue,
             currency: "JPY",
             bookingId,
+            listingId: data.listingId ?? listingId,
           });
         }
         if (data.conversationId) {
@@ -298,6 +312,9 @@ export default function PayButton({
               conversationId?: string;
               metaPurchaseEventId?: string;
               purchaseValue?: number;
+              listingId?: string;
+              capiStatus?: "success" | "skipped" | "failed";
+              capiError?: string;
             };
             try {
               verifyData = await verifyRes.json();
@@ -308,6 +325,13 @@ export default function PayButton({
               return;
             }
             if (verifyRes.ok && verifyData.ok) {
+              logMetaPurchaseFromVerifyResponse({
+                bookingId,
+                metaPurchaseEventId: verifyData.metaPurchaseEventId,
+                purchaseValue: verifyData.purchaseValue,
+                capiStatus: verifyData.capiStatus,
+                capiError: verifyData.capiError,
+              });
               if (
                 verifyData.metaPurchaseEventId &&
                 typeof verifyData.purchaseValue === "number"
@@ -317,6 +341,7 @@ export default function PayButton({
                   value: verifyData.purchaseValue,
                   currency: "JPY",
                   bookingId,
+                  listingId: verifyData.listingId ?? listingId,
                 });
               }
               // 결제 성공 시 호스트와의 메시지창으로 바로 이동 (대화방 있으면)

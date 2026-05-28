@@ -1,4 +1,4 @@
-import { sendMetaPurchaseEvent } from "@/lib/meta-capi";
+import { sendMetaPurchaseEventWithRetry } from "@/lib/meta-capi";
 import { BASE_URL } from "@/lib/site-url";
 
 /** sessionStorage 키 — 결제 직후 브라우저 Purchase 전송용 */
@@ -9,6 +9,14 @@ export type MetaPurchaseConversion = {
   value: number;
   currency: "JPY";
   bookingId: string;
+  listingId?: string;
+};
+
+export type MetaCapiSendStatus = "success" | "skipped" | "failed";
+
+export type MetaPurchaseConversionResult = MetaPurchaseConversion & {
+  capiStatus: MetaCapiSendStatus;
+  capiError?: string;
 };
 
 export type MetaPurchaseTriggerInput = {
@@ -17,6 +25,7 @@ export type MetaPurchaseTriggerInput = {
   value: number;
   request?: Request;
   userEmail?: string | null;
+  userPhone?: string | null;
   eventSourceUrl?: string;
 };
 
@@ -34,20 +43,52 @@ function getClientIp(request?: Request): string | undefined {
 
 /**
  * 결제 완료 시 CAPI Purchase 전송(비동기) + 클라이언트용 event_id·금액 반환.
- * verify / mock-verify / webhook 등 결제 완료 핸들러에서 호출.
+ * webhook 등 fire-and-forget 경로용.
  */
 export function triggerMetaPurchaseConversion(
   input: MetaPurchaseTriggerInput
 ): MetaPurchaseConversion {
+  const result = buildMetaPurchaseConversion(input);
+  void sendMetaPurchaseCapi(input, result.eventId).catch((err) => {
+    console.error("[meta-purchase] CAPI Purchase failed:", err);
+  });
+  return result;
+}
+
+/**
+ * verify API용 — CAPI 전송 완료 여부를 await하여 프론트 디버그/응답에 포함.
+ */
+export async function triggerMetaPurchaseConversionAsync(
+  input: MetaPurchaseTriggerInput
+): Promise<MetaPurchaseConversionResult> {
+  const conversion = buildMetaPurchaseConversion(input);
+  const token = process.env.META_CAPI_ACCESS_TOKEN?.trim();
+  if (!token) {
+    return { ...conversion, capiStatus: "skipped" };
+  }
+  try {
+    await sendMetaPurchaseCapi(input, conversion.eventId);
+    return { ...conversion, capiStatus: "success" };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[meta-purchase] CAPI Purchase failed:", err);
+    return { ...conversion, capiStatus: "failed", capiError: message };
+  }
+}
+
+function buildMetaPurchaseConversion(input: MetaPurchaseTriggerInput): MetaPurchaseConversion {
   const eventId = createMetaPurchaseEventId(input.bookingId);
-  const conversion: MetaPurchaseConversion = {
+  return {
     eventId,
     value: input.value,
     currency: "JPY",
     bookingId: input.bookingId,
+    listingId: input.listingId,
   };
+}
 
-  void sendMetaPurchaseEvent({
+function sendMetaPurchaseCapi(input: MetaPurchaseTriggerInput, eventId: string) {
+  return sendMetaPurchaseEventWithRetry({
     eventId,
     value: input.value,
     currency: "JPY",
@@ -57,11 +98,8 @@ export function triggerMetaPurchaseConversion(
     clientIpAddress: getClientIp(input.request),
     clientUserAgent: input.request?.headers.get("user-agent") ?? undefined,
     userEmail: input.userEmail,
-  }).catch((err) => {
-    console.error("[meta-purchase] CAPI Purchase failed:", err);
+    userPhone: input.userPhone,
   });
-
-  return conversion;
 }
 
 /** 결제 성공 후 브라우저 Pixel 전송 대기 큐(sessionStorage) */

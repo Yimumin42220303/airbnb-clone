@@ -8,6 +8,7 @@ declare global {
       options?: { eventID?: string }
     ) => void;
     _fbq?: Window["fbq"];
+    __metaPixelDebugPatched?: boolean;
   }
 }
 

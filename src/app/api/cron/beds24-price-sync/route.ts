@@ -86,3 +86,5 @@ export async function POST(request: Request) {
     results,
   });
 }
+
+export { POST as GET };

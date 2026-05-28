@@ -1,11 +1,21 @@
 import Script from "next/script";
 import { META_PIXEL_ID } from "@/lib/meta-pixel";
 
+type Props = {
+  /** 로그인 사용자 이메일 SHA-256 (Advanced Matching, 서버에서 해싱) */
+  hashedEmail?: string | null;
+};
+
 /**
  * Meta Pixel 기본 스크립트. root layout <head>에 삽입.
  * 최초 로드 시 PageView 1회 발생.
  */
-export default function MetaPixelScript() {
+export default function MetaPixelScript({ hashedEmail }: Props) {
+  const initUserData =
+    hashedEmail && /^[a-f0-9]{64}$/.test(hashedEmail)
+      ? `, { em: '${hashedEmail}' }`
+      : "";
+
   return (
     <>
       <Script
@@ -21,7 +31,7 @@ export default function MetaPixelScript() {
             t.src=v;s=b.getElementsByTagName(e)[0];
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
-            fbq('init', '${META_PIXEL_ID}');
+            fbq('init', '${META_PIXEL_ID}'${initUserData});
             fbq('track', 'PageView');
           `,
         }}

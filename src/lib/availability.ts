@@ -92,7 +92,8 @@ export type NightlyAvailabilityResult = {
   maxStayNights: number | null;
 };
 
-const nightlyListingSelect = {
+/** Meta 카탈로그·일별 가용성 계산용 Listing select */
+export const nightlyListingSelect = {
   id: true,
   pricePerNight: true,
   cleaningFee: true,
@@ -132,11 +133,12 @@ const nightlyListingSelect = {
   icalImportUrls: true,
 } as const;
 
-type NightlyListingRow = Prisma.ListingGetPayload<{
+export type NightlyListingRow = Prisma.ListingGetPayload<{
   select: typeof nightlyListingSelect;
 }>;
 
-function buildNightlyResultForListing(
+/** DB 스냅샷 기반 일별 가용·요금 (외부 API 없이 호출 가능) */
+export function buildNightlyResultForListing(
   l: NightlyListingRow,
   dateKeys: string[],
   byDate: Map<string, { date: string; available: boolean; pricePerNight: number | null }>,

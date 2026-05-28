@@ -46,7 +46,7 @@ export async function POST(request: Request) {
           user: { select: { name: true, email: true } },
         },
       },
-      user: { select: { name: true, email: true } },
+      user: { select: { name: true, email: true, phone: true } },
     },
   });
 
@@ -172,6 +172,7 @@ export async function POST(request: Request) {
         value: booking.totalPrice,
         request,
         userEmail: booking.user?.email ?? null,
+        userPhone: booking.guestPhone ?? booking.user?.phone ?? null,
       });
 
       results.push({ bookingId: booking.id, success: true });
@@ -235,3 +236,5 @@ export async function POST(request: Request) {
     results,
   });
 }
+
+export { POST as GET };

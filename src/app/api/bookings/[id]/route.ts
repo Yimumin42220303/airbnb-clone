@@ -23,7 +23,9 @@ export async function GET(
 
   const { id } = await params;
 
-  await cancelExpiredBookings({ bookingId: id }).catch(() => {});
+  await cancelExpiredBookings({ bookingId: id }).catch((err) => {
+    console.error("[GET /api/bookings/[id]] cancelExpiredBookings:", err);
+  });
 
   const booking = await prisma.booking.findUnique({
     where: { id },

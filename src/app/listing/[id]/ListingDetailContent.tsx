@@ -88,6 +88,13 @@ type Props = {
 
 const DESCRIPTION_PREVIEW_LENGTH = 200;
 
+/** 숙소 소개 영상: 세로 영상 고정 높이로 모바일 뷰포트를 넘지 않도록 (헤더·하단바·CTA 고려해 dvh 캡) */
+const LISTING_VIDEO_SHELL_CLASS =
+  "mx-auto aspect-[9/16] rounded-xl overflow-hidden " +
+  "max-md:max-h-[min(480px,48dvh)] " +
+  "max-md:w-[min(320px,100%,calc(min(480px,48dvh)*9/16))] " +
+  "md:w-full md:max-w-[320px] md:max-h-none";
+
 function DetailSection({
   title,
   children,
@@ -263,7 +270,7 @@ export default function ListingDetailContent({
                 {/* 숙소 소개 영상 (인스타 릴스 비율 9:16) */}
                 {listing.videoUrl && !videoLoadError && (
                   <div className="py-8 border-b border-[#ebebeb]">
-                    <div className="w-full max-w-[320px] mx-auto aspect-[9/16] rounded-xl overflow-hidden bg-black">
+                    <div className={`${LISTING_VIDEO_SHELL_CLASS} bg-black`}>
                       <video
                         src={listing.videoUrl}
                         controls
@@ -282,7 +289,9 @@ export default function ListingDetailContent({
                 )}
                 {listing.videoUrl && videoLoadError && (
                   <div className="py-8 border-b border-[#ebebeb]">
-                    <div className="w-full max-w-[320px] mx-auto aspect-[9/16] rounded-xl overflow-hidden bg-[#f7f7f7] border border-[#ebebeb] flex items-center justify-center px-4">
+                    <div
+                      className={`${LISTING_VIDEO_SHELL_CLASS} bg-[#f7f7f7] border border-[#ebebeb] flex items-center justify-center px-4`}
+                    >
                       <p className="text-minbak-body text-[#717171] text-center">
                         {t("listingDetail.videoLoadFailed" as Parameters<typeof t>[0])}
                       </p>
