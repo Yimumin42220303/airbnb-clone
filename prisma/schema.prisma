@@ -199,6 +199,16 @@ model Listing {
   checkInTime   String?
   /// 체크아웃 시간 (HH:mm, 예: 11:00). 미설정 시 상세에서 표시 안 함
   checkOutTime  String?
+  /// 체크인 방식: keybox | smart_lock | front_desk | self_checkin | other
+  checkInMethod String?
+  /// 숙소 정보 최종 확인일 (신뢰 카드·운영용)
+  infoVerifiedAt DateTime?
+  /// 운영 검증 완료 시각 (isVerified=true일 때 설정 권장)
+  verifiedAt    DateTime?
+  /// 허가·신고 유형 (표시 가능한 경우만 UI 노출)
+  licenseType   String?
+  /// 허가·신고 번호 (표시 가능한 경우만 UI 노출)
+  licenseNumber String?
 
   bookings     Booking[]
   reviews      Review[]

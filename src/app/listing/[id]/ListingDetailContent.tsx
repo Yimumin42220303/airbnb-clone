@@ -66,6 +66,10 @@ type ListingData = {
   checkInTime?: string | null;
   /** 체크아웃 시간 (HH:mm). 미설정 시 표시 안 함 */
   checkOutTime?: string | null;
+  checkInMethod?: string | null;
+  licenseType?: string | null;
+  licenseNumber?: string | null;
+  infoVerifiedAt?: string | null;
   /** 관리자 인증 여부 */
   isVerified?: boolean;
   /** 최근 30일 예약 수 */
@@ -539,6 +543,8 @@ export default function ListingDetailContent({
                     checkInTime={listing.checkInTime}
                     checkOutTime={listing.checkOutTime}
                     cancellationPolicy={listing.cancellationPolicy}
+                    checkIn={initialCheckIn}
+                    checkInMethod={listing.checkInMethod}
                   />
                 </div>
               </div>

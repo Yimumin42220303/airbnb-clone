@@ -10,11 +10,13 @@ import {
 } from "lucide-react";
 import { BASE_URL } from "@/lib/site-url";
 import { t } from "@/lib/host-i18n";
+import SafePaymentMarks from "@/components/booking/SafePaymentMarks";
 import {
   TRUST_BADGES,
   TRUST_CHECKLIST,
   TRUST_STEPS,
   TRUST_FAQ,
+  TRUST_RESPONSE_CASES,
   type TrustBadgeId,
 } from "@/lib/trust-content";
 
@@ -33,12 +35,21 @@ export const metadata: Metadata = {
     type: "website",
     locale: "ko_KR",
     siteName: "도쿄민박",
+    images: [
+      {
+        url: `${BASE_URL}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: "도쿄민박 안심예약센터 — 한국어 직접 운영대응",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "도쿄민박 안심예약센터",
     description:
       "예약부터 체크인 안내, 숙박 중 문제 접수, 환불·민원 접수까지 도쿄민박이 한국어로 직접 대응합니다.",
+    images: [`${BASE_URL}/og-image.png`],
   },
 };
 
@@ -207,6 +218,55 @@ export default function TrustPage() {
                 </li>
               ))}
             </ul>
+          </section>
+
+          {/* 안전결제 */}
+          <section aria-labelledby="safe-payment-heading">
+            <h2
+              id="safe-payment-heading"
+              className="text-minbak-h2 font-semibold text-minbak-black mb-2 text-center"
+            >
+              안전한 결제
+            </h2>
+            <p className="text-minbak-body text-minbak-gray mb-6 text-center max-w-[560px] mx-auto">
+              결제는 KG이니시스 결제·에스크로 시스템(PortOne 경유)으로 처리됩니다.
+              카드 정보는 도쿄민박 서버에 저장되지 않습니다.
+            </p>
+            <SafePaymentMarks size="md" />
+          </section>
+
+          {/* 실제 대응 사례 */}
+          <section aria-labelledby="cases-heading">
+            <h2
+              id="cases-heading"
+              className="text-minbak-h2 font-semibold text-minbak-black mb-2"
+            >
+              실제 고객지원 대응 사례
+            </h2>
+            <p className="text-minbak-body text-minbak-gray mb-6">
+              개인정보를 제거한 실제 운영 사례입니다. 상황에 따라 처리 방식은 달라질 수
+              있습니다.
+            </p>
+            <div className="space-y-4">
+              {TRUST_RESPONSE_CASES.map((item) => (
+                <article
+                  key={item.id}
+                  className="p-5 border border-minbak-light-gray rounded-minbak bg-white"
+                >
+                  <h3 className="text-minbak-title font-semibold text-minbak-black mb-2">
+                    {item.title}
+                  </h3>
+                  <p className="text-minbak-body text-minbak-gray mb-2">
+                    <span className="font-medium text-minbak-black">상황: </span>
+                    {item.situation}
+                  </p>
+                  <p className="text-minbak-body text-minbak-gray">
+                    <span className="font-medium text-minbak-black">대응: </span>
+                    {item.response}
+                  </p>
+                </article>
+              ))}
+            </div>
           </section>
 
           {/* D. 예약 과정 안내 */}

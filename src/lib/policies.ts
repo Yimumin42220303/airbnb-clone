@@ -183,3 +183,159 @@ export const POLICY_SHORT_KO: Record<CancellationPolicyType, string> = {
   moderate: "체크인 7일 전까지 전액 환불",
   strict: "\uccb4\ud06c\uc778 7\uc77c \uc804\uae4c\uc9c0 50% \ud658\ubd88",
 };
+
+/** 환불 일정 UI용 티어 */
+export type RefundScheduleTier = {
+  refundPercent: number;
+  /** 예: "2026년 7월 10일 23:59까지" */
+  periodLabel: string;
+  /** 예: "전액 환불" */
+  resultLabel: string;
+};
+
+function parseCheckInDate(checkIn: string | Date): Date {
+  if (typeof checkIn === "string") {
+    const d = new Date(checkIn.includes("T") ? checkIn : `${checkIn}T00:00:00`);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+  const d = new Date(checkIn);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+/** 체크인 기준 날짜를 한국어로 (YYYY년 M월 D일) */
+export function formatPolicyDateKR(date: Date): string {
+  const y = date.getFullYear();
+  const m = date.getMonth() + 1;
+  const day = date.getDate();
+  return `${y}년 ${m}월 ${day}일`;
+}
+
+function daysBeforeCheckIn(checkIn: Date, daysBefore: number): Date {
+  const d = new Date(checkIn);
+  d.setDate(d.getDate() - daysBefore);
+  return d;
+}
+
+function untilEndOfDayLabel(date: Date): string {
+  return `${formatPolicyDateKR(date)} 23:59까지`;
+}
+
+/**
+ * 취소정책별 구체 환불 일정 (체크인 날짜 기준).
+ * listing 상세(날짜 미정)에서는 checkIn 없이 상대 규칙만 반환할 수 있음.
+ */
+export function getRefundSchedule(params: {
+  policy: CancellationPolicyType;
+  checkIn?: string | Date;
+  bookingCreatedAt?: Date;
+}): RefundScheduleTier[] {
+  const policy = params.policy in CANCELLATION_POLICIES ? params.policy : "flexible";
+
+  if (!params.checkIn) {
+    return getRefundScheduleRelative(policy);
+  }
+
+  const checkIn = parseCheckInDate(params.checkIn);
+
+  switch (policy) {
+    case "flexible":
+      return [
+        {
+          periodLabel: untilEndOfDayLabel(daysBeforeCheckIn(checkIn, 1)),
+          refundPercent: 100,
+          resultLabel: "전액 환불",
+        },
+        {
+          periodLabel: `${formatPolicyDateKR(checkIn)} 체크인 당일 이후`,
+          refundPercent: 0,
+          resultLabel: "환불 불가",
+        },
+      ];
+
+    case "moderate": {
+      const partialStart = daysBeforeCheckIn(checkIn, 6);
+      const partialEnd = daysBeforeCheckIn(checkIn, 1);
+      return [
+        {
+          periodLabel: untilEndOfDayLabel(daysBeforeCheckIn(checkIn, 7)),
+          refundPercent: 100,
+          resultLabel: "전액 환불",
+        },
+        {
+          periodLabel: `${formatPolicyDateKR(partialStart)} ~ ${formatPolicyDateKR(partialEnd)} 23:59`,
+          refundPercent: 50,
+          resultLabel: "50% 환불",
+        },
+        {
+          periodLabel: `${formatPolicyDateKR(checkIn)} 체크인 당일 이후`,
+          refundPercent: 0,
+          resultLabel: "환불 불가",
+        },
+      ];
+    }
+
+    case "strict": {
+      const tiers: RefundScheduleTier[] = [];
+      if (params.bookingCreatedAt) {
+        const graceEnd = new Date(params.bookingCreatedAt);
+        graceEnd.setHours(graceEnd.getHours() + 48);
+        tiers.push({
+          periodLabel: `${formatPolicyDateKR(graceEnd)}까지 (예약 후 48시간 이내, 체크인 14일 이상 남은 경우)`,
+          refundPercent: 100,
+          resultLabel: "전액 환불",
+        });
+      } else {
+        tiers.push({
+          periodLabel: "예약 후 48시간 이내 (체크인 14일 이상 남은 경우)",
+          refundPercent: 100,
+          resultLabel: "전액 환불",
+        });
+      }
+      tiers.push(
+        {
+          periodLabel: untilEndOfDayLabel(daysBeforeCheckIn(checkIn, 7)),
+          refundPercent: 50,
+          resultLabel: "50% 환불",
+        },
+        {
+          periodLabel: `${formatPolicyDateKR(daysBeforeCheckIn(checkIn, 6))} 이후 ~ 체크인 7일 이내`,
+          refundPercent: 0,
+          resultLabel: "환불 불가",
+        }
+      );
+      return tiers;
+    }
+
+    default:
+      return getRefundSchedule({ policy: "flexible", checkIn: params.checkIn });
+  }
+}
+
+/** 체크인 날짜 없을 때(숙소 상세 등) 상대 규칙만 */
+function getRefundScheduleRelative(policy: CancellationPolicyType): RefundScheduleTier[] {
+  switch (policy) {
+    case "moderate":
+      return [
+        { periodLabel: "체크인 7일 전까지", refundPercent: 100, resultLabel: "전액 환불" },
+        { periodLabel: "체크인 1~6일 전", refundPercent: 50, resultLabel: "50% 환불" },
+        { periodLabel: "체크인 당일 이후", refundPercent: 0, resultLabel: "환불 불가" },
+      ];
+    case "strict":
+      return [
+        {
+          periodLabel: "예약 후 48시간 이내 (체크인 14일 이상 남은 경우)",
+          refundPercent: 100,
+          resultLabel: "전액 환불",
+        },
+        { periodLabel: "체크인 7일 전까지", refundPercent: 50, resultLabel: "50% 환불" },
+        { periodLabel: "체크인 7일 이내", refundPercent: 0, resultLabel: "환불 불가" },
+      ];
+    default:
+      return [
+        { periodLabel: "체크인 1일 전까지", refundPercent: 100, resultLabel: "전액 환불" },
+        { periodLabel: "체크인 당일 이후", refundPercent: 0, resultLabel: "환불 불가" },
+      ];
+  }
+}

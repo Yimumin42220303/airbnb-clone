@@ -6,16 +6,7 @@ import { KAKAO_LINK, CONTACT_EMAIL } from "@/lib/constants";
 import KakaoIcon from "@/components/ui/KakaoIcon";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
-const INICIS_MID = "MOI8774709";
-
-function openInicisPopup(type: "inipay" | "escrow") {
-  const path = type === "inipay" ? "popup_v3.php" : "escrow_popup_v3.php";
-  window.open(
-    `https://mark.inicis.com/mark/${path}?mid=${INICIS_MID}`,
-    "mark",
-    "scrollbars=no,resizable=no,width=565,height=683"
-  );
-}
+import { INICIS_MARK_URLS, openInicisPopup } from "@/lib/inicis-marks";
 
 /** Framer Footer 스타일: CTA 블록 → 링크 행 → 사업자 정보 그리드 → 이메일·카카오 */
 
@@ -88,7 +79,7 @@ export default function Footer() {
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="https://image.inicis.com/mkt/certmark/inipay/inipay_43x43_gray.png"
+                  src={INICIS_MARK_URLS.inipay.sm}
                   alt={t("footer.inicisImgAlt")}
                   width={43}
                   height={43}
@@ -102,7 +93,7 @@ export default function Footer() {
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="https://image.inicis.com/mkt/certmark/escrow/escrow_43x43_gray.png"
+                  src={INICIS_MARK_URLS.escrow.sm}
                   alt={t("footer.inicisImgAlt")}
                   width={43}
                   height={43}

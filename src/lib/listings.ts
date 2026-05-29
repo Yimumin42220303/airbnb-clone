@@ -376,7 +376,12 @@ export const getListingById = cache(async function getListingById(id: string) {
     maxStayNights: listing.maxStayNights ?? null,
     checkInTime: listing.checkInTime ?? null,
     checkOutTime: listing.checkOutTime ?? null,
-    isVerified: (listing as Record<string, unknown>).isVerified === true,
+    checkInMethod: listing.checkInMethod ?? null,
+    infoVerifiedAt: listing.infoVerifiedAt?.toISOString() ?? null,
+    verifiedAt: listing.verifiedAt?.toISOString() ?? null,
+    licenseType: listing.licenseType ?? null,
+    licenseNumber: listing.licenseNumber ?? null,
+    isVerified: listing.isVerified === true,
     recentBookingCount,
     listingCreatedAt: listing.createdAt.toISOString(),
     reviews: listing.reviews.map((r) => {

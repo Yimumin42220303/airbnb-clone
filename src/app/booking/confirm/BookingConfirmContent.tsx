@@ -17,6 +17,9 @@ import { useCurrency } from "@/components/currency/CurrencyProvider";
 import { FormFieldWithError, FormFieldGroupWithError } from "@/components/ui/FormFieldWithError";
 import { cloudinaryLoader } from "@/lib/cloudinary-loader";
 import { trackMetaSchedule } from "@/lib/meta-pixel";
+import RefundSchedule from "@/components/booking/RefundSchedule";
+import SafePaymentMarks from "@/components/booking/SafePaymentMarks";
+import BookingAftercareTimeline from "@/components/booking/BookingAftercareTimeline";
 
 /** HH:mm → "오전 10:00시" / "오후 3:00시" 형태로 표시 (예약 정보 문구용) */
 function formatTimeLabel(timeStr: string): string {
@@ -419,65 +422,27 @@ export default function BookingConfirmContent({
               </div>
             </div>
 
-            {/* 취소 정책 카드 */}
-            {(() => {
-              function deadlineDate(daysBefore: number) {
-                const d = new Date(checkIn + "T00:00:00");
-                d.setDate(d.getDate() - daysBefore);
-                const y = d.getFullYear();
-                const m = d.getMonth() + 1;
-                const day = d.getDate();
-                return `${y}년 ${m}월 ${day}일`;
-              }
+            {/* 취소·환불 일정 (구체 날짜) */}
+            <div className="bg-white rounded-2xl border border-[#ebebeb] shadow-[0_1px_3px_rgba(0,0,0,0.08)] overflow-hidden">
+              <div className="p-6 border-b border-[#ebebeb]">
+                <h2 className="text-[17px] font-semibold text-[#222] flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-[#717171]" />
+                  취소·환불 정책
+                </h2>
+              </div>
+              <div className="p-6">
+                <RefundSchedule
+                  policy={cancellationPolicy}
+                  checkIn={checkIn}
+                  variant="full"
+                />
+              </div>
+            </div>
 
-              const policyMap: Record<string, { label: string; color: string; rules: string[] }> = {
-                flexible: {
-                  label: "유연",
-                  color: "bg-green-100 text-green-800",
-                  rules: [
-                    `${deadlineDate(1)}까지 취소 시 100% 환불`,
-                    "체크인 당일 이후 환불 불가",
-                  ],
-                },
-                moderate: {
-                  label: "보통",
-                  color: "bg-amber-100 text-amber-800",
-                  rules: [
-                    `${deadlineDate(7)}까지 취소 시 100% 환불`,
-                    `${deadlineDate(6)} ~ ${deadlineDate(1)} 취소 시 50% 환불`,
-                    "체크인 당일 이후 환불 불가",
-                  ],
-                },
-                strict: {
-                  label: "엄격",
-                  color: "bg-red-100 text-red-800",
-                  rules: [
-                    "예약 후 48시간 이내 취소 시 100% 환불 (체크인 14일 이상 남은 경우)",
-                    `${deadlineDate(7)}까지 취소 시 50% 환불`,
-                    "체크인 7일 이내 환불 불가",
-                  ],
-                },
-              };
-              const info = policyMap[cancellationPolicy] || policyMap.flexible;
-              return (
-                <div className="bg-white rounded-2xl border border-[#ebebeb] shadow-[0_1px_3px_rgba(0,0,0,0.08)] overflow-hidden">
-                  <div className="p-6 border-b border-[#ebebeb]">
-                    <h2 className="text-[17px] font-semibold text-[#222] flex items-center gap-2">
-                      <Shield className="w-5 h-5 text-[#717171]" />
-                      취소·환불 정책
-                    </h2>
-                  </div>
-                  <ul className="p-6 space-y-2 text-[14px] text-[#222]">
-                    {info.rules.map((rule, i) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#717171] flex-shrink-0" />
-                        {rule}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              );
-            })()}
+            {/* 결제 후 안내 흐름 */}
+            <div className="bg-white rounded-2xl border border-[#ebebeb] shadow-[0_1px_3px_rgba(0,0,0,0.08)] p-6">
+              <BookingAftercareTimeline phase="pre_payment" />
+            </div>
           </div>
 
           {/* 오른쪽 컬럼 (1/3) */}
@@ -519,6 +484,9 @@ export default function BookingConfirmContent({
                 <div className="p-6 space-y-4">
                   {instantBooking ? (
                     <>
+                      <p className="text-[13px] font-medium text-[#E31C23] mb-2">
+                        이 숙소는 자동확정 숙소입니다
+                      </p>
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[#E31C23] text-white flex items-center justify-center text-[13px] font-bold">1</div>
                         <div>
@@ -530,12 +498,17 @@ export default function BookingConfirmContent({
                         <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[#E31C23] text-white flex items-center justify-center text-[13px] font-bold">2</div>
                         <div>
                           <p className="text-[14px] font-medium text-[#222]">예약 확정</p>
-                          <p className="text-[13px] text-[#717171]">결제 완료 즉시 예약이 확정됩니다</p>
+                          <p className="text-[13px] text-[#717171]">
+                            결제 완료 즉시 예약이 확정됩니다. 체크인 안내는 확정 후 순차 발송됩니다.
+                          </p>
                         </div>
                       </div>
                     </>
                   ) : (
                     <>
+                      <p className="text-[13px] font-medium text-[#E31C23] mb-2">
+                        이 숙소는 승인형 예약입니다
+                      </p>
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[#E31C23] text-white flex items-center justify-center text-[13px] font-bold">1</div>
                         <div>
@@ -547,14 +520,18 @@ export default function BookingConfirmContent({
                         <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[#E31C23] text-white flex items-center justify-center text-[13px] font-bold">2</div>
                         <div>
                           <p className="text-[14px] font-medium text-[#222]">호스트 승인</p>
-                          <p className="text-[13px] text-[#717171]">호스트가 24시간 이내에 승인/거절합니다</p>
+                          <p className="text-[13px] text-[#717171]">
+                            호스트가 24시간 이내 승인/거절합니다. 승인 시 도쿄민박이 이메일로 결제 안내를 보냅니다.
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[#E31C23] text-white flex items-center justify-center text-[13px] font-bold">3</div>
                         <div>
                           <p className="text-[14px] font-medium text-[#222]">결제 완료</p>
-                          <p className="text-[13px] text-[#717171]">승인 후 48시간(2일) 이내에 결제하면 예약 확정!</p>
+                          <p className="text-[13px] text-[#717171]">
+                            승인 후 48시간(2일) 이내 결제 시 예약 확정. 기한 내 미결제 시 자동 취소됩니다.
+                          </p>
                         </div>
                       </div>
                     </>
@@ -585,6 +562,11 @@ export default function BookingConfirmContent({
                     </>
                   )}
                 </ul>
+              </div>
+
+              {/* 안전결제 */}
+              <div className="bg-white rounded-2xl border border-[#ebebeb] shadow-[0_1px_3px_rgba(0,0,0,0.08)] p-6">
+                <SafePaymentMarks size="sm" />
               </div>
 
               {/* 예약 요청하기 */}

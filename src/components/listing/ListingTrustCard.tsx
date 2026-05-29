@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Headset, Check, ChevronDown, ChevronUp } from "lucide-react";
+import RefundSchedule from "@/components/booking/RefundSchedule";
+import { CHECK_IN_METHOD_LABELS } from "@/lib/listing-trust";
 
 type Props = {
   /** 숙소 데이터에 존재할 때만 동적 보강에 사용 (없으면 일반 안내 문구 유지) */
@@ -10,6 +12,11 @@ type Props = {
   checkInTime?: string | null;
   checkOutTime?: string | null;
   cancellationPolicy?: string | null;
+  /** 예약 폼에서 선택한 체크인(YYYY-MM-DD). 있으면 환불 일정에 구체 날짜 표시 */
+  checkIn?: string | null;
+  checkInMethod?: string | null;
+  licenseType?: string | null;
+  licenseNumber?: string | null;
 };
 
 const CANCELLATION_LABEL: Record<string, string> = {
@@ -32,6 +39,10 @@ export default function ListingTrustCard({
   checkInTime,
   checkOutTime,
   cancellationPolicy,
+  checkIn,
+  checkInMethod,
+  licenseType,
+  licenseNumber,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
 
@@ -41,9 +52,15 @@ export default function ListingTrustCard({
     return null;
   })();
 
+  const checkInMethodLabel =
+    checkInMethod && CHECK_IN_METHOD_LABELS[checkInMethod]
+      ? CHECK_IN_METHOD_LABELS[checkInMethod]
+      : null;
+
   const reservationDetail = (() => {
     const parts: string[] = [];
     if (maxGuests && maxGuests > 0) parts.push(`최대 ${maxGuests}명 기준`);
+    if (checkInMethodLabel) parts.push(`체크인: ${checkInMethodLabel}`);
     if (cancellationPolicy && CANCELLATION_LABEL[cancellationPolicy]) {
       parts.push(`${CANCELLATION_LABEL[cancellationPolicy]} 취소정책`);
     }
@@ -108,6 +125,20 @@ export default function ListingTrustCard({
             </>
           )}
         </button>
+      )}
+      {licenseType && licenseNumber && (
+        <p className="mt-3 text-[12px] text-[#717171]">
+          {licenseType}: {licenseNumber}
+        </p>
+      )}
+      {cancellationPolicy && (
+        <div className="mt-4 pt-3.5 border-t border-[#e8e8e8]">
+          <RefundSchedule
+            policy={cancellationPolicy}
+            checkIn={checkIn ?? undefined}
+            variant="compact"
+          />
+        </div>
       )}
       <Link
         href="/trust"

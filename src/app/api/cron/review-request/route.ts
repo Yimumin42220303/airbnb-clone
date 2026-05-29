@@ -25,6 +25,7 @@ export async function POST(request: Request) {
   const bookings = await prisma.booking.findMany({
     where: {
       status: "confirmed",
+      paymentStatus: "paid",
       checkOut: { gte: startOfYesterday, lt: startOfToday },
     },
     include: {
