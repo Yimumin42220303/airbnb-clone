@@ -25,10 +25,11 @@ function faqAnswerToPlainText(raw: string): string {
  * "## 자주 묻는 질문" 이후 ### Q. 질문? 블록을 추출합니다.
  */
 export function extractBlogFaqFromBody(body: string): BlogFaqItem[] {
-  const faqStart = body.search(/##\s*자주\s*묻는\s*질문/i);
+  const normalized = body.replace(/\r\n/g, "\n");
+  const faqStart = normalized.search(/##\s*자주\s*묻는\s*질문/i);
   if (faqStart < 0) return [];
 
-  const section = body.slice(faqStart);
+  const section = normalized.slice(faqStart);
   const afterTitle = section.indexOf("\n");
   const rest = afterTitle >= 0 ? section.slice(afterTitle + 1) : "";
   const nextH2 = rest.search(/\n##\s+[^#\s]/);

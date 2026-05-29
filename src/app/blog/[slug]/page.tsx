@@ -12,7 +12,8 @@ import {
 
 type Props = { params: Promise<{ slug: string }> };
 
-export const revalidate = 300;
+/** DB 본문 변경이 빠르게 반영되도록 짧게 유지 (블로그만) */
+export const revalidate = 60;
 
 export async function generateStaticParams() {
   try {

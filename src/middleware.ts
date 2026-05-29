@@ -8,7 +8,12 @@ import type { NextRequest } from "next/server";
 export function middleware(request: NextRequest) {
   const res = NextResponse.next();
   const path = request.nextUrl.pathname;
-  if (path.startsWith("/host/listings") || path.startsWith("/auth/")) {
+  if (
+    path.startsWith("/host/listings") ||
+    path.startsWith("/auth/") ||
+    path === "/blog" ||
+    path.startsWith("/blog/")
+  ) {
     res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
   }
   return res;

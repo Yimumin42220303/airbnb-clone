@@ -18,7 +18,7 @@ async function main() {
     console.error("[update-shibuya] 본문 파일 없음:", BODY_PATH);
     process.exit(1);
   }
-  const body = fs.readFileSync(BODY_PATH, "utf8").trim();
+  const body = fs.readFileSync(BODY_PATH, "utf8").replace(/\r\n/g, "\n").trim();
   const { PrismaClient } = require("@prisma/client");
   const prisma = new PrismaClient();
 
