@@ -8,6 +8,7 @@ import { useCurrency } from "@/components/currency/CurrencyProvider";
 import BookingStepIndicator, {
   getBookingStepState,
 } from "@/components/booking/BookingStepIndicator";
+import BookingConfidenceNotice from "@/components/booking/BookingConfidenceNotice";
 import { CONTACT_EMAIL } from "@/lib/constants";
 import MetaPixelInitiateCheckout from "@/components/analytics/MetaPixelInitiateCheckout";
 
@@ -277,6 +278,9 @@ export default function BookingPayContent() {
             <p className="text-minbak-body font-semibold text-minbak-black pt-1">
               결제 금액: {formatForGuest(booking.totalPrice)}
             </p>
+          </div>
+          <div className="mb-6">
+            <BookingConfidenceNotice />
           </div>
           <PayButton
             bookingId={id}

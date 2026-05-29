@@ -1,0 +1,10 @@
+# Vercel CLI 업로드 제외 (로컬 working tree 기준, git staged와 무관)
+# 비밀 env 덤프·로컬 전용 파일은 배포 번들에 포함하지 않음
+
+.env
+.env.local
+.env*.local
+.env.vercel
+.env.vercel-check
+.env.vercel.import
+.env.vercel.production

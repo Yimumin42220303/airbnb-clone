@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { ListingCard } from "@/components/ui";
 import { Skeleton } from "@/components/ui/Skeleton";
 import HomeHero from "@/components/home/HomeHero";
+import TrustBadgeStrip from "@/components/home/TrustBadgeStrip";
 import HomeRecommendedSection from "@/components/home/HomeRecommendedSection";
 import HomeCtaSection from "@/components/home/HomeCtaSection";
 import { getListings } from "@/lib/listings";
@@ -151,6 +152,9 @@ export default async function Home({
 
       <main className="min-h-screen pt-0">
         <HomeHero />
+
+        {/* 신뢰 배지 스트립: 숙소 리스트 진입 전 안심 요소 노출 */}
+        <TrustBadgeStrip />
 
         {/* AI 맞춤 숙소 추천 - 간결한 CTA 배너 → 클릭 시 /recommend로 이동 */}
         <AIRecommendSection />

@@ -7,6 +7,7 @@ import { MapPin, ChevronDown, ChevronUp } from "lucide-react";
 import BookingForm from "@/components/listing/BookingForm";
 import BookingTypeBadge from "@/components/listing/BookingTypeBadge";
 import CancellationPolicyBadge from "@/components/listing/CancellationPolicyBadge";
+import ListingTrustCard from "@/components/listing/ListingTrustCard";
 import MobileStickyBookingBar, { BOOKING_FORM_AREA_ID } from "@/components/listing/MobileStickyBookingBar";
 import ListingImageGallery from "@/components/listing/ListingImageGallery";
 import ReviewSection from "@/components/listing/ReviewSection";
@@ -530,6 +531,15 @@ export default function ListingDetailContent({
                       policy={listing.cancellationPolicy ?? "flexible"}
                     />
                   </div>
+                </div>
+                {/* 예약 CTA 근처 신뢰 카드: 예약 전 불안 해소 */}
+                <div className="mt-4">
+                  <ListingTrustCard
+                    maxGuests={listing.maxGuests}
+                    checkInTime={listing.checkInTime}
+                    checkOutTime={listing.checkOutTime}
+                    cancellationPolicy={listing.cancellationPolicy}
+                  />
                 </div>
               </div>
             </div>

@@ -103,7 +103,7 @@ export default function AboutPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-minbak-primary font-bold">·</span>
-                  예약 전·후 한국어 응대 지원
+                  예약 전 문의부터 숙박 중 문제 접수, 환불·민원 접수까지 한국어로 직접 대응
                 </li>
               </ul>
 

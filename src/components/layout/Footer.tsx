@@ -36,6 +36,9 @@ export default function Footer() {
           <Link href="/about" className="text-minbak-body text-white/90 hover:text-white hover:underline">
             {t("guest.about")}
           </Link>
+          <Link href="/trust" className="text-minbak-body text-white/90 hover:text-white hover:underline">
+            {t("guest.safeBooking")}
+          </Link>
           <Link href="/policy" className="text-minbak-body text-white/90 hover:text-white hover:underline">
             {t("guest.policy")}
           </Link>
