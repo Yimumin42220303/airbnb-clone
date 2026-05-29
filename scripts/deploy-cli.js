@@ -4,9 +4,10 @@
  * .env의 VERCEL_ORG_ID, VERCEL_PROJECT_ID로 로컬→Vercel 배포
  * (환경변수로 전달하여 chris/minbaktokyos 혼동 방지)
  */
+/** 이미 셸에서 VERCEL_* 를 넘긴 경우 .env가 덮어쓰지 않도록 override: false */
 require("dotenv").config({
   path: require("path").join(__dirname, "..", ".env"),
-  override: true,
+  override: false,
 });
 const { spawnSync } = require("child_process");
 const fs = require("fs");

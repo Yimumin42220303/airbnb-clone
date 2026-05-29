@@ -17,9 +17,15 @@ async function main() {
   console.log("DATABASE_URL host:", dbHost(process.env.DATABASE_URL));
   console.log("VERCEL_PROJECT_ID:", process.env.VERCEL_PROJECT_ID?.slice(0, 12) + "...");
 
-  const htmlPath = path.join(__dirname, "_tmp-prod.html");
-  if (fs.existsSync(htmlPath)) {
-    const h = fs.readFileSync(htmlPath, "utf8");
+  const htmlPath = path.join(__dirname, "_tmp-prod2.html");
+  const htmlPathFallback = path.join(__dirname, "_tmp-prod.html");
+  const htmlFile = fs.existsSync(htmlPath)
+    ? htmlPath
+    : fs.existsSync(htmlPathFallback)
+      ? htmlPathFallback
+      : null;
+  if (htmlFile) {
+    const h = fs.readFileSync(htmlFile, "utf8");
     console.log("\n=== production HTML ===");
     console.log("dpl:", (h.match(/dpl_[a-zA-Z0-9]+/) || ["?"])[0]);
     console.log("old CTA (직접 검증):", h.includes("직접 검증"));
@@ -28,6 +34,16 @@ async function main() {
     console.log('href="/trust":', (h.match(/href="\/trust"/g) || []).length);
     console.log("conversion block:", h.includes("시부야구 숙소를 찾고 있다면"));
     console.log("h3 시부야역:", h.includes("시부야역 주변: 도쿄의 활기"));
+    console.log("FAQPage JSON-LD:", h.includes("FAQPage"));
+    const types = [...h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+      .map((m) => {
+        try {
+          return JSON.parse(m[1])["@type"];
+        } catch {
+          return "?";
+        }
+      });
+    console.log("JSON-LD types:", types.join(", "));
     const mainIdx = h.indexOf("<main");
     const footerIdx = h.indexOf("<footer");
     console.log("main@footer:", mainIdx, footerIdx, "main first:", mainIdx > 0 && mainIdx < footerIdx);
