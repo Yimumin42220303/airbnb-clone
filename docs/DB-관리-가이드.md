@@ -84,6 +84,16 @@ DB 구조(테이블·컬럼)를 바꾸려면 Prisma 스키마를 수정한 뒤 �
 **배포 환경 DB에 스키마만 반영할 때** (마이그레이션 없이 `schema.prisma`만 수정한 경우):  
 해당 환경의 `DATABASE_URL`로 `npx prisma db push`를 실행하면 컬럼 추가 등이 반영됩니다. (예: 숙소 타입 `propertyType` 추가 후 프로덕션 DB에 적용)
 
+**Listing 신뢰 필드만 안전하게 추가할 때** (`checkInMethod`, `infoVerifiedAt` 등 — 기존 행 값 변경 없음):  
+`_prisma_migrations` 기록이 없거나 `migrate deploy` 전체가 위험한 환경에서는 아래만 실행합니다.
+
+```bash
+# .env 또는 Vercel 프로덕션 DATABASE_URL
+npm run db:apply-trust-fields
+```
+
+`prisma migrate deploy`는 운영 DB에 마이그레이션 이력이 정상일 때만 사용하세요.
+
 **예약 전 문의(메세지 보내기) 기능 롤백 시**  
 이전에 `Conversation`에 `listingId`/`guestId`를 넣는 마이그레이션이 적용된 DB라면, 스키마와 맞추기 위해 롤백 마이그레이션을 적용해야 합니다.
 
