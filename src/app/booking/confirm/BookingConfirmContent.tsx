@@ -81,9 +81,11 @@ export default function BookingConfirmContent({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [formAlert, setFormAlert] = useState("");
   const [fullNameError, setFullNameError] = useState("");
   const [emailError, setEmailError] = useState("");
   const [phoneError, setPhoneError] = useState("");
+  const submitSectionRef = useRef<HTMLDivElement>(null);
   const defaultEmail = userEmail ?? "";
   const [form, setForm] = useState({
     fullName: "",
@@ -99,9 +101,21 @@ export default function BookingConfirmContent({
 
   const digitsOnly = useCallback((v: string) => v.replace(/\D/g, ""), []);
 
+  function scrollToFirstInvalidField() {
+    const first =
+      document.getElementById("booking-fullName") ??
+      document.getElementById("booking-email") ??
+      document.getElementById("booking-phone");
+    first?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (first instanceof HTMLInputElement) {
+      first.focus({ preventScroll: true });
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setFormAlert("");
     setFullNameError("");
     setEmailError("");
     setPhoneError("");
@@ -122,7 +136,12 @@ export default function BookingConfirmContent({
       setPhoneError("긴급연락용 전화번호를 올바르게 입력해 주세요. (010-1234-5678)");
       hasClientError = true;
     }
-    if (hasClientError) return;
+    if (hasClientError) {
+      setFormAlert("예약자 정보를 모두 입력해 주세요.");
+      scrollToFirstInvalidField();
+      submitSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      return;
+    }
     const phone = [form.phonePart1, form.phonePart2, form.phonePart3].join("-");
     setLoading(true);
     try {
@@ -570,10 +589,13 @@ export default function BookingConfirmContent({
               </div>
 
               {/* 예약 요청하기 */}
-              <div className="bg-white rounded-2xl border border-[#ebebeb] shadow-[0_1px_3px_rgba(0,0,0,0.08)] p-6 space-y-4">
-                {error && (
-                  <p className="text-[14px] text-[#E31C23]" role="alert">
-                    {error}
+              <div
+                ref={submitSectionRef}
+                className="bg-white rounded-2xl border border-[#ebebeb] shadow-[0_1px_3px_rgba(0,0,0,0.08)] p-6 space-y-4 scroll-mt-28"
+              >
+                {(formAlert || error) && (
+                  <p className="text-[14px] text-[#E31C23] font-medium" role="alert">
+                    {formAlert || error}
                   </p>
                 )}
                 <button

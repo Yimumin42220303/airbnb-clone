@@ -94,6 +94,8 @@ type Props = {
   checkOut: string;
   onCheckInChange: (iso: string) => void;
   onCheckOutChange: (iso: string) => void;
+  /** 팝오버(모바일 포털)일 때 본문 스크롤 + 하단 버튼 고정 */
+  variant?: "inline" | "modal";
   /** 캘린더를 팝오버로 쓸 때, 완료/닫기 버튼 클릭 시 호출 */
   onComplete?: () => void;
   /** 예약 불가 날짜 (YYYY-MM-DD). */
@@ -287,11 +289,13 @@ export default function ListingBookingCalendar({
   checkOut,
   onCheckInChange,
   onCheckOutChange,
+  variant = "inline",
   onComplete,
   blockedDateKeys = [],
   checkoutOnlyDateKeys = [],
   minStayNights,
 }: Props) {
+  const isModal = variant === "modal";
   const isMobile = useIsMobile();
   const { t, locale } = useHostTranslations();
   const dateLocale = locale === "ja" ? "ja-JP" : "ko-KR";
@@ -376,9 +380,15 @@ export default function ListingBookingCalendar({
   const goToToday = () => setMonthOffset(0);
 
   return (
-    <div className="border border-[#ebebeb] rounded-xl bg-white overflow-hidden md:pr-6">
+    <div
+      className={
+        isModal
+          ? "flex flex-col h-full min-h-0 bg-white md:pr-6"
+          : "border border-[#ebebeb] rounded-xl bg-white overflow-hidden md:pr-6"
+      }
+    >
       {/* 헤더: 날짜 선택 + 메시지 + 체크인/체크아웃 입력 필드 */}
-      <div className="p-3 md:p-4 pb-0">
+      <div className="flex-shrink-0 p-3 md:p-4 pb-0">
         <div className="flex justify-between items-start gap-2 md:gap-4 mb-3 md:mb-4">
           <div className="flex-1 min-w-0">
             <h2 className="text-[18px] md:text-[22px] font-semibold text-[#222] mb-1">{t("calendar.title")}</h2>
@@ -458,8 +468,12 @@ export default function ListingBookingCalendar({
         </div>
       </div>
 
-      {/* 캘린더: 모바일은 두 달 세로 스택(스크롤 없이 한눈에), md 이상은 두 달 가로 나란히 */}
-      <div className="px-4 pb-4 -mx-4 sm:mx-0 md:overflow-x-auto scrollbar-hide">
+      {/* 캘린더: 모바일은 두 달 세로 스택, modal일 때만 본문 스크롤 */}
+      <div
+        className={`px-4 pb-4 -mx-4 sm:mx-0 md:overflow-x-auto scrollbar-hide ${
+          isModal ? "flex-1 min-h-0 overflow-y-auto overscroll-contain" : ""
+        }`}
+      >
         <div className="flex flex-col gap-4 md:gap-6 md:flex-row md:min-w-max md:w-max">
           {months.map((mon, idx) => (
             <MonthBlock
@@ -486,18 +500,22 @@ export default function ListingBookingCalendar({
 
       {/* 하단 버튼: 날짜 지우기, 닫기 */}
       {onComplete && (
-        <div className="px-4 py-4 pt-2 border-t border-[#ebebeb] flex justify-end items-center gap-4">
+        <div
+          className={`flex-shrink-0 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom,0px))] border-t border-[#ebebeb] flex justify-end items-center gap-4 bg-white ${
+            isModal ? "shadow-[0_-4px_12px_rgba(0,0,0,0.06)]" : "py-4"
+          }`}
+        >
           <button
             type="button"
             onClick={handleClearDates}
-            className="text-[14px] font-medium text-[#222] hover:underline"
+            className="min-h-[44px] px-1 text-[14px] font-medium text-[#222] hover:underline"
           >
             {t("calendar.clearDates")}
           </button>
           <button
             type="button"
             onClick={onComplete}
-            className="px-4 py-2 rounded-lg text-[14px] font-medium text-white bg-[#222] hover:bg-[#333]"
+            className="min-h-[44px] px-4 py-2 rounded-lg text-[14px] font-medium text-white bg-[#222] hover:bg-[#333]"
           >
             {t("calendar.close")}
           </button>

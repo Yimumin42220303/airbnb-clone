@@ -83,6 +83,7 @@ model Post {
   excerpt     String?   // 메타 설명·목록 요약
   body        String
   coverImage  String?   // 대표 이미지 URL
+  category    String?   // 분류 키 (src/lib/blog-categories.ts 의 id). null = 미분류
   publishedAt DateTime? // null = 비공개(초안)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -92,6 +93,7 @@ model Post {
 
   @@index([publishedAt])
   @@index([slug])
+  @@index([category])
 }
 
 // ---------- 숙소 ----------

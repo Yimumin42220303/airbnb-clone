@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import BlogBody from "@/components/blog/BlogBody";
+import { BLOG_CATEGORIES } from "@/lib/blog-categories";
 
 type PostFormData = {
   title: string;
@@ -11,6 +12,7 @@ type PostFormData = {
   excerpt: string;
   body: string;
   coverImage: string;
+  category: string;
   published: boolean;
 };
 
@@ -20,6 +22,7 @@ const emptyForm: PostFormData = {
   excerpt: "",
   body: "",
   coverImage: "",
+  category: "",
   published: false,
 };
 
@@ -38,6 +41,7 @@ export default function BlogPostForm({ mode, initial }: Props) {
       excerpt: initial.excerpt ?? "",
       body: initial.body ?? "",
       coverImage: initial.coverImage ?? "",
+      category: initial.category ?? "",
       published: !!initial.publishedAt,
     }),
   });
@@ -98,6 +102,7 @@ export default function BlogPostForm({ mode, initial }: Props) {
         excerpt: form.excerpt.trim() || null,
         body: form.body.trim(),
         coverImage: form.coverImage.trim() || null,
+        category: form.category.trim() || null,
         publishedAt: form.published ? new Date().toISOString() : null,
       };
 
@@ -171,6 +176,25 @@ export default function BlogPostForm({ mode, initial }: Props) {
           className="w-full px-4 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body"
           placeholder="tokyo-minbak-guide"
         />
+      </div>
+
+      <div>
+        <label htmlFor="category" className="block text-minbak-body font-medium text-minbak-black mb-1">
+          분류 (카테고리)
+        </label>
+        <select
+          id="category"
+          value={form.category}
+          onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+          className="w-full px-4 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body bg-white"
+        >
+          <option value="">미분류</option>
+          {BLOG_CATEGORIES.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div>

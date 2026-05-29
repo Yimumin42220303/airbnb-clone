@@ -55,20 +55,29 @@ export default function ListingImageGallery({ images, title }: Props) {
   return (
     <>
       <div className="relative w-full">
-        {/* 모바일: 가로 스와이프 캐러셀 (CSS scroll-snap) */}
+        {/* 모바일: 가로 스와이프 캐러셀 — touch-pan-x 없음(세로 페이지 스크롤 허용) */}
         <div
-          className="md:hidden flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory snap-center rounded-xl bg-white touch-pan-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="md:hidden flex overflow-x-auto overflow-y-hidden overscroll-x-contain snap-x snap-mandatory snap-center rounded-xl bg-white [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           style={{ WebkitOverflowScrolling: "touch" }}
+          role="region"
           aria-label={t("gallery.viewAllPhotos")}
         >
           {images.map((img, i) => (
-            <button
+            <div
               key={img.id}
-              type="button"
-              className="relative flex-shrink-0 w-full min-w-full aspect-square snap-center snap-always bg-minbak-light-gray overflow-hidden focus:outline-none focus:ring-2 focus:ring-inset focus:ring-minbak-black/20"
+              role="button"
+              tabIndex={0}
+              className="relative flex-shrink-0 w-full min-w-full aspect-square snap-center snap-always bg-minbak-light-gray overflow-hidden cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-minbak-black/20"
               onClick={() => {
                 setShowAll(false);
                 setLightboxIndex(i);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setShowAll(false);
+                  setLightboxIndex(i);
+                }
               }}
             >
               <Image
@@ -76,11 +85,12 @@ export default function ListingImageGallery({ images, title }: Props) {
                 src={img.url}
                 alt={i === 0 ? title : `${title} ${i + 1}`}
                 fill
-                className="object-cover"
+                className="object-cover pointer-events-none"
                 sizes="100vw"
                 priority={i === 0}
+                draggable={false}
               />
-            </button>
+            </div>
           ))}
         </div>
 

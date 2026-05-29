@@ -19,6 +19,7 @@ import MetaPixelScript from "@/components/analytics/MetaPixelScript";
 import MetaPixelPageView from "@/components/analytics/MetaPixelPageView";
 import MetaPixelDebugInit from "@/components/analytics/MetaPixelDebugInit";
 import { BASE_URL } from "@/lib/site-url";
+import { SITE_META_KO } from "@/lib/marketing-copy";
 import { getHostLocaleFromCookie } from "@/lib/host-i18n";
 
 const notoSansKr = Noto_Sans_KR({
@@ -46,16 +47,14 @@ export const metadata: Metadata = {
     apple: "/icon.png",
   },
   title: {
-    default: "도쿄 숙소 예약｜에어비보다 합리적인 도쿄민박",
+    default: SITE_META_KO.title,
     template: "%s | 도쿄민박",
   },
-  description:
-    "에어비앤비보다 합리적인 가격으로 도쿄 숙소를 예약하세요. 문의부터 체크아웃까지 한국어로 편하게 이용할 수 있습니다.",
+  description: SITE_META_KO.description,
   openGraph: {
     url: BASE_URL,
-    title: "도쿄민박 – 도쿄 숙소 예약",
-    description:
-      "에어비앤비보다 합리적인 가격으로 도쿄 숙소를 예약하세요. 한국어 서포트.",
+    title: SITE_META_KO.ogTitle,
+    description: SITE_META_KO.ogDescription,
     type: "website",
     locale: "ko_KR",
     siteName: "도쿄민박",
@@ -66,9 +65,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "도쿄민박 – 도쿄 숙소 예약",
-    description:
-      "에어비앤비보다 합리적인 가격으로 도쿄 숙소를 예약하세요. 한국어 서포트.",
+    title: SITE_META_KO.ogTitle,
+    description: SITE_META_KO.ogDescription,
     images: ["/og-image.png", "/icon.png"],
   },
   // 네이버 서치어드바이저 사이트 소유확인

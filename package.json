@@ -15,6 +15,7 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:apply-trust-fields": "node scripts/apply-listing-trust-fields-safe.js",
     "db:verify-trust-env": "node scripts/verify-db-trust-env.js",
+    "db:apply-post-category": "node scripts/apply-post-category-safe.js",
     "db:seed": "node prisma/seed.js",
     "db:remove-seed-listings": "node scripts/remove-seed-listings.js",
     "db:studio": "prisma studio",

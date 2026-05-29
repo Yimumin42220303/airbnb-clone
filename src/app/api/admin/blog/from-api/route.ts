@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { createPost } from "@/lib/blog";
+import { isValidCategory } from "@/lib/blog-categories";
 import { BASE_URL } from "@/lib/site-url";
 
 const API_KEY = process.env.BLOG_AUTO_PUBLISH_API_KEY;
@@ -89,6 +90,10 @@ export async function POST(req: Request) {
     typeof raw.coverImage === "string" && raw.coverImage.trim()
       ? raw.coverImage.trim()
       : null;
+  const category =
+    typeof raw.category === "string" && isValidCategory(raw.category.trim())
+      ? raw.category.trim()
+      : null;
 
   // published === true 이면 지금 시각으로 공개, false/미지정이면 초안
   const published = raw.published === true;
@@ -101,6 +106,7 @@ export async function POST(req: Request) {
       excerpt: excerpt || null,
       body: content,
       coverImage: coverImage?.startsWith("http") || coverImage?.startsWith("/") ? coverImage : null,
+      category,
       publishedAt,
     });
     revalidatePath("/blog");

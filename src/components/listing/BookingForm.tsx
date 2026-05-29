@@ -8,6 +8,7 @@ import { Button } from "@/components/ui";
 import ListingBookingCalendar from "@/components/listing/ListingBookingCalendar";
 import { useCurrency } from "@/components/currency/CurrencyProvider";
 import { trackEvent } from "@/lib/booking-analytics";
+import { cn } from "@/lib/utils";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
 /** PC에서 두 달(7요일)이 잘리지 않도록 최소 필요 너비: 264*2 + gap24 + px4*2 + pr6 ≈ 608 */
@@ -103,10 +104,14 @@ export default function BookingForm({
     );
 
     if (isMobile && win) {
-      // 모바일: 헤더 아래 고정, 두 달이 스크롤 없이 한눈에 보이도록 높이 확보
-      const top = 72;
+      // 모바일: 사이트 헤더(검색바 포함) 아래 ~ 하단 safe-area까지. 푸터 버튼은 캘린더 내부에 고정
+      const headerEl = document.querySelector("header");
+      const top = headerEl
+        ? Math.ceil(headerEl.getBoundingClientRect().bottom) + 8
+        : 180;
+      const bottomInset = 16;
       const left = 16;
-      const maxHeight = win.innerHeight - top - 16;
+      const maxHeight = win.innerHeight - top - bottomInset;
       setCalendarPosition({ top, left, width, maxHeight });
       return;
     }
@@ -212,7 +217,12 @@ export default function BookingForm({
         if (!cancelled && !data.error) {
           setPriceResult(data);
           const nightsCount = Array.isArray(data.nights) ? data.nights.length : 0;
-          if (nightsCount > 0 && typeof data.totalPrice === "number") {
+          const available = data.allAvailable !== false;
+          if (
+            nightsCount > 0 &&
+            available &&
+            typeof data.totalPrice === "number"
+          ) {
             onPriceChange?.({ nights: nightsCount, totalPrice: data.totalPrice, cleaningFee: data.cleaningFee ?? 0 });
           } else {
             onPriceChange?.(null);
@@ -243,6 +253,10 @@ export default function BookingForm({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    if (priceLoading) {
+      setError(t("bookingForm.calculating"));
+      return;
+    }
     if (!checkIn || !checkOut) {
       setError(t("bookingForm.checkInOutRequired"));
       return;
@@ -325,16 +339,20 @@ export default function BookingForm({
               />
               {calendarPosition && (
                 <div
-                  className="fixed z-[10001] bg-white rounded-xl shadow-[0_6px_24px_rgba(0,0,0,0.15)] flex flex-col overflow-hidden"
+                  className="fixed z-[10001] bg-white rounded-xl shadow-[0_6px_24px_rgba(0,0,0,0.15)] flex flex-col min-h-0 overflow-hidden"
                   style={{
                     top: calendarPosition.top,
                     left: calendarPosition.left,
                     width: calendarPosition.width,
-                    ...(calendarPosition.maxHeight != null && { maxHeight: calendarPosition.maxHeight }),
+                    ...(calendarPosition.maxHeight != null && {
+                      maxHeight: calendarPosition.maxHeight,
+                      height: calendarPosition.maxHeight,
+                    }),
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <ListingBookingCalendar
+                    variant="modal"
                     checkIn={checkIn}
                     checkOut={checkOut}
                     onCheckInChange={setCheckIn}
@@ -569,8 +587,10 @@ export default function BookingForm({
         variant="primary"
         size="lg"
         rounded="full"
-        className="w-full mt-1"
-        disabled={nights < 1 || !allAvailable}
+        className={cn(
+          "w-full mt-1",
+          (priceLoading || nights < 1 || !allAvailable) && "opacity-60"
+        )}
         onClick={() => {
           trackEvent("booking_cta_clicked", {
             listing_id: listingId,
@@ -580,7 +600,7 @@ export default function BookingForm({
           });
         }}
       >
-        {t("listingDetail.bookButton")}
+        {priceLoading ? t("bookingForm.calculating") : t("listingDetail.bookButton")}
       </Button>
     </form>
   );

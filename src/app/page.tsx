@@ -10,6 +10,7 @@ import HomeRecommendedSection from "@/components/home/HomeRecommendedSection";
 import HomeCtaSection from "@/components/home/HomeCtaSection";
 import { getListings } from "@/lib/listings";
 import { getWishlistListingIds } from "@/lib/wishlist";
+import { SITE_META_KO } from "@/lib/marketing-copy";
 
 const FaqSection = nextDynamic(
   () => import("@/components/home/FaqSection"),
@@ -29,13 +30,11 @@ const ProductStatusBanner = nextDynamic(
 export const revalidate = 60;
 
 export const metadata = {
-  title: "도쿄민박 | 한국인을 위한 도쿄 숙소 추천 플랫폼",
-  description:
-    "에어비앤비보다 합리적인 가격으로, 문의부터 체크아웃까지 한국어로 편하게 이용하세요. 도쿄민박에서 직접 확인하고 엄선한 도쿄 현지 숙소.",
+  title: SITE_META_KO.title,
+  description: SITE_META_KO.description,
   openGraph: {
-    title: "도쿄민박 | 한국인을 위한 도쿄 숙소 추천 플랫폼",
-    description:
-      "에어비앤비보다 합리적인 가격으로 도쿄 숙소를 예약하세요. 한국인 스태프 전 과정 고객 서포트.",
+    title: SITE_META_KO.ogTitle,
+    description: SITE_META_KO.ogDescription,
     type: "website",
   },
 };

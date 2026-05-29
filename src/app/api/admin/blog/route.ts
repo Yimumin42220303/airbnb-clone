@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getAdminUser } from "@/lib/admin";
 import { createPost } from "@/lib/blog";
+import { isValidCategory } from "@/lib/blog-categories";
 
 export async function POST(req: Request) {
   const admin = await getAdminUser();
@@ -28,6 +29,7 @@ export async function POST(req: Request) {
     excerpt,
     body: content,
     coverImage,
+    category,
     publishedAt,
   } = body as Record<string, unknown>;
 
@@ -53,6 +55,10 @@ export async function POST(req: Request) {
       coverImage:
         typeof coverImage === "string" && coverImage.trim()
           ? coverImage.trim()
+          : null,
+      category:
+        typeof category === "string" && isValidCategory(category.trim())
+          ? category.trim()
           : null,
       publishedAt:
         publishedAt === null || publishedAt === undefined

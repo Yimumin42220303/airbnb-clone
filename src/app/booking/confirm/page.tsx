@@ -76,7 +76,7 @@ export default async function BookingConfirmPage({ searchParams }: Props) {
   const userEmail = user?.email ?? null;
 
   return (
-    <main className="min-h-screen bg-white pt-24 md:pt-28 pb-16">
+    <main className="min-h-screen bg-white pt-24 md:pt-28 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] md:pb-16">
       <BookingConfirmContent
         listingId={listingId}
         listingTitle={listing.title}

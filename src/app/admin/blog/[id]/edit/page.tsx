@@ -32,6 +32,7 @@ export default async function AdminBlogEditPage({ params }: Props) {
           excerpt: post.excerpt ?? "",
           body: post.body,
           coverImage: post.coverImage ?? "",
+          category: post.category ?? "",
           publishedAt: post.publishedAt?.toISOString() ?? null,
         }}
       />

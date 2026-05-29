@@ -13,6 +13,7 @@ import { getTopicForDate } from "@/lib/blog-daily-topics";
 import { BLOG_DAILY_SYSTEM_PROMPT } from "@/lib/blog-daily-prompt";
 import { BASE_URL } from "@/lib/site-url";
 import { requireCronAuth } from "@/lib/cron-auth";
+import { getRecentPostTitles, postTitleExists } from "@/lib/blog";
 
 function getOpenAI() {
   const key = process.env.OPENAI_API_KEY;
@@ -55,7 +56,18 @@ export async function POST(request: Request) {
   const topic = getTopicForDate(now);
   const year = now.getFullYear();
 
-  const userPrompt = `오늘 주제: ${topic}\n타깃 키워드: 주제에 맞는 검색 키워드 1~2개 포함.\n연도: ${year}년 기준으로 작성.\n\n위 규칙에 따라 블로그 글을 작성한 뒤, **다른 설명 없이 JSON만** 출력해 주세요.`;
+  // 최근 발행 제목을 프롬프트에 제공해 중복·유사 글 생성을 줄임
+  let recentTitles: string[] = [];
+  try {
+    recentTitles = await getRecentPostTitles(30);
+  } catch (e) {
+    console.error("blog-daily recent titles fetch error:", e);
+  }
+  const recentTitlesBlock = recentTitles.length
+    ? `\n\n## 최근 발행된 제목 (이와 겹치거나 매우 비슷하면 안 됨)\n${recentTitles.map((t) => `- ${t}`).join("\n")}`
+    : "";
+
+  const userPrompt = `오늘 주제: ${topic}\n타깃 키워드: 주제에 맞는 검색 키워드 1~2개 포함.\n연도: ${year}년 기준으로 작성.${recentTitlesBlock}\n\n위 규칙에 따라 블로그 글을 작성한 뒤, **다른 설명 없이 JSON만** 출력해 주세요.`;
 
   let rawContent: string;
   try {
@@ -83,7 +95,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let payload: { title?: string; slug?: string; excerpt?: string; coverImage?: string; body?: string; published?: boolean };
+  let payload: { title?: string; slug?: string; excerpt?: string; coverImage?: string; category?: string; body?: string; published?: boolean };
   try {
     const jsonStr = extractJson(rawContent);
     payload = JSON.parse(jsonStr) as typeof payload;
@@ -102,11 +114,28 @@ export async function POST(request: Request) {
     );
   }
 
+  // 중복 방지: 동일 제목 글이 이미 있으면 등록하지 않고 종료
+  try {
+    if (await postTitleExists(payload.title.trim())) {
+      return NextResponse.json({
+        ok: true,
+        skipped: true,
+        reason: "동일 제목의 글이 이미 존재하여 등록을 건너뛰었습니다.",
+        topic,
+        title: payload.title.trim(),
+        date: now.toISOString().slice(0, 10),
+      });
+    }
+  } catch (e) {
+    console.error("blog-daily duplicate check error:", e);
+  }
+
   const body = {
     title: payload.title.trim(),
     slug: typeof payload.slug === "string" ? payload.slug.trim() : undefined,
     excerpt: typeof payload.excerpt === "string" ? payload.excerpt.trim() : undefined,
     coverImage: typeof payload.coverImage === "string" ? payload.coverImage.trim() : undefined,
+    category: typeof payload.category === "string" ? payload.category.trim() : undefined,
     body: payload.body.trim(),
     published: payload.published !== false,
   };

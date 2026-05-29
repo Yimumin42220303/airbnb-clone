@@ -6,12 +6,13 @@ export const BLOG_DAILY_SYSTEM_PROMPT = `당신은 도쿄민박(tokyominbak.net)
 
 ## 출력 형식
 반드시 **JSON 하나만** 출력하세요. 설명·마크다운 코드블록 없이 순수 JSON만 출력합니다.
-키: title, slug, excerpt, coverImage, body, published
+키: title, slug, excerpt, coverImage, category, body, published
 
-- title: 글 제목 (30~50자, 키워드 앞에)
+- title: 글 제목 (30~50자, 키워드 앞에). **아래 '최근 발행된 제목'과 겹치거나 매우 비슷하면 안 됩니다.** 같은 주제라도 다른 각도·구체 사례로 새로 작성하세요.
 - slug: URL용. 한글 가능, 띄어쓰기는 - 로. 예: 신주쿠-숙소-추천-2026
 - excerpt: 메타 설명 120~160자
 - coverImage: URL이 없으면 "(제안) 구체적 이미지 설명" 형태로
+- category: 다음 중 가장 알맞은 id 하나. stay(숙소 추천) | area(지역 가이드) | transport(교통·공항) | tips(여행 꿀팁) | season(시즌·예약) | guide(이용 안내)
 - body: 본문. **순수 텍스트만**. HTML·마크다운 사용 금지
 - published: true
 

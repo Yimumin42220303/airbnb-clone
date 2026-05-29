@@ -222,7 +222,7 @@ const icons = {
    Navigation definitions
    ────────────────────────────────────────────── */
 const guestNav: NavItem[] = [
-  { icon: icons.events, label: "이벤트정보", labelKey: "guest.navEvents", path: "/blog", isActive: (p) => p.startsWith("/blog") },
+  { icon: icons.events, label: "여행정보", labelKey: "guest.navEvents", path: "/blog", isActive: (p) => p.startsWith("/blog") },
   { icon: icons.heart, label: "찜한숙소", labelKey: "guest.navWishlist", path: "/wishlist", isActive: (p) => p === "/wishlist" },
   { icon: icons.sparkles, label: "AI숙소추천", labelKey: "guest.navAiRecommend", path: "/recommend", isActive: (p) => p === "/recommend" },
   { icon: icons.chat, label: "메시지", labelKey: "guest.navMessages", path: "/messages", isActive: (p) => p.startsWith("/messages") },

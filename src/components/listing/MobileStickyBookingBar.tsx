@@ -23,7 +23,10 @@ export default function MobileStickyBookingBar({
   const hasValidPrice = priceSummary && priceSummary.nights >= 1;
 
   function handleBookClick() {
-    if (!hasValidPrice) return;
+    if (!hasValidPrice) {
+      handleScrollToForm();
+      return;
+    }
     trackEvent("mobile_sticky_cta_clicked", {
       listing_id: listingId,
       booking_type: bookingType,
@@ -31,9 +34,14 @@ export default function MobileStickyBookingBar({
       nights: priceSummary!.nights,
     });
     const form = document.querySelector<HTMLFormElement>("#booking-form");
-    if (form) {
+    const submitBtn = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
+    if (form && submitBtn && !submitBtn.disabled) {
       form.requestSubmit();
+      return;
     }
+    // 제출 버튼이 비활성·폼 밖이면 예약 영역으로 스크롤 후 사용자가 다시 시도
+    handleScrollToForm();
+    submitBtn?.focus({ preventScroll: true });
   }
 
   function handleScrollToForm() {

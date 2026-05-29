@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import BlogBody from "@/components/blog/BlogBody";
-import { getPostBySlug, getPosts } from "@/lib/blog";
+import { getPostBySlug, getPosts, getRelatedPosts } from "@/lib/blog";
 import { BASE_URL } from "@/lib/site-url";
 import BlogCoverImage from "@/components/blog/BlogCoverImage";
+import { getCategoryLabel } from "@/lib/blog-categories";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -32,7 +33,8 @@ export async function generateMetadata({ params }: Props) {
     post.excerpt ||
     bodyForMeta.slice(0, 160) + (bodyForMeta.length > 160 ? "…" : "");
   const url = `${BASE_URL}/blog/${encodeURIComponent(post.slug)}`;
-  const image = post.coverImage || undefined;
+  // 커버 이미지가 없으면 사이트 기본 OG 이미지로 폴백 (소셜 공유 카드 보강)
+  const image = post.coverImage || `${BASE_URL}/og-image.png`;
 
   return {
     title,
@@ -45,13 +47,13 @@ export async function generateMetadata({ params }: Props) {
       type: "article",
       publishedTime: post.publishedAt?.toISOString(),
       modifiedTime: post.updatedAt.toISOString(),
-      ...(image && { images: [{ url: image, alt: post.title }] }),
+      images: [{ url: image, width: 1200, height: 630, alt: post.title }],
     },
     twitter: {
-      card: image ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title,
       description,
-      ...(image && { image }),
+      images: [image],
     },
   };
 }
@@ -71,12 +73,14 @@ export default async function BlogPostPage({ params }: Props) {
   const post = await getPostBySlug(slug, { allowDraft: false });
   if (!post) notFound();
 
+  const relatedPosts = await getRelatedPosts(post.id, 3, post.category).catch(() => []);
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
     headline: post.title,
     description: post.excerpt || undefined,
-    image: post.coverImage || undefined,
+    image: post.coverImage || `${BASE_URL}/og-image.png`,
     datePublished: post.publishedAt?.toISOString(),
     dateModified: post.updatedAt.toISOString(),
     author: post.authorName
@@ -120,6 +124,14 @@ export default async function BlogPostPage({ params }: Props) {
           </Link>
 
           <header className="mb-8">
+            {getCategoryLabel(post.category) && (
+              <Link
+                href={`/blog?category=${post.category}`}
+                className="inline-block mb-3 px-2.5 py-0.5 rounded-full bg-minbak-bg text-minbak-caption font-medium text-minbak-gray hover:text-minbak-primary transition-colors"
+              >
+                {getCategoryLabel(post.category)}
+              </Link>
+            )}
             <h1 className="text-minbak-h1 font-semibold text-minbak-black mb-3">
               {post.title}
             </h1>
@@ -151,6 +163,71 @@ export default async function BlogPostPage({ params }: Props) {
           )}
 
           <BlogBody body={post.body} />
+
+          {/* 숙소 보러가기 CTA */}
+          <div className="mt-12 p-6 rounded-minbak bg-minbak-bg border border-minbak-light-gray text-center">
+            <p className="text-minbak-title font-semibold text-minbak-black mb-1">
+              도쿄 여행, 숙소부터 정하세요
+            </p>
+            <p className="text-minbak-body text-minbak-gray mb-4">
+              한국인 호스트가 직접 검증한 도쿄 민박을 둘러보세요.
+            </p>
+            <div className="flex flex-wrap gap-3 justify-center">
+              <Link
+                href="/search"
+                className="px-5 py-2.5 bg-minbak-primary text-white font-medium rounded-minbak hover:bg-minbak-primary-hover transition-colors"
+              >
+                도쿄 숙소 보러가기
+              </Link>
+              <Link
+                href="/trust"
+                className="px-5 py-2.5 border border-minbak-light-gray bg-white text-minbak-black font-medium rounded-minbak hover:bg-white/60 transition-colors"
+              >
+                안심 예약 안내
+              </Link>
+            </div>
+          </div>
+
+          {/* 관련 글 */}
+          {relatedPosts.length > 0 && (
+            <section className="mt-12 pt-8 border-t border-minbak-light-gray">
+              <h2 className="text-minbak-h3 font-semibold text-minbak-black mb-5">
+                다른 글도 읽어보세요
+              </h2>
+              <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {relatedPosts.map((rp) => (
+                  <li key={rp.id}>
+                    <Link
+                      href={`/blog/${encodeURIComponent(rp.slug)}`}
+                      className="block h-full group border border-minbak-light-gray rounded-minbak overflow-hidden bg-white hover:border-minbak-primary/40 transition-colors"
+                    >
+                      {rp.coverImage && (
+                        <div className="relative w-full h-32 bg-minbak-light-gray">
+                          <BlogCoverImage
+                            src={rp.coverImage}
+                            alt=""
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 640px) 100vw, 240px"
+                          />
+                        </div>
+                      )}
+                      <div className="p-4">
+                        <h3 className="text-minbak-body font-semibold text-minbak-black group-hover:text-minbak-primary transition-colors line-clamp-2">
+                          {rp.title}
+                        </h3>
+                        {rp.excerpt && (
+                          <p className="text-minbak-caption text-minbak-gray mt-1.5 line-clamp-2">
+                            {rp.excerpt}
+                          </p>
+                        )}
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </article>
       </main>
     </>

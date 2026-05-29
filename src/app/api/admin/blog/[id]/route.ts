@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getAdminUser } from "@/lib/admin";
 import { updatePost, deletePost, getPostById } from "@/lib/blog";
+import { isValidCategory } from "@/lib/blog-categories";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -36,6 +37,7 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     excerpt,
     body: content,
     coverImage,
+    category,
     publishedAt,
   } = body as Record<string, unknown>;
 
@@ -48,6 +50,11 @@ export async function PATCH(req: Request, { params }: RouteParams) {
   if (coverImage !== undefined)
     input.coverImage =
       typeof coverImage === "string" && coverImage.trim() ? coverImage : null;
+  if (category !== undefined)
+    input.category =
+      typeof category === "string" && isValidCategory(category.trim())
+        ? category.trim()
+        : null;
   if (publishedAt !== undefined)
     input.publishedAt =
       publishedAt === null || publishedAt === undefined
@@ -116,6 +123,7 @@ export async function GET(_req: Request, { params }: RouteParams) {
     excerpt: post.excerpt,
     body: post.body,
     coverImage: post.coverImage,
+    category: post.category,
     publishedAt: post.publishedAt?.toISOString() ?? null,
     createdAt: post.createdAt.toISOString(),
     updatedAt: post.updatedAt.toISOString(),
