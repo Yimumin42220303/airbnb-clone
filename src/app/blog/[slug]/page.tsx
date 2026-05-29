@@ -5,6 +5,10 @@ import { getPostBySlug, getPosts, getRelatedPosts } from "@/lib/blog";
 import { BASE_URL } from "@/lib/site-url";
 import BlogCoverImage from "@/components/blog/BlogCoverImage";
 import { getCategoryLabel } from "@/lib/blog-categories";
+import {
+  buildBlogFaqJsonLd,
+  extractBlogFaqFromBody,
+} from "@/lib/blog-faq-jsonld";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -104,6 +108,10 @@ export default async function BlogPostPage({ params }: Props) {
     ],
   };
 
+  const pageUrl = `${BASE_URL}/blog/${encodeURIComponent(post.slug)}`;
+  const blogFaq = extractBlogFaqFromBody(post.body);
+  const faqLd = buildBlogFaqJsonLd(blogFaq, pageUrl);
+
   return (
     <>
       <script
@@ -114,6 +122,12 @@ export default async function BlogPostPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
+      {faqLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
+        />
+      )}
       <main className="min-h-screen pt-24">
         <article className="max-w-[720px] mx-auto px-6 py-10">
           <Link
@@ -170,7 +184,7 @@ export default async function BlogPostPage({ params }: Props) {
               도쿄 여행, 숙소부터 정하세요
             </p>
             <p className="text-minbak-body text-minbak-gray mb-4">
-              한국인 호스트가 직접 검증한 도쿄 민박을 둘러보세요.
+              예약 전 문의부터 체크인 안내까지 한국어로 대응하는 도쿄 숙소를 확인해보세요.
             </p>
             <div className="flex flex-wrap gap-3 justify-center">
               <Link
@@ -183,7 +197,7 @@ export default async function BlogPostPage({ params }: Props) {
                 href="/trust"
                 className="px-5 py-2.5 border border-minbak-light-gray bg-white text-minbak-black font-medium rounded-minbak hover:bg-white/60 transition-colors"
               >
-                안심 예약 안내
+                안심예약센터 보기
               </Link>
             </div>
           </div>
