@@ -3,8 +3,8 @@
  * Listing 신뢰 필드 5개만 idempotent 추가 (기존 데이터 변경 없음).
  * migrate deploy 전체가 위험한 환경(baseline 불일치)에서도 안전하게 적용.
  *
- * 사용: node scripts/apply-listing-trust-fields-safe.js
- * 프로덕션: DATABASE_URL을 운영 URL로 설정 후 동일 실행
+ * 사용: npm run db:apply-trust-fields
+ * 여러 env(.env / .env.local / Vercel) 점검: npm run db:verify-trust-env [-- --apply]
  */
 require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") });
 const { PrismaClient } = require("@prisma/client");

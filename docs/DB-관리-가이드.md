@@ -92,6 +92,19 @@ DB 구조(테이블·컬럼)를 바꾸려면 Prisma 스키마를 수정한 뒤 �
 npm run db:apply-trust-fields
 ```
 
+**`.env`와 `.env.local`의 DATABASE_URL 호스트가 다를 수 있습니다.**  
+`next dev`는 `.env.local`을 우선하므로, 프로덕션에만 스크립트를 돌리고 로컬에서 Prisma 오류가 나면 아래로 모든 DB를 점검·적용하세요.
+
+```bash
+# 호스트 비교 + 신뢰 컬럼 5개 존재 여부 (비밀번호 미출력)
+npm run db:verify-trust-env
+
+# 누락 DB에만 idempotent 적용
+npm run db:verify-trust-env -- --apply
+```
+
+Vercel production `DATABASE_URL`은 `VERCEL_TOKEN`이 있으면 자동 비교합니다(값은 출력하지 않음).
+
 `prisma migrate deploy`는 운영 DB에 마이그레이션 이력이 정상일 때만 사용하세요.
 
 **예약 전 문의(메세지 보내기) 기능 롤백 시**  
