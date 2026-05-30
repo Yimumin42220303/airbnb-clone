@@ -3,6 +3,12 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import MessagesPageTitle from "./MessagesPageTitle";
+import LoginRequiredPrompt from "@/components/auth/LoginRequiredPrompt";
+
+export const metadata = {
+  title: { absolute: "메시지 | 도쿄민박" },
+  robots: { index: false, follow: false },
+};
 
 export default async function MessagesPage() {
   const session = await getServerSession(authOptions);
@@ -60,14 +66,12 @@ export default async function MessagesPage() {
   return (
     <main className="min-h-screen pt-4 md:pt-8 px-4 md:px-6">
       <div className="max-w-[600px] mx-auto py-4 md:py-8">
-        <MessagesPageTitle isHost={isHost} />
+        {userId ? <MessagesPageTitle isHost={isHost} /> : null}
         {!userId ? (
-          <p className="text-minbak-body text-minbak-gray">
-            로그인하면 메시지를 볼 수 있습니다.{" "}
-            <Link href="/auth/signin?callbackUrl=/messages" className="text-minbak-primary hover:underline">
-              Google로 로그인
-            </Link>
-          </p>
+          <LoginRequiredPrompt
+            callbackUrl="/messages"
+            description="메시지는 로그인 후 확인할 수 있습니다."
+          />
         ) : list.length === 0 ? (
           <p className="text-minbak-body text-minbak-gray">
             아직 대화가 없습니다. 예약 후 호스트/게스트와 메시지를 주고받을 수 있습니다.

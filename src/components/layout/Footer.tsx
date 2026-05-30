@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Mail } from "lucide-react";
 import { KAKAO_LINK, CONTACT_EMAIL } from "@/lib/constants";
 import KakaoIcon from "@/components/ui/KakaoIcon";
@@ -11,7 +12,13 @@ import { INICIS_MARK_URLS, openInicisPopup } from "@/lib/inicis-marks";
 /** Framer Footer 스타일: CTA 블록 → 링크 행 → 사업자 정보 그리드 → 이메일·카카오 */
 
 export default function Footer() {
+  const pathname = usePathname();
   const t = useHostTranslations().t;
+
+  // 호스트 LP는 전용 푸터를 사용하므로 게스트용 공통 푸터를 숨김
+  if (pathname?.startsWith("/lp/host")) {
+    return null;
+  }
 
   return (
     <footer className="mt-12 md:mt-24 bg-[#3F2826] text-[#D3D3D3]">

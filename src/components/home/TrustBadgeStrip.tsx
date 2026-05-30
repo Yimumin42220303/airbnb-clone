@@ -34,11 +34,12 @@ export default function TrustBadgeStrip() {
             id="home-trust-heading"
             className="text-minbak-title md:text-minbak-h3 font-semibold text-minbak-black"
           >
-            예약부터 숙박 중 문제 대응까지, 도쿄민박이 직접 챙깁니다.
+            예약 전 문의부터 체크인 안내, 숙박 중 문제 접수까지 한국어로 안내합니다.
           </h2>
           <p className="text-minbak-caption md:text-minbak-body text-minbak-gray mt-2 max-w-[680px] mx-auto leading-relaxed">
-            등록된 숙소는 도쿄민박이 한국어로 예약 전 문의, 체크인 안내, 숙박 중 문제
-            접수, 환불·민원 접수까지 직접 대응합니다.
+            등록된 숙소는 도쿄민박 고객지원 창구에서 예약 전 문의, 체크인 안내,
+            숙박 중 문제 접수, 환불·민원 접수를 한국어로 안내합니다. 필요한 경우
+            숙소 운영자 및 현지 파트너와 함께 확인합니다.
           </p>
         </div>
         <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 md:gap-3">

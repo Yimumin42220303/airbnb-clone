@@ -13,7 +13,7 @@ import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 export default function UserMenu() {
   const { data: session, status } = useSession();
   const pathname = usePathname();
-  const isHostMode = pathname?.startsWith("/host") || pathname === "/messages";
+  const isHostMode = pathname?.startsWith("/host") || pathname?.startsWith("/admin");
   const { t } = useHostTranslations();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);

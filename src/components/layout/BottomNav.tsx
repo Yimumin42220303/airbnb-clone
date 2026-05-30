@@ -240,7 +240,7 @@ const hostNav: NavItem[] = [
 /* ──────────────────────────────────────────────
    Hidden-route prefixes (no bottom nav)
    ────────────────────────────────────────────── */
-const HIDDEN_PREFIXES = ["/auth", "/admin"];
+const HIDDEN_PREFIXES = ["/auth", "/admin", "/lp/host"];
 
 /* ──────────────────────────────────────────────
    Component

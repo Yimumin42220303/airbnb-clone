@@ -1,4 +1,47 @@
 import { prisma } from "@/lib/prisma";
+import { BASE_URL } from "@/lib/site-url";
+
+const IMG_TOKEN_RE = /\[IMG:([^\]]+)\]/;
+
+/** slug별 SEO 메타 override (DB excerpt와 별도) */
+export type BlogSeoOverride = {
+  description?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+};
+
+const BLOG_SEO_OVERRIDES: Record<string, BlogSeoOverride> = {
+  "what-is-tokyominbak": {
+    description:
+      "도쿄민박은 한국인을 위한 도쿄 현지 숙소 예약 플랫폼입니다. 예약 전 문의, 체크인 안내, 숙박 중 문제 접수, 환불·민원 접수까지 한국어로 안내하며, 도쿄 여행자가 더 안심하고 숙소를 선택할 수 있도록 돕습니다.",
+    ogTitle: "도쿄민박이란? 한국인을 위한 도쿄 현지 숙소 예약 플랫폼",
+    ogDescription:
+      "예약 전 문의부터 체크인 안내, 숙박 중 문제 접수, 환불·민원 접수까지 한국어로 안내하는 도쿄 숙소 예약 플랫폼을 소개합니다.",
+  },
+};
+
+export function getBlogSeoOverride(slug: string): BlogSeoOverride | null {
+  return BLOG_SEO_OVERRIDES[slug] ?? null;
+}
+
+/** coverImage → 본문 첫 [IMG:…] → 기본 OG 순 */
+export function resolveBlogOgImage(
+  coverImage: string | null | undefined,
+  body: string
+): string {
+  if (coverImage?.trim()) return coverImage.trim();
+  const m = body.match(IMG_TOKEN_RE);
+  const fromBody = m?.[1]?.trim();
+  if (
+    fromBody &&
+    (fromBody.startsWith("https://") ||
+      fromBody.startsWith("http://") ||
+      fromBody.startsWith("/"))
+  ) {
+    return fromBody.startsWith("/") ? `${BASE_URL}${fromBody}` : fromBody;
+  }
+  return `${BASE_URL}/og-image.png`;
+}
 
 /** URL용 slug 생성 (영문·숫자·하이픈) */
 export function generateSlug(title: string): string {

@@ -2,16 +2,30 @@ import { getServerSession } from "next-auth";
 import { cookies } from "next/headers";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
 import { getHostLocaleFromCookie, t } from "@/lib/host-i18n";
 import MypageContent from "./MypageContent";
+import LoginRequiredPrompt from "@/components/auth/LoginRequiredPrompt";
+
+export const metadata = {
+  title: { absolute: "내 정보 | 도쿄민박" },
+  robots: { index: false, follow: false },
+};
 
 export default async function MypagePage() {
   const session = await getServerSession(authOptions);
   const userId = (session as { userId?: string } | null)?.userId;
 
   if (!userId) {
-    redirect("/auth/signin?callbackUrl=/mypage");
+    return (
+      <main className="min-h-screen pt-24 px-4 md:px-6 pb-16">
+        <div className="max-w-[1000px] mx-auto py-8">
+          <LoginRequiredPrompt
+            callbackUrl="/mypage"
+            description="내 정보와 예약 관련 정보는 로그인 후 확인할 수 있습니다."
+          />
+        </div>
+      </main>
+    );
   }
 
   const cookieStore = await cookies();
@@ -53,7 +67,16 @@ export default async function MypagePage() {
   ]);
 
   if (!user) {
-    redirect("/auth/signin?callbackUrl=/mypage");
+    return (
+      <main className="min-h-screen pt-24 px-4 md:px-6 pb-16">
+        <div className="max-w-[1000px] mx-auto py-8">
+          <LoginRequiredPrompt
+            callbackUrl="/mypage"
+            description="내 정보와 예약 관련 정보는 로그인 후 확인할 수 있습니다."
+          />
+        </div>
+      </main>
+    );
   }
 
   const { password: passwordHash, ...userForClient } = user;

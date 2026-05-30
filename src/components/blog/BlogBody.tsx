@@ -185,9 +185,11 @@ export function parseBlogBody(body: string): Block[] {
 type BlogBodyProps = {
   body: string;
   className?: string;
+  /** 본문 [IMG:...] 블록 alt (없으면 빈 문자열) */
+  imageAlt?: string;
 };
 
-export default function BlogBody({ body, className = "" }: BlogBodyProps) {
+export default function BlogBody({ body, className = "", imageAlt = "" }: BlogBodyProps) {
   const blocks = parseBlogBody(body);
 
   return (
@@ -237,7 +239,7 @@ export default function BlogBody({ body, className = "" }: BlogBodyProps) {
                 {/* next/image는 remotePatterns 밖 호스트에서 런타임 오류(500)가 날 수 있어 img 사용 */}
                 <img
                   src={block.url}
-                  alt=""
+                  alt={imageAlt}
                   className="w-full h-auto max-w-full object-contain"
                   loading="lazy"
                   decoding="async"

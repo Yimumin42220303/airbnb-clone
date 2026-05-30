@@ -5,6 +5,10 @@ import { cookies } from "next/headers";
 import { getHostLocaleFromCookie, t } from "@/lib/host-i18n";
 import NotificationsContent from "./NotificationsContent";
 
+export const metadata = {
+  robots: { index: false, follow: false },
+};
+
 export default async function NotificationsPage() {
   const session = await getServerSession(authOptions);
   const userId = (session as { userId?: string } | null)?.userId;

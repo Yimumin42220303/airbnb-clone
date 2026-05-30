@@ -19,6 +19,7 @@ export const metadata = {
   title: "숙소 검색",
   description:
     "도쿄·일본 숙소를 지역, 인원, 가격, 날짜로 검색하세요. 도쿄민박에서 엄선한 민박과 게스트하우스.",
+  alternates: { canonical: "/search" },
   openGraph: {
     title: "숙소 검색 | 도쿄민박",
     description:
@@ -26,6 +27,23 @@ export const metadata = {
     type: "website",
   },
 };
+
+const SEARCH_TRUST_BADGES = [
+  "한국어 문의 가능",
+  "체크인 안내 제공",
+  "숙박 중 문제 접수",
+  "최종 결제 총액 비교",
+  "카드정보 도쿄민박 서버 미저장",
+] as const;
+
+/** 숙소 선택을 돕는 큐레이션 카드 (실제 동작하는 검색 파라미터로만 연결) */
+const SEARCH_CURATIONS: { label: string; href: string }[] = [
+  { label: "가족·4인 여행에 좋은 숙소", href: "/search?adults=4" },
+  { label: "신주쿠 접근성 좋은 숙소", href: "/search?location=신주쿠" },
+  { label: "시부야 여행에 좋은 숙소", href: "/search?location=시부야" },
+  { label: "가성비 우선 숙소", href: "/search?sort=price_asc" },
+  { label: "후기 평점 높은 순", href: "/search?sort=rating" },
+];
 
 function getString(param: string | string[] | undefined): string | undefined {
   if (param == null) return undefined;
@@ -138,6 +156,46 @@ export default async function SearchPage({
   return (
     <main className="min-h-screen pt-4 md:pt-8 px-4 md:px-6">
         <div className="max-w-[1760px] mx-auto py-4 md:py-8">
+          {/* 신뢰 배지 (검색 결과 위, 작게) */}
+          <div className="mb-4 md:mb-5 p-3 md:p-4 rounded-minbak border border-minbak-light-gray bg-white">
+            <ul className="flex flex-wrap gap-2 list-none p-0 m-0" aria-label="도쿄민박 이용 안내">
+              {SEARCH_TRUST_BADGES.map((badge) => (
+                <li key={badge}>
+                  <span className="inline-flex px-2.5 py-1 rounded-minbak-full bg-minbak-bg text-minbak-caption text-minbak-black border border-minbak-light-gray">
+                    {badge}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-minbak-caption text-minbak-gray leading-relaxed">
+              도쿄민박은 예약 전 문의부터 체크인 안내, 숙박 중 문제 접수까지 한국어로 안내합니다. 숙소·일정·인원 조건에 따라 최종 결제 총액을 비교해보세요.{" "}
+              <Link href="/trust" className="text-minbak-primary hover:underline font-medium">
+                안심예약센터 보기
+              </Link>
+            </p>
+          </div>
+          {Object.keys(filters).length === 0 && (
+            <section className="mb-4 md:mb-5" aria-label="숙소 선택 가이드">
+              <h2 className="text-minbak-body text-minbak-black font-semibold mb-1">
+                어떤 숙소를 찾고 계신가요?
+              </h2>
+              <p className="text-minbak-caption text-minbak-gray mb-3 leading-relaxed">
+                여행 인원, 지역, 이동 동선에 따라 숙소 선택 기준이 달라집니다. 많이 찾는 조건부터 비교해보세요.
+              </p>
+              <ul className="flex flex-wrap gap-2 list-none p-0 m-0">
+                {SEARCH_CURATIONS.map((c) => (
+                  <li key={c.label}>
+                    <Link
+                      href={c.href}
+                      className="inline-flex items-center min-h-[40px] px-3.5 py-2 rounded-minbak-full border border-minbak-light-gray bg-white text-minbak-caption text-minbak-black hover:border-minbak-primary hover:text-minbak-primary transition-colors"
+                    >
+                      {c.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           <div className="flex flex-wrap items-center justify-between gap-3 md:gap-4 mb-4 md:mb-5">
             <p className="text-minbak-body text-minbak-black font-medium">
               <span className="font-semibold text-minbak-primary">{listings.length}</span>개의 숙소

@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 
 export const metadata = {
   title: "이용약관",
   description: "도쿄민박 이용약관. 한일익스프레스가 운영하는 도쿄민박(tokyominbak.net) 서비스 이용과 관련한 권리·의무 및 책임사항을 안내합니다.",
+  alternates: { canonical: "/agreement" },
 };
 
 export default function AgreementPage() {
@@ -167,21 +169,31 @@ export default function AgreementPage() {
         </div>
 
         {/* 하단 CTA */}
-        <section className="bg-minbak-primary text-white py-16 mt-16">
-          <div className="max-w-[900px] mx-auto px-6 text-center">
-            <h2 className="text-minbak-h2 font-bold mb-3">
-              합리적인 도쿄여행의 선택
+        <section className="bg-minbak-primary text-white py-14 md:py-16 mt-8">
+          <div className="max-w-[800px] mx-auto px-6 text-center">
+            <h2 className="text-minbak-h2 font-bold mb-4">
+              이용약관을 확인하셨다면, 내 일정에 맞는 도쿄 숙소를 비교해보세요
             </h2>
-            <p className="text-minbak-body-lg mb-8 opacity-95">
-              에어비앤비보다 최대 20% 저렴한 도쿄민박에서 나만의 민박을
-              찾아보세요.
+            <p className="text-minbak-body-lg mb-8 opacity-95 leading-relaxed max-w-[640px] mx-auto">
+              도쿄민박은 예약 전 문의부터 체크인 안내, 숙박 중 문제 접수까지
+              한국어로 안내합니다. 숙소·일정·인원 조건에 따라 최종 결제 총액을
+              비교해보고 예약을 진행해 주세요.
             </p>
-            <Link
-              href="/search"
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-minbak-full bg-white text-minbak-primary font-semibold hover:bg-gray-100 transition-colors"
-            >
-              나만을 위한 민박을 찾아보기
-            </Link>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link
+                href="/search"
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-minbak-full bg-white text-minbak-primary font-semibold hover:bg-gray-100 transition-colors"
+              >
+                도쿄 숙소 둘러보기
+                <ChevronRight className="w-4 h-4" aria-hidden />
+              </Link>
+              <Link
+                href="/trust"
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-minbak-full border border-white/80 text-white font-semibold hover:bg-white/10 transition-colors"
+              >
+                안심예약센터 보기
+              </Link>
+            </div>
           </div>
         </section>
       </main>

@@ -29,7 +29,7 @@ const CANCELLATION_LABEL: Record<string, string> = {
 const CORE_COUNT = 4;
 
 /**
- * 숙소 상세페이지 "이 숙소는 도쿄민박이 직접 운영대응합니다" 카드.
+ * 숙소 상세페이지 "이 숙소는 도쿄민박이 한국어로 고객지원합니다" 카드.
  * - 기본 체크 항목은 일반 안내 문구로 표시한다.
  * - listing 데이터가 있는 항목(체크인 시간·인원·취소정책)만 보조 설명을 동적으로 덧붙인다.
  * - "검증 완료/허가 확인/합법 보장" 같은 단정 표현은 사용하지 않는다.
@@ -84,12 +84,12 @@ export default function ListingTrustCard({
       <div className="flex items-center gap-2 mb-1.5">
         <Headset className="w-5 h-5 text-minbak-primary flex-shrink-0" aria-hidden />
         <h3 className="text-[15px] font-semibold text-[#222]">
-          이 숙소는 도쿄민박이 직접 운영대응합니다
+          이 숙소는 도쿄민박이 한국어로 고객지원합니다
         </h3>
       </div>
       <p className="text-[13px] text-[#717171] leading-relaxed mb-1.5">
-        예약 전 문의, 체크인 안내, 숙박 중 문제 접수, 환불·민원 접수는 도쿄민박이
-        한국어로 직접 대응합니다.
+        예약 전 문의, 체크인 안내, 숙박 중 문제 접수, 환불·민원 접수는 도쿄민박
+        고객지원 창구에서 한국어로 안내합니다.
       </p>
       <p className="text-[13px] text-[#717171] leading-relaxed mb-3.5">
         문제가 발생하면 도쿄민박이 책임 창구가 되어 숙소 운영자 및 현지 파트너와 함께

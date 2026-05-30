@@ -47,7 +47,7 @@ async function deploy() {
       return;
     }
 
-    await run("git", ["commit", "-m", "auto: vercel deploy"]);
+    await run("git", ["commit", "-m", "auto deploy"]);
     await run("git", ["push"]);
     console.log("[deploy] ✅ push 완료");
     if (process.env.VERCEL_DEPLOY_HOOK || process.env.VERCEL_TOKEN) {

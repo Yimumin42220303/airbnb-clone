@@ -1,7 +1,13 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import BlogBody from "@/components/blog/BlogBody";
-import { getPostBySlug, getPosts, getRelatedPosts } from "@/lib/blog";
+import {
+  getPostBySlug,
+  getPosts,
+  getRelatedPosts,
+  getBlogSeoOverride,
+  resolveBlogOgImage,
+} from "@/lib/blog";
 import { BASE_URL } from "@/lib/site-url";
 import BlogCoverImage from "@/components/blog/BlogCoverImage";
 import { getCategoryLabel } from "@/lib/blog-categories";
@@ -9,8 +15,7 @@ import {
   buildBlogFaqJsonLd,
   extractBlogFaqFromBody,
 } from "@/lib/blog-faq-jsonld";
-
-type Props = { params: Promise<{ slug: string }> };
+type Props = { params: Promise<{ slug: string }> | { slug: string } };
 
 /** DB 본문 변경이 빠르게 반영되도록 짧게 유지 (블로그만) */
 export const revalidate = 60;
@@ -25,39 +30,45 @@ export async function generateStaticParams() {
   }
 }
 
+async function resolveSlugParam(params: Props["params"]): Promise<string> {
+  const resolved = await Promise.resolve(params);
+  return decodeSlug(resolved?.slug ?? "");
+}
+
 export async function generateMetadata({ params }: Props) {
-  const resolved = await params;
-  const rawSlug = resolved?.slug ?? "";
-  const slug = decodeSlug(rawSlug);
+  const slug = await resolveSlugParam(params);
   const post = await getPostBySlug(slug, { allowDraft: false });
   if (!post) return { title: "글을 찾을 수 없습니다 | 도쿄민박" };
 
-  const title = `${post.title} | 도쿄민박 블로그`;
+  const pageTitle = `${post.title} | 도쿄민박 블로그`;
+  const seoOverride = getBlogSeoOverride(post.slug);
   const bodyForMeta = post.body.replace(/\[IMG:[^\]]+\]/g, "").replace(/\s+/g, " ").trim();
   const description =
+    seoOverride?.description ||
     post.excerpt ||
     bodyForMeta.slice(0, 160) + (bodyForMeta.length > 160 ? "…" : "");
+  const ogTitle = seoOverride?.ogTitle || post.title;
+  const ogDescription = seoOverride?.ogDescription || description;
   const url = `${BASE_URL}/blog/${encodeURIComponent(post.slug)}`;
-  // 커버 이미지가 없으면 사이트 기본 OG 이미지로 폴백 (소셜 공유 카드 보강)
-  const image = post.coverImage || `${BASE_URL}/og-image.png`;
+  const image = resolveBlogOgImage(post.coverImage, post.body);
 
   return {
-    title,
+    title: { absolute: pageTitle },
     description,
     alternates: { canonical: url },
     openGraph: {
-      title,
-      description,
+      title: ogTitle,
+      description: ogDescription,
       url,
       type: "article",
       publishedTime: post.publishedAt?.toISOString(),
-      modifiedTime: post.updatedAt.toISOString(),
+      modifiedTime: (post.updatedAt ?? post.createdAt).toISOString(),
       images: [{ url: image, width: 1200, height: 630, alt: post.title }],
     },
     twitter: {
       card: "summary_large_image",
-      title,
-      description,
+      title: ogTitle,
+      description: ogDescription,
       images: [image],
     },
   };
@@ -72,22 +83,26 @@ function decodeSlug(raw: string): string {
 }
 
 export default async function BlogPostPage({ params }: Props) {
-  const resolved = await params;
-  const rawSlug = resolved?.slug ?? "";
-  const slug = decodeSlug(rawSlug);
+  const slug = await resolveSlugParam(params);
   const post = await getPostBySlug(slug, { allowDraft: false });
   if (!post) notFound();
 
   const relatedPosts = await getRelatedPosts(post.id, 3, post.category).catch(() => []);
 
+  const seoOverride = getBlogSeoOverride(post.slug);
+  const ogImage = resolveBlogOgImage(post.coverImage, post.body);
+  const metaDescription =
+    seoOverride?.description || post.excerpt || undefined;
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
     headline: post.title,
-    description: post.excerpt || undefined,
-    image: post.coverImage || `${BASE_URL}/og-image.png`,
+    description: metaDescription,
+    image: ogImage,
+    url: `${BASE_URL}/blog/${encodeURIComponent(post.slug)}`,
     datePublished: post.publishedAt?.toISOString(),
-    dateModified: post.updatedAt.toISOString(),
+    dateModified: (post.updatedAt ?? post.createdAt).toISOString(),
     author: post.authorName
       ? { "@type": "Organization", name: post.authorName }
       : undefined,
@@ -177,7 +192,7 @@ export default async function BlogPostPage({ params }: Props) {
             </div>
           )}
 
-          <BlogBody body={post.body} />
+          <BlogBody body={post.body} imageAlt={post.title} />
 
           {/* 숙소 보러가기 CTA */}
           <div className="mt-12 p-6 rounded-minbak bg-minbak-bg border border-minbak-light-gray text-center">

@@ -23,14 +23,16 @@ import {
 const TRUST_URL = `${BASE_URL}/trust`;
 
 export const metadata: Metadata = {
-  title: "도쿄민박 안심예약센터 | 직접 운영대응하는 도쿄 숙소 예약 플랫폼",
+  title: {
+    absolute: "도쿄민박 안심예약센터 | 한국어 고객지원으로 안내하는 도쿄 숙소 예약 플랫폼",
+  },
   description:
-    "도쿄민박은 한국인을 위한 도쿄 현지 숙소 예약 플랫폼입니다. 등록 숙소의 예약 전 문의, 체크인 안내, 숙박 중 문제 접수, 환불·민원 접수까지 한국어로 직접 대응합니다.",
+    "도쿄민박은 한국인을 위한 도쿄 현지 숙소 예약 플랫폼입니다. 등록 숙소의 예약 전 문의, 체크인 안내, 숙박 중 문제 접수, 환불·민원 접수까지 한국어로 안내합니다.",
   alternates: { canonical: "/trust" },
   openGraph: {
     title: "도쿄민박 안심예약센터",
     description:
-      "예약부터 체크인 안내, 숙박 중 문제 접수, 환불·민원 접수까지 도쿄민박이 한국어로 직접 대응합니다.",
+      "예약부터 체크인 안내, 숙박 중 문제 접수, 환불·민원 접수까지 도쿄민박 고객지원 창구에서 한국어로 안내합니다.",
     url: TRUST_URL,
     type: "website",
     locale: "ko_KR",
@@ -40,7 +42,7 @@ export const metadata: Metadata = {
         url: `${BASE_URL}/og-image.png`,
         width: 1200,
         height: 630,
-        alt: "도쿄민박 안심예약센터 — 한국어 직접 운영대응",
+        alt: "도쿄민박 안심예약센터 — 한국어 고객지원 안내",
       },
     ],
   },
@@ -48,7 +50,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "도쿄민박 안심예약센터",
     description:
-      "예약부터 체크인 안내, 숙박 중 문제 접수, 환불·민원 접수까지 도쿄민박이 한국어로 직접 대응합니다.",
+      "예약부터 체크인 안내, 숙박 중 문제 접수, 환불·민원 접수까지 도쿄민박 고객지원 창구에서 한국어로 안내합니다.",
     images: [`${BASE_URL}/og-image.png`],
   },
 };
@@ -142,7 +144,7 @@ export default function TrustPage() {
             </h1>
             <p className="text-minbak-body md:text-minbak-body-lg text-minbak-gray leading-relaxed max-w-[660px] mx-auto">
               도쿄민박에 등록된 숙소는 예약 전 문의부터 체크인 안내, 숙박 중 문제
-              접수, 환불·민원 접수까지 도쿄민박이 한국어로 직접 대응합니다. 문제가
+              접수, 환불·민원 접수까지 도쿄민박 고객지원 창구에서 한국어로 안내합니다. 문제가
               발생하면 도쿄민박이 책임 창구가 되어 숙소 운영자 및 현지 파트너와 함께
               확인하고 조정합니다.
             </p>
@@ -170,7 +172,7 @@ export default function TrustPage() {
               id="trust-badges-heading"
               className="text-minbak-h2 font-semibold text-minbak-black mb-6 text-center"
             >
-              도쿄민박이 직접 대응하는 일
+              도쿄민박 고객지원 창구에서 안내하는 일
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {TRUST_BADGES.map((badge) => {
@@ -277,15 +279,12 @@ export default function TrustPage() {
             >
               예약은 이렇게 진행됩니다
             </h2>
-            <ol className="space-y-4">
-              {TRUST_STEPS.map((step, i) => (
+            <ol className="flow-steps flow-steps-sm space-y-4 m-0 p-0">
+              {TRUST_STEPS.map((step) => (
                 <li
                   key={step.title}
-                  className="flex items-start gap-4 p-4 border border-minbak-light-gray rounded-minbak bg-minbak-bg/50"
+                  className="flow-step flex items-start gap-4 p-4 border border-minbak-light-gray rounded-minbak bg-minbak-bg/50"
                 >
-                  <span className="inline-flex w-8 h-8 flex-shrink-0 items-center justify-center rounded-full bg-minbak-primary text-white text-minbak-caption font-bold">
-                    {i + 1}
-                  </span>
                   <div>
                     <h3 className="text-minbak-title font-semibold text-minbak-black mb-1">
                       {step.title}

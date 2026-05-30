@@ -115,3 +115,34 @@ textarea:focus-visible {
 }
 
 /* 채널톡 기본 버튼 위치는 Shadow DOM이라 여기서 조정 불가 → 커스텀 런처 사용 (ChannelTalk.tsx) */
+
+/* /about, /trust 이용·예약 흐름 단계 번호 — CSS counter로 시각 번호만 표시 (텍스트 중복 방지) */
+.flow-steps {
+  counter-reset: flow-step;
+  list-style: none;
+}
+
+.flow-step {
+  counter-increment: flow-step;
+}
+
+.flow-step::before {
+  content: counter(flow-step);
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  background: var(--minbak-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.flow-steps-sm .flow-step::before {
+  width: 2rem;
+  height: 2rem;
+}

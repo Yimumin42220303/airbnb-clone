@@ -12,7 +12,10 @@ export function middleware(request: NextRequest) {
     path.startsWith("/host/listings") ||
     path.startsWith("/auth/") ||
     path === "/blog" ||
-    path.startsWith("/blog/")
+    path.startsWith("/blog/") ||
+    path.startsWith("/messages") ||
+    path.startsWith("/mypage") ||
+    path === "/wishlist"
   ) {
     res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
   }

@@ -1,6 +1,11 @@
 import { Suspense } from "react";
 import MyBookingsClient from "./MyBookingsClient";
 
+export const metadata = {
+  title: "내 예약",
+  robots: { index: false, follow: false },
+};
+
 function MyBookingsFallback() {
   return (
     <div className="min-h-screen pt-24 px-4 sm:px-6">

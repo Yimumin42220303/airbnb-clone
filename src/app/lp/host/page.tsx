@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { HOST_LP_LINE_ADD_URL } from "@/lib/constants";
-import LpLineQrImage from "@/components/lp/LpLineQrImage";
 
 export const metadata = {
   title: "ホスト様募集 | 韓国人ゲスト向け販売チャネル × 韓国語対応サポート | 東京民泊",
@@ -450,15 +449,11 @@ export default function HostLpPage() {
                 </div>
               </div>
 
-              {/* 右: LINE QR */}
+              {/* 右: LINE相談 */}
               <div className="bg-white border border-minbak-light-gray rounded-[22px] p-6 flex flex-col items-center gap-5">
                 <div className="text-center">
                   <h3 className="font-bold text-[1.05rem] mb-1">LINEで無料相談する</h3>
-                  <p className="text-minbak-gray text-[0.9rem]">QRコードまたはボタンから友達追加してメッセージをお送りください</p>
-                </div>
-                <div className="bg-white p-4 rounded-minbak border border-minbak-light-gray shadow-minbak">
-                  <p className="text-minbak-gray text-[0.82rem] mb-2 text-center">QRコードで追加</p>
-                  <LpLineQrImage />
+                  <p className="text-minbak-gray text-[0.9rem]">下のボタンから友だち追加して、メッセージをお送りください。</p>
                 </div>
                 <a
                   href={HOST_LP_LINE_ADD_URL}
@@ -478,16 +473,39 @@ export default function HostLpPage() {
       </main>
 
       {/* ===== FOOTER ===== */}
-      <footer className="py-6 pb-12 text-minbak-gray text-[0.9rem]">
-        <div className="max-w-[1160px] mx-auto px-4 md:px-6 border-t border-minbak-light-gray pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>© 東京民泊 Host Partners</div>
-          <div>韓国人ゲスト向け販売チャネル × 韓国語ゲスト対応サポート</div>
-          <Link
-            href="/"
-            className="hover:text-minbak-black hover:underline"
-          >
-            ← 東京民泊トップへ
-          </Link>
+      <footer className="py-8 pb-12 text-minbak-gray text-[0.9rem] border-t border-minbak-light-gray bg-[#f8f7f4]">
+        <div className="max-w-[1160px] mx-auto px-4 md:px-6">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-2">
+              <p className="font-semibold text-minbak-black">© 東京民泊 Host Partners</p>
+              <p>韓国人ゲスト向け販売チャネル × 韓国語ゲスト対応サポート</p>
+            </div>
+            <nav
+              className="flex flex-col gap-2 text-[0.88rem]"
+              aria-label="ホストLPフッターナビ"
+            >
+              <Link href="/" className="hover:text-minbak-black hover:underline">
+                東京民泊トップへ
+              </Link>
+              <a
+                href={HOST_LP_LINE_ADD_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-minbak-black hover:underline"
+              >
+                LINEで相談する
+              </a>
+              <a href="#cta" className="hover:text-minbak-black hover:underline">
+                掲載について問い合わせる
+              </a>
+              <Link href="/policy" className="hover:text-minbak-black hover:underline">
+                プライバシーポリシー
+              </Link>
+              <Link href="/agreement" className="hover:text-minbak-black hover:underline">
+                利用規約
+              </Link>
+            </nav>
+          </div>
         </div>
       </footer>
 

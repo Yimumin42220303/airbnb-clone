@@ -35,17 +35,31 @@ function HomeSearchBarFallback() {
 export default function Header() {
   const pathname = usePathname();
   const hostT = useHostTranslations();
+  // 호스트 LP는 전용 헤더를 사용하므로 게스트용 공통 헤더를 숨김
+  if (pathname?.startsWith("/lp/host")) {
+    return null;
+  }
+
   // /messages는 게스트도 하단 네비로 접근하므로 호스트 전용으로 보지 않음. 호스트 메뉴는 /host, /admin 경로에서만 표시
   const isHostMode =
     pathname?.startsWith("/host") ||
     pathname?.startsWith("/admin");
 
+  // 문서형(비탐색) 페이지에서는 검색 모듈을 숨겨 본문 집중도를 높임.
+  // 검색 흐름이 중요한 홈/검색/숙소 상세에는 영향 없음.
+  const isDocumentPage =
+    pathname === "/policy" ||
+    pathname === "/agreement" ||
+    pathname?.startsWith("/lp/host");
+
+  const showSearchBar = !isHostMode && !isDocumentPage;
+
   // 고정 헤더가 본문을 가리는 문제를 방지하기 위한 전역 여백.
   // - 호스트/관리자 모드: 상단 내비만 있으므로 비교적 낮게
   // - 게스트 모드: 검색 바까지 포함되어 높이가 크므로 여유 있게 확보
-  const spacerClass = isHostMode
-    ? "h-[72px] md:h-[80px]"
-    : "h-[176px] md:h-[192px]";
+  const spacerClass = showSearchBar
+    ? "h-[176px] md:h-[192px]"
+    : "h-[72px] md:h-[80px]";
 
   return (
     <>
@@ -177,8 +191,8 @@ export default function Header() {
           </nav>
         </div>
 
-        {/* 검색 모듈: 게스트 모드에서만 표시 (호스트 모드에서는 숨김) */}
-        {!isHostMode && (
+        {/* 검색 모듈: 게스트 모드 + 탐색형 페이지에서만 표시 (호스트/문서형 페이지에서는 숨김) */}
+        {showSearchBar && (
           <div className="w-full max-w-[1240px] min-w-0" style={{ pointerEvents: "auto", zIndex: 10000 }}>
             <Suspense fallback={<HomeSearchBarFallback />}>
               <HomeSearchBar variant="compact" />

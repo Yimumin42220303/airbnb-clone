@@ -118,7 +118,7 @@ export default async function RootLayout({
               url: BASE_URL,
               logo: `${BASE_URL}/icon.png`,
               description:
-                "에어비앤비보다 합리적인 가격으로 도쿄 숙소를 예약할 수 있는 플랫폼. 한국인 스태프가 문의부터 체크아웃까지 한국어로 서포트합니다.",
+                "대형 플랫폼 대비 합리적인 요금으로 도쿄 숙소를 예약할 수 있는 플랫폼. 예약 전 문의부터 체크인 안내, 숙박 중 문제 접수까지 한국어로 안내합니다.",
               contactPoint: {
                 "@type": "ContactPoint",
                 telephone: "+82-10-4689-4411",

@@ -295,6 +295,21 @@ export default function RecommendPageContent() {
         <p className="text-minbak-body text-minbak-dark-gray mt-2">
           {t("guest.aiRecommendDesc")}
         </p>
+        <div className="mt-4 p-3 md:p-4 rounded-minbak border border-minbak-light-gray bg-white text-minbak-caption text-minbak-gray leading-relaxed">
+          <p>
+            AI 숙소 추천은 숙소 설명, 위치, 평점, 입력하신 조건을 기준으로 한 참고용
+            추천입니다. 최종 예약 전에는 숙소 상세의 위치, 인원, 요금, 체크인 방식,
+            취소·환불 조건을 반드시 확인해 주세요.
+          </p>
+          <p className="mt-2">
+            추천에 입력한 여행 조건은 추천 결과 제공을 위해 처리될 수 있습니다. 자세한
+            내용은{" "}
+            <Link href="/policy" className="text-minbak-primary hover:underline font-medium">
+              개인정보처리방침
+            </Link>
+            을 확인해 주세요.
+          </p>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
