@@ -78,6 +78,14 @@ export const metadata: Metadata = {
   formatDetection: { telephone: false, email: false, address: false },
   // PWA: 홈 화면 추가·웹 푸시용
   manifest: "/manifest.json",
+  alternates: {
+    types: {
+      "application/rss+xml": {
+        url: "https://tokyominbak.net/rss.xml",
+        title: "도쿄민박 블로그 RSS",
+      },
+    },
+  },
 };
 
 export default async function RootLayout({

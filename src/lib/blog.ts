@@ -153,6 +153,37 @@ export type PostDetail = PostListItem & {
   updatedAt: Date;
 };
 
+/** RSS 피드용 공개 글 조회 (본문 포함, 최신순, 읽기 전용) */
+export async function getPostsForFeed(limit = 30): Promise<
+  {
+    title: string;
+    slug: string;
+    excerpt: string | null;
+    body: string;
+    category: string | null;
+    publishedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }[]
+> {
+  const take = Math.min(Math.max(1, limit), 30);
+  return prisma.post.findMany({
+    where: { publishedAt: { not: null } },
+    orderBy: { publishedAt: "desc" },
+    take,
+    select: {
+      title: true,
+      slug: true,
+      excerpt: true,
+      body: true,
+      category: true,
+      publishedAt: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+}
+
 /** slug로 단일 글 조회 (공개: publishedAt 필수) */
 export async function getPostBySlug(
   slug: string,
