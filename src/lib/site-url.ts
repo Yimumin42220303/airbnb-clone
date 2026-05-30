@@ -7,3 +7,6 @@
 export const BASE_URL =
   process.env.NEXT_PUBLIC_APP_URL ||
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://tokyominbak.example.com");
+
+/** sitemap.xml · robots.txt · RSS 등 검색엔진 제출용 canonical origin */
+export const SITEMAP_ORIGIN = "https://tokyominbak.net";

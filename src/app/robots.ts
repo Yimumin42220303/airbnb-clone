@@ -1,5 +1,5 @@
 import { MetadataRoute } from "next";
-import { BASE_URL } from "@/lib/site-url";
+import { SITEMAP_ORIGIN } from "@/lib/site-url";
 
 /**
  * robots.txt 정책.
@@ -52,7 +52,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: PRIVATE_PATHS,
       })),
     ],
-    sitemap: `${BASE_URL}/sitemap.xml`,
-    host: BASE_URL,
+    sitemap: `${SITEMAP_ORIGIN}/sitemap.xml`,
+    host: SITEMAP_ORIGIN,
   };
 }

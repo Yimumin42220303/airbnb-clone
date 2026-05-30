@@ -153,6 +153,17 @@ export type PostDetail = PostListItem & {
   updatedAt: Date;
 };
 
+/** sitemap.xml용 공개 글 slug·날짜 (읽기 전용, draft 제외) */
+export async function getPostsForSitemap(): Promise<
+  { slug: string; publishedAt: Date | null; createdAt: Date; updatedAt: Date }[]
+> {
+  return prisma.post.findMany({
+    where: { publishedAt: { not: null } },
+    orderBy: { publishedAt: "desc" },
+    select: { slug: true, publishedAt: true, createdAt: true, updatedAt: true },
+  });
+}
+
 /** RSS 피드용 공개 글 조회 (본문 포함, 최신순, 읽기 전용) */
 export async function getPostsForFeed(limit = 30): Promise<
   {
