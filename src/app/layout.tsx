@@ -80,10 +80,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   alternates: {
     types: {
-      "application/rss+xml": {
-        url: "https://tokyominbak.net/rss.xml",
-        title: "도쿄민박 블로그 RSS",
-      },
+      "application/rss+xml": "https://tokyominbak.net/rss.xml",
     },
   },
 };
@@ -109,6 +106,12 @@ export default async function RootLayout({
   return (
     <html lang={initialLocale === "ja" ? "ja" : "ko"} className={`h-full ${notoSansKr.variable}`}>
       <head>
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title="도쿄민박 블로그 RSS"
+          href="https://tokyominbak.net/rss.xml"
+        />
         <MetaPixelScript hashedEmail={hashedEmail} />
       </head>
       <body className="min-h-full antialiased font-sans">

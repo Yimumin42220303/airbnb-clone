@@ -462,9 +462,26 @@ export type Beds24PostBookingInput = {
 };
 
 /**
+ * POST /bookings 응답에서 생성된 Beds24 예약 ID 추출.
+ * V2는 `new.id`, 문서 예시는 `booking.id` — 둘 다 지원.
+ */
+function parseBeds24CreatedBookId(data: unknown): number | undefined {
+  const first = Array.isArray(data) ? data[0] : null;
+  if (!first || typeof first !== "object") return undefined;
+  const item = first as {
+    success?: boolean;
+    new?: { id?: number };
+    booking?: { id?: number };
+  };
+  if (item.success === false) return undefined;
+  const id = item.new?.id ?? item.booking?.id;
+  return id != null ? id : undefined;
+}
+
+/**
  * 당 OTA에서 확정된 예약을 Beds24로 전송.
  * 성공 시 Beds24가 해당 기간을 블록하여 타 OTA 중복 예약 방지.
- * 응답 배열의 첫 항목에서 booking.id를 추출해 bookId로 반환 (취소 동기화용).
+ * 요청 body는 API 스펙상 배열 1건. 응답에서 bookId 추출 (취소 동기화용).
  */
 export async function postBeds24Booking(input: Beds24PostBookingInput): Promise<{
   ok: boolean;
@@ -508,7 +525,7 @@ export async function postBeds24Booking(input: Beds24PostBookingInput): Promise<
         "Content-Type": "application/json",
         token,
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify([body]),
       signal: AbortSignal.timeout(15000),
     });
     const text = await res.text();
@@ -524,11 +541,15 @@ export async function postBeds24Booking(input: Beds24PostBookingInput): Promise<
       console.error("[Beds24] POST /bookings failed:", res.status, errMsg);
       return { ok: false, error: errMsg };
     }
-    // API V2: 응답은 배열, 새 예약 생성 시 첫 항목에 booking.id 있음
-    const first = Array.isArray(data) ? data[0] : null;
-    const booking = first && typeof first === "object" && first !== null && "booking" in first ? (first as { booking?: { id?: number } }).booking : null;
-    const bookId = booking?.id != null ? booking.id : undefined;
-    return { ok: true, ...(bookId !== undefined && { bookId }) };
+    const bookId = parseBeds24CreatedBookId(data);
+    if (bookId == null) {
+      console.error(
+        "[Beds24] POST /bookings OK but bookId missing in response:",
+        text.slice(0, 500)
+      );
+      return { ok: false, error: "Beds24 예약 ID를 확인하지 못했습니다." };
+    }
+    return { ok: true, bookId };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[Beds24] POST /bookings error:", msg);

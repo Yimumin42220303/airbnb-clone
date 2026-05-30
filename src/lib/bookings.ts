@@ -232,7 +232,14 @@ export async function syncBookingToBeds24(
 ): Promise<{ ok: boolean; error?: string }> {
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
-    include: {
+    select: {
+      id: true,
+      checkIn: true,
+      checkOut: true,
+      guests: true,
+      guestName: true,
+      guestPhone: true,
+      beds24BookId: true,
       listing: {
         select: {
           beds24Enabled: true,
@@ -252,6 +259,10 @@ export async function syncBookingToBeds24(
   ) {
     return { ok: true };
   }
+  // 이미 Beds24에 반영된 예약은 재전송하지 않음 (웹훅·verify 중복 호출 시 이중 블록 방지)
+  if (booking.beds24BookId?.trim()) {
+    return { ok: true };
+  }
   const result = await postBeds24Booking({
     propId: booking.listing.beds24PropId!,
     roomId: booking.listing.beds24RoomId!,
@@ -269,6 +280,7 @@ export async function syncBookingToBeds24(
       where: { id: bookingId },
       data: { beds24BookId: String(result.bookId) },
     });
+    return { ok: true };
   }
-  return { ok: result.ok, error: result.error };
+  return { ok: false, error: result.error ?? "Beds24 동기화에 실패했습니다." };
 }

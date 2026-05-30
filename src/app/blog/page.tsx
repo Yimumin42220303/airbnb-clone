@@ -19,10 +19,7 @@ export const metadata = {
   },
   alternates: {
     types: {
-      "application/rss+xml": {
-        url: "https://tokyominbak.net/rss.xml",
-        title: "도쿄민박 블로그 RSS",
-      },
+      "application/rss+xml": "https://tokyominbak.net/rss.xml",
     },
   },
 };
