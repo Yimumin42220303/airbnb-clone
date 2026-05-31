@@ -80,13 +80,30 @@ model Post {
   id          String    @id @default(cuid())
   title       String
   slug        String    @unique  // URL용 (예: tokyo-minbak-guide)
-  excerpt     String?   // 메타 설명·목록 요약
+  excerpt     String?   // 목록 카드용 요약
   body        String
   coverImage  String?   // 대표 이미지 URL
   category    String?   // 분류 키 (src/lib/blog-categories.ts 의 id). null = 미분류
   publishedAt DateTime? // null = 비공개(초안)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  // --- 블로그 CMS 1차 고도화: SEO/전환 메타 (모두 optional·안전 default) ---
+  seoTitle          String?  // 검색 노출용 제목 (비면 title fallback)
+  metaDescription   String?  // 검색 노출용 description (비면 excerpt fallback)
+  focusKeyword      String?  // 대표 키워드
+  secondaryKeywords String?  // 보조 키워드 (콤마 구분 문자열)
+  coverImageAlt     String?  // 대표 이미지 alt (비면 title fallback)
+  coverImageCaption String?  // 대표 이미지 캡션
+  ogImage           String?  // OG 전용 이미지 (비면 coverImage fallback)
+  postType          String?  // 글 유형 (guide/comparison/area/stay/faq/tips/review/notice)
+  primaryCtaLabel   String?  // 주 CTA 문구
+  primaryCtaUrl     String?  // 주 CTA URL (내부 링크 권장)
+  secondaryCtaLabel String?  // 보조 CTA 문구
+  secondaryCtaUrl   String?  // 보조 CTA URL
+  relatedPostSlugs  String?  // 관련글 slug 목록 (콤마 구분 문자열)
+  relatedListingIds String?  // 관련 숙소 ID 목록 (콤마 구분 문자열)
+  noindex           Boolean  @default(false) // true면 검색 비노출
 
   authorId String
   author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)

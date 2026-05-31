@@ -9,6 +9,8 @@ type Props = {
   title?: string;
   body?: string;
   button?: string;
+  /** CTA 링크 (글별 주 CTA URL). 미지정 시 /recommend */
+  href?: string;
   /** 상위에서 <section>/<aside>를 감싸는 경우 div로 렌더 */
   as?: "aside" | "div";
 };
@@ -18,11 +20,13 @@ export default function BlogRecommendCTA({
   title,
   body,
   button,
+  href = "/recommend",
   as = "aside",
 }: Props) {
   if (hidden) return null;
 
   const Tag = as;
+  const external = href.startsWith("http");
   return (
     <Tag
       className="p-6 rounded-minbak bg-gradient-to-br from-minbak-primary/5 to-amber-50/40 border border-minbak-primary/15"
@@ -31,7 +35,8 @@ export default function BlogRecommendCTA({
       <h2 className="text-minbak-title font-semibold text-minbak-black">{title || BLOG_RECOMMEND_CTA.title}</h2>
       <p className="text-minbak-body text-minbak-gray mt-2 leading-relaxed">{body || BLOG_RECOMMEND_CTA.body}</p>
       <Link
-        href="/recommend"
+        href={href}
+        {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
         data-blog-link-type="recommend_cta"
         className="mt-4 inline-flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 rounded-minbak bg-minbak-primary text-white font-medium hover:bg-minbak-primary-hover transition-colors"
       >

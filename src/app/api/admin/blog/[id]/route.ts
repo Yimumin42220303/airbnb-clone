@@ -3,6 +3,8 @@ import { revalidatePath } from "next/cache";
 import { getAdminUser } from "@/lib/admin";
 import { updatePost, deletePost, getPostById } from "@/lib/blog";
 import { isValidCategory } from "@/lib/blog-categories";
+import { checkBlogPost } from "@/lib/blog-validation";
+import { extractBlogMetaInput, type BlogPayload } from "@/lib/blog-api-helpers";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -31,15 +33,8 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     );
   }
 
-  const {
-    title,
-    slug,
-    excerpt,
-    body: content,
-    coverImage,
-    category,
-    publishedAt,
-  } = body as Record<string, unknown>;
+  const payload = body as BlogPayload;
+  const { title, slug, excerpt, body: content, coverImage, category, publishedAt } = payload;
 
   const input: Record<string, unknown> = {};
   if (title !== undefined) input.title = typeof title === "string" ? title : "";
@@ -63,6 +58,36 @@ export async function PATCH(req: Request, { params }: RouteParams) {
           ? publishedAt
           : null;
 
+  const meta = extractBlogMetaInput(payload);
+  Object.assign(input, meta);
+
+  const willPublish = publishedAt !== null && publishedAt !== undefined;
+  if (willPublish) {
+    const check = checkBlogPost({
+      title: typeof title === "string" ? title : "",
+      slug: typeof slug === "string" ? slug : "",
+      category: typeof category === "string" ? category : null,
+      body: typeof content === "string" ? content : "",
+      excerpt: typeof excerpt === "string" ? excerpt : null,
+      seoTitle: meta.seoTitle ?? null,
+      metaDescription: meta.metaDescription ?? null,
+      coverImage: typeof coverImage === "string" ? coverImage : null,
+      coverImageAlt: meta.coverImageAlt ?? null,
+      ogImage: meta.ogImage ?? null,
+      primaryCtaUrl: meta.primaryCtaUrl ?? null,
+      secondaryCtaUrl: meta.secondaryCtaUrl ?? null,
+      relatedPostSlugs: meta.relatedPostSlugs ?? null,
+      noindex: meta.noindex ?? false,
+      published: true,
+    });
+    if (!check.canPublish) {
+      return NextResponse.json(
+        { error: `게시할 수 없습니다: ${check.errors[0]?.label ?? "검사 실패"}`, errors: check.errors },
+        { status: 422 }
+      );
+    }
+  }
+
   try {
     const updated = await updatePost(id, input as Parameters<typeof updatePost>[1], {
       authorId: admin.id,
@@ -71,6 +96,9 @@ export async function PATCH(req: Request, { params }: RouteParams) {
       return NextResponse.json({ error: "글을 찾을 수 없습니다." }, { status: 404 });
     }
     revalidatePath(`/blog/${updated.slug}`);
+    revalidatePath("/blog");
+    revalidatePath("/sitemap.xml");
+    revalidatePath("/rss.xml");
     return NextResponse.json({ id: updated.id, slug: updated.slug });
   } catch (e) {
     console.error("Blog update error:", e);
@@ -128,5 +156,20 @@ export async function GET(_req: Request, { params }: RouteParams) {
     createdAt: post.createdAt.toISOString(),
     updatedAt: post.updatedAt.toISOString(),
     authorName: post.author?.name ?? null,
+    seoTitle: post.seoTitle ?? null,
+    metaDescription: post.metaDescription ?? null,
+    focusKeyword: post.focusKeyword ?? null,
+    secondaryKeywords: post.secondaryKeywords ?? null,
+    coverImageAlt: post.coverImageAlt ?? null,
+    coverImageCaption: post.coverImageCaption ?? null,
+    ogImage: post.ogImage ?? null,
+    postType: post.postType ?? null,
+    primaryCtaLabel: post.primaryCtaLabel ?? null,
+    primaryCtaUrl: post.primaryCtaUrl ?? null,
+    secondaryCtaLabel: post.secondaryCtaLabel ?? null,
+    secondaryCtaUrl: post.secondaryCtaUrl ?? null,
+    relatedPostSlugs: post.relatedPostSlugs ?? null,
+    relatedListingIds: post.relatedListingIds ?? null,
+    noindex: post.noindex ?? false,
   });
 }

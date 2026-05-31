@@ -26,7 +26,7 @@ const POST_SLUGS = [
 ];
 
 const FOOTER_MARKERS = ["한일익스프레스", "ftc.go.kr/bizCommPop"];
-const PLACEHOLDERS = ["[이미지 삽입]", "[IMG:", "이미지 삽입", "TODO", "[image]", "[사진]"];
+const PLACEHOLDERS = ["[이미지 삽입]", "[IMG:", "이미지 삽입", "TODO", "[image]", "[사진]", "[LISTING_CARD:", "[BLOG_COMPARE", "[BLOG_CONCLUSION"];
 
 let failures = 0;
 let warnings = 0;
@@ -124,6 +124,22 @@ async function checkPost(slug) {
   const found = PLACEHOLDERS.filter((p) => html.includes(p));
   if (found.length === 0) pass("placeholder 없음");
   else fail(`placeholder 노출: ${found.join(", ")}`);
+
+  // 존재하지 않는 /recommendation 링크 금지
+  if (/href=["'][^"']*\/recommendation/i.test(html)) fail("/recommendation 링크 노출");
+  else pass("/recommendation 링크 없음");
+
+  // CTA(추천 CTA)가 본문(h1)보다 먼저 나오지 않아야 함
+  const ctaIdx = firstIndex(html, 'data-blog-link-type="recommend_cta"');
+  if (ctaIdx !== Infinity) {
+    if (ctaIdx < h1Idx) fail(`CTA가 h1보다 먼저 (cta@${ctaIdx} < h1@${h1Idx})`);
+    else pass("CTA가 h1보다 뒤");
+  }
+
+  // 대표 이미지 alt가 비어 있지 않은지 (best-effort: 비어있는 alt="" 만 있고 비어있지 않은 alt가 없으면 경고)
+  const hasNonEmptyAlt = /alt=["'][^"']+["']/i.test(html);
+  if (hasNonEmptyAlt) pass("이미지 alt 존재");
+  else warn("비어있지 않은 이미지 alt 없음");
 }
 
 async function checkBlogList() {

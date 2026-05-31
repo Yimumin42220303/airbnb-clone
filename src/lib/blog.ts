@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { BASE_URL } from "@/lib/site-url";
+import { slugify } from "@/lib/blog-post-fields";
 
 const IMG_TOKEN_RE = /\[IMG:([^\]]+)\]/;
 
@@ -100,11 +101,16 @@ export function getBlogCtaConfig(slug: string): BlogCtaConfig {
   return BLOG_CTA_CONFIG[slug] ?? {};
 }
 
-/** coverImage → 본문 첫 [IMG:…] → 기본 OG 순 */
+/** ogImage → coverImage → 본문 첫 [IMG:…] → 기본 OG 순 */
 export function resolveBlogOgImage(
   coverImage: string | null | undefined,
-  body: string
+  body: string,
+  ogImage?: string | null | undefined
 ): string {
+  const og = ogImage?.trim();
+  if (og && (og.startsWith("http://") || og.startsWith("https://") || og.startsWith("/")) && !og.includes("|") && !/\s/.test(og)) {
+    return og.startsWith("/") ? `${BASE_URL}${og}` : og;
+  }
   if (coverImage?.trim()) return coverImage.trim();
   const m = body.match(IMG_TOKEN_RE);
   const raw = m?.[1]?.trim();
@@ -124,13 +130,7 @@ export function resolveBlogOgImage(
 
 /** URL용 slug 생성 (영문·숫자·하이픈) */
 export function generateSlug(title: string): string {
-  return title
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9가-힣-]/g, "")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "") || "post";
+  return slugify(title);
 }
 
 /** 고유 slug 확보 (기존과 겹치면 숫자 붙임) */
@@ -230,6 +230,21 @@ export async function getPostsPaginated(options?: {
 export type PostDetail = PostListItem & {
   body: string;
   updatedAt: Date;
+  seoTitle: string | null;
+  metaDescription: string | null;
+  focusKeyword: string | null;
+  secondaryKeywords: string | null;
+  coverImageAlt: string | null;
+  coverImageCaption: string | null;
+  ogImage: string | null;
+  postType: string | null;
+  primaryCtaLabel: string | null;
+  primaryCtaUrl: string | null;
+  secondaryCtaLabel: string | null;
+  secondaryCtaUrl: string | null;
+  relatedPostSlugs: string | null;
+  relatedListingIds: string | null;
+  noindex: boolean;
 };
 
 /** sitemap.xml용 공개 글 slug·날짜 (읽기 전용, draft 제외) */
@@ -237,7 +252,7 @@ export async function getPostsForSitemap(): Promise<
   { slug: string; publishedAt: Date | null; createdAt: Date; updatedAt: Date }[]
 > {
   return prisma.post.findMany({
-    where: { publishedAt: { not: null } },
+    where: { publishedAt: { not: null }, noindex: false },
     orderBy: { publishedAt: "desc" },
     select: { slug: true, publishedAt: true, createdAt: true, updatedAt: true },
   });
@@ -249,6 +264,7 @@ export async function getPostsForFeed(limit = 30): Promise<
     title: string;
     slug: string;
     excerpt: string | null;
+    metaDescription: string | null;
     body: string;
     category: string | null;
     publishedAt: Date | null;
@@ -257,14 +273,15 @@ export async function getPostsForFeed(limit = 30): Promise<
   }[]
 > {
   const take = Math.min(Math.max(1, limit), 30);
-  return prisma.post.findMany({
-    where: { publishedAt: { not: null } },
+  const rows = await prisma.post.findMany({
+    where: { publishedAt: { not: null }, noindex: false },
     orderBy: { publishedAt: "desc" },
     take,
     select: {
       title: true,
       slug: true,
       excerpt: true,
+      metaDescription: true,
       body: true,
       category: true,
       publishedAt: true,
@@ -272,6 +289,7 @@ export async function getPostsForFeed(limit = 30): Promise<
       updatedAt: true,
     },
   });
+  return rows;
 }
 
 /** slug로 단일 글 조회 (공개: publishedAt 필수) */
@@ -297,7 +315,41 @@ export async function getPostBySlug(
     updatedAt: post.updatedAt,
     authorName: post.author.name,
     body: post.body,
+    seoTitle: post.seoTitle ?? null,
+    metaDescription: post.metaDescription ?? null,
+    focusKeyword: post.focusKeyword ?? null,
+    secondaryKeywords: post.secondaryKeywords ?? null,
+    coverImageAlt: post.coverImageAlt ?? null,
+    coverImageCaption: post.coverImageCaption ?? null,
+    ogImage: post.ogImage ?? null,
+    postType: post.postType ?? null,
+    primaryCtaLabel: post.primaryCtaLabel ?? null,
+    primaryCtaUrl: post.primaryCtaUrl ?? null,
+    secondaryCtaLabel: post.secondaryCtaLabel ?? null,
+    secondaryCtaUrl: post.secondaryCtaUrl ?? null,
+    relatedPostSlugs: post.relatedPostSlugs ?? null,
+    relatedListingIds: post.relatedListingIds ?? null,
+    noindex: post.noindex ?? false,
   };
+}
+
+/** slug 목록으로 공개 글 조회 (관리자가 지정한 관련글 우선 노출용, 순서 보존) */
+export async function getPostsBySlugs(
+  slugs: string[],
+  excludeId?: string
+): Promise<PostListItem[]> {
+  const cleaned = Array.from(new Set(slugs.map((s) => s.trim()).filter(Boolean)));
+  if (cleaned.length === 0) return [];
+  const rows = await prisma.post.findMany({
+    where: {
+      slug: { in: cleaned },
+      publishedAt: { not: null },
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+    },
+    include: { author: { select: { name: true } } },
+  });
+  const bySlug = new Map(rows.map((p) => [p.slug, toPostListItem(p)]));
+  return cleaned.map((s) => bySlug.get(s)).filter((p): p is PostListItem => !!p);
 }
 
 /**
@@ -367,7 +419,54 @@ export async function getPostById(id: string) {
   });
 }
 
-export type CreatePostInput = {
+/** 신규 SEO/전환 필드 (create·update 공용). 모두 optional. */
+export type BlogMetaInput = Partial<{
+  seoTitle: string | null;
+  metaDescription: string | null;
+  focusKeyword: string | null;
+  secondaryKeywords: string | null;
+  coverImageAlt: string | null;
+  coverImageCaption: string | null;
+  ogImage: string | null;
+  postType: string | null;
+  primaryCtaLabel: string | null;
+  primaryCtaUrl: string | null;
+  secondaryCtaLabel: string | null;
+  secondaryCtaUrl: string | null;
+  relatedPostSlugs: string | null;
+  relatedListingIds: string | null;
+  noindex: boolean;
+}>;
+
+const META_STRING_FIELDS = [
+  "seoTitle",
+  "metaDescription",
+  "focusKeyword",
+  "secondaryKeywords",
+  "coverImageAlt",
+  "coverImageCaption",
+  "ogImage",
+  "postType",
+  "primaryCtaLabel",
+  "primaryCtaUrl",
+  "secondaryCtaLabel",
+  "secondaryCtaUrl",
+  "relatedPostSlugs",
+  "relatedListingIds",
+] as const;
+
+/** create 용: 입력된 메타 필드를 정리해 prisma data 로 변환 */
+function buildMetaCreateData(input: BlogMetaInput): Record<string, unknown> {
+  const data: Record<string, unknown> = {};
+  for (const key of META_STRING_FIELDS) {
+    const v = input[key];
+    if (v !== undefined) data[key] = typeof v === "string" ? v.trim() || null : null;
+  }
+  if (input.noindex !== undefined) data.noindex = !!input.noindex;
+  return data;
+}
+
+export type CreatePostInput = BlogMetaInput & {
   title: string;
   slug?: string;
   excerpt?: string | null;
@@ -394,11 +493,12 @@ export async function createPost(authorId: string, input: CreatePostInput) {
       coverImage: input.coverImage?.trim() || null,
       category: input.category?.trim() || null,
       publishedAt,
+      ...buildMetaCreateData(input),
     },
   });
 }
 
-export type UpdatePostInput = Partial<{
+export type UpdatePostInput = BlogMetaInput & Partial<{
   title: string;
   slug: string;
   excerpt: string | null;
@@ -429,6 +529,13 @@ export async function updatePost(
       ? input.publishedAt ? new Date(input.publishedAt) : null
       : existing.publishedAt;
 
+  const metaData: Record<string, unknown> = {};
+  for (const key of META_STRING_FIELDS) {
+    const v = input[key];
+    if (v !== undefined) metaData[key] = typeof v === "string" ? v.trim() || null : null;
+  }
+  if (input.noindex !== undefined) metaData.noindex = !!input.noindex;
+
   return prisma.post.update({
     where: { id },
     data: {
@@ -439,6 +546,7 @@ export async function updatePost(
       ...(input.coverImage !== undefined && { coverImage: input.coverImage?.trim() || null }),
       ...(input.category !== undefined && { category: input.category?.trim() || null }),
       publishedAt,
+      ...metaData,
     },
   });
 }

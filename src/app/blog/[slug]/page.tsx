@@ -10,12 +10,16 @@ import {
   getPostBySlug,
   getPosts,
   getRelatedPosts,
+  getPostsBySlugs,
   getBlogSeoOverride,
   getBlogCtaConfig,
   resolveBlogOgImage,
 } from "@/lib/blog";
+import { splitCsv } from "@/lib/blog-post-fields";
 import { BASE_URL } from "@/lib/site-url";
 import BlogCoverImage from "@/components/blog/BlogCoverImage";
+import BlogListingCard from "@/components/blog/BlogListingCard";
+import { buildListingCardDisplay } from "@/lib/blog-listing-shortcode";
 import { getCategoryLabel } from "@/lib/blog-categories";
 import {
   buildBlogFaqJsonLd,
@@ -52,21 +56,26 @@ export async function generateMetadata({ params }: Props) {
   if (!post) return { title: "글을 찾을 수 없습니다 | 도쿄민박" };
 
   const seoOverride = getBlogSeoOverride(post.slug);
-  const pageTitle = seoOverride?.title || `${post.title} | 도쿄민박 블로그`;
   const bodyForMeta = post.body.replace(/\[IMG:[^\]]+\]/g, "").replace(/\s+/g, " ").trim();
+  const seoTitle = post.seoTitle?.trim() || seoOverride?.title;
+  const pageTitle = seoTitle || `${post.title} | 도쿄민박 블로그`;
   const description =
+    post.metaDescription?.trim() ||
     seoOverride?.description ||
     post.excerpt ||
     bodyForMeta.slice(0, 160) + (bodyForMeta.length > 160 ? "…" : "");
-  const ogTitle = seoOverride?.ogTitle || post.title;
-  const ogDescription = seoOverride?.ogDescription || description;
+  const ogTitle = post.seoTitle?.trim() || seoOverride?.ogTitle || post.title;
+  const ogDescription =
+    post.metaDescription?.trim() || seoOverride?.ogDescription || description;
   const url = `${BASE_URL}/blog/${encodeURIComponent(post.slug)}`;
-  const image = resolveBlogOgImage(post.coverImage, post.body);
+  const image = resolveBlogOgImage(post.coverImage, post.body, post.ogImage);
+  const coverAlt = post.coverImageAlt?.trim() || seoOverride?.coverAlt || post.title;
 
   return {
     title: { absolute: pageTitle },
     description,
     alternates: { canonical: url },
+    ...(post.noindex ? { robots: { index: false, follow: false } } : {}),
     openGraph: {
       title: ogTitle,
       description: ogDescription,
@@ -79,7 +88,7 @@ export async function generateMetadata({ params }: Props) {
           url: image,
           width: 1200,
           height: 630,
-          alt: seoOverride?.coverAlt || post.title,
+          alt: coverAlt,
         },
       ],
     },
@@ -105,24 +114,36 @@ export default async function BlogPostPage({ params }: Props) {
   const post = await getPostBySlug(slug, { allowDraft: false });
   if (!post) notFound();
 
-  const relatedPosts = await getRelatedPosts(post.id, 3, post.category).catch(() => []);
-
   const seoOverride = getBlogSeoOverride(post.slug);
-  const ogImage = resolveBlogOgImage(post.coverImage, post.body);
+  const ogImage = resolveBlogOgImage(post.coverImage, post.body, post.ogImage);
+  const headline = post.seoTitle?.trim() || seoOverride?.title || post.title;
   const metaDescription =
-    seoOverride?.description || post.excerpt || undefined;
+    post.metaDescription?.trim() || seoOverride?.description || post.excerpt || undefined;
+
+  // 관련글: 관리자가 지정한 slug 우선, 없으면 자동 관련글 fallback
+  const explicitRelatedSlugs = splitCsv(post.relatedPostSlugs);
+  const relatedPosts =
+    explicitRelatedSlugs.length > 0
+      ? await getPostsBySlugs(explicitRelatedSlugs, post.id).catch(() => [])
+      : await getRelatedPosts(post.id, 3, post.category).catch(() => []);
 
   const pageUrl = `${BASE_URL}/blog/${encodeURIComponent(post.slug)}`;
   const bodyBlocks = parseBlogBody(post.body);
-  const listingIds = collectListingIdsForPage(post.body, bodyBlocks);
+  const bodyListingIds = collectListingIdsForPage(post.body, bodyBlocks);
+  const relatedListingIds = splitCsv(post.relatedListingIds);
+  const allListingIds = Array.from(new Set([...bodyListingIds, ...relatedListingIds]));
   const listingsMap =
-    listingIds.length > 0 ? await getListingsForBlogCards(listingIds) : new Map();
-  const coverAlt = seoOverride?.coverAlt || post.title;
+    allListingIds.length > 0 ? await getListingsForBlogCards(allListingIds) : new Map();
+  const listingIds = bodyListingIds;
+  const relatedListings = relatedListingIds
+    .map((id) => listingsMap.get(id))
+    .filter((l): l is NonNullable<typeof l> => !!l);
+  const coverAlt = post.coverImageAlt?.trim() || seoOverride?.coverAlt || post.title;
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
-    headline: post.title,
+    headline,
     description: metaDescription,
     image: ogImage,
     url: pageUrl,
@@ -161,11 +182,15 @@ export default async function BlogPostPage({ params }: Props) {
   const faqLd = buildBlogFaqJsonLd(blogFaq, pageUrl);
 
   const cta = getBlogCtaConfig(post.slug);
+  // 글별 CTA(DB) 우선 → 기존 getBlogCtaConfig fallback → 기본값
+  const recommendButton = post.primaryCtaLabel?.trim() || cta.recommendButton;
+  const recommendHref = post.primaryCtaUrl?.trim() || "/recommend";
   const secondaryHeading = cta.secondaryHeading || "도쿄 여행, 숙소부터 정하세요";
   const secondaryBody =
     cta.secondaryBody ||
     "예약 전 문의부터 체크인 안내까지 한국어로 대응하는 도쿄 숙소를 확인해보세요.";
-  const searchLabel = cta.searchLabel || "도쿄 숙소 보러가기";
+  const searchLabel = post.secondaryCtaLabel?.trim() || cta.searchLabel || "도쿄 숙소 보러가기";
+  const searchHref = post.secondaryCtaUrl?.trim() || "/search";
   const trustLabel = cta.trustLabel || "안심예약센터 보기";
 
   return (
@@ -230,16 +255,23 @@ export default async function BlogPostPage({ params }: Props) {
             </header>
 
             {post.coverImage && (
-              <div className="relative w-full aspect-video rounded-minbak overflow-hidden bg-minbak-light-gray mb-8">
-                <BlogCoverImage
-                  src={post.coverImage}
-                  alt={coverAlt}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 720px"
-                  priority
-                />
-              </div>
+              <figure className="mb-8">
+                <div className="relative w-full aspect-video rounded-minbak overflow-hidden bg-minbak-light-gray">
+                  <BlogCoverImage
+                    src={post.coverImage}
+                    alt={coverAlt}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 720px"
+                    priority
+                  />
+                </div>
+                {post.coverImageCaption?.trim() && (
+                  <figcaption className="mt-2 text-minbak-caption text-minbak-gray text-center">
+                    {post.coverImageCaption.trim()}
+                  </figcaption>
+                )}
+              </figure>
             )}
 
               <BlogBody
@@ -252,7 +284,8 @@ export default async function BlogPostPage({ params }: Props) {
           <section className="mt-12 space-y-8" aria-label="추천 숙소 및 예약 안내">
             <BlogRecommendCTA
               as="div"
-              button={cta.recommendButton}
+              button={recommendButton}
+              href={recommendHref}
               title={cta.recommendTitle}
               body={cta.recommendBody}
             />
@@ -266,7 +299,7 @@ export default async function BlogPostPage({ params }: Props) {
               </p>
               <div className="flex flex-wrap gap-3 justify-center">
                 <Link
-                  href="/search"
+                  href={searchHref}
                   data-blog-link-type="nav"
                   className="px-5 py-2.5 bg-minbak-primary text-white font-medium rounded-minbak hover:bg-minbak-primary-hover transition-colors"
                 >
@@ -282,6 +315,23 @@ export default async function BlogPostPage({ params }: Props) {
               </div>
             </div>
           </section>
+
+          {relatedListings.length > 0 && (
+            <section className="mt-12" aria-label="관련 숙소">
+              <h2 className="text-minbak-h3 font-semibold text-minbak-black mb-5">
+                이 글과 어울리는 숙소
+              </h2>
+              <div className="space-y-4">
+                {relatedListings.map((listing) => (
+                  <BlogListingCard
+                    key={listing.id}
+                    listing={listing}
+                    display={buildListingCardDisplay(listing, {})}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
 
           {relatedPosts.length > 0 && (
               <aside className="mt-12" aria-label="관련 글">

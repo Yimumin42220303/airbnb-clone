@@ -19,6 +19,7 @@ export type BlogRssPost = {
   title: string;
   slug: string;
   excerpt: string | null;
+  metaDescription?: string | null;
   body: string;
   category: string | null;
   publishedAt: Date | null;
@@ -84,6 +85,7 @@ function blocksToHtml(blocks: BodyBlock[]): string {
 function resolveItemDescription(post: BlogRssPost): string {
   const seo = getBlogSeoOverride(post.slug);
   if (seo?.description?.trim()) return seo.description.trim();
+  if (post.metaDescription?.trim()) return post.metaDescription.trim();
   if (post.excerpt?.trim()) return post.excerpt.trim();
   const plain = post.body
     .replace(/\[IMG:[^\]]+\]/g, "")
