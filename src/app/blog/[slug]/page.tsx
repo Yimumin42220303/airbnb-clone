@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import BlogArticleBody from "@/components/blog/BlogArticleBody";
+import BlogBody, {
+  collectListingIdsForPage,
+  parseBlogBody,
+} from "@/components/blog/BlogBody";
 import BlogLinkAnalytics from "@/components/blog/BlogLinkAnalytics";
 import BlogRecommendCTA from "@/components/recommend/BlogRecommendCTA";
 import {
@@ -17,7 +20,6 @@ import {
   buildBlogFaqJsonLd,
   extractBlogFaqFromBody,
 } from "@/lib/blog-faq-jsonld";
-import { collectListingIdsForPage } from "@/components/blog/BlogBody";
 import { getListingsForBlogCards } from "@/lib/blog-listing-data";
 import {
   buildBlogListingItemListJsonLd,
@@ -48,8 +50,8 @@ export async function generateMetadata({ params }: Props) {
   const post = await getPostBySlug(slug, { allowDraft: false });
   if (!post) return { title: "글을 찾을 수 없습니다 | 도쿄민박" };
 
-  const pageTitle = `${post.title} | 도쿄민박 블로그`;
   const seoOverride = getBlogSeoOverride(post.slug);
+  const pageTitle = seoOverride?.title || `${post.title} | 도쿄민박 블로그`;
   const bodyForMeta = post.body.replace(/\[IMG:[^\]]+\]/g, "").replace(/\s+/g, " ").trim();
   const description =
     seoOverride?.description ||
@@ -71,7 +73,14 @@ export async function generateMetadata({ params }: Props) {
       type: "article",
       publishedTime: post.publishedAt?.toISOString(),
       modifiedTime: (post.updatedAt ?? post.createdAt).toISOString(),
-      images: [{ url: image, width: 1200, height: 630, alt: post.title }],
+      images: [
+        {
+          url: image,
+          width: 1200,
+          height: 630,
+          alt: seoOverride?.coverAlt || post.title,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
@@ -103,9 +112,11 @@ export default async function BlogPostPage({ params }: Props) {
     seoOverride?.description || post.excerpt || undefined;
 
   const pageUrl = `${BASE_URL}/blog/${encodeURIComponent(post.slug)}`;
-  const listingIds = collectListingIdsForPage(post.body);
+  const bodyBlocks = parseBlogBody(post.body);
+  const listingIds = collectListingIdsForPage(post.body, bodyBlocks);
   const listingsMap =
     listingIds.length > 0 ? await getListingsForBlogCards(listingIds) : new Map();
+  const coverAlt = seoOverride?.coverAlt || post.title;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -171,125 +182,137 @@ export default async function BlogPostPage({ params }: Props) {
         />
       )}
       <main className="min-h-screen pt-24">
-        <article className="max-w-[720px] mx-auto px-6 py-10">
-          <Link
-            href="/blog"
-            className="text-minbak-body text-minbak-primary hover:underline mb-6 inline-block"
-          >
-            ← 블로그 목록
-          </Link>
-
-          <header className="mb-8">
-            {getCategoryLabel(post.category) && (
-              <Link
-                href={`/blog?category=${post.category}`}
-                className="inline-block mb-3 px-2.5 py-0.5 rounded-full bg-minbak-bg text-minbak-caption font-medium text-minbak-gray hover:text-minbak-primary transition-colors"
-              >
-                {getCategoryLabel(post.category)}
-              </Link>
-            )}
-            <h1 className="text-minbak-h1 font-semibold text-minbak-black mb-3">
-              {post.title}
-            </h1>
-            <p className="text-minbak-body text-minbak-gray">
-              {post.publishedAt
-                ? new Date(post.publishedAt).toLocaleDateString("ko-KR", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })
-                : ""}
-              {post.authorName && (
-                <span className="ml-2">· {post.authorName}</span>
-              )}
-            </p>
-          </header>
-
-          {post.coverImage && (
-            <div className="relative w-full aspect-video rounded-minbak overflow-hidden bg-minbak-light-gray mb-8">
-              <BlogCoverImage
-                src={post.coverImage}
-                alt={post.title}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 720px"
-                priority
-              />
-            </div>
-          )}
+        <div className="max-w-[720px] mx-auto px-6 py-10">
+          <nav aria-label="블로그 탐색">
+            <Link
+              href="/blog"
+              className="text-minbak-body text-minbak-primary hover:underline mb-6 inline-block"
+            >
+              ← 블로그 목록
+            </Link>
+          </nav>
 
           <BlogLinkAnalytics postSlug={post.slug}>
-            <BlogArticleBody body={post.body} defaultImageAlt={post.title} />
+          <article>
+            <header className="mb-8">
+              {getCategoryLabel(post.category) && (
+                <Link
+                  href={`/blog?category=${post.category}`}
+                  className="inline-block mb-3 px-2.5 py-0.5 rounded-full bg-minbak-bg text-minbak-caption font-medium text-minbak-gray hover:text-minbak-primary transition-colors"
+                >
+                  {getCategoryLabel(post.category)}
+                </Link>
+              )}
+              <h1 className="text-minbak-h1 font-semibold text-minbak-black mb-3">
+                {post.title}
+              </h1>
+              <p className="text-minbak-body text-minbak-gray">
+                {post.publishedAt
+                  ? new Date(post.publishedAt).toLocaleDateString("ko-KR", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })
+                  : ""}
+                {post.authorName && (
+                  <span className="ml-2">· {post.authorName}</span>
+                )}
+              </p>
+            </header>
 
+            {post.coverImage && (
+              <div className="relative w-full aspect-video rounded-minbak overflow-hidden bg-minbak-light-gray mb-8">
+                <BlogCoverImage
+                  src={post.coverImage}
+                  alt={coverAlt}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 720px"
+                  priority
+                />
+              </div>
+            )}
+
+              <BlogBody
+                blocks={bodyBlocks}
+                listingsMap={listingsMap}
+                defaultImageAlt={coverAlt}
+              />
+          </article>
+
+          <aside className="mt-12 space-y-12" aria-label="블로그 전환 및 관련 글">
             <BlogRecommendCTA />
 
-          {/* 숙소 보러가기 CTA */}
-          <div className="mt-12 p-6 rounded-minbak bg-minbak-bg border border-minbak-light-gray text-center">
-            <p className="text-minbak-title font-semibold text-minbak-black mb-1">
-              도쿄 여행, 숙소부터 정하세요
-            </p>
-            <p className="text-minbak-body text-minbak-gray mb-4">
-              예약 전 문의부터 체크인 안내까지 한국어로 대응하는 도쿄 숙소를 확인해보세요.
-            </p>
-            <div className="flex flex-wrap gap-3 justify-center">
-              <Link
-                href="/search"
-                className="px-5 py-2.5 bg-minbak-primary text-white font-medium rounded-minbak hover:bg-minbak-primary-hover transition-colors"
-              >
-                도쿄 숙소 보러가기
-              </Link>
-              <Link
-                href="/trust"
-                className="px-5 py-2.5 border border-minbak-light-gray bg-white text-minbak-black font-medium rounded-minbak hover:bg-white/60 transition-colors"
-              >
-                안심예약센터 보기
-              </Link>
-            </div>
-          </div>
-
-          {/* 관련 글 */}
-          {relatedPosts.length > 0 && (
-            <section className="mt-12 pt-8 border-t border-minbak-light-gray" aria-label="관련 글">
-              <h2 className="text-minbak-h3 font-semibold text-minbak-black mb-5">
-                다른 글도 읽어보세요
+            <div className="p-6 rounded-minbak bg-minbak-bg border border-minbak-light-gray text-center">
+              <h2 className="text-minbak-title font-semibold text-minbak-black mb-1">
+                도쿄 여행, 숙소부터 정하세요
               </h2>
-              <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {relatedPosts.map((rp) => (
-                  <li key={rp.id}>
-                    <Link
-                      href={`/blog/${encodeURIComponent(rp.slug)}`}
-                      data-blog-link-type="related_post"
-                      className="block h-full group border border-minbak-light-gray rounded-minbak overflow-hidden bg-white hover:border-minbak-primary/40 transition-colors"
-                    >
-                      {rp.coverImage && (
-                        <div className="relative w-full h-32 bg-minbak-light-gray">
-                          <BlogCoverImage
-                            src={rp.coverImage}
-                            alt=""
-                            fill
-                            className="object-cover"
-                            sizes="(max-width: 640px) 100vw, 240px"
-                          />
-                        </div>
-                      )}
-                      <div className="p-4">
-                        <h3 className="text-minbak-body font-semibold text-minbak-black group-hover:text-minbak-primary transition-colors line-clamp-2">
-                          {rp.title}
-                        </h3>
-                        {rp.excerpt && (
-                          <p className="text-minbak-caption text-minbak-gray mt-1.5 line-clamp-2">
-                            {rp.excerpt}
-                          </p>
+              <p className="text-minbak-body text-minbak-gray mb-4">
+                예약 전 문의부터 체크인 안내까지 한국어로 대응하는 도쿄 숙소를 확인해보세요.
+              </p>
+              <div className="flex flex-wrap gap-3 justify-center">
+                <Link
+                  href="/search"
+                  data-blog-link-type="nav"
+                  className="px-5 py-2.5 bg-minbak-primary text-white font-medium rounded-minbak hover:bg-minbak-primary-hover transition-colors"
+                >
+                  도쿄 숙소 보러가기
+                </Link>
+                <Link
+                  href="/trust"
+                  data-blog-link-type="nav"
+                  className="px-5 py-2.5 border border-minbak-light-gray bg-white text-minbak-black font-medium rounded-minbak hover:bg-white/60 transition-colors"
+                >
+                  안심예약센터 보기
+                </Link>
+              </div>
+            </div>
+
+            {relatedPosts.length > 0 && (
+              <section aria-label="관련 글">
+                <h2 className="text-minbak-h3 font-semibold text-minbak-black mb-5">
+                  다른 글도 읽어보세요
+                </h2>
+                <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {relatedPosts.map((rp) => (
+                    <li key={rp.id}>
+                      <article className="h-full border border-minbak-light-gray rounded-minbak overflow-hidden bg-white hover:border-minbak-primary/40 transition-colors">
+                        {rp.coverImage && (
+                          <div className="relative w-full h-32 bg-minbak-light-gray">
+                            <BlogCoverImage
+                              src={rp.coverImage}
+                              alt=""
+                              fill
+                              className="object-cover"
+                              sizes="(max-width: 640px) 100vw, 240px"
+                            />
+                          </div>
                         )}
-                      </div>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
+                        <div className="p-4">
+                          <h3 className="text-minbak-body font-semibold text-minbak-black line-clamp-2">
+                            <Link
+                              href={`/blog/${encodeURIComponent(rp.slug)}`}
+                              data-blog-link-type="related_post"
+                              className="hover:text-minbak-primary transition-colors"
+                            >
+                              {rp.title}
+                            </Link>
+                          </h3>
+                          {rp.excerpt && (
+                            <p className="text-minbak-caption text-minbak-gray mt-1.5 line-clamp-2">
+                              {rp.excerpt}
+                            </p>
+                          )}
+                        </div>
+                      </article>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+          </aside>
           </BlogLinkAnalytics>
-        </article>
+        </div>
       </main>
     </>
   );

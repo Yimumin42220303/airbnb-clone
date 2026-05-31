@@ -11,6 +11,10 @@ export const BLOG_SHORTCODE_EXAMPLES = {
   imagePlain: "[IMG:https://res.cloudinary.com/.../photo.jpg]",
   imageListing:
     "[IMG:https://res.cloudinary.com/.../photo.jpg|listing:LISTING_ID|숙소 사진 alt]",
+  conclusion: `[BLOG_CONCLUSION]
+도입 한 줄 요약
+2~3인 소가족|LISTING_ID|숙소 표시명
+[/BLOG_CONCLUSION]`,
 } as const;
 
 export const BLOG_SHORTCODE_HELP = [
@@ -18,4 +22,6 @@ export const BLOG_SHORTCODE_HELP = [
   "카드·비교표·JSON-LD는 코드 수정 없이 본문 shortcode만으로 동작합니다.",
   "[BLOG_COMPARE]만 넣으면, 그 위에 있는 [LISTING_CARD] 순서로 비교표를 만듭니다.",
   "추천 이유·주의는 shortcode에 넣지 않으면 DB 숙소 정보·설명에서 자동 채웁니다.",
+  "[BLOG_CONCLUSION]…[/BLOG_CONCLUSION]으로 결론 요약 박스(AEO용)를 넣을 수 있습니다.",
+  "FAQ는 ## 자주 묻는 질문 + ### Q. 질문? 형식으로 작성하면 FAQPage JSON-LD와 연동됩니다.",
 ] as const;

@@ -5,12 +5,24 @@ const IMG_TOKEN_RE = /\[IMG:([^\]]+)\]/;
 
 /** slug별 SEO 메타 override (DB excerpt와 별도) */
 export type BlogSeoOverride = {
+  /** document title (absolute) */
+  title?: string;
   description?: string;
   ogTitle?: string;
   ogDescription?: string;
+  coverAlt?: string;
 };
 
 const BLOG_SEO_OVERRIDES: Record<string, BlogSeoOverride> = {
+  "shinjuku-family-accommodation-guide": {
+    title: "신주쿠 숙소 추천｜가족여행 인원별 숙소 고르는 법 | 도쿄민박",
+    description:
+      "도쿄 가족여행에서 신주쿠 숙소를 고민 중이라면? 2~3인 소가족부터 4~8인 대가족까지 인원별 추천 숙소와 침대 구성, 역 접근성, 엘리베이터, 세탁기·주방 체크포인트를 정리했습니다.",
+    ogTitle: "신주쿠 숙소 추천｜가족여행 인원별 숙소 고르는 법 | 도쿄민박",
+    ogDescription:
+      "도쿄 가족여행에서 신주쿠 숙소를 고민 중이라면 인원별 추천 숙소와 예약 전 체크포인트를 확인해보세요.",
+    coverAlt: "신주쿠 가족여행 숙소 추천 대표 이미지",
+  },
   "what-is-tokyominbak": {
     description:
       "도쿄민박은 한국인을 위한 도쿄 현지 숙소 예약 플랫폼입니다. 예약 전 문의, 체크인 안내, 숙박 중 문제 접수, 환불·민원 접수까지 한국어로 안내하며, 도쿄 여행자가 더 안심하고 숙소를 선택할 수 있도록 돕습니다.",
@@ -31,14 +43,17 @@ export function resolveBlogOgImage(
 ): string {
   if (coverImage?.trim()) return coverImage.trim();
   const m = body.match(IMG_TOKEN_RE);
-  const fromBody = m?.[1]?.trim();
-  if (
-    fromBody &&
-    (fromBody.startsWith("https://") ||
-      fromBody.startsWith("http://") ||
-      fromBody.startsWith("/"))
-  ) {
-    return fromBody.startsWith("/") ? `${BASE_URL}${fromBody}` : fromBody;
+  const raw = m?.[1]?.trim();
+  if (raw) {
+    const urlPart = raw.split("|")[0]?.trim() ?? "";
+    if (
+      urlPart &&
+      (urlPart.startsWith("https://") ||
+        urlPart.startsWith("http://") ||
+        urlPart.startsWith("/"))
+    ) {
+      return urlPart.startsWith("/") ? `${BASE_URL}${urlPart}` : urlPart;
+    }
   }
   return `${BASE_URL}/og-image.png`;
 }

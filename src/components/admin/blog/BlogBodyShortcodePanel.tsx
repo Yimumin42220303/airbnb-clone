@@ -42,6 +42,7 @@ export default function BlogBodyShortcodePanel({ onInsert }: Props) {
               label="숙소 연결 이미지"
               onClick={() => onInsert(BLOG_SHORTCODE_EXAMPLES.imageListing)}
             />
+            <InsertBtn label="결론 요약 박스" onClick={() => onInsert(BLOG_SHORTCODE_EXAMPLES.conclusion)} />
           </div>
 
           <ul className="list-disc pl-5 space-y-1.5 leading-relaxed">

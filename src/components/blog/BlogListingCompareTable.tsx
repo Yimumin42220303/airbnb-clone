@@ -27,7 +27,16 @@ export default function BlogListingCompareTable({ rows }: Props) {
               return (
                 <tr key={row.listingId} className="border-t border-minbak-light-gray">
                   <td className="px-4 py-3 text-minbak-gray whitespace-nowrap">{row.guestRange}</td>
-                  <td className="px-4 py-3 font-medium text-minbak-black">{row.displayName}</td>
+                  <td className="px-4 py-3 font-medium text-minbak-black">
+                    <Link
+                      href={href}
+                      className="hover:text-minbak-primary hover:underline underline-offset-2"
+                      data-blog-link-type="compare_table"
+                      data-listing-id={row.listingId}
+                    >
+                      {row.displayName}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3 text-minbak-gray">{row.station}</td>
                   <td className="px-4 py-3 text-minbak-gray">{row.feature}</td>
                   <td className="px-4 py-3 text-minbak-gray">{row.caution}</td>
@@ -57,7 +66,16 @@ export default function BlogListingCompareTable({ rows }: Props) {
               className="snap-start shrink-0 w-[min(100%,280px)] rounded-minbak border border-minbak-light-gray bg-white p-4 flex flex-col"
             >
               <p className="text-minbak-caption text-minbak-primary font-medium">{row.guestRange}</p>
-              <h3 className="text-minbak-body font-semibold text-minbak-black mt-1">{row.displayName}</h3>
+              <h3 className="text-minbak-body font-semibold text-minbak-black mt-1">
+                <Link
+                  href={href}
+                  className="hover:text-minbak-primary"
+                  data-blog-link-type="compare_table"
+                  data-listing-id={row.listingId}
+                >
+                  {row.displayName}
+                </Link>
+              </h3>
               <p className="text-minbak-caption text-minbak-gray mt-2">{row.station}</p>
               <p className="text-minbak-caption text-minbak-gray mt-1">
                 <span className="font-medium text-minbak-black">특징 · </span>

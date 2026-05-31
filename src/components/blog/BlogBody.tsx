@@ -6,6 +6,8 @@
  */
 
 import Link from "next/link";
+import BlogConclusionBox, { type BlogConclusionItem } from "@/components/blog/BlogConclusionBox";
+import BlogFaqSection from "@/components/blog/BlogFaqSection";
 import BlogListingCard from "@/components/blog/BlogListingCard";
 import BlogListingCompareTable from "@/components/blog/BlogListingCompareTable";
 import type { BlogListingCardData } from "@/lib/blog-listing-data";
@@ -17,6 +19,7 @@ import {
   parseCompareListingIds,
   parseListingCardToken,
   collectListingIdsInOrder,
+  isListingId,
   type BlogListingCardOverrides,
 } from "@/lib/blog-listing-shortcode";
 
@@ -50,6 +53,7 @@ function renderInline(raw: string): string {
   s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_m, text, url) => {
     const u = String(url);
     if (!isAllowedLinkUrl(u)) return text;
+    if (/cloudinary\.com/i.test(u) && !u.includes("/listing/")) return text;
     const external = u.startsWith("http");
     const rel = external ? ' target="_blank" rel="noopener noreferrer nofollow"' : "";
     return `<a href="${u}"${rel}>${text}</a>`;
@@ -68,7 +72,94 @@ export type BlogBodyBlock =
   | { type: "hr" }
   | { type: "image"; url: string; linkHref?: string; alt?: string }
   | { type: "listing_card"; listingId: string; overrides: BlogListingCardOverrides }
-  | { type: "compare_table"; listingIds: string[] | "auto" };
+  | { type: "compare_table"; listingIds: string[] | "auto" }
+  | { type: "conclusion"; intro: string; items: BlogConclusionItem[]; footer?: string }
+  | { type: "faq"; items: { q: string; a: string }[] };
+
+function stripHtmlToText(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function parseConclusionBlock(inner: string): BlogBodyBlock | null {
+  const lines = inner
+    .replace(/\r\n/g, "\n")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (lines.length === 0) return null;
+
+  const items: BlogConclusionItem[] = [];
+  const introLines: string[] = [];
+  const footerLines: string[] = [];
+  let phase: "intro" | "items" | "footer" = "intro";
+
+  for (const line of lines) {
+    const parts = line.split("|").map((p) => p.trim());
+    if (parts.length >= 3 && isListingId(parts[1])) {
+      phase = "items";
+      items.push({ label: parts[0], listingId: parts[1], name: parts.slice(2).join("|") });
+      continue;
+    }
+    if (phase === "intro") introLines.push(line);
+    else footerLines.push(line);
+  }
+
+  if (items.length === 0) return null;
+  return {
+    type: "conclusion",
+    intro: introLines.join(" "),
+    items,
+    footer: footerLines.length ? footerLines.join(" ") : undefined,
+  };
+}
+
+/** ## 자주 묻는 질문 + ### Q. 블록을 FAQ 섹션으로 묶음 */
+function collapseFaqBlocks(blocks: BlogBodyBlock[]): BlogBodyBlock[] {
+  const out: BlogBodyBlock[] = [];
+  let i = 0;
+  while (i < blocks.length) {
+    const b = blocks[i];
+    if (
+      b.type === "heading" &&
+      b.level === 2 &&
+      stripHtmlToText(b.html).includes("자주 묻는 질문")
+    ) {
+      const items: { q: string; a: string }[] = [];
+      i += 1;
+      while (i < blocks.length) {
+        const cur = blocks[i];
+        if (cur.type === "heading" && cur.level === 2) break;
+        if (cur.type === "heading" && cur.level === 3) {
+          const raw = stripHtmlToText(cur.html);
+          const q = raw.replace(/^Q\.\s*/i, "").trim();
+          i += 1;
+          const answerParts: string[] = [];
+          while (i < blocks.length) {
+            const next = blocks[i];
+            if (next.type === "heading" && (next.level === 2 || next.level === 3)) break;
+            if (next.type === "paragraph") answerParts.push(stripHtmlToText(next.html));
+            if (next.type === "list") {
+              for (const item of next.items) answerParts.push(stripHtmlToText(item));
+            }
+            i += 1;
+          }
+          if (q && answerParts.length) items.push({ q, a: answerParts.join(" ") });
+          continue;
+        }
+        i += 1;
+      }
+      if (items.length) out.push({ type: "faq", items });
+      continue;
+    }
+    out.push(b);
+    i += 1;
+  }
+  return out;
+}
 
 function parseImgToken(inner: string): BlogBodyBlock | null {
   const parts = inner.split("|").map((p) => p.trim());
@@ -205,7 +296,8 @@ function parseTextBlocks(text: string): BlogBodyBlock[] {
 
 export function parseBlogBody(body: string): BlogBodyBlock[] {
   const blocks: BlogBodyBlock[] = [];
-  const re = /\[IMG:([^\]]+)\]|\[LISTING_CARD:([^\]]+)\]|\[BLOG_COMPARE(?::[^\]]*)?\]/gi;
+  const re =
+    /\[BLOG_CONCLUSION\]([\s\S]*?)\[\/BLOG_CONCLUSION\]|\[IMG:([^\]]+)\]|\[LISTING_CARD:([^\]]+)\]|\[BLOG_COMPARE(?::[^\]]*)?\]/gi;
   let lastIndex = 0;
   let m: RegExpExecArray | null;
 
@@ -214,12 +306,15 @@ export function parseBlogBody(body: string): BlogBodyBlock[] {
       blocks.push(...parseTextBlocks(body.slice(lastIndex, m.index)));
     }
     const full = m[0];
-    if (full.toUpperCase().startsWith("[IMG:")) {
-      const img = parseImgToken(m[1]);
+    if (full.toUpperCase().startsWith("[BLOG_CONCLUSION")) {
+      const conclusion = parseConclusionBlock(m[1] ?? "");
+      if (conclusion) blocks.push(conclusion);
+    } else if (full.toUpperCase().startsWith("[IMG:")) {
+      const img = parseImgToken(m[2]);
       if (img) blocks.push(img);
       else blocks.push(...parseTextBlocks(full));
     } else if (full.toUpperCase().startsWith("[LISTING_CARD:")) {
-      const parsed = parseListingCardToken(m[2]);
+      const parsed = parseListingCardToken(m[3]);
       if (parsed) {
         blocks.push({
           type: "listing_card",
@@ -240,7 +335,7 @@ export function parseBlogBody(body: string): BlogBodyBlock[] {
   if (lastIndex < body.length) {
     blocks.push(...parseTextBlocks(body.slice(lastIndex)));
   }
-  return blocks;
+  return collapseFaqBlocks(blocks);
 }
 
 export function collectListingIdsFromBlocks(blocks: BlogBodyBlock[]): string[] {
@@ -342,6 +437,8 @@ export default function BlogBody({
             return <hr key={i} className="my-8 border-minbak-light-gray" />;
           case "image": {
             const alt = block.alt || defaultImageAlt;
+            const linkHref =
+              block.linkHref?.startsWith("/listing/") ? block.linkHref : undefined;
             const imgEl = (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
@@ -354,12 +451,12 @@ export default function BlogBody({
             );
             return (
               <figure key={i} className="my-6 rounded-minbak overflow-hidden bg-minbak-light-gray">
-                {block.linkHref ? (
+                {linkHref ? (
                   <Link
-                    href={block.linkHref}
+                    href={linkHref}
                     className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-minbak-primary"
                     data-blog-link-type="listing_image"
-                    data-listing-id={block.linkHref.replace("/listing/", "").split("?")[0]}
+                    data-listing-id={linkHref.replace("/listing/", "").split("?")[0]}
                   >
                     {imgEl}
                   </Link>
@@ -388,6 +485,17 @@ export default function BlogBody({
             if (!rows.length) return null;
             return <BlogListingCompareTable key={i} rows={rows} />;
           }
+          case "conclusion":
+            return (
+              <BlogConclusionBox
+                key={i}
+                intro={block.intro}
+                items={block.items}
+                footer={block.footer}
+              />
+            );
+          case "faq":
+            return <BlogFaqSection key={i} items={block.items} />;
           case "paragraph":
           default:
             return (

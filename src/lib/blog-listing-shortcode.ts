@@ -28,6 +28,8 @@ export type BlogListingCardOverrides = {
   recommendedFor?: string;
   recommendReason?: string;
   caution?: string;
+  /** 카드·앵커에 쓸 짧은 숙소명 (미입력 시 listing.title) */
+  displayName?: string;
 };
 
 export type BlogListingCardDisplay = {
@@ -62,6 +64,7 @@ export function parseListingCardToken(
       recommendedFor: parts[1] || undefined,
       recommendReason: parts[2] || undefined,
       caution: parts[3] || undefined,
+      displayName: parts[4] || undefined,
     },
   };
 }
@@ -82,7 +85,9 @@ export function buildListingCardDisplay(
   listing: BlogListingCardData,
   overrides: BlogListingCardOverrides = {}
 ): BlogListingCardDisplay {
-  const displayName = listing.title.length > 48 ? `${listing.title.slice(0, 48)}…` : listing.title;
+  const displayName =
+    overrides.displayName?.trim() ||
+    (listing.title.length > 48 ? `${listing.title.slice(0, 48)}…` : listing.title);
   const roomLine = `침실 ${listing.bedrooms} · 침대 ${listing.beds}${
     listing.areaSqm ? ` · ${listing.areaSqm}㎡` : ""
   }`;

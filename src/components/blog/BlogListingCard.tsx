@@ -20,25 +20,35 @@ export default function BlogListingCard({ listing, display }: Props) {
 
   return (
     <article className="my-8 rounded-minbak border border-minbak-light-gray bg-white overflow-hidden shadow-sm">
-      <Link
-        href={href}
-        className="block sm:flex sm:items-stretch group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-minbak-primary focus-visible:ring-offset-2"
-        data-blog-link-type="listing_card"
-        data-listing-id={listing.id}
-      >
-        <div className="relative w-full sm:w-2/5 aspect-[4/3] sm:aspect-auto sm:min-h-[200px] bg-minbak-light-gray shrink-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={listing.imageUrl}
-            alt={display.imageAlt || display.displayName}
-            className="w-full h-full object-cover"
-            loading="lazy"
-            decoding="async"
-          />
-        </div>
+      <div className="sm:flex sm:items-stretch">
+        <Link
+          href={href}
+          className="block sm:w-2/5 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-minbak-primary focus-visible:ring-offset-2"
+          data-blog-link-type="listing_image"
+          data-listing-id={listing.id}
+          aria-label={`${display.displayName} 사진 보기`}
+        >
+          <div className="relative w-full aspect-[4/3] sm:aspect-auto sm:min-h-[200px] bg-minbak-light-gray">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={listing.imageUrl}
+              alt={display.imageAlt || display.displayName}
+              className="w-full h-full object-cover"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+        </Link>
         <div className="p-5 sm:p-6 flex-1 flex flex-col">
-          <h3 className="text-minbak-title font-semibold text-minbak-black group-hover:text-minbak-primary transition-colors">
-            {display.displayName}
+          <h3 className="text-minbak-title font-semibold text-minbak-black">
+            <Link
+              href={href}
+              className="hover:text-minbak-primary transition-colors"
+              data-blog-link-type="listing_card"
+              data-listing-id={listing.id}
+            >
+              {display.displayName}
+            </Link>
           </h3>
           <p className="text-minbak-caption text-minbak-primary font-medium mt-1">
             {display.recommendedFor}
@@ -67,11 +77,16 @@ export default function BlogListingCard({ listing, display }: Props) {
             <span className="font-medium text-minbak-black">주의 · </span>
             {display.caution}
           </p>
-          <span className="mt-4 inline-flex items-center justify-center min-h-[44px] px-5 py-2.5 rounded-minbak bg-minbak-primary text-white font-medium group-hover:bg-minbak-primary-hover transition-colors w-fit">
+          <Link
+            href={href}
+            className="mt-4 inline-flex items-center justify-center min-h-[44px] px-5 py-2.5 rounded-minbak bg-minbak-primary text-white font-medium hover:bg-minbak-primary-hover transition-colors w-fit"
+            data-blog-link-type="listing_card"
+            data-listing-id={listing.id}
+          >
             {display.anchorLabel}
-          </span>
+          </Link>
         </div>
-      </Link>
+      </div>
     </article>
   );
 }
