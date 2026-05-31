@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { Sparkles } from "lucide-react";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
 /** 히어로 배경 이미지: env 또는 public/hero-bg.jpg, 로드 실패 시 기본 도쿄 이미지 */
@@ -62,6 +64,21 @@ export default function HomeHero() {
             </li>
           ))}
         </ul>
+      </div>
+      <div className="relative z-10 mt-6 md:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-[480px]">
+        <Link
+          href="/search"
+          className="inline-flex items-center justify-center min-h-[48px] w-full sm:flex-1 px-6 py-3 rounded-minbak-full bg-white text-minbak-black font-semibold text-minbak-body hover:bg-gray-100 transition-colors"
+        >
+          {t("guest.heroCtaSearch")}
+        </Link>
+        <Link
+          href="/recommend"
+          className="inline-flex items-center justify-center gap-2 min-h-[48px] w-full sm:flex-1 px-6 py-3 rounded-minbak-full border-2 border-white/90 text-white font-semibold text-minbak-body hover:bg-white/10 transition-colors"
+        >
+          <Sparkles className="w-5 h-5 shrink-0" aria-hidden />
+          {t("guest.heroCtaRecommend")}
+        </Link>
       </div>
     </section>
   );

@@ -1,7 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import {
+  RecommendLandingWrapper,
+  RecommendExampleSection,
+  RecommendFaqSection,
+  RecommendBottomCta,
+} from "@/components/recommend/RecommendLandingSections";
+import { trackRecommendEvent } from "@/lib/recommend-analytics";
 import { ListingCard } from "@/components/ui";
 import { formatDateDisplay } from "@/lib/date-utils";
 import FramerDateRangePicker from "@/components/search/FramerDateRangePicker";
@@ -135,6 +142,35 @@ export default function RecommendPageContent() {
   const [error, setError] = useState("");
   const [results, setResults] = useState<RecommendItem[] | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const formStartedRef = useRef(false);
+  const dateTrackedRef = useRef(false);
+  const guestTrackedRef = useRef(false);
+
+  const markFormStart = () => {
+    if (!formStartedRef.current) {
+      formStartedRef.current = true;
+      trackRecommendEvent("recommend_form_start");
+    }
+  };
+
+  useEffect(() => {
+    if (checkIn && checkOut && !dateTrackedRef.current) {
+      dateTrackedRef.current = true;
+      trackRecommendEvent("recommend_date_select", { date_selected: true });
+    }
+  }, [checkIn, checkOut]);
+
+  useEffect(() => {
+    if (results && results.length > 0) {
+      trackRecommendEvent("recommend_result_view", {
+        result_count: results.length,
+        travel_type: tripType || undefined,
+        priorities: priorities.join(","),
+        guest_count: guests.adult + guests.child,
+        date_selected: !!(checkIn && checkOut),
+      });
+    }
+  }, [results, tripType, priorities, guests.adult, guests.child, checkIn, checkOut]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,6 +193,12 @@ export default function RecommendPageContent() {
     });
 
     setLoading(true);
+    trackRecommendEvent("recommend_submit", {
+      travel_type: tripType || undefined,
+      priorities: priorities.slice(0, MAX_PRIORITIES).join(","),
+      guest_count: guests.adult + guests.child,
+      date_selected: true,
+    });
     const recommendBody = {
       checkIn,
       checkOut,
@@ -284,35 +326,10 @@ export default function RecommendPageContent() {
   };
 
   return (
-    <div className="max-w-[720px] mx-auto px-4 py-8 pb-24">
-      <div className="mb-8">
-        <h1 className="text-minbak-h2 font-bold text-minbak-black flex items-center gap-2">
-          <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-minbak-primary to-amber-500 flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-white" />
-          </span>
-          {t("guest.aiRecommendTitle")}
-        </h1>
-        <p className="text-minbak-body text-minbak-dark-gray mt-2">
-          {t("guest.aiRecommendDesc")}
-        </p>
-        <div className="mt-4 p-3 md:p-4 rounded-minbak border border-minbak-light-gray bg-white text-minbak-caption text-minbak-gray leading-relaxed">
-          <p>
-            AI 숙소 추천은 숙소 설명, 위치, 평점, 입력하신 조건을 기준으로 한 참고용
-            추천입니다. 최종 예약 전에는 숙소 상세의 위치, 인원, 요금, 체크인 방식,
-            취소·환불 조건을 반드시 확인해 주세요.
-          </p>
-          <p className="mt-2">
-            추천에 입력한 여행 조건은 추천 결과 제공을 위해 처리될 수 있습니다. 자세한
-            내용은{" "}
-            <Link href="/policy" className="text-minbak-primary hover:underline font-medium">
-              개인정보처리방침
-            </Link>
-            을 확인해 주세요.
-          </p>
-        </div>
-      </div>
+    <div className="max-w-[900px] mx-auto px-0 sm:px-2 py-6 md:py-8 pb-24">
+      <RecommendLandingWrapper />
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form id="recommend-form" onSubmit={handleSubmit} className="space-y-6 scroll-mt-28">
         {/* 여행 유형 */}
         <section className="bg-white border border-minbak-light-gray rounded-minbak p-4 md:p-5 shadow-sm">
           <h2 className="text-minbak-body font-semibold text-minbak-black mb-3 flex items-center gap-2">
@@ -324,7 +341,12 @@ export default function RecommendPageContent() {
               <button
                 key={value}
                 type="button"
-                onClick={() => setTripType(tripType === value ? "" : value)}
+                onClick={() => {
+                  markFormStart();
+                  const next = tripType === value ? "" : value;
+                  setTripType(next);
+                  if (next) trackRecommendEvent("recommend_travel_type_select", { travel_type: next });
+                }}
                 className={`px-4 py-2.5 rounded-minbak text-minbak-body font-medium border transition-colors ${
                   tripType === value
                     ? "bg-minbak-primary text-white border-minbak-primary"
@@ -355,8 +377,17 @@ export default function RecommendPageContent() {
                   key={value}
                   type="button"
                   onClick={() => {
+                    markFormStart();
                     if (isSelected) setPriorities((prev) => prev.filter((p) => p !== value));
-                    else if (priorities.length < MAX_PRIORITIES) setPriorities((prev) => [...prev, value]);
+                    else if (priorities.length < MAX_PRIORITIES) {
+                      setPriorities((prev) => {
+                        const next = [...prev, value];
+                        trackRecommendEvent("recommend_priority_select", {
+                          priorities: next.join(","),
+                        });
+                        return next;
+                      });
+                    }
                   }}
                   disabled={isDisabled}
                   className={`px-4 py-2.5 rounded-minbak text-minbak-body font-medium border transition-colors ${
@@ -382,10 +413,13 @@ export default function RecommendPageContent() {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-minbak-caption text-minbak-gray mb-1">{t("guest.checkInCheckOut")}</label>
+              <label className="block text-minbak-caption text-minbak-gray mb-1">{t("guest.recommendScheduleHint")}</label>
               <button
                 type="button"
-                onClick={() => setDateOpen(true)}
+                onClick={() => {
+                  markFormStart();
+                  setDateOpen(true);
+                }}
                 className="w-full flex items-center justify-between px-4 py-3 border border-minbak-light-gray rounded-minbak text-left text-minbak-body hover:border-minbak-primary transition-colors"
               >
                 <span className="text-minbak-black">
@@ -396,10 +430,13 @@ export default function RecommendPageContent() {
               </button>
             </div>
             <div>
-              <label className="block text-minbak-caption text-minbak-gray mb-1">{t("guest.guests")}</label>
+              <label className="block text-minbak-caption text-minbak-gray mb-1">{t("guest.recommendGuestsHint")}</label>
               <button
                 type="button"
-                onClick={() => setGuestOpen(true)}
+                onClick={() => {
+                  markFormStart();
+                  setGuestOpen(true);
+                }}
                 className="w-full flex items-center justify-between px-4 py-3 border border-minbak-light-gray rounded-minbak text-left text-minbak-body hover:border-minbak-primary transition-colors"
               >
                 <span className="text-minbak-black">
@@ -422,7 +459,10 @@ export default function RecommendPageContent() {
           </h2>
           <textarea
             value={preferences}
-            onChange={(e) => setPreferences(e.target.value)}
+            onChange={(e) => {
+              markFormStart();
+              setPreferences(e.target.value);
+            }}
             placeholder={t("guest.preferencesPlaceholder")}
             className="w-full px-4 py-3 border border-minbak-light-gray rounded-minbak text-minbak-body text-minbak-black placeholder:text-minbak-gray resize-none focus:outline-none focus:ring-2 focus:ring-minbak-primary focus:border-transparent"
             rows={3}
@@ -490,7 +530,7 @@ export default function RecommendPageContent() {
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
             {results.map((item) => (
-              <div key={item.id} className="relative">
+              <div key={item.id} className="relative flex flex-col">
                 <div className="absolute top-2 left-2 z-10">
                   <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-minbak-primary text-white text-sm font-bold shadow-md">
                     {item.rank}
@@ -507,9 +547,10 @@ export default function RecommendPageContent() {
                   amenities={item.amenities}
                   isPromoted={item.isPromoted}
                 />
-                <div className="mt-2 space-y-1">
+                <div className="mt-2 space-y-2 flex-1 flex flex-col">
                   <p className="text-minbak-caption text-minbak-dark-gray">
-                    <span className="font-medium text-minbak-primary">{t("guest.recommendReason")}:</span> {item.reason}
+                    <span className="font-medium text-minbak-primary">{t("guest.recommendReason")}:</span>{" "}
+                    {item.reason}
                   </p>
                   {item.highlights && item.highlights.length > 0 && (
                     <div className="text-minbak-caption text-minbak-gray">
@@ -521,6 +562,28 @@ export default function RecommendPageContent() {
                       </ul>
                     </div>
                   )}
+                  <div className="flex flex-wrap gap-2 mt-auto pt-2">
+                    <Link
+                      href={`/listing/${item.id}`}
+                      onClick={() =>
+                        trackRecommendEvent("recommend_listing_click", {
+                          listing_id: item.id,
+                          listing_name: item.title,
+                          result_count: results.length,
+                        })
+                      }
+                      className="inline-flex items-center justify-center min-h-[40px] flex-1 px-4 py-2 rounded-minbak bg-minbak-primary text-white text-minbak-caption font-semibold hover:bg-minbak-primary-hover transition-colors"
+                    >
+                      {t("guest.recommendViewListing")}
+                    </Link>
+                    <Link
+                      href={`/listing/${item.id}`}
+                      onClick={() => trackRecommendEvent("recommend_booking_start", { listing_id: item.id })}
+                      className="inline-flex items-center justify-center min-h-[40px] px-4 py-2 rounded-minbak border border-minbak-primary text-minbak-primary text-minbak-caption font-medium hover:bg-minbak-primary/5 transition-colors"
+                    >
+                      {t("guest.recommendCheckListing")}
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}
@@ -555,10 +618,21 @@ export default function RecommendPageContent() {
       {guestOpen && (
         <FramerGuestPicker
           counts={guests}
-          onChange={setGuests}
+          onChange={(next) => {
+            setGuests(next);
+            const total = next.adult + next.child;
+            if (total > 0 && !guestTrackedRef.current) {
+              guestTrackedRef.current = true;
+              trackRecommendEvent("recommend_guest_count_select", { guest_count: total });
+            }
+          }}
           onClose={() => setGuestOpen(false)}
         />
       )}
+
+      <RecommendExampleSection />
+      <RecommendFaqSection />
+      <RecommendBottomCta />
     </div>
   );
 }

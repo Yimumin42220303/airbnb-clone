@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Sparkles, ChevronDown, ArrowRight } from "lucide-react";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
-const RECOMMEND_URL = "https://tokyominbak.net/recommend";
+const RECOMMEND_URL = "/recommend";
 
 export default function AIRecommendSection() {
   const t = useHostTranslations().t;

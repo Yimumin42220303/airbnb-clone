@@ -11,6 +11,10 @@ import {
   INLINE_POSITION,
   FEW_THRESHOLD,
 } from "@/components/search/SearchAIPrompt";
+import RecommendCtaBanner from "@/components/recommend/RecommendCtaBanner";
+
+/** 숙소 카드 5~6번째 이후 배너 삽입 (0-based index 5) */
+const RECOMMEND_BANNER_AT = 5;
 import { getListings, type ListingFilters } from "@/lib/listings";
 import { getNightlyAvailabilityForListings } from "@/lib/availability";
 import { getWishlistListingIds } from "@/lib/wishlist";
@@ -212,6 +216,9 @@ export default async function SearchPage({
                       checkOut={checkOut}
                       guests={guestsCount}
                     />
+                  )}
+                  {idx === RECOMMEND_BANNER_AT && listings.length > RECOMMEND_BANNER_AT && (
+                    <RecommendCtaBanner compact />
                   )}
                   <ListingCard
                     {...listing}

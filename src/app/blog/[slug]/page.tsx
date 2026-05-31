@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import BlogBody from "@/components/blog/BlogBody";
+import BlogRecommendCTA from "@/components/recommend/BlogRecommendCTA";
 import {
   getPostBySlug,
   getPosts,
@@ -193,6 +194,8 @@ export default async function BlogPostPage({ params }: Props) {
           )}
 
           <BlogBody body={post.body} imageAlt={post.title} />
+
+          <BlogRecommendCTA />
 
           {/* 숙소 보러가기 CTA */}
           <div className="mt-12 p-6 rounded-minbak bg-minbak-bg border border-minbak-light-gray text-center">

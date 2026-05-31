@@ -1,10 +1,29 @@
 import RecommendPageContent from "./RecommendPageContent";
+import { RECOMMEND_FAQ } from "@/lib/recommend-landing";
 
-/** AI 맞춤 숙소 추천 전용 페이지: 여행 유형·우선순위·일정·선호사항 입력 */
 export default function RecommendPage() {
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: RECOMMEND_FAQ.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.a,
+      },
+    })),
+  };
+
   return (
-    <main className="min-h-screen pt-24 px-4 md:px-6 pb-16 bg-minbak-bg">
-      <RecommendPageContent />
-    </main>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+      <main className="min-h-screen pt-24 px-4 md:px-6 pb-16 bg-minbak-bg">
+        <RecommendPageContent />
+      </main>
+    </>
   );
 }
