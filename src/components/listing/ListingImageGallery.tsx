@@ -11,9 +11,16 @@ type ImageItem = { id: string; url: string; sortOrder: number };
 type Props = {
   images: ImageItem[];
   title: string;
+  /** SEO alt fallback (location·인원 포함). 없으면 title 사용 */
+  imageAltBase?: string;
 };
 
-export default function ListingImageGallery({ images, title }: Props) {
+function altAt(base: string, index: number): string {
+  return index <= 0 ? base : `${base} 사진 ${index + 1}`;
+}
+
+export default function ListingImageGallery({ images, title, imageAltBase }: Props) {
+  const altBase = imageAltBase?.trim() || title;
   const { t } = useHostTranslations();
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [showAll, setShowAll] = useState(false);
@@ -26,7 +33,7 @@ export default function ListingImageGallery({ images, title }: Props) {
             <Image
               loader={cloudinaryLoader}
               src={images[0].url}
-              alt={title}
+              alt={altAt(altBase, 0)}
               fill
               className="object-contain cursor-pointer bg-black/5"
           sizes="(max-width: 1200px) 100vw, 800px"
@@ -39,6 +46,7 @@ export default function ListingImageGallery({ images, title }: Props) {
           <Lightbox
             images={images}
             title={title}
+            imageAltBase={altBase}
             currentIndex={0}
             onClose={() => setLightboxIndex(null)}
             onPrev={() => setLightboxIndex(null)}
@@ -83,7 +91,7 @@ export default function ListingImageGallery({ images, title }: Props) {
               <Image
                 loader={cloudinaryLoader}
                 src={img.url}
-                alt={i === 0 ? title : `${title} ${i + 1}`}
+                alt={altAt(altBase, i)}
                 fill
                 className="object-cover pointer-events-none"
                 sizes="100vw"
@@ -108,7 +116,7 @@ export default function ListingImageGallery({ images, title }: Props) {
               <Image
                 loader={cloudinaryLoader}
                 src={main.url}
-                alt={title}
+                alt={altAt(altBase, 0)}
                 fill
                 className="object-cover"
                 sizes="50vw"
@@ -130,7 +138,7 @@ export default function ListingImageGallery({ images, title }: Props) {
                   <Image
                     loader={cloudinaryLoader}
                     src={img.url}
-                    alt={`${title} ${i + 2}`}
+                    alt={altAt(altBase, i + 1)}
                     fill
                     className="object-cover"
                     sizes="(max-width: 1200px) 25vw, 360px"
@@ -158,6 +166,7 @@ export default function ListingImageGallery({ images, title }: Props) {
         <Lightbox
           images={images}
           title={title}
+          imageAltBase={altBase}
           currentIndex={lightboxIndex}
           onClose={() => setLightboxIndex(null)}
           onPrev={() =>
@@ -172,6 +181,7 @@ export default function ListingImageGallery({ images, title }: Props) {
         <AllPhotosOverlay
           images={images}
           title={title}
+          imageAltBase={altBase}
           onClose={() => setShowAll(false)}
         />
       )}
@@ -182,6 +192,7 @@ export default function ListingImageGallery({ images, title }: Props) {
 function Lightbox({
   images,
   title,
+  imageAltBase,
   currentIndex,
   onClose,
   onPrev,
@@ -189,12 +200,14 @@ function Lightbox({
 }: {
   images: ImageItem[];
   title: string;
+  imageAltBase?: string;
   currentIndex: number;
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
 }) {
   const { t } = useHostTranslations();
+  const altBase = imageAltBase?.trim() || title;
   const img = images[currentIndex];
 
   useEffect(() => {
@@ -258,7 +271,7 @@ function Lightbox({
         <Image
           loader={cloudinaryLoader}
           src={img.url}
-          alt={`${title} - ${currentIndex + 1}`}
+          alt={altAt(altBase, currentIndex)}
           fill
           className="object-contain"
           sizes="90vw"
@@ -274,13 +287,16 @@ function Lightbox({
 function AllPhotosOverlay({
   images,
   title,
+  imageAltBase,
   onClose,
 }: {
   images: ImageItem[];
   title: string;
+  imageAltBase?: string;
   onClose: () => void;
 }) {
   const { t } = useHostTranslations();
+  const altBase = imageAltBase?.trim() || title;
   const [aspects, setAspects] = useState<Record<number, { w: number; h: number }>>({});
 
   const handleLoad = (index: number, e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -332,7 +348,7 @@ function AllPhotosOverlay({
                   <Image
                     loader={cloudinaryLoader}
                     src={img.url}
-                    alt={`${title} 추가 사진 ${index + 1}`}
+                    alt={altAt(altBase, index)}
                     fill
                     className="object-cover"
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"

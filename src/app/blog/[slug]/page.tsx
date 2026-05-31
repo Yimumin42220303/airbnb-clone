@@ -8,7 +8,6 @@ import BlogLinkAnalytics from "@/components/blog/BlogLinkAnalytics";
 import BlogRecommendCTA from "@/components/recommend/BlogRecommendCTA";
 import {
   getPostBySlug,
-  getPosts,
   getRelatedPosts,
   getPostsBySlugs,
   getBlogSeoOverride,
@@ -32,18 +31,11 @@ import {
 } from "@/lib/blog-listing-jsonld";
 type Props = { params: Promise<{ slug: string }> | { slug: string } };
 
-/** DB 본문 변경이 빠르게 반영되도록 짧게 유지 (블로그만) */
-export const revalidate = 60;
-
-export async function generateStaticParams() {
-  try {
-    const posts = await getPosts({ publishedOnly: true });
-    return posts.map((p) => ({ slug: p.slug }));
-  } catch {
-    // DB 연결 불가(로컬/Neon 일시중지 등) 시 빌드만 통과시키고, 블로그 글은 방문 시 서버에서 생성
-    return [];
-  }
-}
+/**
+ * 빌드 시 DB 미연결로 SSG가 깨지면 상세 500이 날 수 있어 SSR 고정.
+ * (revalidate는 force-dynamic과 함께 쓰지 않음)
+ */
+export const dynamic = "force-dynamic";
 
 async function resolveSlugParam(params: Props["params"]): Promise<string> {
   const resolved = await Promise.resolve(params);

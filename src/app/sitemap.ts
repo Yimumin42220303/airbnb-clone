@@ -6,6 +6,7 @@ import {
   staticLastModified,
 } from "@/lib/sitemap-config";
 import { SITEMAP_ORIGIN } from "@/lib/site-url";
+import { ORGANIC_LANDING_PATHS } from "@/lib/organic-landing";
 
 /** DB 변경 반영 (새 블로그·숙소 공개 시 자동 갱신) */
 export const revalidate = 3600;
@@ -105,6 +106,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly",
       priority: 0.8,
     },
+    ...ORGANIC_LANDING_PATHS.map((path) => ({
+      url: siteUrl(path),
+      lastModified: staticLastModified(path),
+      changeFrequency: "weekly" as const,
+      priority: 0.85,
+    })),
   ];
 
   const blogUrls: MetadataRoute.Sitemap = posts.map((post) => ({

@@ -36,6 +36,11 @@ export interface ListingCardProps {
   isVerified?: boolean;
   /** 숙소 등록일 (ISO) */
   listingCreatedAt?: string;
+  /** SEO: 침실·인원 등 스펙 텍스트 노출 */
+  showSpecs?: boolean;
+  maxGuests?: number;
+  beds?: number;
+  bedrooms?: number;
 }
 
 export default function ListingCard({
@@ -58,6 +63,10 @@ export default function ListingCard({
   perPerson,
   isVerified,
   listingCreatedAt,
+  showSpecs = false,
+  maxGuests,
+  beds,
+  bedrooms,
 }: ListingCardProps) {
   const { formatForGuest } = useCurrency();
   const listingHref = searchQuery ? `/listing/${id}?${searchQuery}` : `/listing/${id}`;
@@ -120,6 +129,17 @@ export default function ListingCard({
             </span>
             <span className="truncate">{location}</span>
           </div>
+          {showSpecs && (maxGuests != null || beds != null || bedrooms != null) && (
+            <p className="text-minbak-caption text-minbak-gray line-clamp-1">
+              {[
+                maxGuests != null && maxGuests > 0 ? `최대 ${maxGuests}인` : null,
+                bedrooms != null && bedrooms > 0 ? `침실 ${bedrooms}` : null,
+                beds != null && beds > 0 ? `침대 ${beds}` : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          )}
         </div>
         {amenities.length > 0 && (
           <div className="flex flex-wrap gap-1">

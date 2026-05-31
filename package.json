@@ -11,6 +11,7 @@
     "lint": "next lint",
     "check": "next lint && next build",
     "qa:blog-seo": "node scripts/qa-blog-seo.mjs",
+    "qa:organic-seo": "node scripts/qa-organic-seo.mjs",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",

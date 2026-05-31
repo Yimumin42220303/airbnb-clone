@@ -11,11 +11,16 @@ export const SITEMAP_STATIC_LASTMOD: Record<
   | "/agreement"
   | "/recommend"
   | "/blog"
-  | "/lp/host",
+  | "/lp/host"
+  | "/tokyo-family-accommodation"
+  | "/tokyo-4-person-accommodation"
+  | "/tokyo-5-person-accommodation"
+  | "/shinjuku-family-accommodation"
+  | "/tokyo-korean-minbak",
   string
 > = {
   "/": "2026-05-30",
-  "/search": "2026-05-30",
+  "/search": "2026-05-31",
   "/about": "2026-05-30",
   "/trust": "2026-05-30",
   "/policy": "2026-05-30",
@@ -23,6 +28,11 @@ export const SITEMAP_STATIC_LASTMOD: Record<
   "/recommend": "2026-05-30",
   "/blog": "2026-05-30",
   "/lp/host": "2026-05-30",
+  "/tokyo-family-accommodation": "2026-05-31",
+  "/tokyo-4-person-accommodation": "2026-05-31",
+  "/tokyo-5-person-accommodation": "2026-05-31",
+  "/shinjuku-family-accommodation": "2026-05-31",
+  "/tokyo-korean-minbak": "2026-05-31",
 };
 
 export function staticLastModified(path: keyof typeof SITEMAP_STATIC_LASTMOD): Date {

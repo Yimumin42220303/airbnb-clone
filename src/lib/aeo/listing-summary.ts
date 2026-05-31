@@ -290,6 +290,21 @@ export function buildAeoLandingLinks(aeo: ListingAeo): AeoLandingLink[] {
   const out: AeoLandingLink[] = [];
   const { parsedLocation: loc, travelType: tt, guestRange } = aeo;
 
+  if (tt.family || guestRange.max >= 4) {
+    out.push({ label: "도쿄 가족 숙소 랜딩", href: "/tokyo-family-accommodation" });
+  }
+  if (guestRange.max >= 4) {
+    out.push({ label: "도쿄 4인 숙소", href: "/tokyo-4-person-accommodation" });
+  }
+  if (guestRange.max >= 5) {
+    out.push({ label: "도쿄 5인 숙소", href: "/tokyo-5-person-accommodation" });
+  }
+  if (/신주쿠|shinjuku/i.test(loc.mainArea ?? "")) {
+    out.push({ label: "신주쿠 가족 숙소", href: "/shinjuku-family-accommodation" });
+  }
+  if (aeo.koreanSupport) {
+    out.push({ label: "도쿄 한인민박·한국어 안내", href: "/tokyo-korean-minbak" });
+  }
   if (loc.mainArea) {
     out.push({
       label: `${loc.mainArea} 근처 숙소 더 보기`,
@@ -297,16 +312,7 @@ export function buildAeoLandingLinks(aeo: ListingAeo): AeoLandingLink[] {
     });
   }
   if (guestRange.max >= 4 && tt.family) {
-    out.push({ label: "도쿄 4인 가족숙소 추천", href: "/search?guests=4" });
-  }
-  if (guestRange.max >= 5 && tt.group) {
-    out.push({ label: "도쿄 5인 이상 그룹 숙소 추천", href: "/search?guests=5" });
-  }
-  if (tt.longStay) {
-    out.push({ label: "장기체류 가능한 도쿄 민박", href: "/search?sort=newest" });
-  }
-  if (aeo.koreanSupport) {
-    out.push({ label: "한국어 안내 가능한 도쿄 숙소", href: "/search" });
+    out.push({ label: "4인 기준 숙소 검색", href: "/search?adults=4" });
   }
   return out;
 }

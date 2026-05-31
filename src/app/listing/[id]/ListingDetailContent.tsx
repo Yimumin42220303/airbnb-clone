@@ -15,9 +15,10 @@ import ListingBadge, { computeBadges } from "@/components/listing/ListingBadge";
 import WishlistHeart from "@/components/wishlist/WishlistHeart";
 import ShareListingButton from "@/components/listing/ShareListingButton";
 import ListingChannelInquiryButton from "@/components/channel/ListingChannelInquiryButton";
-import MetaPixelViewContent from "@/components/analytics/MetaPixelViewContent";
+import { buildListingGalleryAlt } from "@/lib/listing-image-alt";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 import { getAmenityLabel } from "@/lib/host-i18n";
+import MetaPixelViewContent from "@/components/analytics/MetaPixelViewContent";
 
 type ReviewItem = {
   rating: number;
@@ -220,6 +221,7 @@ export default function ListingDetailContent({
             <ListingImageGallery
               images={listing.images}
               title={listing.title}
+              imageAltBase={buildListingGalleryAlt(listing.title, listing.location)}
             />
           </div>
 
