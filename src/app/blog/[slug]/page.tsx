@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import BlogBody from "@/components/blog/BlogBody";
+import BlogArticleBody from "@/components/blog/BlogArticleBody";
+import BlogLinkAnalytics from "@/components/blog/BlogLinkAnalytics";
 import BlogRecommendCTA from "@/components/recommend/BlogRecommendCTA";
 import {
   getPostBySlug,
@@ -16,6 +17,11 @@ import {
   buildBlogFaqJsonLd,
   extractBlogFaqFromBody,
 } from "@/lib/blog-faq-jsonld";
+import { getBlogPostListingEmbed } from "@/lib/blog-listing-embeds";
+import {
+  buildBlogListingItemListJsonLd,
+  buildBlogPostingMentions,
+} from "@/lib/blog-listing-jsonld";
 type Props = { params: Promise<{ slug: string }> | { slug: string } };
 
 /** DB 본문 변경이 빠르게 반영되도록 짧게 유지 (블로그만) */
@@ -95,13 +101,16 @@ export default async function BlogPostPage({ params }: Props) {
   const metaDescription =
     seoOverride?.description || post.excerpt || undefined;
 
+  const listingEmbed = getBlogPostListingEmbed(post.slug);
+  const pageUrl = `${BASE_URL}/blog/${encodeURIComponent(post.slug)}`;
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
     headline: post.title,
     description: metaDescription,
     image: ogImage,
-    url: `${BASE_URL}/blog/${encodeURIComponent(post.slug)}`,
+    url: pageUrl,
     datePublished: post.publishedAt?.toISOString(),
     dateModified: (post.updatedAt ?? post.createdAt).toISOString(),
     author: post.authorName
@@ -112,8 +121,13 @@ export default async function BlogPostPage({ params }: Props) {
       name: "도쿄민박",
       logo: { "@type": "ImageObject", url: `${BASE_URL}/icon.png` },
     },
-    mainEntityOfPage: { "@type": "WebPage", "@id": `${BASE_URL}/blog/${encodeURIComponent(post.slug)}` },
+    mainEntityOfPage: { "@type": "WebPage", "@id": pageUrl },
+    ...(listingEmbed ? { mentions: buildBlogPostingMentions(listingEmbed) } : {}),
   };
+
+  const listingItemListLd = listingEmbed
+    ? buildBlogListingItemListJsonLd(post.title, pageUrl, listingEmbed)
+    : null;
 
   const breadcrumbLd = {
     "@context": "https://schema.org",
@@ -125,7 +139,6 @@ export default async function BlogPostPage({ params }: Props) {
     ],
   };
 
-  const pageUrl = `${BASE_URL}/blog/${encodeURIComponent(post.slug)}`;
   const blogFaq = extractBlogFaqFromBody(post.body);
   const faqLd = buildBlogFaqJsonLd(blogFaq, pageUrl);
 
@@ -143,6 +156,12 @@ export default async function BlogPostPage({ params }: Props) {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
+        />
+      )}
+      {listingItemListLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(listingItemListLd) }}
         />
       )}
       <main className="min-h-screen pt-24">
@@ -193,9 +212,10 @@ export default async function BlogPostPage({ params }: Props) {
             </div>
           )}
 
-          <BlogBody body={post.body} imageAlt={post.title} />
+          <BlogLinkAnalytics postSlug={post.slug}>
+            <BlogArticleBody body={post.body} slug={post.slug} defaultImageAlt={post.title} />
 
-          <BlogRecommendCTA />
+            <BlogRecommendCTA />
 
           {/* 숙소 보러가기 CTA */}
           <div className="mt-12 p-6 rounded-minbak bg-minbak-bg border border-minbak-light-gray text-center">
@@ -223,7 +243,7 @@ export default async function BlogPostPage({ params }: Props) {
 
           {/* 관련 글 */}
           {relatedPosts.length > 0 && (
-            <section className="mt-12 pt-8 border-t border-minbak-light-gray">
+            <section className="mt-12 pt-8 border-t border-minbak-light-gray" aria-label="관련 글">
               <h2 className="text-minbak-h3 font-semibold text-minbak-black mb-5">
                 다른 글도 읽어보세요
               </h2>
@@ -232,6 +252,7 @@ export default async function BlogPostPage({ params }: Props) {
                   <li key={rp.id}>
                     <Link
                       href={`/blog/${encodeURIComponent(rp.slug)}`}
+                      data-blog-link-type="related_post"
                       className="block h-full group border border-minbak-light-gray rounded-minbak overflow-hidden bg-white hover:border-minbak-primary/40 transition-colors"
                     >
                       {rp.coverImage && (
@@ -261,6 +282,7 @@ export default async function BlogPostPage({ params }: Props) {
               </ul>
             </section>
           )}
+          </BlogLinkAnalytics>
         </article>
       </main>
     </>

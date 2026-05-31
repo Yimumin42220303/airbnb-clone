@@ -19,6 +19,7 @@ export default function BlogRecommendCTA({ hidden = false }: Props) {
       <p className="text-minbak-body text-minbak-gray mt-2 leading-relaxed">{BLOG_RECOMMEND_CTA.body}</p>
       <Link
         href="/recommend"
+        data-blog-link-type="recommend_cta"
         className="mt-4 inline-flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 rounded-minbak bg-minbak-primary text-white font-medium hover:bg-minbak-primary-hover transition-colors"
       >
         <Sparkles className="w-4 h-4" aria-hidden />

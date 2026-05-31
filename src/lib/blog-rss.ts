@@ -63,7 +63,15 @@ function blocksToHtml(blocks: BodyBlock[]): string {
           const src = block.url.startsWith("/")
             ? `${RSS_SITE_URL}${block.url}`
             : block.url;
-          return `<figure><img src="${escapeXml(src)}" alt="" loading="lazy" /></figure>`;
+          const alt = escapeXml(block.alt || "");
+          const img = `<img src="${escapeXml(src)}" alt="${alt}" loading="lazy" />`;
+          if (block.linkHref) {
+            const href = block.linkHref.startsWith("/")
+              ? `${RSS_SITE_URL}${block.linkHref}`
+              : block.linkHref;
+            return `<figure><a href="${escapeXml(href)}">${img}</a></figure>`;
+          }
+          return `<figure>${img}</figure>`;
         }
         default:
           return "";

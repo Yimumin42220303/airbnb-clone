@@ -4,7 +4,9 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import BlogBody from "@/components/blog/BlogBody";
+import BlogBodyShortcodePanel from "@/components/admin/blog/BlogBodyShortcodePanel";
 import { BLOG_CATEGORIES } from "@/lib/blog-categories";
+import { getBlogPostListingEmbed } from "@/lib/blog-listing-embeds";
 
 type PostFormData = {
   title: string;
@@ -251,7 +253,11 @@ export default function BlogPostForm({ mode, initial }: Props) {
         </div>
         <p className="text-minbak-caption text-minbak-gray mb-2">
           본문 중간에 넣을 위치에 커서를 두고 「이미지 삽입」을 누른 뒤 사진을 선택하면 해당 위치에 이미지가 들어갑니다.
+          숙소 사진은 업로드 후{" "}
+          <code className="text-minbak-black">|listing:숙소ID|alt설명</code>을 URL 뒤에 붙이면 상세페이지로
+          연결됩니다.
         </p>
+        <BlogBodyShortcodePanel slug={form.slug} onInsert={insertAtCursor} />
         <textarea
           ref={bodyRef}
           id="body"
@@ -268,7 +274,7 @@ export default function BlogPostForm({ mode, initial }: Props) {
           </p>
           <div className="p-4 min-h-[120px]">
             {form.body.trim() ? (
-              <BlogBody body={form.body} />
+              <BlogBody body={form.body} embed={getBlogPostListingEmbed(form.slug)} />
             ) : (
               <p className="text-minbak-caption text-minbak-gray">본문을 입력하면 미리보기가 표시됩니다.</p>
             )}
