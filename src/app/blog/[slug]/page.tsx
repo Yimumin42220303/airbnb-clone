@@ -11,6 +11,7 @@ import {
   getPosts,
   getRelatedPosts,
   getBlogSeoOverride,
+  getBlogCtaConfig,
   resolveBlogOgImage,
 } from "@/lib/blog";
 import { BASE_URL } from "@/lib/site-url";
@@ -159,6 +160,14 @@ export default async function BlogPostPage({ params }: Props) {
   const blogFaq = extractBlogFaqFromBody(post.body);
   const faqLd = buildBlogFaqJsonLd(blogFaq, pageUrl);
 
+  const cta = getBlogCtaConfig(post.slug);
+  const secondaryHeading = cta.secondaryHeading || "도쿄 여행, 숙소부터 정하세요";
+  const secondaryBody =
+    cta.secondaryBody ||
+    "예약 전 문의부터 체크인 안내까지 한국어로 대응하는 도쿄 숙소를 확인해보세요.";
+  const searchLabel = cta.searchLabel || "도쿄 숙소 보러가기";
+  const trustLabel = cta.trustLabel || "안심예약센터 보기";
+
   return (
     <>
       <script
@@ -240,15 +249,20 @@ export default async function BlogPostPage({ params }: Props) {
               />
           </article>
 
-          <aside className="mt-12 space-y-12" aria-label="블로그 전환 및 관련 글">
-            <BlogRecommendCTA />
+          <section className="mt-12 space-y-8" aria-label="추천 숙소 및 예약 안내">
+            <BlogRecommendCTA
+              as="div"
+              button={cta.recommendButton}
+              title={cta.recommendTitle}
+              body={cta.recommendBody}
+            />
 
             <div className="p-6 rounded-minbak bg-minbak-bg border border-minbak-light-gray text-center">
               <h2 className="text-minbak-title font-semibold text-minbak-black mb-1">
-                도쿄 여행, 숙소부터 정하세요
+                {secondaryHeading}
               </h2>
               <p className="text-minbak-body text-minbak-gray mb-4">
-                예약 전 문의부터 체크인 안내까지 한국어로 대응하는 도쿄 숙소를 확인해보세요.
+                {secondaryBody}
               </p>
               <div className="flex flex-wrap gap-3 justify-center">
                 <Link
@@ -256,20 +270,21 @@ export default async function BlogPostPage({ params }: Props) {
                   data-blog-link-type="nav"
                   className="px-5 py-2.5 bg-minbak-primary text-white font-medium rounded-minbak hover:bg-minbak-primary-hover transition-colors"
                 >
-                  도쿄 숙소 보러가기
+                  {searchLabel}
                 </Link>
                 <Link
                   href="/trust"
                   data-blog-link-type="nav"
                   className="px-5 py-2.5 border border-minbak-light-gray bg-white text-minbak-black font-medium rounded-minbak hover:bg-white/60 transition-colors"
                 >
-                  안심예약센터 보기
+                  {trustLabel}
                 </Link>
               </div>
             </div>
+          </section>
 
-            {relatedPosts.length > 0 && (
-              <section aria-label="관련 글">
+          {relatedPosts.length > 0 && (
+              <aside className="mt-12" aria-label="관련 글">
                 <h2 className="text-minbak-h3 font-semibold text-minbak-black mb-5">
                   다른 글도 읽어보세요
                 </h2>
@@ -308,9 +323,8 @@ export default async function BlogPostPage({ params }: Props) {
                     </li>
                   ))}
                 </ul>
-              </section>
+              </aside>
             )}
-          </aside>
           </BlogLinkAnalytics>
         </div>
       </main>

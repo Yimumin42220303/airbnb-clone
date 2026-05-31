@@ -30,10 +30,74 @@ const BLOG_SEO_OVERRIDES: Record<string, BlogSeoOverride> = {
     ogDescription:
       "예약 전 문의부터 체크인 안내, 숙박 중 문제 접수, 환불·민원 접수까지 한국어로 안내하는 도쿄 숙소 예약 플랫폼을 소개합니다.",
   },
+  "tokyo-minbak-vs-hotel": {
+    title: "도쿄 민박 vs 호텔 비교｜가족·친구 여행 숙소 선택 가이드 | 도쿄민박",
+    description:
+      "도쿄 여행 숙소를 호텔로 할지 민박으로 할지 고민된다면? 인원·일정·예산·여행 스타일별로 민박과 호텔의 장단점을 비교하고 후회 없는 도쿄 숙소 선택 기준을 정리했습니다.",
+    ogTitle: "도쿄 민박 vs 호텔 비교｜가족·친구 여행 숙소 선택 가이드",
+    ogDescription:
+      "인원·일정·예산·여행 스타일별로 도쿄 민박과 호텔의 장단점을 비교하고 숙소 선택 기준을 정리했습니다.",
+  },
+  "tokyo-travel-luggage-tips": {
+    title: "도쿄 여행 짐 보관 꿀팁｜공항 택배·코인락커·빈손 여행 | 도쿄민박",
+    description:
+      "도쿄 여행 캐리어 고민 끝! 공항 택배(탁큐빈), 코인락커 실시간 확인, 숙소 짐 맡기기까지 도쿄 빈손 여행 실전 꿀팁과 짐 동선이 편한 숙소 선택법을 정리했습니다.",
+    ogTitle: "도쿄 여행 짐 보관 꿀팁｜공항 택배·코인락커·빈손 여행",
+    ogDescription:
+      "공항 택배, 코인락커 실시간 확인, 숙소 짐 맡기기까지 도쿄 빈손 여행 실전 꿀팁을 정리했습니다.",
+  },
+  "shibuya-ku-area-guide": {
+    title: "시부야구 숙소 가이드｜지역별 특징과 숙소 선택 기준 | 도쿄민박",
+    ogTitle: "시부야구 숙소 가이드｜지역별 특징과 숙소 선택 기준",
+  },
 };
 
 export function getBlogSeoOverride(slug: string): BlogSeoOverride | null {
   return BLOG_SEO_OVERRIDES[slug] ?? null;
+}
+
+/** 글 주제별 하단 CTA 문구 (article 밖, 전환 동선). 미정의 시 기본값 사용 */
+export type BlogCtaConfig = {
+  recommendTitle?: string;
+  recommendBody?: string;
+  recommendButton?: string;
+  secondaryHeading?: string;
+  secondaryBody?: string;
+  searchLabel?: string;
+  trustLabel?: string;
+};
+
+const BLOG_CTA_CONFIG: Record<string, BlogCtaConfig> = {
+  "shibuya-ku-area-guide": {
+    recommendButton: "시부야구 여행 동선에 맞는 숙소 추천받기",
+    secondaryHeading: "시부야·하츠다이 근처 숙소를 찾고 있다면",
+    searchLabel: "시부야·하츠다이 근처 숙소 보기",
+  },
+  "shinjuku-family-accommodation-guide": {
+    recommendButton: "4인 이상 가족 숙소 추천받기",
+    secondaryHeading: "신주쿠 근처 넓은 숙소를 찾고 있다면",
+    searchLabel: "신주쿠 근처 넓은 숙소 보기",
+  },
+  "tokyo-minbak-vs-hotel": {
+    recommendButton: "가족·친구 여행에 맞는 숙소 찾기",
+    secondaryHeading: "호텔보다 넓은 도쿄 숙소가 궁금하다면",
+    searchLabel: "호텔보다 넓은 도쿄 숙소 비교하기",
+  },
+  "what-is-tokyominbak": {
+    recommendButton: "내 조건에 맞는 도쿄 숙소 추천받기",
+    secondaryHeading: "처음 이용한다면 먼저 확인해보세요",
+    searchLabel: "도쿄민박 등록 숙소 둘러보기",
+    trustLabel: "처음 이용 전 안심예약센터 보기",
+  },
+  "tokyo-travel-luggage-tips": {
+    recommendButton: "짐 옮기기 편한 숙소 추천받기",
+    secondaryHeading: "역에서 가까운 도쿄 숙소를 찾고 있다면",
+    searchLabel: "역에서 가까운 도쿄 숙소 보기",
+  },
+};
+
+export function getBlogCtaConfig(slug: string): BlogCtaConfig {
+  return BLOG_CTA_CONFIG[slug] ?? {};
 }
 
 /** coverImage → 본문 첫 [IMG:…] → 기본 OG 순 */
