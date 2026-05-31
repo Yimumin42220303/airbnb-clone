@@ -1,16 +1,24 @@
 /**
  * 블로그 본문 렌더링.
  *
- * - 경량 마크다운: 제목, 목록, 링크 [텍스트](url) → crawlable <a href="">
- * - [IMG:url] · [IMG:url|listing:ID|alt] · [LISTING_CARD:key] · [BLOG_COMPARE]
+ * - 링크 [텍스트](url) → <a href="">
+ * - [IMG:url|listing:ID|alt] · [LISTING_CARD:ID|...] · [BLOG_COMPARE:ID,ID] · [BLOG_COMPARE]
  */
 
 import Link from "next/link";
 import BlogListingCard from "@/components/blog/BlogListingCard";
 import BlogListingCompareTable from "@/components/blog/BlogListingCompareTable";
 import type { BlogListingCardData } from "@/lib/blog-listing-data";
-import type { BlogPostListingEmbed } from "@/lib/blog-listing-embeds";
-import { listingPath } from "@/lib/blog-listing-embeds";
+import {
+  buildCompareRowFromListing,
+  buildListingCardDisplay,
+  listingIdsFromCardsBeforeCompare,
+  listingPath,
+  parseCompareListingIds,
+  parseListingCardToken,
+  collectListingIdsInOrder,
+  type BlogListingCardOverrides,
+} from "@/lib/blog-listing-shortcode";
 
 function isAllowedImageUrl(url: string): boolean {
   const t = url.trim();
@@ -36,12 +44,9 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-/** 한 줄 인라인 마크다운 → HTML (<a href> 포함) */
 function renderInline(raw: string): string {
   let s = escapeHtml(raw);
-
   s = s.replace(/`([^`]+)`/g, (_m, code) => `<code>${code}</code>`);
-
   s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_m, text, url) => {
     const u = String(url);
     if (!isAllowedLinkUrl(u)) return text;
@@ -49,11 +54,9 @@ function renderInline(raw: string): string {
     const rel = external ? ' target="_blank" rel="noopener noreferrer nofollow"' : "";
     return `<a href="${u}"${rel}>${text}</a>`;
   });
-
   s = s.replace(/\*\*([^*]+)\*\*/g, (_m, t) => `<strong>${t}</strong>`);
   s = s.replace(/(^|[^*])\*([^*\s][^*]*?)\*(?!\*)/g, (_m, pre, t) => `${pre}<em>${t}</em>`);
   s = s.replace(/(^|[^_])_([^_\s][^_]*?)_(?!_)/g, (_m, pre, t) => `${pre}<em>${t}</em>`);
-
   return s;
 }
 
@@ -64,14 +67,10 @@ export type BlogBodyBlock =
   | { type: "quote"; html: string }
   | { type: "hr" }
   | { type: "image"; url: string; linkHref?: string; alt?: string }
-  | { type: "listing_card"; listingKey: string }
-  | { type: "compare_table" };
+  | { type: "listing_card"; listingId: string; overrides: BlogListingCardOverrides }
+  | { type: "compare_table"; listingIds: string[] | "auto" };
 
-type ParseOptions = {
-  embed?: BlogPostListingEmbed | null;
-};
-
-function parseImgToken(inner: string, embed?: BlogPostListingEmbed | null): BlogBodyBlock | null {
+function parseImgToken(inner: string): BlogBodyBlock | null {
   const parts = inner.split("|").map((p) => p.trim());
   const url = parts[0];
   if (!isAllowedImageUrl(url)) return null;
@@ -82,36 +81,19 @@ function parseImgToken(inner: string, embed?: BlogPostListingEmbed | null): Blog
   for (let i = 1; i < parts.length; i++) {
     const p = parts[i];
     if (p.startsWith("listing:")) {
-      linkHref = listingPath(p.slice("listing:".length));
+      const id = p.slice("listing:".length);
+      linkHref = listingPath(id);
     } else if (p.startsWith("/listing/")) {
       linkHref = p.split("?")[0];
     } else if (p) {
       alt = p;
     }
   }
-  if (!linkHref && embed) {
-    const key = Object.keys(embed.listings).find(
-      (k) =>
-        embed.listings[k].imageUrlHint && url.includes(embed.listings[k].imageUrlHint!)
-    );
-    if (key) linkHref = listingPath(embed.listings[key].listingId);
-  }
 
   return { type: "image", url, linkHref, alt };
 }
 
-function resolveListingCardKey(token: string, embed?: BlogPostListingEmbed | null): string | null {
-  const t = token.trim();
-  if (embed?.listings[t]) return t;
-  if (embed) {
-    const found = Object.entries(embed.listings).find(([, m]) => m.listingId === t);
-    if (found) return found[0];
-  }
-  return null;
-}
-
-/** 텍스트 청크 파싱 */
-function parseTextBlocks(text: string, opts?: ParseOptions): BlogBodyBlock[] {
+function parseTextBlocks(text: string): BlogBodyBlock[] {
   const blocks: BlogBodyBlock[] = [];
   const lines = text.replace(/\r\n/g, "\n").split("\n");
   let i = 0;
@@ -137,15 +119,25 @@ function parseTextBlocks(text: string, opts?: ParseOptions): BlogBodyBlock[] {
     const listingCard = trimmed.match(/^\[LISTING_CARD:([^\]]+)\]$/i);
     if (listingCard) {
       flushParagraph();
-      const key = resolveListingCardKey(listingCard[1], opts?.embed);
-      if (key) blocks.push({ type: "listing_card", listingKey: key });
+      const parsed = parseListingCardToken(listingCard[1]);
+      if (parsed) {
+        blocks.push({
+          type: "listing_card",
+          listingId: parsed.listingId,
+          overrides: parsed.overrides,
+        });
+      }
       i += 1;
       continue;
     }
 
-    if (/^\[BLOG_COMPARE(?::[^\]]*)?\]$/i.test(trimmed)) {
+    const compareMatch = trimmed.match(/^\[BLOG_COMPARE(?::([^\]]*))?\]$/i);
+    if (compareMatch) {
       flushParagraph();
-      blocks.push({ type: "compare_table" });
+      blocks.push({
+        type: "compare_table",
+        listingIds: parseCompareListingIds(compareMatch[1]),
+      });
       i += 1;
       continue;
     }
@@ -211,8 +203,7 @@ function parseTextBlocks(text: string, opts?: ParseOptions): BlogBodyBlock[] {
   return blocks;
 }
 
-/** 본문 → 블록 배열 */
-export function parseBlogBody(body: string, opts?: ParseOptions): BlogBodyBlock[] {
+export function parseBlogBody(body: string): BlogBodyBlock[] {
   const blocks: BlogBodyBlock[] = [];
   const re = /\[IMG:([^\]]+)\]|\[LISTING_CARD:([^\]]+)\]|\[BLOG_COMPARE(?::[^\]]*)?\]/gi;
   let lastIndex = 0;
@@ -220,57 +211,80 @@ export function parseBlogBody(body: string, opts?: ParseOptions): BlogBodyBlock[
 
   while ((m = re.exec(body)) !== null) {
     if (m.index > lastIndex) {
-      blocks.push(...parseTextBlocks(body.slice(lastIndex, m.index), opts));
+      blocks.push(...parseTextBlocks(body.slice(lastIndex, m.index)));
     }
     const full = m[0];
     if (full.toUpperCase().startsWith("[IMG:")) {
-      const img = parseImgToken(m[1], opts?.embed);
+      const img = parseImgToken(m[1]);
       if (img) blocks.push(img);
-      else blocks.push(...parseTextBlocks(full, opts));
+      else blocks.push(...parseTextBlocks(full));
     } else if (full.toUpperCase().startsWith("[LISTING_CARD:")) {
-      const key = resolveListingCardKey(m[2], opts?.embed);
-      if (key) blocks.push({ type: "listing_card", listingKey: key });
+      const parsed = parseListingCardToken(m[2]);
+      if (parsed) {
+        blocks.push({
+          type: "listing_card",
+          listingId: parsed.listingId,
+          overrides: parsed.overrides,
+        });
+      }
     } else if (full.toUpperCase().startsWith("[BLOG_COMPARE")) {
-      blocks.push({ type: "compare_table" });
+      const inner = full.match(/\[BLOG_COMPARE(?::([^\]]*))?\]/i)?.[1];
+      blocks.push({
+        type: "compare_table",
+        listingIds: parseCompareListingIds(inner),
+      });
     }
     lastIndex = re.lastIndex;
   }
 
   if (lastIndex < body.length) {
-    blocks.push(...parseTextBlocks(body.slice(lastIndex), opts));
+    blocks.push(...parseTextBlocks(body.slice(lastIndex)));
   }
   return blocks;
 }
 
-export function collectListingIdsFromBlocks(
-  blocks: BlogBodyBlock[],
-  embed?: BlogPostListingEmbed | null
-): string[] {
-  const ids = new Set<string>();
-  for (const block of blocks) {
+export function collectListingIdsFromBlocks(blocks: BlogBodyBlock[]): string[] {
+  const fromBody = blocks.flatMap((block) => {
+    if (block.type === "listing_card") return [block.listingId];
     if (block.type === "image" && block.linkHref?.startsWith("/listing/")) {
-      ids.add(block.linkHref.replace("/listing/", "").split("?")[0]);
+      return [block.linkHref.replace("/listing/", "").split("?")[0]];
     }
-    if (block.type === "listing_card") {
-      const meta = embed?.listings[block.listingKey];
-      if (meta) ids.add(meta.listingId);
-      else if (/^c[a-z0-9]{20,}$/i.test(block.listingKey)) ids.add(block.listingKey);
+    if (block.type === "compare_table" && Array.isArray(block.listingIds)) {
+      return block.listingIds;
     }
-    if (block.type === "compare_table" && embed) {
-      for (const row of embed.compareRows) {
-        const meta = embed.listings[row.listingKey];
-        if (meta) ids.add(meta.listingId);
-      }
-    }
+    return [];
+  });
+  return Array.from(new Set(fromBody));
+}
+
+export function collectListingIdsForPage(body: string, blocks?: BlogBodyBlock[]): string[] {
+  const parsed = blocks ?? parseBlogBody(body);
+  const ordered = collectListingIdsInOrder(body);
+  const fromBlocks = collectListingIdsFromBlocks(parsed);
+  const merged = [...ordered];
+  for (const id of fromBlocks) {
+    if (!merged.includes(id)) merged.push(id);
   }
-  return Array.from(ids);
+  return merged;
+}
+
+function resolveCompareIds(blocks: BlogBodyBlock[], blockIndex: number): string[] {
+  const block = blocks[blockIndex];
+  if (block.type !== "compare_table") return [];
+  if (Array.isArray(block.listingIds) && block.listingIds.length > 0) {
+    return block.listingIds;
+  }
+  return listingIdsFromCardsBeforeCompare(
+    blocks.map((b) =>
+      b.type === "listing_card" ? { type: b.type, listingId: b.listingId } : { type: b.type }
+    ),
+    blockIndex
+  );
 }
 
 type BlogBodyProps = {
   body?: string;
   blocks?: BlogBodyBlock[];
-  slug?: string;
-  embed?: BlogPostListingEmbed | null;
   listingsMap?: Map<string, BlogListingCardData>;
   className?: string;
   defaultImageAlt?: string;
@@ -279,12 +293,11 @@ type BlogBodyProps = {
 export default function BlogBody({
   body,
   blocks: blocksProp,
-  embed = null,
   listingsMap = new Map(),
   className = "",
   defaultImageAlt = "",
 }: BlogBodyProps) {
-  const blocks = blocksProp ?? parseBlogBody(body ?? "", { embed });
+  const blocks = blocksProp ?? parseBlogBody(body ?? "");
 
   return (
     <div className={`prose prose-neutral max-w-none text-minbak-body text-minbak-black ${className}`}>
@@ -357,15 +370,24 @@ export default function BlogBody({
             );
           }
           case "listing_card": {
-            const meta = embed?.listings[block.listingKey];
-            if (!meta) return null;
-            const listing = listingsMap.get(meta.listingId);
+            const listing = listingsMap.get(block.listingId);
             if (!listing) return null;
-            return <BlogListingCard key={i} listing={listing} meta={meta} />;
+            const display = buildListingCardDisplay(listing, block.overrides);
+            return <BlogListingCard key={i} listing={listing} display={display} />;
           }
-          case "compare_table":
-            if (!embed?.compareRows.length) return null;
-            return <BlogListingCompareTable key={i} rows={embed.compareRows} listings={embed.listings} />;
+          case "compare_table": {
+            const ids = resolveCompareIds(blocks, i);
+            if (!ids.length) return null;
+            const rows = ids
+              .map((id) => {
+                const listing = listingsMap.get(id);
+                if (!listing) return null;
+                return buildCompareRowFromListing(listing);
+              })
+              .filter((r): r is NonNullable<typeof r> => !!r);
+            if (!rows.length) return null;
+            return <BlogListingCompareTable key={i} rows={rows} />;
+          }
           case "paragraph":
           default:
             return (

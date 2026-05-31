@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 export type BlogListingCardData = {
   id: string;
   title: string;
+  description: string;
   location: string;
   imageUrl: string;
   maxGuests: number;
@@ -25,6 +26,7 @@ export async function getListingsForBlogCards(
     select: {
       id: true,
       title: true,
+      description: true,
       location: true,
       imageUrl: true,
       maxGuests: true,
@@ -44,6 +46,7 @@ export async function getListingsForBlogCards(
     map.set(row.id, {
       id: row.id,
       title: row.title,
+      description: row.description ?? "",
       location: row.location,
       imageUrl: row.imageUrl,
       maxGuests: row.maxGuests,

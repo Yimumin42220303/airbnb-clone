@@ -17,7 +17,8 @@ import {
   buildBlogFaqJsonLd,
   extractBlogFaqFromBody,
 } from "@/lib/blog-faq-jsonld";
-import { getBlogPostListingEmbed } from "@/lib/blog-listing-embeds";
+import { collectListingIdsForPage } from "@/components/blog/BlogBody";
+import { getListingsForBlogCards } from "@/lib/blog-listing-data";
 import {
   buildBlogListingItemListJsonLd,
   buildBlogPostingMentions,
@@ -101,8 +102,10 @@ export default async function BlogPostPage({ params }: Props) {
   const metaDescription =
     seoOverride?.description || post.excerpt || undefined;
 
-  const listingEmbed = getBlogPostListingEmbed(post.slug);
   const pageUrl = `${BASE_URL}/blog/${encodeURIComponent(post.slug)}`;
+  const listingIds = collectListingIdsForPage(post.body);
+  const listingsMap =
+    listingIds.length > 0 ? await getListingsForBlogCards(listingIds) : new Map();
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -122,12 +125,15 @@ export default async function BlogPostPage({ params }: Props) {
       logo: { "@type": "ImageObject", url: `${BASE_URL}/icon.png` },
     },
     mainEntityOfPage: { "@type": "WebPage", "@id": pageUrl },
-    ...(listingEmbed ? { mentions: buildBlogPostingMentions(listingEmbed) } : {}),
+    ...(listingIds.length > 0
+      ? { mentions: buildBlogPostingMentions(listingIds, listingsMap) }
+      : {}),
   };
 
-  const listingItemListLd = listingEmbed
-    ? buildBlogListingItemListJsonLd(post.title, pageUrl, listingEmbed)
-    : null;
+  const listingItemListLd =
+    listingIds.length > 0
+      ? buildBlogListingItemListJsonLd(post.title, pageUrl, listingIds, listingsMap)
+      : null;
 
   const breadcrumbLd = {
     "@context": "https://schema.org",
@@ -213,7 +219,7 @@ export default async function BlogPostPage({ params }: Props) {
           )}
 
           <BlogLinkAnalytics postSlug={post.slug}>
-            <BlogArticleBody body={post.body} slug={post.slug} defaultImageAlt={post.title} />
+            <BlogArticleBody body={post.body} defaultImageAlt={post.title} />
 
             <BlogRecommendCTA />
 

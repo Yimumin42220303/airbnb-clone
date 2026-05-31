@@ -1,13 +1,12 @@
 import Link from "next/link";
-import type { BlogCompareRow, BlogListingEmbedMeta } from "@/lib/blog-listing-embeds";
-import { listingPath } from "@/lib/blog-listing-embeds";
+import { listingPath } from "@/lib/blog-listing-shortcode";
+import type { BlogCompareTableRow } from "@/lib/blog-listing-shortcode";
 
 type Props = {
-  rows: BlogCompareRow[];
-  listings: Record<string, BlogListingEmbedMeta>;
+  rows: BlogCompareTableRow[];
 };
 
-export default function BlogListingCompareTable({ rows, listings }: Props) {
+export default function BlogListingCompareTable({ rows }: Props) {
   return (
     <div className="my-8">
       <div className="hidden md:block overflow-x-auto rounded-minbak border border-minbak-light-gray">
@@ -24,13 +23,11 @@ export default function BlogListingCompareTable({ rows, listings }: Props) {
           </thead>
           <tbody>
             {rows.map((row) => {
-              const meta = listings[row.listingKey];
-              if (!meta) return null;
-              const href = listingPath(meta.listingId);
+              const href = listingPath(row.listingId);
               return (
-                <tr key={row.listingKey} className="border-t border-minbak-light-gray">
+                <tr key={row.listingId} className="border-t border-minbak-light-gray">
                   <td className="px-4 py-3 text-minbak-gray whitespace-nowrap">{row.guestRange}</td>
-                  <td className="px-4 py-3 font-medium text-minbak-black">{meta.displayName}</td>
+                  <td className="px-4 py-3 font-medium text-minbak-black">{row.displayName}</td>
                   <td className="px-4 py-3 text-minbak-gray">{row.station}</td>
                   <td className="px-4 py-3 text-minbak-gray">{row.feature}</td>
                   <td className="px-4 py-3 text-minbak-gray">{row.caution}</td>
@@ -39,7 +36,7 @@ export default function BlogListingCompareTable({ rows, listings }: Props) {
                       href={href}
                       className="inline-flex min-h-[40px] items-center px-4 py-2 rounded-minbak border border-minbak-primary text-minbak-primary font-medium hover:bg-minbak-primary/5 transition-colors"
                       data-blog-link-type="compare_table"
-                      data-listing-id={meta.listingId}
+                      data-listing-id={row.listingId}
                     >
                       상세보기
                     </Link>
@@ -53,16 +50,14 @@ export default function BlogListingCompareTable({ rows, listings }: Props) {
 
       <div className="md:hidden flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory">
         {rows.map((row) => {
-          const meta = listings[row.listingKey];
-          if (!meta) return null;
-          const href = listingPath(meta.listingId);
+          const href = listingPath(row.listingId);
           return (
             <div
-              key={row.listingKey}
+              key={row.listingId}
               className="snap-start shrink-0 w-[min(100%,280px)] rounded-minbak border border-minbak-light-gray bg-white p-4 flex flex-col"
             >
               <p className="text-minbak-caption text-minbak-primary font-medium">{row.guestRange}</p>
-              <h3 className="text-minbak-body font-semibold text-minbak-black mt-1">{meta.displayName}</h3>
+              <h3 className="text-minbak-body font-semibold text-minbak-black mt-1">{row.displayName}</h3>
               <p className="text-minbak-caption text-minbak-gray mt-2">{row.station}</p>
               <p className="text-minbak-caption text-minbak-gray mt-1">
                 <span className="font-medium text-minbak-black">특징 · </span>
@@ -76,7 +71,7 @@ export default function BlogListingCompareTable({ rows, listings }: Props) {
                 href={href}
                 className="mt-4 inline-flex min-h-[44px] items-center justify-center px-4 py-2 rounded-minbak bg-minbak-primary text-white font-medium hover:bg-minbak-primary-hover transition-colors"
                 data-blog-link-type="compare_table"
-                data-listing-id={meta.listingId}
+                data-listing-id={row.listingId}
               >
                 상세보기
               </Link>
