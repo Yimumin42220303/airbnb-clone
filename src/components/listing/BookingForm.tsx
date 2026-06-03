@@ -1,8 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef, useLayoutEffect, useCallback } from "react";
+import { useState, useEffect, useRef, useLayoutEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  mergeListingBookingPrefill,
+  parseListingBookingPrefill,
+} from "@/lib/listing-booking-prefill";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui";
 import ListingBookingCalendar from "@/components/listing/ListingBookingCalendar";
@@ -86,20 +90,52 @@ export default function BookingForm({
   const { t, locale } = useHostTranslations();
   const dateLocale = locale === "ja" ? "ja-JP" : "ko-KR";
   const router = useRouter();
-  const initialDates = resolveInitialDateRange(initialCheckIn, initialCheckOut);
+  const searchParams = useSearchParams();
+  const prefill = useMemo(() => {
+    const fromUrl = parseListingBookingPrefill(
+      new URLSearchParams(searchParams.toString())
+    );
+    return mergeListingBookingPrefill(
+      {
+        initialCheckIn,
+        initialCheckOut,
+        initialGuests,
+        initialAdults,
+        initialChildren,
+        initialInfants,
+      },
+      fromUrl
+    );
+  }, [
+    searchParams,
+    initialCheckIn,
+    initialCheckOut,
+    initialGuests,
+    initialAdults,
+    initialChildren,
+    initialInfants,
+  ]);
+  const effCheckIn = prefill.initialCheckIn;
+  const effCheckOut = prefill.initialCheckOut;
+  const effGuests = prefill.initialGuests;
+  const effAdults = prefill.initialAdults;
+  const effChildren = prefill.initialChildren;
+  const effInfants = prefill.initialInfants;
+
+  const initialDates = resolveInitialDateRange(effCheckIn, effCheckOut);
   const [checkIn, setCheckIn] = useState(initialDates.checkIn);
   const [checkOut, setCheckOut] = useState(initialDates.checkOut);
   const datesTouchedRef = useRef(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const resolvedAdults =
-    initialAdults != null
-      ? initialAdults > 0
-        ? initialAdults
+    effAdults != null
+      ? effAdults > 0
+        ? effAdults
         : 1
-      : (initialGuests ?? 1);
+      : (effGuests ?? 1);
   const initAdults = Math.min(Math.max(1, resolvedAdults), maxGuests);
-  const initChildren = Math.max(0, initialChildren ?? 0);
-  const initInfants = Math.max(0, initialInfants ?? 0);
+  const initChildren = Math.max(0, effChildren ?? 0);
+  const initInfants = Math.max(0, effInfants ?? 0);
   const initGuestTotal = Math.max(1, initAdults + initChildren + initInfants);
   const [guests, setGuests] = useState(initGuestTotal);
   const [adults, setAdults] = useState(initAdults);
@@ -124,32 +160,24 @@ export default function BookingForm({
   } | null>(null);
 
   /** listing/query prefill — useState는 최초 마운트만 반영되므로 props 도착·URL 변경 시 1회 동기화 */
-  const prefillKey = `${listingId}|${initialCheckIn ?? ""}|${initialCheckOut ?? ""}|${initialAdults ?? ""}|${initialChildren ?? ""}|${initialInfants ?? ""}`;
+  const prefillKey = `${listingId}|${effCheckIn ?? ""}|${effCheckOut ?? ""}|${effAdults ?? ""}|${effChildren ?? ""}|${effInfants ?? ""}`;
   const appliedPrefillKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (appliedPrefillKeyRef.current === prefillKey) return;
 
-    if (
-      initialCheckIn &&
-      initialCheckOut &&
-      initialCheckOut > initialCheckIn
-    ) {
+    if (effCheckIn && effCheckOut && effCheckOut > effCheckIn) {
       datesTouchedRef.current = false;
-      setCheckIn(initialCheckIn);
-      setCheckOut(initialCheckOut);
+      setCheckIn(effCheckIn);
+      setCheckOut(effCheckOut);
     }
 
-    if (initialAdults != null || initialGuests != null) {
+    if (effAdults != null || effGuests != null) {
       const a =
-        initialAdults != null
-          ? initialAdults > 0
-            ? initialAdults
-            : 1
-          : (initialGuests ?? 1);
+        effAdults != null ? (effAdults > 0 ? effAdults : 1) : (effGuests ?? 1);
       const nextAdults = Math.min(Math.max(1, a), maxGuests);
-      const nextChildren = Math.max(0, initialChildren ?? 0);
-      const nextInfants = Math.max(0, initialInfants ?? 0);
+      const nextChildren = Math.max(0, effChildren ?? 0);
+      const nextInfants = Math.max(0, effInfants ?? 0);
       setAdults(nextAdults);
       setChildren(nextChildren);
       setInfants(nextInfants);
@@ -159,12 +187,12 @@ export default function BookingForm({
   }, [
     prefillKey,
     listingId,
-    initialCheckIn,
-    initialCheckOut,
-    initialAdults,
-    initialChildren,
-    initialInfants,
-    initialGuests,
+    effCheckIn,
+    effCheckOut,
+    effAdults,
+    effChildren,
+    effInfants,
+    effGuests,
     maxGuests,
   ]);
 
@@ -276,15 +304,13 @@ export default function BookingForm({
   }, [adults, children, infants, onGuestsChange]);
 
   const validInitialRange =
-    !!initialCheckIn &&
-    !!initialCheckOut &&
-    initialCheckOut > initialCheckIn;
+    !!effCheckIn && !!effCheckOut && effCheckOut > effCheckIn;
   const activeCheckIn =
     checkIn ||
-    (!datesTouchedRef.current && validInitialRange ? initialCheckIn! : "");
+    (!datesTouchedRef.current && validInitialRange ? effCheckIn! : "");
   const activeCheckOut =
     checkOut ||
-    (!datesTouchedRef.current && validInitialRange ? initialCheckOut! : "");
+    (!datesTouchedRef.current && validInitialRange ? effCheckOut! : "");
 
   const setCheckInWithTouch = useCallback((value: string) => {
     datesTouchedRef.current = true;
