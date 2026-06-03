@@ -18,6 +18,9 @@ import ChannelTalk from "@/components/channel/ChannelTalk";
 import MetaPixelScript from "@/components/analytics/MetaPixelScript";
 import MetaPixelPageView from "@/components/analytics/MetaPixelPageView";
 import MetaPixelDebugInit from "@/components/analytics/MetaPixelDebugInit";
+import GoogleAnalyticsScript from "@/components/analytics/GoogleAnalyticsScript";
+import GoogleAnalyticsPageView from "@/components/analytics/GoogleAnalyticsPageView";
+import { isGoogleAnalyticsEnabled } from "@/lib/google-analytics";
 import { BASE_URL } from "@/lib/site-url";
 import { SITE_META_KO } from "@/lib/marketing-copy";
 import { getHostLocaleFromCookie } from "@/lib/host-i18n";
@@ -112,11 +115,13 @@ export default async function RootLayout({
           title="도쿄민박 블로그 RSS"
           href="https://tokyominbak.net/rss.xml"
         />
+        <GoogleAnalyticsScript />
         <MetaPixelScript hashedEmail={hashedEmail} />
       </head>
       <body className="min-h-full antialiased font-sans">
         <Suspense fallback={null}>
           <MetaPixelPageView />
+          {isGoogleAnalyticsEnabled() ? <GoogleAnalyticsPageView /> : null}
         </Suspense>
         <MetaPixelDebugInit />
         <script
