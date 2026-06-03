@@ -89,6 +89,9 @@ type Props = {
   initialCheckIn?: string;
   initialCheckOut?: string;
   initialGuests?: number;
+  initialAdults?: number;
+  initialChildren?: number;
+  initialInfants?: number;
   canReview?: boolean;
   hasReviewed?: boolean;
   /** SSR로 전달되는 AEO 통합 섹션 (요약·FAQ·적합성 안내·태그·내부링크) */
@@ -130,6 +133,9 @@ export default function ListingDetailContent({
   initialCheckIn,
   initialCheckOut,
   initialGuests,
+  initialAdults,
+  initialChildren,
+  initialInfants,
   aeoSection,
 }: Props) {
   const { formatForGuest } = useCurrency();
@@ -535,6 +541,9 @@ export default function ListingDetailContent({
                       initialCheckIn={initialCheckIn}
                       initialCheckOut={initialCheckOut}
                       initialGuests={initialGuests}
+                      initialAdults={initialAdults}
+                      initialChildren={initialChildren}
+                      initialInfants={initialInfants}
                     />
                     <CancellationPolicyBadge
                       policy={listing.cancellationPolicy ?? "flexible"}

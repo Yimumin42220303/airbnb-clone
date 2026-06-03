@@ -21,6 +21,7 @@ import {
   buildFaqJsonLd,
   type AeoListingInput,
 } from "@/lib/aeo";
+import { parseListingBookingPrefill } from "@/lib/listing-booking-prefill";
 
 export const revalidate = 60;
 
@@ -109,14 +110,7 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
   if (!id) notFound();
 
   const sp = await searchParams;
-  const initialCheckIn = typeof sp.checkIn === "string" ? sp.checkIn : undefined;
-  const initialCheckOut = typeof sp.checkOut === "string" ? sp.checkOut : undefined;
-  const initialAdults = typeof sp.adults === "string" ? parseInt(sp.adults, 10) : undefined;
-  const initialChildren = typeof sp.children === "string" ? parseInt(sp.children, 10) : undefined;
-  const initialGuests = (
-    (initialAdults != null && !isNaN(initialAdults) ? initialAdults : 1) +
-    (initialChildren != null && !isNaN(initialChildren) ? initialChildren : 0)
-  );
+  const bookingPrefill = parseListingBookingPrefill(sp);
 
   const [listing, session] = await Promise.all([
     getListingById(id),
@@ -189,9 +183,12 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
         listing={listing}
         isSaved={wishlistIds.includes(id)}
         isLoggedIn={!!userId}
-        initialCheckIn={initialCheckIn}
-        initialCheckOut={initialCheckOut}
-        initialGuests={initialGuests > 0 ? initialGuests : undefined}
+        initialCheckIn={bookingPrefill.initialCheckIn}
+        initialCheckOut={bookingPrefill.initialCheckOut}
+        initialGuests={bookingPrefill.initialGuests}
+        initialAdults={bookingPrefill.initialAdults}
+        initialChildren={bookingPrefill.initialChildren}
+        initialInfants={bookingPrefill.initialInfants}
         canReview={reviewPermission.canReview}
         hasReviewed={reviewPermission.hasReviewed}
         aeoSection={

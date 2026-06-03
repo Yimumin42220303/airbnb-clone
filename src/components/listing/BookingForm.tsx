@@ -34,8 +34,12 @@ type BookingFormProps = {
   initialCheckIn?: string;
   /** 검색에서 전달된 초기 체크아웃 날짜 (YYYY-MM-DD) */
   initialCheckOut?: string;
-  /** 검색에서 전달된 초기 게스트 수 */
+  /** 검색에서 전달된 초기 게스트 수 (adults+children, 유아 제외) */
   initialGuests?: number;
+  /** query adults — 있으면 initialGuests보다 우선 */
+  initialAdults?: number;
+  initialChildren?: number;
+  initialInfants?: number;
 };
 
 type PriceResult = {
@@ -60,6 +64,9 @@ export default function BookingForm({
   initialCheckIn,
   initialCheckOut,
   initialGuests,
+  initialAdults,
+  initialChildren,
+  initialInfants,
 }: BookingFormProps) {
   const { formatForGuest } = useCurrency();
   const { t, locale } = useHostTranslations();
@@ -68,11 +75,20 @@ export default function BookingForm({
   const [checkIn, setCheckIn] = useState(initialCheckIn ?? "");
   const [checkOut, setCheckOut] = useState(initialCheckOut ?? "");
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const initAdults = Math.min(initialGuests ?? 1, maxGuests);
-  const [guests, setGuests] = useState(initAdults);
+  const resolvedAdults =
+    initialAdults != null
+      ? initialAdults > 0
+        ? initialAdults
+        : 1
+      : (initialGuests ?? 1);
+  const initAdults = Math.min(Math.max(1, resolvedAdults), maxGuests);
+  const initChildren = Math.max(0, initialChildren ?? 0);
+  const initInfants = Math.max(0, initialInfants ?? 0);
+  const initGuestTotal = Math.max(1, initAdults + initChildren + initInfants);
+  const [guests, setGuests] = useState(initGuestTotal);
   const [adults, setAdults] = useState(initAdults);
-  const [children, setChildren] = useState(0);
-  const [infants, setInfants] = useState(0);
+  const [children, setChildren] = useState(initChildren);
+  const [infants, setInfants] = useState(initInfants);
   const [guestSelectorOpen, setGuestSelectorOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");

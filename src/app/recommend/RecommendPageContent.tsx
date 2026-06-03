@@ -30,6 +30,7 @@ import {
   type PrimaryPriorityType,
   type RecommendAttribution,
 } from "@/lib/recommend-funnel";
+import { buildListingDetailSearchQuery } from "@/lib/listing-booking-prefill";
 
 type Priority = "value" | "rating" | "location" | "space" | "environment" | "child_friendly";
 
@@ -144,6 +145,19 @@ export default function RecommendPageContent() {
   const guestTrackedRef = useRef(false);
   const prefillDoneRef = useRef(false);
   const pageViewTrackedRef = useRef(false);
+
+  const listingDetailSearchQuery = useMemo(
+    () =>
+      buildListingDetailSearchQuery({
+        checkIn: checkIn || undefined,
+        checkOut: checkOut || undefined,
+        adults: guests.adult,
+        children: guests.child,
+        infants: guests.infant,
+        sourcePage: "recommend",
+      }),
+    [checkIn, checkOut, guests.adult, guests.child, guests.infant]
+  );
 
   useEffect(() => {
     if (prefillDoneRef.current) return;
@@ -572,6 +586,7 @@ export default function RecommendPageContent() {
                   reviewCount={item.reviewCount}
                   isPromoted={item.isPromoted}
                   showPrice={false}
+                  searchQuery={listingDetailSearchQuery || undefined}
                 />
                 <div className="p-3 space-y-2 flex-1 flex flex-col">
                   <p className="text-minbak-caption text-minbak-dark-gray line-clamp-2">
@@ -585,11 +600,16 @@ export default function RecommendPageContent() {
                     </p>
                   )}
                   <Link
-                    href={`/listing/${item.id}`}
+                    href={
+                      listingDetailSearchQuery
+                        ? `/listing/${item.id}?${listingDetailSearchQuery}`
+                        : `/listing/${item.id}`
+                    }
                     onClick={() =>
                       trackRecommendEvent("recommend_listing_click", {
                         listing_id: item.id,
                         result_count: displayResults.length,
+                        source_page: "recommend",
                       })
                     }
                     className="mt-auto inline-flex items-center justify-center min-h-[40px] px-4 py-2 rounded-minbak bg-minbak-primary text-white text-minbak-caption font-semibold hover:bg-minbak-primary-hover transition-colors"
