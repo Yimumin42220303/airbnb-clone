@@ -618,7 +618,6 @@ export default function RecommendPageContent() {
               primaryPriority={primaryPriority}
               budgetType={budgetType}
               priorities={priorityListForRanking}
-              freeText={preferences.trim()}
               listings={displayResults.map((r) => ({ rank: r.rank, id: r.id, title: r.title }))}
               attribution={attribution}
             />

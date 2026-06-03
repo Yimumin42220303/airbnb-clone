@@ -5,11 +5,12 @@
 import { BUDGET_OPTIONS } from "@/lib/recommend-funnel";
 
 const TRIP_TYPES = new Set(["friends", "couple", "family", "solo"]);
-const CONTACT_METHODS = new Set(["kakao", "email"]);
+const CONTACT_METHODS = new Set(["kakao", "email", "channel"]);
 
 export type RecommendationLeadInput = {
   website?: string;
-  privacyConsent: boolean;
+  /** @deprecated 클라이언트 미전송 — 상담 시작 요청 시 서버에서 처리 시각 기록 */
+  privacyConsent?: boolean;
   guestName?: string;
   contactMethod?: string;
   email?: string;
@@ -92,10 +93,6 @@ export function validateRecommendationLeadInput(
     return { ok: false, error: "요청을 처리할 수 없습니다." };
   }
 
-  if (b.privacyConsent !== true) {
-    return { ok: false, error: "개인정보 수집·이용에 동의해 주세요." };
-  }
-
   const checkIn = trimOrNull(b.checkIn, 10);
   const checkOut = trimOrNull(b.checkOut, 10);
   if (!checkIn || !checkOut) {
@@ -113,7 +110,7 @@ export function validateRecommendationLeadInput(
     return { ok: false, error: "인원 정보가 올바르지 않습니다." };
   }
 
-  const contactMethod = trimOrNull(b.contactMethod, 20) ?? "kakao";
+  const contactMethod = trimOrNull(b.contactMethod, 20) ?? "channel";
   if (!CONTACT_METHODS.has(contactMethod)) {
     return { ok: false, error: "연락 방법이 올바르지 않습니다." };
   }
@@ -171,7 +168,7 @@ export function validateRecommendationLeadInput(
       budgetMax: range.max,
       budgetCurrency: "KRW",
       priorities,
-      freeText: trimOrNull(b.freeText, 2000),
+      freeText: null,
       referralSource: trimOrNull(b.referralSource, 100),
       recommendedListingIds: listingIds,
       sourcePage: trimOrNull(b.sourcePage, 50),

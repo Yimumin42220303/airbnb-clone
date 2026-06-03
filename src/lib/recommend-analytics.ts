@@ -18,6 +18,10 @@ export type RecommendEventName =
   | "recommend_kakao_click"
   | "recommend_copy_message"
   | "recommend_lead_submit"
+  | "recommend_consult_start_click"
+  | "recommend_consult_lead_created"
+  | "recommend_channeltalk_open"
+  | "recommend_channeltalk_open_failed"
   | "listing_recommend_click";
 
 export type RecommendEventParams = {

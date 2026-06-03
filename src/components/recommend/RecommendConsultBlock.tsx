@@ -1,20 +1,22 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
+import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import {
-  buildGuestConsultationMessage,
   getGuestAccessibilityLabel,
   getKakaoChannelChatUrl,
   getPrimaryPriorityLabel,
+  getBudgetLabel,
   type AccessibilityType,
   type BudgetType,
   type PrimaryPriorityType,
 } from "@/lib/recommend-funnel";
+import {
+  openRecommendChannelConsult,
+  type RecommendChannelContext,
+} from "@/lib/recommend-channel-talk";
 import { trackRecommendEvent } from "@/lib/recommend-analytics";
-
-export const PRIVACY_CONSENT_TEXT =
-  "[필수] 숙소 추천 상담을 위해 입력한 조건을 저장하는 데 동의합니다.";
 
 export type ConsultListingItem = {
   rank: number;
@@ -30,7 +32,6 @@ type Props = {
   infantCount: number;
   accessibility: AccessibilityType;
   primaryPriority: PrimaryPriorityType;
-  freeText: string;
   listings: ConsultListingItem[];
   attribution: {
     sourcePage?: string;
@@ -44,18 +45,6 @@ type Props = {
   priorities?: string[];
 };
 
-/** window.open 반환값으로 팝업 차단 여부 추정 (async 이후 호출 시 모바일에서 자주 차단됨) */
-function openKakaoChat(url: string): boolean {
-  const opened = window.open(url, "_blank", "noopener,noreferrer");
-  if (opened == null) return false;
-  try {
-    if (opened.closed) return false;
-  } catch {
-    return false;
-  }
-  return true;
-}
-
 export default function RecommendConsultBlock({
   checkIn,
   checkOut,
@@ -64,40 +53,41 @@ export default function RecommendConsultBlock({
   infantCount,
   accessibility,
   primaryPriority,
-  freeText,
   listings,
   attribution,
   budgetType,
   priorities,
 }: Props) {
-  const [privacyConsent, setPrivacyConsent] = useState(false);
-  const [consultNumber, setConsultNumber] = useState<string | null>(null);
-  const [consentError, setConsentError] = useState("");
   const [saveError, setSaveError] = useState("");
-  const [successHint, setSuccessHint] = useState("");
-  const [kakaoHint, setKakaoHint] = useState("");
-  const [copyFailed, setCopyFailed] = useState(false);
-  const [kakaoOpenFailed, setKakaoOpenFailed] = useState(false);
+  const [channelError, setChannelError] = useState("");
+  const [channelFailed, setChannelFailed] = useState(false);
   const [saving, setSaving] = useState(false);
+  const savedContextRef = useRef<RecommendChannelContext | null>(null);
 
   const kakaoUrl =
     typeof window !== "undefined"
       ? process.env.NEXT_PUBLIC_KAKAO_CHANNEL_CHAT_URL || getKakaoChannelChatUrl()
       : getKakaoChannelChatUrl();
 
-  const buildMessage = useCallback(
-    (code: string) =>
-      buildGuestConsultationMessage({
-        leadCode: code,
-        checkIn,
-        checkOut,
-        adultCount,
-        childCount,
-        infantCount,
-        accessibilityLabel: getGuestAccessibilityLabel(accessibility),
-        priorityLabel: getPrimaryPriorityLabel(primaryPriority),
-        listings: listings.map((l) => ({ rank: l.rank, title: l.title })),
-      }),
+  const buildChannelContext = useCallback(
+    (leadCode: string): RecommendChannelContext => ({
+      leadCode,
+      checkIn,
+      checkOut,
+      guestCount: adultCount + childCount,
+      childCount,
+      infantCount,
+      preferredAreaLabel: getGuestAccessibilityLabel(accessibility),
+      priorityLabel: getPrimaryPriorityLabel(primaryPriority),
+      budgetLabel:
+        budgetType && budgetType !== "undecided"
+          ? getBudgetLabel(budgetType)
+          : undefined,
+      recommendedListingTitles: listings.map((l) => l.title),
+      recommendedListingIds: listings.map((l) => l.id),
+      sourcePage: attribution.sourcePage,
+      sourceListingId: attribution.sourceListingId,
+    }),
     [
       checkIn,
       checkOut,
@@ -106,71 +96,48 @@ export default function RecommendConsultBlock({
       infantCount,
       accessibility,
       primaryPriority,
+      budgetType,
       listings,
+      attribution.sourcePage,
+      attribution.sourceListingId,
     ]
   );
 
-  const copyToClipboard = async (text: string): Promise<boolean> => {
-    try {
-      await navigator.clipboard.writeText(text);
+  const openChannel = async (ctx: RecommendChannelContext) => {
+    const result = await openRecommendChannelConsult(ctx);
+    if (result === "opened") {
+      setChannelError("");
+      setChannelFailed(false);
+      trackRecommendEvent("recommend_channeltalk_open", {
+        source_page: attribution.sourcePage,
+        listing_id: attribution.sourceListingId,
+      });
       return true;
-    } catch {
-      try {
-        const ta = document.createElement("textarea");
-        ta.value = text;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-        return true;
-      } catch {
-        return false;
-      }
     }
-  };
-
-  const tryOpenKakao = (): boolean => {
-    if (!kakaoUrl) {
-      setKakaoOpenFailed(true);
-      return false;
-    }
-    const ok = openKakaoChat(kakaoUrl);
-    if (ok) {
-      setKakaoOpenFailed(false);
-      setKakaoHint("");
-      trackRecommendEvent("recommend_kakao_click", { source_page: attribution.sourcePage });
+    setChannelFailed(true);
+    trackRecommendEvent("recommend_channeltalk_open_failed", {
+      source_page: attribution.sourcePage,
+      contact_method: result,
+    });
+    if (result === "not_ready") {
+      setChannelError("상담창을 여는 데 실패했습니다. 잠시 후 다시 시도해 주세요.");
     } else {
-      setKakaoOpenFailed(true);
-      setKakaoHint("카카오톡 창이 열리지 않았다면 아래 버튼을 눌러주세요.");
+      setChannelError("상담창이 열리지 않았어요. 다시 시도해 주세요.");
     }
-    return ok;
-  };
-
-  const handleOpenKakaoButton = () => {
-    tryOpenKakao();
+    return false;
   };
 
   const handleStartConsult = async () => {
-    if (!privacyConsent) {
-      setConsentError("개인정보 수집·이용에 동의해 주세요.");
-      return;
-    }
-    setConsentError("");
     setSaveError("");
-    setSuccessHint("");
-    setKakaoHint("");
-    setCopyFailed(false);
-    setKakaoOpenFailed(false);
+    setChannelError("");
 
-    if (consultNumber) {
-      const copied = await copyToClipboard(buildMessage(consultNumber));
-      if (copied) {
-        setSuccessHint("상담 내용이 복사됐어요. 카카오톡에 붙여넣어 보내주세요.");
-        trackRecommendEvent("recommend_copy_message", { source_page: attribution.sourcePage });
-      } else {
-        setCopyFailed(true);
-      }
-      tryOpenKakao();
+    trackRecommendEvent("recommend_consult_start_click", {
+      source_page: attribution.sourcePage,
+      listing_id: attribution.sourceListingId,
+    });
+
+    if (savedContextRef.current) {
+      await openChannel(savedContextRef.current);
       return;
     }
 
@@ -180,8 +147,7 @@ export default function RecommendConsultBlock({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          privacyConsent: true,
-          contactMethod: "kakao",
+          contactMethod: "channel",
           checkIn,
           checkOut,
           adultCount,
@@ -190,7 +156,6 @@ export default function RecommendConsultBlock({
           accessibility,
           budgetType: budgetType ?? "undecided",
           priorities,
-          freeText: freeText.trim() || undefined,
           recommendedListingIds: listings.map((l) => l.id),
           sourcePage: attribution.sourcePage,
           sourceListingId: attribution.sourceListingId,
@@ -207,22 +172,18 @@ export default function RecommendConsultBlock({
         return;
       }
 
-      setConsultNumber(data.leadCode);
+      trackRecommendEvent("recommend_consult_lead_created", {
+        source_page: attribution.sourcePage,
+        listing_id: attribution.sourceListingId,
+      });
       trackRecommendEvent("recommend_lead_submit", {
-        contact_method: "kakao",
+        contact_method: "channel",
         source_page: attribution.sourcePage,
       });
 
-      const messageText = buildMessage(data.leadCode);
-      const copied = await copyToClipboard(messageText);
-      if (copied) {
-        setSuccessHint("상담 내용이 복사됐어요. 카카오톡에 붙여넣어 보내주세요.");
-        trackRecommendEvent("recommend_copy_message", { source_page: attribution.sourcePage });
-      } else {
-        setCopyFailed(true);
-      }
-
-      tryOpenKakao();
+      const ctx = buildChannelContext(data.leadCode);
+      savedContextRef.current = ctx;
+      await openChannel(ctx);
     } catch {
       setSaveError("잠시 후 다시 시도해 주세요.");
     } finally {
@@ -230,14 +191,13 @@ export default function RecommendConsultBlock({
     }
   };
 
-  const handleRetryCopy = async () => {
-    if (!consultNumber) return;
-    const copied = await copyToClipboard(buildMessage(consultNumber));
-    if (copied) {
-      setCopyFailed(false);
-      setSuccessHint("상담 내용이 복사됐어요. 카카오톡에 붙여넣어 보내주세요.");
-      trackRecommendEvent("recommend_copy_message", { source_page: attribution.sourcePage });
+  const handleRetryChannel = async () => {
+    if (!savedContextRef.current) {
+      setChannelError("상담창을 여는 데 실패했습니다. 잠시 후 다시 시도해 주세요.");
+      return;
     }
+    setChannelError("");
+    await openChannel(savedContextRef.current);
   };
 
   return (
@@ -246,7 +206,7 @@ export default function RecommendConsultBlock({
         어떤 숙소가 좋을지 고민된다면?
       </h2>
       <p className="text-minbak-body text-minbak-dark-gray mt-2">
-        상담번호를 보내주시면 입력하신 조건을 기준으로 더 정확히 안내드릴게요.
+        도쿄민박이 입력하신 조건을 보고 바로 상담해드릴게요.
       </p>
 
       <div className="mt-5 space-y-4">
@@ -261,40 +221,20 @@ export default function RecommendConsultBlock({
           readOnly
         />
 
-        <label className="flex items-start gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={privacyConsent}
-            onChange={(e) => {
-              setPrivacyConsent(e.target.checked);
-              if (e.target.checked) setConsentError("");
-            }}
-            className="mt-1 h-4 w-4 rounded border-minbak-light-gray text-minbak-primary focus:ring-minbak-primary"
-          />
-          <span className="text-minbak-caption text-minbak-dark-gray leading-relaxed">
-            {PRIVACY_CONSENT_TEXT}{" "}
-            <a href="/policy" className="text-minbak-primary underline" target="_blank" rel="noopener noreferrer">
-              개인정보처리방침
-            </a>
-          </span>
-        </label>
+        <p className="text-minbak-caption text-minbak-gray">
+          상담 시작 시 입력한 조건이 상담창에 함께 전달됩니다.
+        </p>
 
-        {consentError && <p className="text-minbak-caption text-red-600">{consentError}</p>}
+        <p className="text-minbak-caption text-minbak-gray/90 leading-relaxed">
+          입력한 조건 처리에 대한 내용은{" "}
+          <Link href="/policy" className="text-minbak-primary underline underline-offset-2">
+            개인정보처리방침
+          </Link>
+          에서 확인할 수 있습니다.
+        </p>
+
         {saveError && <p className="text-minbak-caption text-red-600">{saveError}</p>}
-
-        {consultNumber && (
-          <p className="text-minbak-body font-semibold text-minbak-primary">
-            상담번호: <span className="tabular-nums">{consultNumber}</span>
-          </p>
-        )}
-
-        {successHint && (
-          <p className="text-minbak-caption text-minbak-dark-gray">{successHint}</p>
-        )}
-
-        {kakaoHint && (
-          <p className="text-minbak-caption text-minbak-dark-gray">{kakaoHint}</p>
-        )}
+        {channelError && <p className="text-minbak-caption text-red-600">{channelError}</p>}
 
         <button
           type="button"
@@ -312,24 +252,33 @@ export default function RecommendConsultBlock({
           )}
         </button>
 
-        {copyFailed && consultNumber && (
+        {channelFailed && savedContextRef.current && (
           <button
             type="button"
-            onClick={handleRetryCopy}
-            className="w-full text-minbak-caption text-minbak-primary font-medium underline underline-offset-2"
+            onClick={handleRetryChannel}
+            className="w-full inline-flex items-center justify-center min-h-[48px] px-4 py-3 rounded-minbak border-2 border-minbak-primary text-minbak-primary font-semibold text-minbak-body hover:bg-minbak-primary/5 transition-colors"
           >
-            상담 내용 다시 복사
+            상담창 다시 열기
           </button>
         )}
 
-        {kakaoOpenFailed && kakaoUrl && consultNumber && (
-          <button
-            type="button"
-            onClick={handleOpenKakaoButton}
-            className="w-full inline-flex items-center justify-center min-h-[48px] px-4 py-3 rounded-minbak border-2 border-minbak-primary text-minbak-primary font-semibold text-minbak-body hover:bg-minbak-primary/5 transition-colors"
-          >
-            카카오톡 상담 열기
-          </button>
+        {channelFailed && kakaoUrl && (
+          <p className="text-minbak-caption text-minbak-gray text-center">
+            채널톡이 열리지 않으면{" "}
+            <a
+              href={kakaoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-minbak-primary font-medium underline underline-offset-2"
+              onClick={() =>
+                trackRecommendEvent("recommend_kakao_click", {
+                  source_page: attribution.sourcePage,
+                })
+              }
+            >
+              카카오톡으로 문의하기
+            </a>
+          </p>
         )}
       </div>
     </section>
