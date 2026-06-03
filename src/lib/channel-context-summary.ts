@@ -98,6 +98,31 @@ export function joinChannelParts(
   return parts.filter((p) => p != null && String(p).trim() !== "").join(separator);
 }
 
+const CHANNEL_LABEL_NONE = "상관없음";
+
+/** 게스트 폼 「상관없음」 → 운영자용 지역 표기 */
+export function formatChannelAreaLabel(label: string): string {
+  const t = label.trim();
+  if (!t || t === CHANNEL_LABEL_NONE) return "지역 상관없음";
+  return t;
+}
+
+/** summary/searchCondition용 우선순위 (상관없음 → 「우선순위 상관없음」, 그 외 기존 「가격우선」 형식) */
+export function formatChannelPrioritySummaryPart(label: string): string | null {
+  const t = label.trim();
+  if (!t || t === CHANNEL_LABEL_NONE) return "우선순위 상관없음";
+  return `${t}우선`;
+}
+
+/** [태그] 본문 — 태그 바로 뒤는 공백만, 본문 조각은 · 로 연결 */
+export function formatChannelContextSummaryLine(
+  tag: string,
+  parts: (string | null | undefined)[]
+): string {
+  const body = joinChannelParts(parts);
+  return body ? `${tag} ${body}` : tag;
+}
+
 export function formatChannelListingIds(ids: string[]): string {
   return truncateChannelText(
     ids.filter(Boolean).slice(0, 10).join(","),
@@ -144,8 +169,8 @@ export function buildRecommendationSearchCondition(
   const parts = [
     dates,
     guests,
-    input.preferredAreaLabel,
-    input.priorityLabel,
+    formatChannelAreaLabel(input.preferredAreaLabel),
+    formatChannelPrioritySummaryPart(input.priorityLabel),
     input.budgetLabel ? `예산 ${input.budgetLabel}` : null,
   ];
   return truncateChannelText(
@@ -164,12 +189,11 @@ export function buildRecommendationContextSummary(
     infantCount: input.infantCount,
   });
   const candidateCount = Math.min(input.recommendedListingTitles.length, 3);
-  const summary = joinChannelParts([
-    "[추천상담]",
+  const summary = formatChannelContextSummaryLine("[추천상담]", [
     dates,
     guests,
-    input.preferredAreaLabel,
-    `${input.priorityLabel}우선`,
+    formatChannelAreaLabel(input.preferredAreaLabel),
+    formatChannelPrioritySummaryPart(input.priorityLabel),
     input.budgetLabel ? `예산 ${input.budgetLabel}` : null,
     candidateCount > 0 ? `후보 ${candidateCount}개` : null,
   ]);
@@ -275,8 +299,7 @@ export function buildListingInquiryContextSummary(
             })
           : "일정/인원 미입력";
 
-  const summary = joinChannelParts([
-    "[숙소문의]",
+  const summary = formatChannelContextSummaryLine("[숙소문의]", [
     title,
     schedulePart,
     "상세페이지에서 문의",
