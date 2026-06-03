@@ -163,6 +163,27 @@ export default function BookingForm({
   const prefillKey = `${listingId}|${effCheckIn ?? ""}|${effCheckOut ?? ""}|${effAdults ?? ""}|${effChildren ?? ""}|${effInfants ?? ""}`;
   const appliedPrefillKeyRef = useRef<string | null>(null);
 
+  /** useSearchParams만으로는 비어 있을 수 있어, 브라우저 URL에서 직접 동기화 */
+  useLayoutEffect(() => {
+    if (typeof window === "undefined") return;
+    const fromWindow = parseListingBookingPrefill(
+      new URLSearchParams(window.location.search)
+    );
+    const inDate = fromWindow.initialCheckIn ?? effCheckIn;
+    const outDate = fromWindow.initialCheckOut ?? effCheckOut;
+    if (inDate && outDate && outDate > inDate) {
+      datesTouchedRef.current = false;
+      setCheckIn(inDate);
+      setCheckOut(outDate);
+    }
+    const a =
+      fromWindow.initialAdults ?? effAdults ?? (fromWindow.initialGuests ?? effGuests ?? 1);
+    const nextAdults = Math.min(Math.max(1, a > 0 ? a : 1), maxGuests);
+    setAdults(nextAdults);
+    setChildren(Math.max(0, fromWindow.initialChildren ?? effChildren ?? 0));
+    setInfants(Math.max(0, fromWindow.initialInfants ?? effInfants ?? 0));
+  }, [listingId, searchParams, effCheckIn, effCheckOut, effAdults, effChildren, effInfants, effGuests, maxGuests]);
+
   useEffect(() => {
     if (appliedPrefillKeyRef.current === prefillKey) return;
 
