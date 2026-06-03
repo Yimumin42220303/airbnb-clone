@@ -1,6 +1,6 @@
 /**
  * /recommend 퍼널 이벤트 (GTM dataLayer). gtag/dataLayer 없으면 no-op.
- * 자유 입력 텍스트(preferences)는 전송하지 않음.
+ * 자유 입력 텍스트·연락처(PII)는 전송하지 않음.
  */
 
 export type RecommendEventName =
@@ -14,7 +14,11 @@ export type RecommendEventName =
   | "recommend_result_view"
   | "recommend_listing_click"
   | "recommend_inquiry_click"
-  | "recommend_booking_start";
+  | "recommend_booking_start"
+  | "recommend_kakao_click"
+  | "recommend_copy_message"
+  | "recommend_lead_submit"
+  | "listing_recommend_click";
 
 export type RecommendEventParams = {
   travel_type?: string;
@@ -24,6 +28,10 @@ export type RecommendEventParams = {
   result_count?: number;
   listing_id?: string;
   listing_name?: string;
+  source_page?: string;
+  contact_method?: string;
+  has_area?: boolean;
+  has_budget?: boolean;
 };
 
 declare global {

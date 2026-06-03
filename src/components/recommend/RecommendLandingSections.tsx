@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
 import {
   MapPin,
@@ -18,7 +17,6 @@ import {
   RECOMMEND_FAQ,
   RECOMMEND_HERO,
 } from "@/lib/recommend-landing";
-import { trackRecommendEvent } from "@/lib/recommend-analytics";
 
 const AUDIENCE_ICONS = [MapPin, Users, Building2, Baby, LayoutGrid, Compass] as const;
 
@@ -166,18 +164,9 @@ export function RecommendBottomCta() {
   );
 }
 
-/** 페이지 진입 시 recommend_page_view 1회 */
-export default function RecommendLandingAnalytics() {
-  useEffect(() => {
-    trackRecommendEvent("recommend_page_view");
-  }, []);
-  return null;
-}
-
 export function RecommendLandingWrapper({ showBottomCta = true }: Props) {
   return (
     <>
-      <RecommendLandingAnalytics />
       <RecommendHero />
       <RecommendAudienceSection />
     </>

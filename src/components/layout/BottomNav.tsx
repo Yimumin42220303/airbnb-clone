@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
+import MessagesUnreadBadge from "@/components/messages/MessagesUnreadBadge";
 import type { HostTranslationKey } from "@/lib/host-i18n/translations";
 
 /* ──────────────────────────────────────────────
@@ -271,20 +272,24 @@ export default function BottomNav() {
         {items.map((item) => {
           const active = item.isActive(pathname);
           const isAiRecommend = item.path === "/recommend";
+          const isMessages = item.path === "/messages";
           return (
             <li key={item.path} className="flex-1 min-w-0 min-h-[44px]">
               <Link
                 href={item.path}
                 className={`
-                  flex flex-col items-center justify-center gap-0.5
+                  relative flex flex-col items-center justify-center gap-0.5
                   min-h-[44px] py-2 w-full
                   transition-colors duration-200 active:opacity-80
                   ${isAiRecommend ? "text-[#D74132] font-semibold" : active ? "text-[#D74132]" : "text-[#717171]"}
                   ${isAiRecommend && active ? "bg-minbak-primary/10 rounded-lg" : ""}
                 `}
               >
-                <span className={isAiRecommend ? "text-[#D74132]" : undefined}>
+                <span className={`relative ${isAiRecommend ? "text-[#D74132]" : undefined}`}>
                   {item.icon(active)}
+                  {isMessages && (
+                    <MessagesUnreadBadge className="absolute -top-1 -right-2 min-w-[16px] h-4 text-[9px]" />
+                  )}
                 </span>
                 <span
                   className={`truncate ${isAiRecommend ? "text-[11px] sm:text-xs font-semibold" : "text-[11px] leading-tight font-medium"}`}

@@ -7,6 +7,7 @@ import { translateMessageBody } from "@/lib/translate";
 import { formatBookingTotalForGuestDisplay } from "@/lib/currency";
 import { ensureInstantBookingWelcomeMessage } from "@/lib/payment-complete";
 import { UNPAID_DEADLINE_HOURS } from "@/lib/unpaid-deadline";
+import { markConversationAsRead } from "@/lib/conversation-read";
 import MessageThread from "./MessageThread";
 import MessageAutoTranslateToggle from "./MessageAutoTranslateToggle";
 import MetaPixelPurchase from "@/components/analytics/MetaPixelPurchase";
@@ -71,6 +72,15 @@ export default async function ConversationPage({ params }: Props) {
     );
   }
   if (!conversation || !conversation.booking) notFound();
+
+  const threadMessagesForRead = await prisma.message.findMany({
+    where: { conversationId },
+    orderBy: { createdAt: "desc" },
+    take: 1,
+    select: { createdAt: true },
+  });
+  const readAt = threadMessagesForRead[0]?.createdAt ?? new Date();
+  await markConversationAsRead(userId, conversationId, readAt);
 
   const guest = conversation.booking.user;
   const listing = conversation.booking.listing;

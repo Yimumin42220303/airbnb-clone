@@ -439,3 +439,72 @@ export function reviewRequestGuest(info: ReviewRequestEmailInfo) {
     html: layout("숙소 리뷰를 남겨 주세요", body),
   };
 }
+
+export type RecommendationLeadEmailInfo = {
+  leadCode: string;
+  leadId: string;
+  checkIn: string;
+  checkOut: string;
+  adultCount: number;
+  childCount: number;
+  infantCount: number;
+  tripType: string | null;
+  accessibilityLabel: string;
+  budgetLabel: string;
+  priorities: string | null;
+  contactMethod: string;
+  guestName: string | null;
+  email: string | null;
+  kakaoId: string | null;
+  freeText: string | null;
+  listingLines: string;
+  sourcePage: string | null;
+  sourceListingId: string | null;
+  utmSource: string | null;
+  utmMedium: string | null;
+  utmCampaign: string | null;
+  referrer: string | null;
+};
+
+function esc(s: string | null | undefined): string {
+  if (!s) return "—";
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+export function recommendationLeadNotifyEmail(info: RecommendationLeadEmailInfo): string {
+  let prioritiesText = "—";
+  if (info.priorities) {
+    try {
+      prioritiesText = (JSON.parse(info.priorities) as string[]).join(", ");
+    } catch {
+      prioritiesText = info.priorities;
+    }
+  }
+
+  const body = `
+    <p><strong>상담번호:</strong> ${esc(info.leadCode)}</p>
+    <p style="font-size:13px;color:${GRAY_COLOR};">리드 ID: ${esc(info.leadId)}</p>
+    <hr style="border:none;border-top:1px solid #ebebeb;margin:16px 0;" />
+    <p><strong>일정:</strong> ${esc(info.checkIn)} ~ ${esc(info.checkOut)}</p>
+    <p><strong>인원:</strong> 성인 ${info.adultCount}${info.childCount > 0 ? `, 아동 ${info.childCount}` : ""}${info.infantCount > 0 ? `, 유아 ${info.infantCount}` : ""}</p>
+    <p><strong>여행 유형:</strong> ${esc(info.tripType)}</p>
+    <p><strong>희망 지역/접근성:</strong> ${esc(info.accessibilityLabel)}</p>
+    <p><strong>예산(참고):</strong> ${esc(info.budgetLabel)}</p>
+    <p><strong>중요 조건:</strong> ${esc(prioritiesText)}</p>
+    <p><strong>연락 방법:</strong> ${esc(info.contactMethod)}</p>
+    <p><strong>이름:</strong> ${esc(info.guestName)}</p>
+    <p><strong>이메일:</strong> ${esc(info.email)}</p>
+    <p><strong>카카오 ID:</strong> ${esc(info.kakaoId)}</p>
+    <p><strong>추천 숙소:</strong><br/>${info.listingLines || "—"}</p>
+    <p><strong>추가 요청:</strong> ${esc(info.freeText)}</p>
+    <hr style="border:none;border-top:1px solid #ebebeb;margin:16px 0;" />
+    <p><strong>유입:</strong> ${esc(info.sourcePage)} ${info.sourceListingId ? `(listing: ${esc(info.sourceListingId)})` : ""}</p>
+    <p><strong>UTM:</strong> ${esc(info.utmSource)} / ${esc(info.utmMedium)} / ${esc(info.utmCampaign)}</p>
+    <p><strong>Referrer:</strong> ${esc(info.referrer?.slice(0, 200))}</p>`;
+
+  return layout("숙소추천 상담 요청", body);
+}

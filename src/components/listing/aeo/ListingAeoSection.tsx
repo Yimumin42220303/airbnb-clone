@@ -216,7 +216,10 @@ export default function ListingAeoSection({ listing }: Props) {
           </ul>
           <p className="mt-4 text-[14px] text-[#717171]">
             맞춤 추천이 필요하면{" "}
-            <Link href="/recommend" className="text-minbak-primary hover:underline font-medium">
+            <Link
+              href={`/recommend?sourcePage=listing&sourceListingId=${encodeURIComponent(listing.id)}`}
+              className="text-minbak-primary hover:underline font-medium"
+            >
               AI 숙소 추천
             </Link>
             을 이용해 보세요.

@@ -1,5 +1,6 @@
 import RecommendPageContent from "./RecommendPageContent";
 import { RECOMMEND_FAQ } from "@/lib/recommend-landing";
+import { Suspense } from "react";
 
 export default function RecommendPage() {
   const faqJsonLd = {
@@ -22,7 +23,15 @@ export default function RecommendPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
       <main className="min-h-screen pt-24 px-4 md:px-6 pb-16 bg-minbak-bg">
-        <RecommendPageContent />
+        <Suspense
+          fallback={
+            <div className="max-w-[900px] mx-auto py-12 text-center text-minbak-gray">
+              불러오는 중…
+            </div>
+          }
+        >
+          <RecommendPageContent />
+        </Suspense>
       </main>
     </>
   );

@@ -10,6 +10,7 @@ import UserMenu from "./UserMenu";
 import NotificationBell from "./NotificationBell";
 import HostLocaleSwitcher from "@/components/host/HostLocaleSwitcher";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
+import MessagesUnreadBadge from "@/components/messages/MessagesUnreadBadge";
 import { INSTAGRAM_LINK } from "@/lib/constants";
 
 /** useSearchParams 미사용 폴백: SSR/정적 생성 시 검색 바 스켈레톤 */
@@ -120,11 +121,12 @@ export default function Header() {
               </Link>
               <Link
                 href="/messages"
-                className={`min-h-[44px] flex items-center px-1.5 sm:px-2 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 ${
+                className={`relative min-h-[44px] flex items-center gap-1.5 px-1.5 sm:px-2 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 ${
                   pathname?.startsWith("/messages") ? "text-minbak-black border-b-2 border-minbak-black pb-2 -mb-0.5" : "text-minbak-black hover:underline"
                 }`}
               >
                 {hostT.t("nav.messages")}
+                <MessagesUnreadBadge />
               </Link>
               <Link
                 href="/host/revenue"

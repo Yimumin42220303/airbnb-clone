@@ -1,25 +1,47 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   RecommendLandingWrapper,
   RecommendExampleSection,
   RecommendFaqSection,
   RecommendBottomCta,
 } from "@/components/recommend/RecommendLandingSections";
+import RecommendConsultBlock from "@/components/recommend/RecommendConsultBlock";
 import { trackRecommendEvent } from "@/lib/recommend-analytics";
 import { ListingCard } from "@/components/ui";
 import { formatDateDisplay } from "@/lib/date-utils";
 import FramerDateRangePicker from "@/components/search/FramerDateRangePicker";
 import FramerGuestPicker, {
   defaultGuestCounts,
-  formatGuestLabel,
   type GuestCounts,
 } from "@/components/search/FramerGuestPicker";
-import { Sparkles, Loader2, Users, Target, Calendar, MessageSquare } from "lucide-react";
+import {
+  Sparkles,
+  Loader2,
+  Users,
+  Target,
+  Calendar,
+  MessageSquare,
+  MapPin,
+  Wallet,
+} from "lucide-react";
 import type { HostTranslationKey } from "@/lib/host-i18n";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
+import {
+  ACCESSIBILITY_OPTIONS,
+  BUDGET_OPTIONS,
+  CONFIRMATION_NOTE,
+  RECOMMEND_DISPLAY_MAX,
+  RECOMMEND_INTERNAL_MAX,
+  applyRecommendRanking,
+  parseRecommendSearchParams,
+  type AccessibilityType,
+  type BudgetType,
+  type RecommendAttribution,
+} from "@/lib/recommend-funnel";
 
 const TRIP_TYPES: { value: "friends" | "couple" | "family" | "solo"; labelKey: HostTranslationKey }[] = [
   { value: "friends", labelKey: "guest.tripFriends" },
@@ -55,7 +77,6 @@ type ListingFromApi = {
   beds?: number;
 };
 
-/** API·후속 단계에서 동일 id가 섞여 들어올 때 한 번만 유지 */
 function dedupeListingsById(listings: ListingFromApi[]): ListingFromApi[] {
   const seen = new Set<string>();
   return listings.filter((l) => {
@@ -65,10 +86,7 @@ function dedupeListingsById(listings: ListingFromApi[]): ListingFromApi[] {
   });
 }
 
-function ruleBasedSort(
-  listings: ListingFromApi[],
-  priorities: Priority[]
-): ListingFromApi[] {
+function ruleBasedSort(listings: ListingFromApi[], priorities: Priority[]): ListingFromApi[] {
   if (listings.length <= 1) return [...listings];
   const primary = priorities[0];
   const sorted = [...listings];
@@ -82,6 +100,8 @@ function ruleBasedSort(
       const scoreB = (b.bedrooms ?? 0) * 10 + (b.maxGuests ?? 0) + (b.beds ?? 0);
       return scoreB - scoreA;
     });
+  } else if (primary === "location") {
+    sorted.sort((a, b) => a.location.localeCompare(b.location, "ko"));
   } else {
     sorted.sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
   }
@@ -122,12 +142,24 @@ type RecommendItem = {
   isPromoted?: boolean;
   rank: number;
   reason: string;
-  /** AI 추천 근거(리뷰·위치·가격 등). 게스트에게 "왜 이 숙소인지" 보여줌 */
   highlights?: string[];
+};
+
+const TRIP_TYPE_LABELS: Record<TripType, string> = {
+  friends: "친구",
+  couple: "커플",
+  family: "가족",
+  solo: "혼자",
 };
 
 export default function RecommendPageContent() {
   const { t, locale } = useHostTranslations();
+  const searchParams = useSearchParams();
+  const prefill = useMemo(
+    () => parseRecommendSearchParams(new URLSearchParams(searchParams.toString())),
+    [searchParams]
+  );
+
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
   const [guests, setGuests] = useState<GuestCounts>(defaultGuestCounts);
@@ -135,6 +167,10 @@ export default function RecommendPageContent() {
   const [priorities, setPriorities] = useState<Priority[]>([]);
   const MAX_PRIORITIES = 3;
   const [preferences, setPreferences] = useState("");
+  const [accessibility, setAccessibility] = useState<AccessibilityType>("any");
+  const [accessibilityOther, setAccessibilityOther] = useState("");
+  const [budgetType, setBudgetType] = useState<BudgetType>("undecided");
+  const [attribution, setAttribution] = useState<RecommendAttribution>({});
   const [dateOpen, setDateOpen] = useState(false);
   const [guestOpen, setGuestOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -145,11 +181,58 @@ export default function RecommendPageContent() {
   const formStartedRef = useRef(false);
   const dateTrackedRef = useRef(false);
   const guestTrackedRef = useRef(false);
+  const prefillDoneRef = useRef(false);
+  const pageViewTrackedRef = useRef(false);
+
+  useEffect(() => {
+    if (prefillDoneRef.current) return;
+    prefillDoneRef.current = true;
+    if (prefill.checkIn) setCheckIn(prefill.checkIn);
+    if (prefill.checkOut) setCheckOut(prefill.checkOut);
+    if (prefill.guests != null && prefill.guests > 0) {
+      setGuests({ adult: prefill.guests, child: 0, infant: 0 });
+    }
+    if (prefill.budgetType) setBudgetType(prefill.budgetType);
+    if (prefill.location?.trim()) {
+      setAccessibility("other");
+      setAccessibilityOther(prefill.location.trim());
+    }
+    setAttribution({
+      sourcePage: prefill.sourcePage,
+      sourceListingId: prefill.sourceListingId,
+      utmSource: prefill.utmSource,
+      utmMedium: prefill.utmMedium,
+      utmCampaign: prefill.utmCampaign,
+      referrer: prefill.referrer,
+    });
+  }, [prefill]);
+
+  useEffect(() => {
+    if (pageViewTrackedRef.current) return;
+    pageViewTrackedRef.current = true;
+    trackRecommendEvent("recommend_page_view", {
+      source_page: prefill.sourcePage,
+    });
+  }, [prefill.sourcePage]);
+
+  useEffect(() => {
+    if (typeof document !== "undefined" && document.referrer && !attribution.referrer) {
+      setAttribution((prev) => ({
+        ...prev,
+        referrer: prev.referrer ?? document.referrer.slice(0, 500),
+      }));
+    }
+  }, [attribution.referrer]);
+
+  const displayResults = useMemo(
+    () => (results ? results.slice(0, RECOMMEND_DISPLAY_MAX) : null),
+    [results]
+  );
 
   const markFormStart = () => {
     if (!formStartedRef.current) {
       formStartedRef.current = true;
-      trackRecommendEvent("recommend_form_start");
+      trackRecommendEvent("recommend_form_start", { source_page: attribution.sourcePage });
     }
   };
 
@@ -161,16 +244,27 @@ export default function RecommendPageContent() {
   }, [checkIn, checkOut]);
 
   useEffect(() => {
-    if (results && results.length > 0) {
+    if (displayResults && displayResults.length > 0) {
       trackRecommendEvent("recommend_result_view", {
-        result_count: results.length,
+        result_count: displayResults.length,
         travel_type: tripType || undefined,
         priorities: priorities.join(","),
         guest_count: guests.adult + guests.child,
         date_selected: !!(checkIn && checkOut),
+        has_area: accessibility !== "any",
+        has_budget: budgetType !== "undecided",
       });
     }
-  }, [results, tripType, priorities, guests.adult, guests.child, checkIn, checkOut]);
+  }, [displayResults, tripType, priorities, guests.adult, guests.child, checkIn, checkOut, accessibility, budgetType]);
+
+  const prioritiesLabel = useMemo(() => {
+    if (priorities.length === 0) return undefined;
+    return priorities
+      .map((p) => PRIORITIES.find((x) => x.value === p))
+      .filter(Boolean)
+      .map((x) => t(x!.labelKey))
+      .join(", ");
+  }, [priorities, t]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -198,7 +292,10 @@ export default function RecommendPageContent() {
       priorities: priorities.slice(0, MAX_PRIORITIES).join(","),
       guest_count: guests.adult + guests.child,
       date_selected: true,
+      has_area: accessibility !== "any",
+      has_budget: budgetType !== "undecided",
     });
+
     const recommendBody = {
       checkIn,
       checkOut,
@@ -211,9 +308,8 @@ export default function RecommendPageContent() {
       locale,
     };
 
-    const listingsPromise = fetch(`/api/listings?${params}`).then((r) => r.json());
-
-    listingsPromise
+    fetch(`/api/listings?${params}`)
+      .then((r) => r.json())
       .then(async (listingsData) => {
         if (!Array.isArray(listingsData)) {
           setError(listingsData?.error ?? t("guest.recommendRequestFailed"));
@@ -227,11 +323,19 @@ export default function RecommendPageContent() {
           setLoading(false);
           return;
         }
-        const sorted = ruleBasedSort(listings, priorities.slice(0, MAX_PRIORITIES));
-        const ruleBasedTop5 = sorted.slice(0, 5).map((l, i) =>
+
+        const ranked = applyRecommendRanking(listings, {
+          accessibility,
+          accessibilityOther,
+          budgetType,
+          priorities: priorities.slice(0, MAX_PRIORITIES),
+          ruleBasedSort: (items) => ruleBasedSort(items, priorities.slice(0, MAX_PRIORITIES)),
+        });
+
+        const ruleBasedTop = ranked.slice(0, RECOMMEND_INTERNAL_MAX).map((l, i) =>
           toRecommendItem(l, i + 1, t("guest.ruleBasedReason"), undefined)
         );
-        setResults(ruleBasedTop5);
+        setResults(ruleBasedTop);
         setMessage(null);
         setLoading(false);
         setAiRefining(true);
@@ -251,7 +355,7 @@ export default function RecommendPageContent() {
                 streamError = errData.error;
               }
             } catch {
-              // ignore parsing failure and keep fallback message
+              /* ignore */
             }
             setMessage(streamError);
             return;
@@ -263,6 +367,7 @@ export default function RecommendPageContent() {
           const reader = res.body.getReader();
           const decoder = new TextDecoder();
           let buffer = "";
+          const aiItems: RecommendItem[] = [];
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
@@ -270,42 +375,34 @@ export default function RecommendPageContent() {
             const lines = buffer.split("\n");
             buffer = lines.pop() ?? "";
             for (const line of lines) {
-              if (line.startsWith("data: ")) {
-                const raw = line.slice(6).trim();
-                if (raw === "" || raw === "[DONE]") continue;
-                try {
-                  const data = JSON.parse(raw) as { done?: boolean; error?: string } & RecommendItem;
-                  if (data.done || data.error) {
-                    if (data.error) setMessage(data.error);
-                    continue;
-                  }
-                  const item: RecommendItem = {
-                    id: data.id,
-                    title: data.title,
-                    location: data.location,
-                    imageUrl: data.imageUrl,
-                    price: data.price,
-                    rating: data.rating,
-                    reviewCount: data.reviewCount,
-                    amenities: data.amenities,
-                    isPromoted: data.isPromoted,
-                    rank: data.rank,
-                    reason: data.reason,
-                    highlights: data.highlights,
-                  };
-                  if (!hasReceivedAny) {
-                    setResults([item]);
-                    hasReceivedAny = true;
-                  } else {
-                    setResults((prev) => {
-                      if (!prev) return [item];
-                      if (prev.some((p) => p.id === item.id)) return prev;
-                      return [...prev, item];
-                    });
-                  }
-                } catch {
-                  // skip invalid JSON
+              if (!line.startsWith("data: ")) continue;
+              const raw = line.slice(6).trim();
+              if (raw === "" || raw === "[DONE]") continue;
+              try {
+                const data = JSON.parse(raw) as { done?: boolean; error?: string } & RecommendItem;
+                if (data.done || data.error) {
+                  if (data.error) setMessage(data.error);
+                  continue;
                 }
+                if (aiItems.some((p) => p.id === data.id)) continue;
+                aiItems.push({
+                  id: data.id,
+                  title: data.title,
+                  location: data.location,
+                  imageUrl: data.imageUrl,
+                  price: data.price,
+                  rating: data.rating,
+                  reviewCount: data.reviewCount,
+                  amenities: data.amenities,
+                  isPromoted: data.isPromoted,
+                  rank: aiItems.length + 1,
+                  reason: data.reason,
+                  highlights: data.highlights,
+                });
+                hasReceivedAny = true;
+                setResults([...aiItems].slice(0, RECOMMEND_INTERNAL_MAX));
+              } catch {
+                /* skip */
               }
             }
           }
@@ -325,12 +422,16 @@ export default function RecommendPageContent() {
       });
   };
 
+  const scrollToConsult = useCallback(() => {
+    document.getElementById("recommend-consult-block")?.scrollIntoView({ behavior: "smooth" });
+    trackRecommendEvent("recommend_inquiry_click", { source_page: attribution.sourcePage });
+  }, [attribution.sourcePage]);
+
   return (
     <div className="max-w-[900px] mx-auto px-0 sm:px-2 py-6 md:py-8 pb-24">
       <RecommendLandingWrapper />
 
       <form id="recommend-form" onSubmit={handleSubmit} className="space-y-6 scroll-mt-28">
-        {/* 여행 유형 */}
         <section className="bg-white border border-minbak-light-gray rounded-minbak p-4 md:p-5 shadow-sm">
           <h2 className="text-minbak-body font-semibold text-minbak-black mb-3 flex items-center gap-2">
             <Users className="w-5 h-5 text-minbak-primary" />
@@ -359,14 +460,16 @@ export default function RecommendPageContent() {
           </div>
         </section>
 
-        {/* 우선순위 (최대 3개) */}
         <section className="bg-white border border-minbak-light-gray rounded-minbak p-4 md:p-5 shadow-sm">
           <h2 className="text-minbak-body font-semibold text-minbak-black mb-1 flex items-center gap-2">
             <Target className="w-5 h-5 text-minbak-primary" />
             {t("guest.whatMattersMost")}
           </h2>
           <p className="text-minbak-caption text-minbak-gray mb-3">
-            {t("guest.priorityMaxSelect", { max: MAX_PRIORITIES })} · <span className="font-medium text-minbak-dark-gray">{t("guest.prioritySelectCount", { current: priorities.length, max: MAX_PRIORITIES })}</span>
+            {t("guest.priorityMaxSelect", { max: MAX_PRIORITIES })} ·{" "}
+            <span className="font-medium text-minbak-dark-gray">
+              {t("guest.prioritySelectCount", { current: priorities.length, max: MAX_PRIORITIES })}
+            </span>
           </p>
           <div className="flex flex-wrap gap-2">
             {PRIORITIES.map(({ value, labelKey }) => {
@@ -382,9 +485,7 @@ export default function RecommendPageContent() {
                     else if (priorities.length < MAX_PRIORITIES) {
                       setPriorities((prev) => {
                         const next = [...prev, value];
-                        trackRecommendEvent("recommend_priority_select", {
-                          priorities: next.join(","),
-                        });
+                        trackRecommendEvent("recommend_priority_select", { priorities: next.join(",") });
                         return next;
                       });
                     }
@@ -405,7 +506,71 @@ export default function RecommendPageContent() {
           </div>
         </section>
 
-        {/* 일정 · 인원 */}
+        <section className="bg-white border border-minbak-light-gray rounded-minbak p-4 md:p-5 shadow-sm">
+          <h2 className="text-minbak-body font-semibold text-minbak-black mb-3 flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-minbak-primary" />
+            희망 지역/접근성
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {ACCESSIBILITY_OPTIONS.map(({ value, label }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => {
+                  markFormStart();
+                  setAccessibility(value);
+                }}
+                className={`px-3 py-2 rounded-minbak text-minbak-caption font-medium border transition-colors ${
+                  accessibility === value
+                    ? "bg-minbak-primary text-white border-minbak-primary"
+                    : "bg-white text-minbak-black border-minbak-light-gray hover:border-minbak-primary/50"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {accessibility === "other" && (
+            <input
+              type="text"
+              value={accessibilityOther}
+              onChange={(e) => setAccessibilityOther(e.target.value)}
+              placeholder="희망 지역이나 역 이름을 입력해 주세요"
+              className="mt-3 w-full px-4 py-3 border border-minbak-light-gray rounded-minbak text-minbak-body"
+              maxLength={200}
+            />
+          )}
+        </section>
+
+        <section className="bg-white border border-minbak-light-gray rounded-minbak p-4 md:p-5 shadow-sm">
+          <h2 className="text-minbak-body font-semibold text-minbak-black mb-3 flex items-center gap-2">
+            <Wallet className="w-5 h-5 text-minbak-primary" />
+            1박 예산 (참고)
+          </h2>
+          <p className="text-minbak-caption text-minbak-gray mb-3">
+            예산은 상담·추천 참고용이며, 조건에 맞는 숙소가 적을 경우 범위를 넓혀 추천합니다.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {BUDGET_OPTIONS.map(({ value, label }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => {
+                  markFormStart();
+                  setBudgetType(value);
+                }}
+                className={`px-3 py-2 rounded-minbak text-minbak-caption font-medium border transition-colors ${
+                  budgetType === value
+                    ? "bg-minbak-primary text-white border-minbak-primary"
+                    : "bg-white text-minbak-black border-minbak-light-gray hover:border-minbak-primary/50"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </section>
+
         <section className="bg-white border border-minbak-light-gray rounded-minbak p-4 md:p-5 shadow-sm">
           <h2 className="text-minbak-body font-semibold text-minbak-black mb-3 flex items-center gap-2">
             <Calendar className="w-5 h-5 text-minbak-primary" />
@@ -413,7 +578,9 @@ export default function RecommendPageContent() {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-minbak-caption text-minbak-gray mb-1">{t("guest.recommendScheduleHint")}</label>
+              <label className="block text-minbak-caption text-minbak-gray mb-1">
+                {t("guest.recommendScheduleHint")}
+              </label>
               <button
                 type="button"
                 onClick={() => {
@@ -430,7 +597,9 @@ export default function RecommendPageContent() {
               </button>
             </div>
             <div>
-              <label className="block text-minbak-caption text-minbak-gray mb-1">{t("guest.recommendGuestsHint")}</label>
+              <label className="block text-minbak-caption text-minbak-gray mb-1">
+                {t("guest.recommendGuestsHint")}
+              </label>
               <button
                 type="button"
                 onClick={() => {
@@ -441,9 +610,12 @@ export default function RecommendPageContent() {
               >
                 <span className="text-minbak-black">
                   {guests.adult + guests.child + guests.infant > 0
-                    ? (guests.infant > 0
-                      ? t("guest.guestCountWithInfant", { total: guests.adult + guests.child, infant: guests.infant })
-                      : t("guest.guestCount", { total: guests.adult + guests.child }))
+                    ? guests.infant > 0
+                      ? t("guest.guestCountWithInfant", {
+                          total: guests.adult + guests.child,
+                          infant: guests.infant,
+                        })
+                      : t("guest.guestCount", { total: guests.adult + guests.child })
                     : t("guest.addGuests")}
                 </span>
               </button>
@@ -451,7 +623,6 @@ export default function RecommendPageContent() {
           </div>
         </section>
 
-        {/* 선호사항 자유 입력 */}
         <section className="bg-white border border-minbak-light-gray rounded-minbak p-4 md:p-5 shadow-sm">
           <h2 className="text-minbak-body font-semibold text-minbak-black mb-3 flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-minbak-primary" />
@@ -488,20 +659,26 @@ export default function RecommendPageContent() {
           ) : (
             <>
               <Sparkles className="w-5 h-5" />
-              {t("guest.aiRecommendCta")}
+              내 조건에 맞는 숙소 3곳 추천받기
             </>
           )}
         </button>
+        <p className="text-minbak-caption text-minbak-gray text-center -mt-2">
+          일정·인원만 입력하면 조건에 맞는 숙소 3곳을 추천해드려요.
+        </p>
       </form>
 
       {results !== null && results.length === 0 && message && (
         <p className="mt-10 text-minbak-body text-minbak-dark-gray">{message}</p>
       )}
-      {results !== null && results.length > 0 && (
+
+      {displayResults && displayResults.length > 0 && (
         <div className="mt-10">
-          <h2 className="text-minbak-h3 font-bold text-minbak-black mb-4">
-            {t("guest.aiRecommendResultsCount", { count: results.length })}
+          <h2 className="text-minbak-h3 font-bold text-minbak-black mb-2">
+            {t("guest.aiRecommendResultsCount", { count: displayResults.length })}
           </h2>
+          <p className="text-minbak-caption text-minbak-gray mb-4">{CONFIRMATION_NOTE}</p>
+
           {aiRefining && (
             <div className="mb-4 p-4 bg-minbak-primary/5 border border-minbak-primary/20 rounded-minbak">
               <div className="flex items-center justify-between gap-3 mb-2">
@@ -511,7 +688,10 @@ export default function RecommendPageContent() {
                 </span>
                 <span className="text-minbak-body font-semibold text-minbak-primary tabular-nums">
                   {t("guest.progressPercent", {
-                    percent: Math.min(100, Math.round((results.length / 5) * 100)),
+                    percent: Math.min(
+                      100,
+                      Math.round(((results?.length ?? 0) / RECOMMEND_INTERNAL_MAX) * 100)
+                    ),
                   })}
                 </span>
               </div>
@@ -519,7 +699,7 @@ export default function RecommendPageContent() {
                 <div
                   className="h-full bg-minbak-primary rounded-full transition-all duration-500 ease-out"
                   style={{
-                    width: `${Math.min(100, (results.length / 5) * 100)}%`,
+                    width: `${Math.min(100, ((results?.length ?? 0) / RECOMMEND_INTERNAL_MAX) * 100)}%`,
                   }}
                 />
               </div>
@@ -528,12 +708,13 @@ export default function RecommendPageContent() {
           {message && !aiRefining && (
             <p className="text-minbak-caption text-minbak-gray mb-4">{message}</p>
           )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-            {results.map((item) => (
-              <div key={item.id} className="relative flex flex-col">
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {displayResults.map((item) => (
+              <div key={item.id} className="relative flex flex-col bg-white border border-minbak-light-gray rounded-minbak overflow-hidden shadow-sm">
                 <div className="absolute top-2 left-2 z-10">
-                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-minbak-primary text-white text-sm font-bold shadow-md">
-                    {item.rank}
+                  <span className="inline-flex items-center justify-center min-w-[2rem] h-8 px-2 rounded-full bg-minbak-primary text-white text-sm font-bold shadow-md">
+                    {item.rank}순위
                   </span>
                 </div>
                 <ListingCard
@@ -547,7 +728,7 @@ export default function RecommendPageContent() {
                   amenities={item.amenities}
                   isPromoted={item.isPromoted}
                 />
-                <div className="mt-2 space-y-2 flex-1 flex flex-col">
+                <div className="p-3 space-y-2 flex-1 flex flex-col">
                   <p className="text-minbak-caption text-minbak-dark-gray">
                     <span className="font-medium text-minbak-primary">{t("guest.recommendReason")}:</span>{" "}
                     {item.reason}
@@ -562,37 +743,69 @@ export default function RecommendPageContent() {
                       </ul>
                     </div>
                   )}
-                  <div className="flex flex-wrap gap-2 mt-auto pt-2">
+                  <p className="text-minbak-caption text-amber-800/90 bg-amber-50 border border-amber-100 rounded px-2 py-1.5">
+                    <span className="font-medium">확인 필요:</span> {CONFIRMATION_NOTE}
+                  </p>
+                  <div className="flex flex-col gap-2 mt-auto pt-2">
                     <Link
                       href={`/listing/${item.id}`}
                       onClick={() =>
                         trackRecommendEvent("recommend_listing_click", {
                           listing_id: item.id,
                           listing_name: item.title,
-                          result_count: results.length,
+                          result_count: displayResults.length,
                         })
                       }
-                      className="inline-flex items-center justify-center min-h-[40px] flex-1 px-4 py-2 rounded-minbak bg-minbak-primary text-white text-minbak-caption font-semibold hover:bg-minbak-primary-hover transition-colors"
+                      className="inline-flex items-center justify-center min-h-[40px] px-4 py-2 rounded-minbak bg-minbak-primary text-white text-minbak-caption font-semibold hover:bg-minbak-primary-hover transition-colors"
                     >
                       {t("guest.recommendViewListing")}
                     </Link>
-                    <Link
-                      href={`/listing/${item.id}`}
-                      onClick={() => trackRecommendEvent("recommend_booking_start", { listing_id: item.id })}
-                      className="inline-flex items-center justify-center min-h-[40px] px-4 py-2 rounded-minbak border border-minbak-primary text-minbak-primary text-minbak-caption font-medium hover:bg-minbak-primary/5 transition-colors"
+                    <button
+                      type="button"
+                      onClick={() => {
+                        trackRecommendEvent("recommend_inquiry_click", {
+                          listing_id: item.id,
+                          listing_name: item.title,
+                        });
+                        scrollToConsult();
+                      }}
+                      className="inline-flex items-center justify-center min-h-[40px] px-4 py-2 rounded-minbak border border-minbak-primary/40 text-minbak-primary text-minbak-caption font-medium hover:bg-minbak-primary/5 transition-colors"
                     >
-                      {t("guest.recommendCheckListing")}
-                    </Link>
+                      이 숙소 상담하기
+                    </button>
                   </div>
                 </div>
               </div>
             ))}
           </div>
+
           <p className="mt-6 text-minbak-caption text-minbak-gray text-center">
             <Link href="/search" className="text-minbak-primary hover:underline">
               {t("guest.changeConditionsSearch")}
             </Link>
           </p>
+
+          <div id="recommend-consult-block">
+            <RecommendConsultBlock
+              checkIn={checkIn}
+              checkOut={checkOut}
+              adultCount={guests.adult}
+              childCount={guests.child}
+              infantCount={guests.infant}
+              tripTypeLabel={tripType ? TRIP_TYPE_LABELS[tripType] : undefined}
+              tripType={tripType || undefined}
+              accessibility={accessibility}
+              accessibilityOther={accessibilityOther}
+              budgetType={budgetType}
+              prioritiesLabel={prioritiesLabel}
+              priorities={priorities}
+              freeText={[preferences, accessibility === "other" ? accessibilityOther : ""]
+                .filter(Boolean)
+                .join("\n")}
+              listings={displayResults.map((r) => ({ rank: r.rank, id: r.id, title: r.title }))}
+              attribution={attribution}
+            />
+          </div>
         </div>
       )}
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { useCurrency } from "@/components/currency/CurrencyProvider";
 import Image from "next/image";
 import { MapPin, ChevronDown, ChevronUp } from "lucide-react";
@@ -19,6 +20,8 @@ import { buildListingGalleryAlt } from "@/lib/listing-image-alt";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 import { getAmenityLabel } from "@/lib/host-i18n";
 import MetaPixelViewContent from "@/components/analytics/MetaPixelViewContent";
+import { buildRecommendHref } from "@/lib/recommend-funnel";
+import { trackRecommendEvent } from "@/lib/recommend-analytics";
 
 type ReviewItem = {
   rating: number;
@@ -549,6 +552,23 @@ export default function ListingDetailContent({
                     checkInMethod={listing.checkInMethod}
                   />
                 </div>
+                <p className="mt-3 text-center">
+                  <Link
+                    href={buildRecommendHref({
+                      sourcePage: "listing",
+                      sourceListingId: listing.id,
+                    })}
+                    onClick={() =>
+                      trackRecommendEvent("listing_recommend_click", {
+                        listing_id: listing.id,
+                        source_page: "listing",
+                      })
+                    }
+                    className="text-[13px] text-[#717171] hover:text-minbak-primary underline underline-offset-2"
+                  >
+                    비슷한 숙소 추천받기
+                  </Link>
+                </p>
               </div>
             </div>
           </div>

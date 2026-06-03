@@ -38,6 +38,7 @@ export default function AIRecommendPromptCard({ variant, checkIn, checkOut, gues
     if (checkIn) params.set("checkIn", checkIn);
     if (checkOut) params.set("checkOut", checkOut);
     if (guests != null) params.set("guests", String(guests));
+    params.set("sourcePage", "search");
     const qs = params.toString();
     return qs ? `/recommend?${qs}` : "/recommend";
   })();

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { fetchConversationListForUser } from "@/lib/conversation-read";
 
 /**
  * GET /api/conversations
@@ -17,59 +18,8 @@ export async function GET() {
     );
   }
 
-  const conversations = await prisma.conversation.findMany({
-    where: {
-      OR: [
-        { booking: { userId } },
-        { booking: { listing: { userId } } },
-      ],
-    },
-    orderBy: { createdAt: "desc" },
-    include: {
-      booking: {
-        include: {
-          listing: {
-            include: { user: { select: { name: true, email: true } } },
-          },
-          user: { select: { id: true, name: true, email: true } },
-        },
-      },
-      messages: {
-        orderBy: { createdAt: "desc" },
-        take: 1,
-        select: { id: true, body: true, createdAt: true, senderId: true },
-      },
-    },
-  });
-
-  const result = conversations.map((c) => {
-    const guest = c.booking!.user;
-    const listing = c.booking!.listing as { id: string; title: string; user: { name: string | null; email: string } };
-    const listingId = listing.id;
-    const listingTitle = listing.title;
-    const isGuest = userId === guest.id;
-    const otherName = isGuest
-      ? (listing.user?.name || listing.user?.email || "호스트")
-      : (guest.name || guest.email || "게스트");
-    const last = c.messages[0];
-    return {
-      id: c.id,
-      bookingId: c.bookingId,
-      listingId,
-      listingTitle,
-      otherName,
-      lastMessage: last
-        ? {
-            body: last.body,
-            createdAt: last.createdAt.toISOString(),
-            isFromMe: last.senderId === userId,
-          }
-        : null,
-      createdAt: c.createdAt.toISOString(),
-    };
-  });
-
-  return NextResponse.json({ conversations: result });
+  const conversations = await fetchConversationListForUser(userId);
+  return NextResponse.json({ conversations });
 }
 
 /**

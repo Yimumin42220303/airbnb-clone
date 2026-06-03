@@ -6,6 +6,7 @@ import { createNotification } from "@/lib/notifications";
 import { translateMessageBody } from "@/lib/translate";
 import { sendPushToUser } from "@/lib/web-push";
 import { sendDiscordMessage } from "@/lib/discord";
+import { markConversationAsRead } from "@/lib/conversation-read";
 import { BASE_URL } from "@/lib/email";
 
 function canAccessConversation(
@@ -118,6 +119,14 @@ export async function GET(
       return { ...base, bodyDisplay: translated };
     })
   );
+
+  const latestCreatedAt = list.length
+    ? list.reduce(
+        (max, m) => (m.createdAt > max ? m.createdAt : max),
+        list[0].createdAt
+      )
+    : new Date();
+  await markConversationAsRead(userId, conversationId, latestCreatedAt);
 
   return NextResponse.json({
     conversationId,

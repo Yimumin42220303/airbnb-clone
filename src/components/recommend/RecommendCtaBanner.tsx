@@ -1,14 +1,40 @@
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { RECOMMEND_MID_BANNER } from "@/lib/recommend-landing";
+import { buildRecommendHref, priceRangeToBudgetType } from "@/lib/recommend-funnel";
 
 type Props = {
   className?: string;
-  /** 검색 그리드 중간 삽입 시 컴팩트 레이아웃 */
   compact?: boolean;
+  checkIn?: string;
+  checkOut?: string;
+  guests?: number;
+  location?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  sourcePage?: string;
 };
 
-export default function RecommendCtaBanner({ className = "", compact = false }: Props) {
+export default function RecommendCtaBanner({
+  className = "",
+  compact = false,
+  checkIn,
+  checkOut,
+  guests,
+  location,
+  minPrice,
+  maxPrice,
+  sourcePage = "search",
+}: Props) {
+  const href = buildRecommendHref({
+    checkIn,
+    checkOut,
+    guests,
+    location,
+    budgetType: priceRangeToBudgetType(minPrice, maxPrice),
+    sourcePage,
+  });
+
   if (compact) {
     return (
       <div
@@ -19,7 +45,7 @@ export default function RecommendCtaBanner({ className = "", compact = false }: 
           {RECOMMEND_MID_BANNER.body}
         </p>
         <Link
-          href="/recommend"
+          href={href}
           className="mt-4 inline-flex items-center justify-center gap-2 min-h-[44px] w-full px-4 py-2.5 rounded-minbak bg-minbak-primary text-white text-minbak-body font-semibold hover:bg-minbak-primary-hover transition-colors"
         >
           <Sparkles className="w-4 h-4 shrink-0" aria-hidden />
@@ -39,7 +65,7 @@ export default function RecommendCtaBanner({ className = "", compact = false }: 
         {RECOMMEND_MID_BANNER.body}
       </p>
       <Link
-        href="/recommend"
+        href={href}
         className="mt-5 inline-flex items-center justify-center gap-2 min-h-[48px] px-6 py-3 rounded-minbak-full bg-minbak-primary text-white text-minbak-body font-semibold hover:bg-minbak-primary-hover transition-colors shadow-lg shadow-minbak-primary/20"
       >
         <Sparkles className="w-5 h-5" aria-hidden />

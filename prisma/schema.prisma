@@ -35,6 +35,7 @@ model User {
   wishlists Wishlist[]
   posts    Post[]   // 운영자 블로그 (admin 전용)
   notifications Notification[]
+  conversationReads ConversationRead[]
   scheduledMessageTemplates ScheduledMessageTemplate[] @relation("HostTemplates")
   pushSubscriptions PushSubscription[]
 }
@@ -385,6 +386,19 @@ model Conversation {
 
   messages Message[]
   scheduledMessages ScheduledMessage[]
+  reads ConversationRead[]
+}
+
+model ConversationRead {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  lastReadAt     DateTime
+
+  @@unique([userId, conversationId])
+  @@index([userId])
 }
 
 model Message {
@@ -548,4 +562,60 @@ model PushSubscription {
 
   @@unique([userId, endpoint])
   @@index([userId])
+}
+
+// ---------- 숙소 추천 상담 리드 (카카오톡 퍼널) ----------
+model RecommendationLead {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// new | contacted | converted | lost
+  status    String   @default("new")
+  leadCode  String   @unique
+
+  sourcePage      String?
+  sourceListingId String?
+  utmSource       String?
+  utmMedium       String?
+  utmCampaign     String?
+  referrer        String?
+
+  userId String?
+
+  guestName     String?
+  contactMethod String  @default("kakao")
+  email         String?
+  kakaoId       String?
+
+  tripType    String?
+  checkIn     String?
+  checkOut    String?
+  adultCount  Int?
+  childCount  Int      @default(0)
+  infantCount Int      @default(0)
+
+  preferredAreas String?
+  budgetType     String?
+  budgetMin      Int?
+  budgetMax      Int?
+  budgetCurrency String? @default("KRW")
+  priorities     String?
+  mustHaves      String?
+  freeText       String?
+  referralSource String?
+
+  recommendedListingIds String?
+  selectedListingId     String?
+  bookingId             String?
+
+  operatorMemo String?
+  lostReason   String?
+
+  privacyConsentAt DateTime
+
+  @@index([status, createdAt])
+  @@index([userId])
+  @@index([sourceListingId])
+  @@index([leadCode])
 }

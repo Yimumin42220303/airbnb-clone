@@ -37,6 +37,9 @@ export default async function SearchResults({ searchParams }: Props) {
     guestsCount,
     hasActiveFilters,
   } = parsed;
+  const locationFilter = filters.location;
+  const minPriceFilter = filters.minPrice;
+  const maxPriceFilter = filters.maxPrice;
 
   const session = await getServerSession(authOptions);
   const userId = (session as { userId?: string } | null)?.userId ?? null;
@@ -112,7 +115,16 @@ export default async function SearchResults({ searchParams }: Props) {
                 <SearchAIInlineCard checkIn={checkIn} checkOut={checkOut} guests={guestsCount} />
               )}
               {idx === RECOMMEND_BANNER_AT && listings.length > RECOMMEND_BANNER_AT && (
-                <RecommendCtaBanner compact />
+                <RecommendCtaBanner
+                  compact
+                  checkIn={checkIn}
+                  checkOut={checkOut}
+                  guests={guestsCount}
+                  location={locationFilter}
+                  minPrice={minPriceFilter}
+                  maxPrice={maxPriceFilter}
+                  sourcePage="search"
+                />
               )}
                   <ListingCard
                     {...listing}
