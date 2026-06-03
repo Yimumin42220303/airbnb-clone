@@ -6,7 +6,9 @@ import { useSearchParams } from "next/navigation";
 import { RecommendLandingWrapper } from "@/components/recommend/RecommendLandingSections";
 import { RECOMMEND_RESULTS_TITLE } from "@/lib/recommend-landing";
 import RecommendConsultBlock from "@/components/recommend/RecommendConsultBlock";
+import RecommendResultPrice from "@/components/recommend/RecommendResultPrice";
 import { trackRecommendEvent } from "@/lib/recommend-analytics";
+import type { ListingPriceSummary } from "@/lib/stay-price";
 import { ListingCard } from "@/components/ui";
 import { formatDateDisplay } from "@/lib/date-utils";
 import FramerDateRangePicker from "@/components/search/FramerDateRangePicker";
@@ -19,7 +21,6 @@ import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 import {
   ACCESSIBILITY_OPTIONS_GUEST,
   BUDGET_OPTIONS,
-  CONFIRMATION_NOTE,
   PRIMARY_PRIORITY_OPTIONS,
   RECOMMEND_DISPLAY_MAX,
   RECOMMEND_INTERNAL_MAX,
@@ -140,6 +141,10 @@ export default function RecommendPageContent() {
   const [error, setError] = useState("");
   const [results, setResults] = useState<RecommendItem[] | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [priceByListingId, setPriceByListingId] = useState<
+    Record<string, ListingPriceSummary>
+  >({});
+  const [priceLoading, setPriceLoading] = useState(false);
   const formStartedRef = useRef(false);
   const dateTrackedRef = useRef(false);
   const guestTrackedRef = useRef(false);
@@ -207,6 +212,75 @@ export default function RecommendPageContent() {
     [results]
   );
 
+  /** BookingForm price API와 동일: 성인+어린이+유아 */
+  const guestCountForPrice = useMemo(() => {
+    const total = guests.adult + guests.child + guests.infant;
+    return total > 0 ? total : 1;
+  }, [guests.adult, guests.child, guests.infant]);
+
+  const priceListingIds = useMemo(() => {
+    if (!displayResults?.length) return [];
+    return Array.from(new Set(displayResults.map((r) => r.id))).sort();
+  }, [displayResults]);
+
+  const priceFetchKey = useMemo(() => {
+    if (!checkIn || !checkOut || priceListingIds.length === 0) return null;
+    return `${checkIn}|${checkOut}|${guestCountForPrice}|${priceListingIds.join(",")}`;
+  }, [checkIn, checkOut, guestCountForPrice, priceListingIds]);
+
+  useEffect(() => {
+    if (!priceFetchKey) {
+      setPriceLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setPriceLoading(true);
+    setPriceByListingId((prev) => {
+      const next = { ...prev };
+      for (const id of priceListingIds) {
+        delete next[id];
+      }
+      return next;
+    });
+
+    fetch("/api/listings/batch-price", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+      body: JSON.stringify({
+        listingIds: priceListingIds,
+        checkIn,
+        checkOut,
+        guests: guestCountForPrice,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data: { prices?: Record<string, ListingPriceSummary>; error?: string }) => {
+        if (cancelled) return;
+        if (data.prices && typeof data.prices === "object") {
+          setPriceByListingId((prev) => ({ ...prev, ...data.prices }));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          /* 개별 카드 fallback은 RecommendResultPrice에서 처리 */
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setPriceLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [priceFetchKey, priceListingIds, checkIn, checkOut, guestCountForPrice]);
+
+  const resultsContextLine = useMemo(() => {
+    if (!checkIn || !checkOut) return null;
+    return `${formatDateDisplay(checkIn, locale)}~${formatDateDisplay(checkOut, locale)} · 게스트 ${guestCountForPrice}명 기준 추천 결과입니다.`;
+  }, [checkIn, checkOut, guestCountForPrice, locale]);
+
   const markFormStart = () => {
     if (!formStartedRef.current) {
       formStartedRef.current = true;
@@ -244,6 +318,8 @@ export default function RecommendPageContent() {
     setError("");
     setResults(null);
     setMessage(null);
+    setPriceByListingId({});
+    setPriceLoading(false);
     if (!checkIn || !checkOut) {
       setDateOpen(true);
       setError(t("guest.dateRequiredError"));
@@ -563,7 +639,15 @@ export default function RecommendPageContent() {
           <h2 className="text-minbak-h3 font-bold text-minbak-black mb-2">
             {RECOMMEND_RESULTS_TITLE}
           </h2>
-          <p className="text-minbak-caption text-minbak-gray mb-4">{CONFIRMATION_NOTE}</p>
+          {resultsContextLine && (
+            <p className="text-minbak-body text-minbak-dark-gray mb-1">
+              {resultsContextLine}
+            </p>
+          )}
+          <p className="text-minbak-caption text-minbak-gray mb-4">
+            표시 요금은 선택한 일정·인원 기준 예상 요금이며, 최종 요금은 숙소 상세에서
+            확인해 주세요.
+          </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {displayResults.map((item) => (
@@ -586,9 +670,16 @@ export default function RecommendPageContent() {
                   reviewCount={item.reviewCount}
                   isPromoted={item.isPromoted}
                   showPrice={false}
+                  showPricePlaceholder={false}
                   searchQuery={listingDetailSearchQuery || undefined}
+                  className="rounded-none shadow-none hover:shadow-none"
                 />
-                <div className="p-3 space-y-2 flex-1 flex flex-col">
+                <RecommendResultPrice
+                  className="px-3 pt-3 pb-1 border-t border-minbak-light-gray min-h-[72px]"
+                  loading={priceLoading && !priceByListingId[item.id]}
+                  summary={priceByListingId[item.id]}
+                />
+                <div className="p-3 pt-2 space-y-2 flex-1 flex flex-col">
                   <p className="text-minbak-caption text-minbak-dark-gray line-clamp-2">
                     {item.reason}
                   </p>

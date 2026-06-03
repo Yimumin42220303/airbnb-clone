@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getNightlyAvailability } from "@/lib/availability";
+import { computeStayTotalFromNightly } from "@/lib/stay-price";
 
 export const dynamic = "force-dynamic";
 
@@ -40,19 +41,8 @@ export async function GET(
 
   try {
     const result = await getNightlyAvailability(listingId, checkIn, checkOut);
-    const nightsCount = result.nights.length;
-    const nightsTotal = result.nights.reduce(
-      (sum, n) => sum + n.pricePerNight,
-      0
-    );
-    const cleaningFee = result.cleaningFee ?? 0;
-    const baseGuests = result.baseGuests ?? 2;
-    const extraGuestFee = result.extraGuestFee ?? 0;
     const guests = guestsParam ? Math.max(1, parseInt(guestsParam, 10) || 1) : 1;
-    const extraGuests = Math.max(0, guests - baseGuests);
-    const extraTotal =
-      nightsCount > 0 ? extraGuests * extraGuestFee * nightsCount : 0;
-    const totalPrice = nightsTotal + cleaningFee + extraTotal;
+    const { totalPrice, nightsCount } = computeStayTotalFromNightly(result, guests);
     return NextResponse.json(
       {
         totalPrice,

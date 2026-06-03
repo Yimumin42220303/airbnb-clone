@@ -26,6 +26,8 @@ export interface ListingCardProps {
   searchQuery?: string;
   /** 체크인·체크아웃·인원이 모두 있을 때만 true. 미완료 시 가격 숨김 */
   showPrice?: boolean;
+  /** showPrice=false일 때 기본 placeholder 문구 표시 여부 (추천 카드 등 외부 가격 UI 사용 시 false) */
+  showPricePlaceholder?: boolean;
   /** 검색 조건이 있을 때: 숙박+청소+추가인원 반영 총액 */
   totalPrice?: number;
   /** 검색 조건이 있을 때: 숙박 박수 */
@@ -58,6 +60,7 @@ export default function ListingCard({
   initialSaved = false,
   searchQuery,
   showPrice = true,
+  showPricePlaceholder = true,
   totalPrice: totalPriceProp,
   nights,
   perPerson,
@@ -172,9 +175,9 @@ export default function ListingCard({
                   <span className="text-minbak-gray"> /박</span>
                 </p>
               )
-            ) : (
+            ) : showPricePlaceholder ? (
               <p className="text-minbak-body text-minbak-gray">체크인·체크아웃·인원 선택 후 가격 확인</p>
-            )}
+            ) : null}
             {rating !== undefined && (
               <span className="text-minbak-caption text-minbak-gray">
                 ★ {rating.toFixed(1)}
