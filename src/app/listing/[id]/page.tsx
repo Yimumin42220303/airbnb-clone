@@ -24,7 +24,8 @@ import {
 } from "@/lib/aeo";
 import { parseListingBookingPrefill } from "@/lib/listing-booking-prefill";
 
-export const revalidate = 60;
+/** query prefill 반영 — searchParams별 동적 렌더 (ISR 캐시로 prefill 누락 방지) */
+export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ id: string }>;

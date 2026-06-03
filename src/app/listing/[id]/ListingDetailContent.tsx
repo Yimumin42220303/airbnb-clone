@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCurrency } from "@/components/currency/CurrencyProvider";
@@ -146,23 +146,38 @@ export default function ListingDetailContent({
   const { formatForGuest } = useCurrency();
   const { t, locale } = useHostTranslations();
   const searchParams = useSearchParams();
+  const [windowPrefill, setWindowPrefill] = useState<
+    ReturnType<typeof parseListingBookingPrefill>
+  >({});
+
+  useLayoutEffect(() => {
+    if (typeof window === "undefined") return;
+    setWindowPrefill(
+      parseListingBookingPrefill(new URLSearchParams(window.location.search))
+    );
+  }, [searchParams]);
+
   const bookingPrefill = useMemo(() => {
-    const fromUrl = parseListingBookingPrefill(
+    const fromRouter = parseListingBookingPrefill(
       new URLSearchParams(searchParams.toString())
     );
     return mergeListingBookingPrefill(
-      {
-        initialCheckIn,
-        initialCheckOut,
-        initialGuests,
-        initialAdults,
-        initialChildren,
-        initialInfants,
-      },
-      fromUrl
+      mergeListingBookingPrefill(
+        {
+          initialCheckIn,
+          initialCheckOut,
+          initialGuests,
+          initialAdults,
+          initialChildren,
+          initialInfants,
+        },
+        fromRouter
+      ),
+      windowPrefill
     );
   }, [
     searchParams,
+    windowPrefill,
     initialCheckIn,
     initialCheckOut,
     initialGuests,
