@@ -193,8 +193,6 @@ export default function ListingDetailContent({
     initialChildren: resolvedChildren,
     initialInfants: resolvedInfants,
   } = bookingPrefill;
-  const bookingFormKey = `${listing.id}|${resolvedCheckIn ?? ""}|${resolvedCheckOut ?? ""}|${resolvedAdults ?? ""}|${resolvedChildren ?? ""}|${resolvedInfants ?? ""}`;
-
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [priceSummary, setPriceSummary] = useState<{ nights: number; totalPrice: number; cleaningFee: number } | null>(null);
   const [guestCount, setGuestCount] = useState(resolvedGuests ?? 1);
@@ -584,7 +582,6 @@ export default function ListingDetailContent({
                       bookingType={listing.instantBooking ? "instant" : "approval"}
                     />
                     <BookingForm
-                      key={bookingFormKey}
                       listingId={listing.id}
                       pricePerNight={listing.pricePerNight}
                       cleaningFee={listing.cleaningFee ?? 0}
