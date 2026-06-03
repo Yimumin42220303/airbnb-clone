@@ -113,7 +113,8 @@ export function parseListingBookingPrefill(
       : undefined;
 
   return {
-    ...dates,
+    initialCheckIn: dates.checkIn,
+    initialCheckOut: dates.checkOut,
     initialAdults,
     initialChildren,
     initialInfants,
