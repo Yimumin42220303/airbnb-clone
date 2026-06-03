@@ -22,7 +22,37 @@ export const ACCESSIBILITY_OPTIONS = [
   { value: "other", label: "기타" },
 ] as const;
 
+/** 게스트 /recommend 폼용 (5지역 + 상관없음) */
+export const ACCESSIBILITY_OPTIONS_GUEST = [
+  { value: "shinjuku", label: "신주쿠" },
+  { value: "shibuya", label: "시부야" },
+  { value: "ikebukuro", label: "이케부쿠로" },
+  { value: "ueno_asakusa", label: "우에노·아사쿠사" },
+  { value: "any", label: "상관없음" },
+] as const;
+
 export type AccessibilityType = (typeof ACCESSIBILITY_OPTIONS)[number]["value"];
+
+/** 게스트 폼: 단일 선택 중요 조건 */
+export const PRIMARY_PRIORITY_OPTIONS = [
+  { value: "value", label: "가격" },
+  { value: "location", label: "위치" },
+  { value: "space", label: "넓이" },
+  { value: "rating", label: "후기" },
+  { value: "none", label: "상관없음" },
+] as const;
+
+export type PrimaryPriorityType = (typeof PRIMARY_PRIORITY_OPTIONS)[number]["value"];
+
+export function getPrimaryPriorityLabel(priority: PrimaryPriorityType): string {
+  return PRIMARY_PRIORITY_OPTIONS.find((o) => o.value === priority)?.label ?? "상관없음";
+}
+
+export function getGuestAccessibilityLabel(accessibility: AccessibilityType): string {
+  const guest = ACCESSIBILITY_OPTIONS_GUEST.find((o) => o.value === accessibility);
+  if (guest) return guest.label;
+  return getAccessibilityLabel(accessibility);
+}
 
 export const BUDGET_OPTIONS = [
   { value: "undecided", label: "아직 정하지 않았어요" },
@@ -272,11 +302,34 @@ export function buildConsultationMessage(input: ConsultMessageInput): string {
   return lines.join("\n");
 }
 
-/** 클라이언트 임시 상담번호 (리드 저장 전) */
-export function generateTempLeadCode(): string {
-  const t = Date.now().toString(36).slice(-4).toUpperCase();
-  const r = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `TM-${t}-${r}`;
+export type GuestConsultMessageInput = {
+  leadCode: string;
+  checkIn: string;
+  checkOut: string;
+  adultCount: number;
+  childCount: number;
+  infantCount: number;
+  accessibilityLabel: string;
+  priorityLabel: string;
+  listings: { rank: number; title: string }[];
+};
+
+/** 카카오 붙여넣기용 — URL·유입·leadId·긴 freeText 제외 */
+export function buildGuestConsultationMessage(input: GuestConsultMessageInput): string {
+  const guestCount = `성인 ${input.adultCount}${input.childCount > 0 ? `, 아동 ${input.childCount}` : ""}${input.infantCount > 0 ? `, 유아 ${input.infantCount}` : ""}`;
+  const lines = [
+    "[도쿄민박 숙소추천 상담]",
+    `상담번호: ${input.leadCode}`,
+    `일정: ${input.checkIn} ~ ${input.checkOut}`,
+    `인원: ${guestCount}`,
+    `희망 위치: ${input.accessibilityLabel}`,
+    `중요 조건: ${input.priorityLabel}`,
+    "추천 숙소:",
+  ];
+  for (const l of input.listings) {
+    lines.push(`${l.rank}. ${l.title}`);
+  }
+  return lines.join("\n");
 }
 
 export function budgetTypeToStoredRange(budgetType: BudgetType): {
