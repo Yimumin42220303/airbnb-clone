@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCurrency } from "@/components/currency/CurrencyProvider";
 import Image from "next/image";
 import { MapPin, ChevronDown, ChevronUp } from "lucide-react";
@@ -22,6 +23,10 @@ import { getAmenityLabel } from "@/lib/host-i18n";
 import MetaPixelViewContent from "@/components/analytics/MetaPixelViewContent";
 import { buildRecommendHref } from "@/lib/recommend-funnel";
 import { trackRecommendEvent } from "@/lib/recommend-analytics";
+import {
+  mergeListingBookingPrefill,
+  parseListingBookingPrefill,
+} from "@/lib/listing-booking-prefill";
 
 type ReviewItem = {
   rating: number;
@@ -140,9 +145,44 @@ export default function ListingDetailContent({
 }: Props) {
   const { formatForGuest } = useCurrency();
   const { t, locale } = useHostTranslations();
+  const searchParams = useSearchParams();
+  const bookingPrefill = useMemo(() => {
+    const fromUrl = parseListingBookingPrefill(
+      new URLSearchParams(searchParams.toString())
+    );
+    return mergeListingBookingPrefill(
+      {
+        initialCheckIn,
+        initialCheckOut,
+        initialGuests,
+        initialAdults,
+        initialChildren,
+        initialInfants,
+      },
+      fromUrl
+    );
+  }, [
+    searchParams,
+    initialCheckIn,
+    initialCheckOut,
+    initialGuests,
+    initialAdults,
+    initialChildren,
+    initialInfants,
+  ]);
+  const {
+    initialCheckIn: resolvedCheckIn,
+    initialCheckOut: resolvedCheckOut,
+    initialGuests: resolvedGuests,
+    initialAdults: resolvedAdults,
+    initialChildren: resolvedChildren,
+    initialInfants: resolvedInfants,
+  } = bookingPrefill;
+  const bookingFormKey = `${listing.id}|${resolvedCheckIn ?? ""}|${resolvedCheckOut ?? ""}|${resolvedAdults ?? ""}|${resolvedChildren ?? ""}|${resolvedInfants ?? ""}`;
+
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [priceSummary, setPriceSummary] = useState<{ nights: number; totalPrice: number; cleaningFee: number } | null>(null);
-  const [guestCount, setGuestCount] = useState(initialGuests ?? 1);
+  const [guestCount, setGuestCount] = useState(resolvedGuests ?? 1);
   const bookingFormAreaRef = useRef<HTMLDivElement>(null);
   const [isBookingFormInView, setIsBookingFormInView] = useState(true);
   const [videoLoadError, setVideoLoadError] = useState(false);
@@ -181,7 +221,7 @@ export default function ListingDetailContent({
         contentCategory={listing.location}
         pricePerNight={listing.pricePerNight}
         totalPrice={priceSummary?.totalPrice}
-        waitForTotalPrice={!!(initialCheckIn && initialCheckOut)}
+        waitForTotalPrice={!!(resolvedCheckIn && resolvedCheckOut)}
       />
       <main className="min-h-screen bg-white">
         {/* 상단: 숙소명 · 위치 · 평점 · 찜 (minbak.tokyo 상단 영역) */}
@@ -529,6 +569,7 @@ export default function ListingDetailContent({
                       bookingType={listing.instantBooking ? "instant" : "approval"}
                     />
                     <BookingForm
+                      key={bookingFormKey}
                       listingId={listing.id}
                       pricePerNight={listing.pricePerNight}
                       cleaningFee={listing.cleaningFee ?? 0}
@@ -538,12 +579,12 @@ export default function ListingDetailContent({
                       minStayNights={listing.minStayNights ?? undefined}
                       onPriceChange={setPriceSummary}
                       onGuestsChange={setGuestCount}
-                      initialCheckIn={initialCheckIn}
-                      initialCheckOut={initialCheckOut}
-                      initialGuests={initialGuests}
-                      initialAdults={initialAdults}
-                      initialChildren={initialChildren}
-                      initialInfants={initialInfants}
+                      initialCheckIn={resolvedCheckIn}
+                      initialCheckOut={resolvedCheckOut}
+                      initialGuests={resolvedGuests}
+                      initialAdults={resolvedAdults}
+                      initialChildren={resolvedChildren}
+                      initialInfants={resolvedInfants}
                     />
                     <CancellationPolicyBadge
                       policy={listing.cancellationPolicy ?? "flexible"}
@@ -557,7 +598,7 @@ export default function ListingDetailContent({
                     checkInTime={listing.checkInTime}
                     checkOutTime={listing.checkOutTime}
                     cancellationPolicy={listing.cancellationPolicy}
-                    checkIn={initialCheckIn}
+                    checkIn={resolvedCheckIn}
                     checkInMethod={listing.checkInMethod}
                   />
                 </div>

@@ -51,6 +51,20 @@ type PriceResult = {
   maxStayNights?: number | null;
 };
 
+function resolveInitialDateRange(
+  initialCheckIn?: string,
+  initialCheckOut?: string
+): { checkIn: string; checkOut: string } {
+  if (
+    initialCheckIn &&
+    initialCheckOut &&
+    initialCheckOut > initialCheckIn
+  ) {
+    return { checkIn: initialCheckIn, checkOut: initialCheckOut };
+  }
+  return { checkIn: "", checkOut: "" };
+}
+
 export default function BookingForm({
   listingId,
   pricePerNight,
@@ -72,8 +86,10 @@ export default function BookingForm({
   const { t, locale } = useHostTranslations();
   const dateLocale = locale === "ja" ? "ja-JP" : "ko-KR";
   const router = useRouter();
-  const [checkIn, setCheckIn] = useState(initialCheckIn ?? "");
-  const [checkOut, setCheckOut] = useState(initialCheckOut ?? "");
+  const initialDates = resolveInitialDateRange(initialCheckIn, initialCheckOut);
+  const [checkIn, setCheckIn] = useState(initialDates.checkIn);
+  const [checkOut, setCheckOut] = useState(initialDates.checkOut);
+  const datesTouchedRef = useRef(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const resolvedAdults =
     initialAdults != null
@@ -106,6 +122,51 @@ export default function BookingForm({
     width: number;
     maxHeight?: number;
   } | null>(null);
+
+  /** listing/query prefill — useState는 최초 마운트만 반영되므로 props 도착·URL 변경 시 1회 동기화 */
+  const prefillKey = `${listingId}|${initialCheckIn ?? ""}|${initialCheckOut ?? ""}|${initialAdults ?? ""}|${initialChildren ?? ""}|${initialInfants ?? ""}`;
+  const appliedPrefillKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (appliedPrefillKeyRef.current === prefillKey) return;
+
+    if (
+      initialCheckIn &&
+      initialCheckOut &&
+      initialCheckOut > initialCheckIn
+    ) {
+      datesTouchedRef.current = false;
+      setCheckIn(initialCheckIn);
+      setCheckOut(initialCheckOut);
+    }
+
+    if (initialAdults != null || initialGuests != null) {
+      const a =
+        initialAdults != null
+          ? initialAdults > 0
+            ? initialAdults
+            : 1
+          : (initialGuests ?? 1);
+      const nextAdults = Math.min(Math.max(1, a), maxGuests);
+      const nextChildren = Math.max(0, initialChildren ?? 0);
+      const nextInfants = Math.max(0, initialInfants ?? 0);
+      setAdults(nextAdults);
+      setChildren(nextChildren);
+      setInfants(nextInfants);
+    }
+
+    appliedPrefillKeyRef.current = prefillKey;
+  }, [
+    prefillKey,
+    listingId,
+    initialCheckIn,
+    initialCheckOut,
+    initialAdults,
+    initialChildren,
+    initialInfants,
+    initialGuests,
+    maxGuests,
+  ]);
 
   useLayoutEffect(() => {
     if (!calendarOpen || !calendarWrapRef.current) {
@@ -214,8 +275,28 @@ export default function BookingForm({
     onGuestsChange?.(next);
   }, [adults, children, infants, onGuestsChange]);
 
+  const validInitialRange =
+    !!initialCheckIn &&
+    !!initialCheckOut &&
+    initialCheckOut > initialCheckIn;
+  const activeCheckIn =
+    checkIn ||
+    (!datesTouchedRef.current && validInitialRange ? initialCheckIn! : "");
+  const activeCheckOut =
+    checkOut ||
+    (!datesTouchedRef.current && validInitialRange ? initialCheckOut! : "");
+
+  const setCheckInWithTouch = useCallback((value: string) => {
+    datesTouchedRef.current = true;
+    setCheckIn(value);
+  }, []);
+  const setCheckOutWithTouch = useCallback((value: string) => {
+    datesTouchedRef.current = true;
+    setCheckOut(value);
+  }, []);
+
   useEffect(() => {
-    if (!checkIn || !checkOut || checkOut <= checkIn) {
+    if (!activeCheckIn || !activeCheckOut || activeCheckOut <= activeCheckIn) {
       setPriceResult(null);
       onPriceChange?.(null);
       return;
@@ -224,8 +305,8 @@ export default function BookingForm({
     setPriceLoading(true);
     fetch(
       `/api/listings/${listingId}/price?checkIn=${encodeURIComponent(
-        checkIn
-      )}&checkOut=${encodeURIComponent(checkOut)}&guests=${guests}`,
+        activeCheckIn
+      )}&checkOut=${encodeURIComponent(activeCheckOut)}&guests=${guests}`,
       { cache: "no-store" }
     )
       .then((res) => res.json())
@@ -260,7 +341,7 @@ export default function BookingForm({
     return () => {
       cancelled = true;
     };
-  }, [listingId, checkIn, checkOut, guests, onPriceChange]);
+  }, [listingId, activeCheckIn, activeCheckOut, guests, onPriceChange]);
 
   const nights = priceResult?.nights?.length ?? 0;
   const totalPrice = priceResult?.totalPrice ?? 0;
@@ -273,11 +354,11 @@ export default function BookingForm({
       setError(t("bookingForm.calculating"));
       return;
     }
-    if (!checkIn || !checkOut) {
+    if (!activeCheckIn || !activeCheckOut) {
       setError(t("bookingForm.checkInOutRequired"));
       return;
     }
-    if (checkOut <= checkIn) {
+    if (activeCheckOut <= activeCheckIn) {
       setError(t("bookingForm.checkOutAfterCheckIn"));
       return;
     }
@@ -291,8 +372,8 @@ export default function BookingForm({
     }
     const params = new URLSearchParams({
       listingId,
-      checkIn,
-      checkOut,
+      checkIn: activeCheckIn,
+      checkOut: activeCheckOut,
       guests: String(guests),
     });
     router.push(`/booking/confirm?${params.toString()}`);
@@ -322,7 +403,7 @@ export default function BookingForm({
           >
             <span className="text-[12px] text-[#717171]">{t("guest.checkIn")}</span>
             <span className="text-[14px] text-[#222]">
-              {checkIn ? formatDisplayDate(checkIn) : t("bookingForm.addDate")}
+              {activeCheckIn ? formatDisplayDate(activeCheckIn) : t("bookingForm.addDate")}
             </span>
           </button>
           <button
@@ -332,7 +413,7 @@ export default function BookingForm({
           >
             <span className="text-[12px] text-[#717171]">{t("guest.checkOut")}</span>
             <span className="text-[14px] text-[#222]">
-              {checkOut ? formatDisplayDate(checkOut) : t("bookingForm.addDate")}
+              {activeCheckOut ? formatDisplayDate(activeCheckOut) : t("bookingForm.addDate")}
             </span>
           </button>
         </div>
@@ -369,10 +450,10 @@ export default function BookingForm({
                 >
                   <ListingBookingCalendar
                     variant="modal"
-                    checkIn={checkIn}
-                    checkOut={checkOut}
-                    onCheckInChange={setCheckIn}
-                    onCheckOutChange={setCheckOut}
+                    checkIn={activeCheckIn}
+                    checkOut={activeCheckOut}
+                    onCheckInChange={setCheckInWithTouch}
+                    onCheckOutChange={setCheckOutWithTouch}
                     onComplete={() => setCalendarOpen(false)}
                     blockedDateKeys={blockedDateKeys}
                     checkoutOnlyDateKeys={checkoutOnlyDateKeys}
@@ -503,7 +584,7 @@ export default function BookingForm({
         )}
       </div>
 
-      {priceLoading && checkIn && checkOut && (
+      {priceLoading && activeCheckIn && activeCheckOut && (
         <div className="border-t border-minbak-light-gray pt-4 mb-4">
           <div className="flex items-center gap-2 text-minbak-body text-minbak-gray">
             <span className="inline-block w-4 h-4 border-2 border-minbak-gray border-t-transparent rounded-full animate-spin" />

@@ -41,14 +41,17 @@ function parseNonNegIntParam(raw: string | undefined): number | undefined {
   return Number.isFinite(n) && n >= 0 ? n : undefined;
 }
 
+/** 타임존에 영향받지 않도록 UTC 달력 기준으로 검증 */
 function isValidIsoDate(s: string): boolean {
   if (!ISO_DATE_RE.test(s)) return false;
-  const d = new Date(`${s}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return false;
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}` === s;
+  const [y, m, d] = s.split("-").map((n) => parseInt(n, 10));
+  if (!y || m < 1 || m > 12 || d < 1 || d > 31) return false;
+  const utc = new Date(Date.UTC(y, m - 1, d));
+  return (
+    utc.getUTCFullYear() === y &&
+    utc.getUTCMonth() === m - 1 &&
+    utc.getUTCDate() === d
+  );
 }
 
 function parseValidDateRange(
@@ -146,6 +149,31 @@ export function buildListingDetailSearchQuery(
   if (input.sourcePage) sp.set("sourcePage", input.sourcePage);
 
   return sp.toString();
+}
+
+/** 서버 props와 클라이언트 URL query prefill 병합 (primary 우선, 없으면 fallback) */
+export function mergeListingBookingPrefill(
+  primary: ParsedListingBookingPrefill,
+  fallback: ParsedListingBookingPrefill
+): ParsedListingBookingPrefill {
+  const initialAdults = primary.initialAdults ?? fallback.initialAdults;
+  const initialChildren = primary.initialChildren ?? fallback.initialChildren;
+  const initialGuests =
+    primary.initialGuests ??
+    fallback.initialGuests ??
+    (initialAdults != null
+      ? initialAdults + (initialChildren ?? 0)
+      : undefined);
+
+  return {
+    initialCheckIn: primary.initialCheckIn ?? fallback.initialCheckIn,
+    initialCheckOut: primary.initialCheckOut ?? fallback.initialCheckOut,
+    initialAdults,
+    initialChildren: primary.initialChildren ?? fallback.initialChildren,
+    initialInfants: primary.initialInfants ?? fallback.initialInfants,
+    initialGuests:
+      initialGuests != null && initialGuests > 0 ? initialGuests : undefined,
+  };
 }
 
 /** 추천·검색 등 → 숙소 상세 href (가격 query 미포함) */

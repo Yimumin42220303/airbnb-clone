@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
@@ -179,24 +180,32 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
         />
       )}
 
-      <ListingDetailContent
-        listing={listing}
-        isSaved={wishlistIds.includes(id)}
-        isLoggedIn={!!userId}
-        initialCheckIn={bookingPrefill.initialCheckIn}
-        initialCheckOut={bookingPrefill.initialCheckOut}
-        initialGuests={bookingPrefill.initialGuests}
-        initialAdults={bookingPrefill.initialAdults}
-        initialChildren={bookingPrefill.initialChildren}
-        initialInfants={bookingPrefill.initialInfants}
-        canReview={reviewPermission.canReview}
-        hasReviewed={reviewPermission.hasReviewed}
-        aeoSection={
-          <div className="max-w-[1240px] mx-auto px-4 md:px-6">
-            <ListingAeoSection listing={aeoInput} />
+      <Suspense
+        fallback={
+          <div className="min-h-[40vh] flex items-center justify-center text-[#717171]">
+            …
           </div>
         }
-      />
+      >
+        <ListingDetailContent
+          listing={listing}
+          isSaved={wishlistIds.includes(id)}
+          isLoggedIn={!!userId}
+          initialCheckIn={bookingPrefill.initialCheckIn}
+          initialCheckOut={bookingPrefill.initialCheckOut}
+          initialGuests={bookingPrefill.initialGuests}
+          initialAdults={bookingPrefill.initialAdults}
+          initialChildren={bookingPrefill.initialChildren}
+          initialInfants={bookingPrefill.initialInfants}
+          canReview={reviewPermission.canReview}
+          hasReviewed={reviewPermission.hasReviewed}
+          aeoSection={
+            <div className="max-w-[1240px] mx-auto px-4 md:px-6">
+              <ListingAeoSection listing={aeoInput} />
+            </div>
+          }
+        />
+      </Suspense>
     </>
   );
 }
