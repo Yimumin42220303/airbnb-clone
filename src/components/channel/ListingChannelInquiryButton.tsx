@@ -1,8 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import {
+  buildListingInquiryTokyominbakFields,
+  RECOMMEND_CHANNEL_PROFILE_CLEAR,
+  TOKYOMINBAK_CONTEXT_CLEAR_PROFILE,
+} from "@/lib/channel-context-summary";
+import { parseListingBookingPrefill } from "@/lib/listing-booking-prefill";
 
 type Props = {
   listingId: string;
@@ -15,6 +21,14 @@ type Props = {
 function listingInquiryTag(listingId: string): string {
   return `listing_${listingId}`.toLowerCase().slice(0, 64);
 }
+
+const INQUIRY_PROFILE_CLEAR = {
+  inquiryListingId: null,
+  inquiryListingTitle: null,
+  inquiryPageUrl: null,
+  lastInquiryListingSummary: null,
+  ...TOKYOMINBAK_CONTEXT_CLEAR_PROFILE,
+};
 
 /**
  * 숙소 상세에서 채널톡을 열고, 데스크에서 숙소를 식별할 수 있도록 전달합니다.
@@ -31,7 +45,13 @@ export default function ListingChannelInquiryButton({
 }: Props) {
   const { data: session } = useSession();
   const pathname = usePathname() ?? "";
+  const searchParams = useSearchParams();
   const [opening, setOpening] = useState(false);
+
+  const bookingFromUrl = useMemo(
+    () => parseListingBookingPrefill(new URLSearchParams(searchParams.toString())),
+    [searchParams]
+  );
 
   useEffect(() => {
     const tag = listingInquiryTag(listingId);
@@ -49,12 +69,7 @@ export default function ListingChannelInquiryButton({
       }
       try {
         window.ChannelIO("updateUser", {
-          profile: {
-            inquiryListingId: null,
-            inquiryListingTitle: null,
-            inquiryPageUrl: null,
-            lastInquiryListingSummary: null,
-          },
+          profile: INQUIRY_PROFILE_CLEAR,
         });
       } catch {
         /* ignore */
@@ -75,22 +90,43 @@ export default function ListingChannelInquiryButton({
     const summaryForProfile = `${titleShort} · ${listingId}`.slice(0, 500);
     const tag = listingInquiryTag(listingId);
 
+    const guestCount = bookingFromUrl.initialGuests;
+    const childCount = bookingFromUrl.initialChildren;
+    const infantCount = bookingFromUrl.initialInfants;
+
+    const tokyominbak = buildListingInquiryTokyominbakFields({
+      listingId,
+      listingTitle: titleShort,
+      pageUrl: pageForDesk,
+      checkIn: bookingFromUrl.initialCheckIn,
+      checkOut: bookingFromUrl.initialCheckOut,
+      guestCount,
+      childCount,
+      infantCount,
+    });
+
+    const chatProfile = {
+      ...RECOMMEND_CHANNEL_PROFILE_CLEAR,
+      inquiryListingId: listingId,
+      inquiryListingTitle: titleShort,
+      inquiryPageUrl: url.slice(0, 2000),
+      lastInquiryListingSummary: summaryForProfile,
+      ...tokyominbak,
+    };
+
     try {
       window.ChannelIO("track", "Guest listing inquiry", {
         listingId,
         listingTitle: titleShort,
         pageUrl: url,
+        checkIn: bookingFromUrl.initialCheckIn ?? null,
+        checkOut: bookingFromUrl.initialCheckOut ?? null,
+        guestCount: guestCount ?? null,
+        ...tokyominbak,
       });
     } catch {
       /* ignore */
     }
-
-    const chatProfile = {
-      inquiryListingId: listingId,
-      inquiryListingTitle: titleShort,
-      inquiryPageUrl: url.slice(0, 2000),
-      lastInquiryListingSummary: summaryForProfile,
-    };
 
     try {
       window.ChannelIO("setPage", pageForDesk, chatProfile);
@@ -129,6 +165,7 @@ export default function ListingChannelInquiryButton({
     pathname,
     session?.user?.email,
     session?.user?.name,
+    bookingFromUrl,
   ]);
 
   return (

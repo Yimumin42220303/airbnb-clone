@@ -3,6 +3,12 @@
  * ListingChannelInquiryButton 패턴 참고, PII·freeText 미전달
  */
 
+import {
+  buildRecommendationTokyominbakFields,
+  LISTING_INQUIRY_CHANNEL_PROFILE_CLEAR,
+  type RecommendationContextInput,
+} from "@/lib/channel-context-summary";
+
 export type RecommendChannelContext = {
   leadCode: string;
   checkIn: string;
@@ -48,7 +54,28 @@ function buildPageUrl(): string {
   return `${origin}${pathname}${search}`;
 }
 
-function buildChatProfile(ctx: RecommendChannelContext) {
+function toRecommendationInput(
+  ctx: RecommendChannelContext,
+  pageUrl: string
+): RecommendationContextInput {
+  return {
+    leadCode: ctx.leadCode,
+    checkIn: ctx.checkIn,
+    checkOut: ctx.checkOut,
+    guestCount: ctx.guestCount,
+    childCount: ctx.childCount,
+    infantCount: ctx.infantCount,
+    preferredAreaLabel: ctx.preferredAreaLabel,
+    priorityLabel: ctx.priorityLabel,
+    budgetLabel: ctx.budgetLabel,
+    recommendedListingTitles: ctx.recommendedListingTitles,
+    recommendedListingIds: ctx.recommendedListingIds,
+    sourcePage: ctx.sourcePage,
+    pageUrl,
+  };
+}
+
+function buildChatProfile(ctx: RecommendChannelContext, pageUrl: string) {
   const titles = ctx.recommendedListingTitles.slice(0, 3).join(" · ");
   const ids = ctx.recommendedListingIds.slice(0, 3).join(",");
   const guestLine =
@@ -56,7 +83,12 @@ function buildChatProfile(ctx: RecommendChannelContext) {
       ? `${ctx.guestCount}명(아동 ${ctx.childCount}${ctx.infantCount > 0 ? `, 유아 ${ctx.infantCount}` : ""})`
       : `${ctx.guestCount}명`;
 
+  const tokyominbak = buildRecommendationTokyominbakFields(
+    toRecommendationInput(ctx, pageUrl)
+  );
+
   return {
+    ...LISTING_INQUIRY_CHANNEL_PROFILE_CLEAR,
     recommendLeadCode: ctx.leadCode,
     recommendCheckIn: ctx.checkIn,
     recommendCheckOut: ctx.checkOut,
@@ -68,6 +100,35 @@ function buildChatProfile(ctx: RecommendChannelContext) {
     recommendListingIds: ids.slice(0, 500),
     ...(ctx.sourcePage ? { recommendSourcePage: ctx.sourcePage } : {}),
     ...(ctx.sourceListingId ? { recommendSourceListingId: ctx.sourceListingId } : {}),
+    ...tokyominbak,
+  };
+}
+
+function buildTrackPayload(
+  ctx: RecommendChannelContext,
+  pageUrl: string
+): Record<string, unknown> {
+  const titles = ctx.recommendedListingTitles.slice(0, 3);
+  const tokyominbak = buildRecommendationTokyominbakFields(
+    toRecommendationInput(ctx, pageUrl)
+  );
+
+  return {
+    leadCode: ctx.leadCode,
+    checkIn: ctx.checkIn,
+    checkOut: ctx.checkOut,
+    guestCount: ctx.guestCount,
+    childCount: ctx.childCount,
+    infantCount: ctx.infantCount,
+    preferredAreaLabel: ctx.preferredAreaLabel,
+    priorityLabel: ctx.priorityLabel,
+    ...(ctx.budgetLabel ? { budgetLabel: ctx.budgetLabel } : {}),
+    recommendedListingIds: ctx.recommendedListingIds.slice(0, 3),
+    recommendedListingTitles: titles,
+    sourcePage: ctx.sourcePage ?? null,
+    sourceListingId: ctx.sourceListingId ?? null,
+    pageUrl,
+    ...tokyominbak,
   };
 }
 
@@ -76,26 +137,11 @@ export function pushRecommendConsultToChannel(ctx: RecommendChannelContext): boo
   if (!isChannelIOReady()) return false;
 
   const pageUrl = buildPageUrl();
-  const profile = buildChatProfile(ctx);
-  const titles = ctx.recommendedListingTitles.slice(0, 3);
+  const profile = buildChatProfile(ctx, pageUrl);
+  const trackPayload = buildTrackPayload(ctx, pageUrl);
 
   try {
-    window.ChannelIO!("track", "Recommendation lead inquiry", {
-      leadCode: ctx.leadCode,
-      checkIn: ctx.checkIn,
-      checkOut: ctx.checkOut,
-      guestCount: ctx.guestCount,
-      childCount: ctx.childCount,
-      infantCount: ctx.infantCount,
-      preferredAreaLabel: ctx.preferredAreaLabel,
-      priorityLabel: ctx.priorityLabel,
-      ...(ctx.budgetLabel ? { budgetLabel: ctx.budgetLabel } : {}),
-      recommendedListingIds: ctx.recommendedListingIds.slice(0, 3),
-      recommendedListingTitles: titles,
-      sourcePage: ctx.sourcePage ?? null,
-      sourceListingId: ctx.sourceListingId ?? null,
-      pageUrl,
-    });
+    window.ChannelIO!("track", "Recommendation lead inquiry", trackPayload);
   } catch {
     /* ignore */
   }
