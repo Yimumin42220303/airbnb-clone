@@ -1,3 +1,5 @@
+import { trackGa4AddToCart } from "@/lib/ga4-events";
+
 type EventName =
   | "price_summary_viewed"
   | "cancellation_policy_viewed"
@@ -35,6 +37,20 @@ export function trackEvent(name: EventName, params: EventParams) {
       window.dataLayer.push({
         event: name,
         ...params,
+      });
+    }
+
+    if (
+      (name === "booking_cta_clicked" ||
+        name === "mobile_sticky_cta_clicked") &&
+      params.total_price != null &&
+      params.total_price > 0
+    ) {
+      trackGa4AddToCart({
+        listingId: params.listing_id,
+        value: params.total_price,
+        bookingType: params.booking_type,
+        nights: params.nights,
       });
     }
 

@@ -17,6 +17,7 @@ import { useCurrency } from "@/components/currency/CurrencyProvider";
 import { FormFieldWithError, FormFieldGroupWithError } from "@/components/ui/FormFieldWithError";
 import { cloudinaryLoader } from "@/lib/cloudinary-loader";
 import { trackMetaSchedule } from "@/lib/meta-pixel";
+import Ga4BeginCheckout from "@/components/analytics/Ga4BeginCheckout";
 import RefundSchedule from "@/components/booking/RefundSchedule";
 import SafePaymentMarks from "@/components/booking/SafePaymentMarks";
 import BookingAftercareTimeline from "@/components/booking/BookingAftercareTimeline";
@@ -190,6 +191,14 @@ export default function BookingConfirmContent({
   }
 
   return (
+    <>
+      <Ga4BeginCheckout
+        listingId={listingId}
+        itemName={listingTitle}
+        itemCategory={listingLocation}
+        totalPriceJpy={totalPrice}
+        nights={nights}
+      />
     <div className="max-w-[1240px] mx-auto px-4 md:px-6 py-8">
       <div className="mb-8">
         <button
@@ -622,5 +631,6 @@ export default function BookingConfirmContent({
           </div>
       </form>
     </div>
+    </>
   );
 }

@@ -13,6 +13,7 @@ import SafePaymentMarks from "@/components/booking/SafePaymentMarks";
 import BookingAftercareTimeline from "@/components/booking/BookingAftercareTimeline";
 import { CONTACT_EMAIL } from "@/lib/constants";
 import MetaPixelInitiateCheckout from "@/components/analytics/MetaPixelInitiateCheckout";
+import Ga4AddPaymentInfo from "@/components/analytics/Ga4AddPaymentInfo";
 
 const PAY_DEADLINE_MS = 48 * 60 * 60 * 1000;
 
@@ -228,6 +229,11 @@ export default function BookingPayContent() {
       <MetaPixelInitiateCheckout
         listingId={booking.listing.id}
         totalPriceJpy={booking.totalPrice}
+      />
+      <Ga4AddPaymentInfo
+        listingId={booking.listing.id}
+        totalPriceJpy={booking.totalPrice}
+        bookingId={booking.id}
       />
       <div className="max-w-[600px] mx-auto py-8">
           <div className="mb-6 p-4 bg-white border border-minbak-light-gray rounded-minbak">
