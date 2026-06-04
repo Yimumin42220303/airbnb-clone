@@ -7,6 +7,8 @@ const nextConfig = {
       dynamic: 30,
       static: 300,
     },
+    /** 사용된 아이콘만 번들링 — lucide-react 전체 패키지 임포트 방지 */
+    optimizePackageImports: ["lucide-react"],
   },
   images: {
     remotePatterns: [

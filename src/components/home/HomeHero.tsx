@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
@@ -15,22 +15,35 @@ export default function HomeHero() {
     process.env.NEXT_PUBLIC_HERO_IMAGE_URL || "/hero-bg.jpg";
   const [bgSrc, setBgSrc] = useState(heroImageUrl);
   const [videoPlaying, setVideoPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // 비디오는 LCP 이미지 렌더 후 1.5초 뒤에 재생하여 초기 로딩 부하 분산
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      videoRef.current?.play().catch(() => {});
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <section className="relative min-h-[380px] sm:min-h-[420px] md:min-h-[640px] flex flex-col items-center justify-center bg-gray-900 text-white px-4 pt-[140px] pb-10 sm:pt-[152px] sm:pb-12 md:pt-[172px] md:pb-[100px] md:px-6 overflow-hidden">
       {/* 배경 이미지: 비디오 미재생 시 보임. 비디오 재생되면 가림 */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={bgSrc}
         alt=""
+        // fetchPriority: LCP 요소를 브라우저 최우선으로 로드
+        fetchPriority="high"
         className={`absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-500 ${videoPlaying ? "opacity-0 pointer-events-none" : "opacity-100"}`}
         aria-hidden
         onError={() => setBgSrc(HERO_IMAGE_FALLBACK)}
       />
       <video
-        autoPlay
+        ref={videoRef}
         muted
         loop
         playsInline
+        preload="none"
         className="absolute inset-0 w-full h-full object-cover z-0"
         src={process.env.NEXT_PUBLIC_HERO_VIDEO_URL || "https://framerusercontent.com/assets/MLWPbW1dUQawJLhhun3dBwpgJak.mp4"}
         aria-hidden

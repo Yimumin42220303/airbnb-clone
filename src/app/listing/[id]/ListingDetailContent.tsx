@@ -11,8 +11,25 @@ import BookingTypeBadge from "@/components/listing/BookingTypeBadge";
 import CancellationPolicyBadge from "@/components/listing/CancellationPolicyBadge";
 import ListingTrustCard from "@/components/listing/ListingTrustCard";
 import MobileStickyBookingBar, { BOOKING_FORM_AREA_ID } from "@/components/listing/MobileStickyBookingBar";
+import nextDynamic from "next/dynamic";
 import ListingImageGallery from "@/components/listing/ListingImageGallery";
-import ReviewSection from "@/components/listing/ReviewSection";
+
+const ReviewSection = nextDynamic(
+  () => import("@/components/listing/ReviewSection"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="py-8 border-t border-[#ebebeb]">
+        <div className="h-8 w-40 rounded-lg bg-[#f0f0f0] animate-pulse mb-6" />
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-20 rounded-xl bg-[#f7f7f7] animate-pulse" />
+          ))}
+        </div>
+      </div>
+    ),
+  }
+);
 import ListingBadge, { computeBadges } from "@/components/listing/ListingBadge";
 import WishlistHeart from "@/components/wishlist/WishlistHeart";
 import ShareListingButton from "@/components/listing/ShareListingButton";
@@ -21,6 +38,7 @@ import { buildListingGalleryAlt } from "@/lib/listing-image-alt";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 import { getAmenityLabel } from "@/lib/host-i18n";
 import MetaPixelViewContent from "@/components/analytics/MetaPixelViewContent";
+import Ga4ViewContent from "@/components/analytics/Ga4ViewContent";
 import { buildRecommendHref } from "@/lib/recommend-funnel";
 import { trackRecommendEvent } from "@/lib/recommend-analytics";
 import {
@@ -236,6 +254,14 @@ export default function ListingDetailContent({
         totalPrice={priceSummary?.totalPrice}
         waitForTotalPrice={!!(resolvedCheckIn && resolvedCheckOut)}
       />
+      <Ga4ViewContent
+        listingId={listing.id}
+        itemName={listing.title}
+        itemCategory={listing.location}
+        pricePerNight={listing.pricePerNight}
+        totalPrice={priceSummary?.totalPrice}
+        waitForTotalPrice={!!(resolvedCheckIn && resolvedCheckOut)}
+      />
       <main className="min-h-screen bg-white">
         {/* 상단: 숙소명 · 위치 · 평점 · 찜 (minbak.tokyo 상단 영역) */}
         <div className="bg-white border-b border-[#ebebeb] pt-6 md:pt-8">
@@ -344,11 +370,10 @@ export default function ListingDetailContent({
                         src={listing.videoUrl}
                         controls
                         playsInline
-                        autoPlay
                         muted
                         loop
                         className="w-full h-full object-contain"
-                        preload="auto"
+                        preload="none"
                         onError={() => setVideoLoadError(true)}
                       >
                         {t("listingDetail.videoNotSupported")}
