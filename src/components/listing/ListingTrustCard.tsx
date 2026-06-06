@@ -88,12 +88,10 @@ export default function ListingTrustCard({
         </h3>
       </div>
       <p className="text-[13px] text-[#717171] leading-relaxed mb-1.5">
-        예약 전 문의, 체크인 안내, 숙박 중 문제 접수, 환불·민원 접수는 도쿄민박
-        고객지원 창구에서 한국어로 안내합니다.
+        이 숙소는 도쿄민박 고객지원팀이 예약 전 문의, 체크인 안내, 숙박 중 문제 접수를 한국어로 도와드립니다.
       </p>
       <p className="text-[13px] text-[#717171] leading-relaxed mb-3.5">
-        문제가 발생하면 도쿄민박이 책임 창구가 되어 숙소 운영자 및 현지 파트너와 함께
-        확인하고 조정합니다.
+        숙박 제공과 현장 관리는 숙소 운영자 또는 일본 현지 파트너가 담당합니다.
       </p>
       <ul className="space-y-2">
         {visiblePoints.map((p) => (

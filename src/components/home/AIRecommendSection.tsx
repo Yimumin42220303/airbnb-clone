@@ -9,7 +9,7 @@ const RECOMMEND_URL = "/recommend";
 
 export default function AIRecommendSection() {
   const t = useHostTranslations().t;
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
 
   return (
     <section id="ai-recommend" className="relative overflow-hidden scroll-mt-24">

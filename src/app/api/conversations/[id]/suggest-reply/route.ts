@@ -6,9 +6,9 @@ import { prisma } from "@/lib/prisma";
 import { formatForHost } from "@/lib/currency";
 
 function getOpenAI() {
-  const key = process.env.OPENAI_API_KEY;
+  const key = process.env.GROQ_API_KEY;
   if (!key) return null;
-  return new OpenAI({ apiKey: key });
+  return new OpenAI({ apiKey: key, baseURL: "https://api.groq.com/openai/v1" });
 }
 
 /** 호스트 전용: 대화 맥락을 바탕으로 답장 초안 한 건 생성 */
@@ -122,7 +122,7 @@ ${conversationLines.join("\n")}
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "llama-3.3-70b-versatile",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },

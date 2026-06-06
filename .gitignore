@@ -30,6 +30,7 @@ yarn-error.log*
 .env.vercel
 .env.vercel.tmp
 .env.check
+scripts/.env.harness
 .env.vercel-check
 .env.vercel.import
 .env.vercel.production

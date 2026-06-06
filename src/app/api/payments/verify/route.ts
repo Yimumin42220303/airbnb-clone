@@ -6,6 +6,7 @@ import { getPayment } from "@/lib/portone";
 import { onPaymentVerified } from "@/lib/payment-complete";
 import { sendChannelTalkNotification } from "@/lib/channel-api";
 import { triggerMetaPurchaseConversionAsync } from "@/lib/meta-purchase";
+import { extractMetaCookies } from "@/lib/meta-user-data";
 import { getJpyToKrwRate } from "@/lib/exchange-rate";
 import { STORED_CURRENCY, convertJpyToKrw } from "@/lib/currency";
 import { hasOverlappingPaidBooking } from "@/lib/availability";
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
 
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { user: { select: { email: true, phone: true } } },
+      include: { user: { select: { email: true, phone: true, name: true } } },
     });
     if (!booking) {
       return NextResponse.json(
@@ -209,6 +210,9 @@ export async function POST(request: Request) {
       console.error("[Payment Verify] post-complete error:", postErr);
     }
 
+    const { fbc, fbp } = extractMetaCookies(request);
+    const userName = booking.guestName ?? booking.user?.name ?? null;
+    const nameParts = userName ? userName.trim().split(/\s+/) : [];
     const metaPurchase = await triggerMetaPurchaseConversionAsync({
       bookingId,
       listingId: booking.listingId,
@@ -216,6 +220,10 @@ export async function POST(request: Request) {
       request,
       userEmail: booking.user?.email ?? null,
       userPhone: booking.guestPhone ?? booking.user?.phone ?? null,
+      userFirstName: nameParts[0] ?? null,
+      userLastName: nameParts.length > 1 ? nameParts.slice(1).join(" ") : null,
+      fbc,
+      fbp,
     });
 
     // 채널톡 봇 알림 (실패해도 결제 완료 응답은 유지)

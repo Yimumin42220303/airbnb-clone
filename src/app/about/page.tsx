@@ -70,7 +70,6 @@ const BUSINESS_INFO: { label: string; value: string }[] = [
   },
   { label: "소재지", value: t("ko", "footer.address").replace(/^소재지\s*/, "") },
   { label: "고객문의", value: t("ko", "footer.contactKr").replace(/^고객 문의\(한국\)\s*:\s*/, "") },
-  { label: "이메일", value: "minbaktokyo@gmail.com" },
 ];
 
 const HERO_BENEFITS = [
@@ -99,7 +98,6 @@ export default function AboutPage() {
       contactType: "customer service",
       areaServed: "KR",
       availableLanguage: ["Korean"],
-      email: "minbaktokyo@gmail.com",
     },
   };
 
@@ -166,9 +164,8 @@ export default function AboutPage() {
               도쿄민박이란? 한국인을 위한 도쿄 숙소 예약 플랫폼
             </h1>
             <p className="text-minbak-body-lg text-minbak-gray leading-relaxed mb-6 max-w-[680px]">
-              도쿄민박은 도쿄 현지 숙소를 한국어로 비교·문의·예약할 수 있는 숙소
-              예약 서비스입니다. 예약 전 문의부터 체크인 안내, 숙박 중 문제 접수까지
-              한국어로 안내합니다.
+              도쿄민박은 일본 현지 숙소를 대형 OTA 수수료 부담이 줄어든 가격 구조로 안내하고,
+              한국인 스태프가 예약 전후를 한국어로 도와주는 도쿄 숙소 예약·고객지원 플랫폼입니다.
             </p>
             <p className="text-minbak-body text-minbak-gray leading-relaxed mb-6 max-w-[680px]">
               도쿄민박은 한국 여행객이 도쿄 현지 숙소를 더 합리적이고 안심하게
@@ -207,7 +204,57 @@ export default function AboutPage() {
         </section>
 
         <div className="max-w-[840px] mx-auto px-6 py-12 md:py-16 space-y-16 md:space-y-20">
-          {/* 2. 문제 제기 */}
+          {/* 2. 역할 명확화 */}
+          <section aria-labelledby="role-heading">
+            <h2
+              id="role-heading"
+              className="text-minbak-h2 font-semibold text-minbak-black mb-3"
+            >
+              도쿄민박은 숙소 운영자가 아니라, 한국어 예약·안내 창구입니다
+            </h2>
+            <p className="text-minbak-body text-minbak-gray leading-relaxed mb-6 max-w-[680px]">
+              도쿄민박은 숙박시설을 직접 소유·운영하지 않습니다.
+              숙박 제공과 시설 관리는 각 숙소 운영자 또는 일본 현지 파트너가 담당합니다.
+              도쿄민박은 한국인 게스트가 도쿄 현지 숙소를 더 쉽게 비교·문의·예약할 수 있도록 돕고,
+              예약 전후 안내와 문제 접수를 한국어로 지원합니다.
+            </p>
+            <div className="overflow-x-auto mb-6">
+              <table className="w-full text-minbak-body text-minbak-gray border-collapse">
+                <thead>
+                  <tr className="bg-minbak-bg">
+                    <th className="text-left p-3 font-semibold text-minbak-black border border-minbak-light-gray">역할</th>
+                    <th className="text-left p-3 font-semibold text-minbak-black border border-minbak-light-gray">담당</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="p-3 border border-minbak-light-gray">예약 중개, 결제, 환불 접수, 한국어 고객지원</td>
+                    <td className="p-3 border border-minbak-light-gray">도쿄민박 / 주식회사 한일익스프레스</td>
+                  </tr>
+                  <tr className="bg-minbak-bg/30">
+                    <td className="p-3 border border-minbak-light-gray">예약 전 문의, 체크인 안내, 숙박 중 문제 접수</td>
+                    <td className="p-3 border border-minbak-light-gray">도쿄민박 한국인 스태프</td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 border border-minbak-light-gray">숙박 제공, 시설 관리, 숙소 규칙 운영, 현장 조치</td>
+                    <td className="p-3 border border-minbak-light-gray">숙소 운영자 / 호스트</td>
+                  </tr>
+                  <tr className="bg-minbak-bg/30">
+                    <td className="p-3 border border-minbak-light-gray">필요 시 현지 숙소 확인, 운영자 연락, 현장 이슈 확인 지원</td>
+                    <td className="p-3 border border-minbak-light-gray">일본 현지 파트너사 (주식회사 마이크로아이디어)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="p-4 bg-minbak-bg rounded-minbak border border-minbak-light-gray text-minbak-caption text-minbak-gray space-y-1">
+              <p className="font-medium text-minbak-black">일본 현지 파트너사 정보</p>
+              <p>주식회사 마이크로아이디어 · 도쿄도 신주쿠구 카와다쵸 7</p>
+              <p>旅行サービス手配業：東京都知事 7産労観振旅第949号</p>
+              <p>住宅宿泊管理業：国土交通大臣（01）第F04702号</p>
+            </div>
+          </section>
+
+          {/* 3. 문제 제기 */}
           <section aria-labelledby="concerns-heading">
             <h2
               id="concerns-heading"

@@ -61,7 +61,7 @@ export default function AgreementPage() {
               <li>
                 <strong className="text-minbak-black">승인형 숙소</strong>
                 <br />
-                회원이 예약 요청 후 결제를 완료하면 &quot;승인 대기&quot; 상태가 되며, 호스트가 승인한 시점에 예약이 확정됩니다. 승인이 거절될 경우 결제 금액은 전액 환불됩니다.
+                회원이 예약 요청을 제출한 후 숙소 운영자의 가능 여부 확인을 거칩니다. 숙소 운영자가 요청을 승인하면 결제 링크가 발송되며, 회원이 결제를 완료한 시점에 예약이 확정됩니다. 승인되지 않은 예약 요청에는 결제가 발생하지 않습니다.
               </li>
             </ol>
             <p className="text-minbak-body text-minbak-gray leading-relaxed">
@@ -130,7 +130,7 @@ export default function AgreementPage() {
               제7조 (책임의 제한)
             </h2>
             <ul className="space-y-2 text-minbak-body text-minbak-gray list-none">
-              <li>회사는 게스트와의 책임 창구로서 문제 내용을 접수하고, 숙소 운영자 및 현지 파트너와 함께 확인·조정을 진행합니다.</li>
+              <li>회사는 게스트와의 한국어 1차 창구로서 문제 내용을 접수하고, 숙소 운영자 또는 일본 현지 파트너와 확인해 안내·조정을 지원합니다.</li>
               <li>회사의 귀책사유 또는 운영관리 범위 내에서 발생한 문제는 관련 법령 및 본 약관에 따라 책임 있게 처리합니다.</li>
               <li>숙소 운영자 또는 회원의 귀책, 천재지변, 감염병, 항공편 취소 등 회사의 합리적 관리 범위를 벗어난 불가항력 사유에 대해서는 관계 법령, 숙소 취소 정책 및 개별 예약 조건에 따릅니다.</li>
             </ul>

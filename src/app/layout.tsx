@@ -12,7 +12,7 @@ import HostLocaleProvider from "@/components/host/HostLocaleProvider";
 import CurrencyAudienceFromRoute from "@/components/currency/CurrencyAudienceFromRoute";
 import { CurrencyProvider } from "@/components/currency/CurrencyProvider";
 import Toaster from "@/components/ui/Toaster";
-import BottomNav from "@/components/layout/BottomNav";
+
 import { Header, Footer } from "@/components/layout";
 import ChannelTalk from "@/components/channel/ChannelTalk";
 import MetaPixelScript from "@/components/analytics/MetaPixelScript";
@@ -173,11 +173,10 @@ export default async function RootLayout({
             <CurrencyProvider>
             <HostLocaleProvider initialLocale={initialLocale}>
               <Header />
-              <div className="pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-0">
+              <div>
                 {children}
               </div>
               <Footer />
-              <BottomNav />
               <ChannelTalk />
               <Toaster />
             </HostLocaleProvider>

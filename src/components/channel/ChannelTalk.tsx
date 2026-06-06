@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { useSession } from "next-auth/react";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
@@ -31,11 +30,6 @@ export default function ChannelTalk() {
   const { data: session, status } = useSession();
   const bootedRef = useRef(false);
   const [badgeCount, setBadgeCount] = useState(0);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // SDK 로드 + boot
   useEffect(() => {
@@ -118,7 +112,7 @@ export default function ChannelTalk() {
     try {
       window.ChannelIO("onBadgeChanged", (unread: number) => setBadgeCount(unread ?? 0));
     } catch { /* ignore */ }
-  }, [mounted]);
+  }, []);
 
   const button = (
     <button
@@ -147,8 +141,5 @@ export default function ChannelTalk() {
     </button>
   );
 
-  if (mounted && typeof document !== "undefined") {
-    return createPortal(button, document.body);
-  }
-  return null;
+  return button;
 }

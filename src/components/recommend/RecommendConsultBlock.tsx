@@ -222,7 +222,7 @@ export default function RecommendConsultBlock({
         />
 
         <p className="text-minbak-caption text-minbak-gray">
-          상담 시작 시 입력한 조건이 상담창에 함께 전달됩니다.
+          상담을 진행하면 입력하신 조건과 추천 결과가 도쿄민박 고객지원팀에 전달됩니다.
         </p>
 
         <p className="text-minbak-caption text-minbak-gray/90 leading-relaxed">

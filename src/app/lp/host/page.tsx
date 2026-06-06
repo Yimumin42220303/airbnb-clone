@@ -257,7 +257,7 @@ export default function HostLpPage() {
                   <span className="text-minbak-gray">/ 売上</span>
                 </div>
                 <p className="text-minbak-gray text-[0.95rem] mb-4">
-                  東京民泊を追加販売チャネルとして利用し、ゲスト対応はホスト様ご自身で行うプランです。
+                  東京民泊を追加販売チャネルとして利用し、施設運営・現場対応はホスト様ご自身で行うプランです。ただし、東京民泊経由でご予約いただいた韓国人ゲスト様からの基本的なお問い合わせや予約前後のご案内は、東京民泊カスタマーサポート窓口を通じて受け付けされることがあります。現場対応・施設運営の判断はホスト様が担当します。
                 </p>
                 <hr className="border-minbak-light-gray my-4" />
                 <ul className="pl-[18px] space-y-1 list-disc text-minbak-gray text-[0.95rem]">

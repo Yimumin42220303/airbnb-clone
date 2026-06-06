@@ -13,6 +13,9 @@ import {
   instantBookingNotificationHost,
 } from "@/lib/email-templates";
 import { cancelExpiredBookings } from "@/lib/cancel-expired-bookings";
+import { sendMetaCapiEvent } from "@/lib/meta-capi";
+import { extractMetaCookies } from "@/lib/meta-user-data";
+import { BASE_URL as SITE_BASE_URL } from "@/lib/site-url";
 
 /**
  * GET /api/bookings
@@ -271,6 +274,33 @@ export async function POST(request: Request) {
       }
     } catch (emailErr) {
       console.error("[Booking Email] Error:", emailErr);
+    }
+
+    // CAPI Schedule 이벤트 (fire-and-forget)
+    try {
+      const session2 = session as { userId?: string; user?: { email?: string | null; name?: string | null } } | null;
+      const { fbc, fbp } = extractMetaCookies(request);
+      const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? request.headers.get("x-real-ip") ?? undefined;
+      const clientUserAgent = request.headers.get("user-agent") ?? undefined;
+      const scheduleUserName = (guestName != null && String(guestName).trim()) ? String(guestName).trim() : session2?.user?.name ?? null;
+      const nameParts = scheduleUserName ? scheduleUserName.split(/\s+/) : [];
+      void sendMetaCapiEvent({
+        eventName: "Schedule",
+        eventId: `schedule_${result.booking.id}`,
+        eventSourceUrl: `${SITE_BASE_URL}/listing/${String(listingId)}`,
+        contentIds: [String(listingId)],
+        value: result.booking.totalPrice,
+        currency: "JPY",
+        clientIpAddress: clientIp,
+        clientUserAgent,
+        userEmail: session2?.user?.email ?? null,
+        userFirstName: nameParts[0] ?? null,
+        userLastName: nameParts.length > 1 ? nameParts.slice(1).join(" ") : null,
+        fbc,
+        fbp,
+      }).catch((err) => console.error("[capi] Schedule failed:", err));
+    } catch {
+      // 분석 오류가 예약 응답에 영향 주지 않도록
     }
 
     return NextResponse.json(

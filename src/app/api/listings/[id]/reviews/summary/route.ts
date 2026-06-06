@@ -9,9 +9,9 @@ const MAX_REVIEWS = 30;
 const MAX_BODY_LENGTH = 200;
 
 function getOpenAI() {
-  const key = process.env.OPENAI_API_KEY;
+  const key = process.env.GROQ_API_KEY;
   if (!key) return null;
-  return new OpenAI({ apiKey: key });
+  return new OpenAI({ apiKey: key, baseURL: "https://api.groq.com/openai/v1" });
 }
 
 function isListingReviewSummaryTableMissing(err: unknown): boolean {
@@ -61,7 +61,7 @@ async function createReviewSummaryCompletion(
   userPrompt: string
 ): Promise<OpenAI.Chat.Completions.ChatCompletion> {
   const params = {
-    model: "gpt-4o-mini",
+    model: "llama-3.3-70b-versatile",
     messages: [
       { role: "system" as const, content: systemPrompt },
       { role: "user" as const, content: userPrompt },
@@ -189,7 +189,7 @@ export async function GET(
       return NextResponse.json(
         {
           error:
-            "AI 요약 서비스가 설정되지 않았습니다. OPENAI_API_KEY를 확인해 주세요.",
+            "AI 요약 서비스가 설정되지 않았습니다. GROQ_API_KEY를 확인해 주세요.",
         },
         { status: 503 }
       );

@@ -6,7 +6,7 @@ import {
 
 /** Meta Pixel ID. 환경 변수로 덮어쓸 수 있음. */
 export const META_PIXEL_ID =
-  process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "1815598592627600";
+  process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "1382135537313085";
 
 /** 카탈로그·퍼널 공통 파라미터 */
 export type MetaCatalogEventPayload = {
@@ -14,12 +14,16 @@ export type MetaCatalogEventPayload = {
   value: number;
   currency?: string;
   content_type?: string;
+  /** CAPI와 동일한 eventId — Meta 중복 제거용 */
+  eventId?: string;
 };
 
 /** Meta ViewContent 이벤트 페이로드 */
 export type MetaViewContentPayload = MetaCatalogEventPayload & {
   content_name: string;
   content_category: string;
+  /** CAPI와 동일한 eventId — Meta 중복 제거용 */
+  eventId?: string;
 };
 
 /** Meta Purchase 이벤트 페이로드 (브라우저 Pixel) */
@@ -47,7 +51,7 @@ export function buildViewContentPixelParams(payload: MetaViewContentPayload) {
 
 function trackFunnelEvent(
   eventName: "Schedule" | "InitiateCheckout",
-  payload: MetaCatalogEventPayload
+  payload: MetaCatalogEventPayload & { eventId?: string }
 ) {
   try {
     if (typeof window === "undefined" || typeof window.fbq !== "function") return;
@@ -61,7 +65,11 @@ function trackFunnelEvent(
       return;
     }
 
-    window.fbq("track", eventName, params);
+    if (payload.eventId) {
+      window.fbq("track", eventName, params, { eventID: payload.eventId });
+    } else {
+      window.fbq("track", eventName, params);
+    }
   } catch {
     // silently ignore analytics errors
   }
@@ -83,15 +91,19 @@ export function trackMetaViewContent(payload: MetaViewContentPayload) {
     if (typeof window === "undefined" || typeof window.fbq !== "function") return;
 
     const params = buildViewContentPixelParams(payload);
-    const validation = validateViewContentPixelPayload(params);
-    if (!validation.valid) {
-      if (process.env.NODE_ENV === "development") {
+    // 브라우저 fbq()는 CAPI보다 관대하므로 검증 실패 시에도 발화
+    if (process.env.NODE_ENV === "development") {
+      const validation = validateViewContentPixelPayload(params);
+      if (!validation.valid) {
         console.warn("[meta-pixel] ViewContent 페이로드 규격 오류", validation.issues);
       }
-      return;
     }
 
-    window.fbq("track", "ViewContent", params);
+    if (payload.eventId) {
+      window.fbq("track", "ViewContent", params, { eventID: payload.eventId });
+    } else {
+      window.fbq("track", "ViewContent", params);
+    }
   } catch {
     // silently ignore analytics errors
   }

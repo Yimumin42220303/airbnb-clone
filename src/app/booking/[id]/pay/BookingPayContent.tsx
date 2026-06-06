@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import PayButton from "./PayButton";
@@ -13,6 +13,7 @@ import SafePaymentMarks from "@/components/booking/SafePaymentMarks";
 import BookingAftercareTimeline from "@/components/booking/BookingAftercareTimeline";
 import { CONTACT_EMAIL } from "@/lib/constants";
 import MetaPixelInitiateCheckout from "@/components/analytics/MetaPixelInitiateCheckout";
+import { useRef } from "react";
 import Ga4AddPaymentInfo from "@/components/analytics/Ga4AddPaymentInfo";
 
 const PAY_DEADLINE_MS = 48 * 60 * 60 * 1000;
@@ -62,6 +63,11 @@ export default function BookingPayContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [unauthorized, setUnauthorized] = useState(false);
+  const initiateCheckoutEventId = useMemo(() =>
+    typeof crypto !== "undefined" ? crypto.randomUUID() : `ic_${id}_${Date.now()}`,
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  []);
+  const capiSentRef = useRef(false);
 
   useEffect(() => {
     if (!id) {
@@ -125,6 +131,21 @@ export default function BookingPayContent() {
       router.replace("/my-bookings");
     }
   }, [booking, loading, router]);
+
+  // CAPI InitiateCheckout 미러링 (예약 정보 로드 완료 후 1회)
+  useEffect(() => {
+    if (!booking || loading || capiSentRef.current) return;
+    capiSentRef.current = true;
+    void fetch("/api/capi/initiate-checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        eventId: initiateCheckoutEventId,
+        bookingId: booking.id,
+        value: booking.totalPrice,
+      }),
+    }).catch(() => {});
+  }, [booking, loading, initiateCheckoutEventId]);
 
   if (loading || (booking && booking.paymentStatus === "paid")) {
     return (
@@ -229,6 +250,7 @@ export default function BookingPayContent() {
       <MetaPixelInitiateCheckout
         listingId={booking.listing.id}
         totalPriceJpy={booking.totalPrice}
+        eventId={initiateCheckoutEventId}
       />
       <Ga4AddPaymentInfo
         listingId={booking.listing.id}

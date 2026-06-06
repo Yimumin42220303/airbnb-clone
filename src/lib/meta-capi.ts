@@ -24,6 +24,29 @@ export type MetaCapiPurchaseInput = {
   clientUserAgent?: string;
   userEmail?: string | null;
   userPhone?: string | null;
+  userFirstName?: string | null;
+  userLastName?: string | null;
+  fbc?: string | null;
+  fbp?: string | null;
+};
+
+/** ViewContent, InitiateCheckout, Schedule, Lead 등 범용 CAPI 이벤트 */
+export type MetaCapiEventInput = {
+  eventName: "ViewContent" | "InitiateCheckout" | "Schedule" | "Lead" | "Search";
+  eventId: string;
+  eventSourceUrl: string;
+  contentIds?: string[];
+  value?: number;
+  currency?: string;
+  customData?: Record<string, unknown>;
+  clientIpAddress?: string;
+  clientUserAgent?: string;
+  userEmail?: string | null;
+  userPhone?: string | null;
+  userFirstName?: string | null;
+  userLastName?: string | null;
+  fbc?: string | null;
+  fbp?: string | null;
 };
 
 function sleep(ms: number): Promise<void> {
@@ -51,6 +74,17 @@ export function buildMetaCapiPurchasePayload(input: MetaCapiPurchaseInput): {
       userData.ph = [hashedPhone];
     }
   }
+  if (input.userFirstName?.trim()) {
+    userData.fn = [hashSha256(input.userFirstName.trim().toLowerCase())];
+  }
+  if (input.userLastName?.trim()) {
+    userData.ln = [hashSha256(input.userLastName.trim().toLowerCase())];
+  }
+  // 서비스 특성상 한국 게스트 고정
+  userData.country = [hashSha256("kr")];
+  // fbc, fbp는 해싱 없이 평문 전달
+  if (input.fbc) userData.fbc = input.fbc;
+  if (input.fbp) userData.fbp = input.fbp;
   if (input.clientIpAddress) {
     userData.client_ip_address = input.clientIpAddress;
   }
@@ -167,6 +201,73 @@ export async function sendMetaPurchaseEvent(input: MetaCapiPurchaseInput): Promi
       ...opsBase,
       errorMessage: message,
     });
+    throw err;
+  }
+}
+
+/**
+ * 범용 CAPI 이벤트 전송 (ViewContent, InitiateCheckout, Schedule, Lead 등).
+ * META_CAPI_ACCESS_TOKEN 미설정 시 skip.
+ */
+export async function sendMetaCapiEvent(input: MetaCapiEventInput): Promise<void> {
+  const accessToken = process.env.META_CAPI_ACCESS_TOKEN?.trim();
+  if (!accessToken) {
+    logMetaCapiOps("skipped", { eventId: input.eventId, reason: "META_CAPI_ACCESS_TOKEN_missing", eventName: input.eventName });
+    return;
+  }
+
+  const userData: Record<string, string | string[]> = {};
+  if (input.userEmail?.trim()) userData.em = [hashSha256(input.userEmail)];
+  if (input.userPhone?.trim()) {
+    const hashedPhone = hashMetaPhone(input.userPhone);
+    if (hashedPhone) userData.ph = [hashedPhone];
+  }
+  if (input.userFirstName?.trim()) userData.fn = [hashSha256(input.userFirstName.trim().toLowerCase())];
+  if (input.userLastName?.trim()) userData.ln = [hashSha256(input.userLastName.trim().toLowerCase())];
+  userData.country = [hashSha256("kr")];
+  if (input.fbc) userData.fbc = input.fbc;
+  if (input.fbp) userData.fbp = input.fbp;
+  if (input.clientIpAddress) userData.client_ip_address = input.clientIpAddress;
+  if (input.clientUserAgent) userData.client_user_agent = input.clientUserAgent;
+
+  const customData: Record<string, unknown> = {
+    currency: input.currency ?? "JPY",
+    ...input.customData,
+  };
+  if (input.contentIds?.length) customData.content_ids = input.contentIds;
+  if (input.value != null) customData.value = input.value;
+
+  const eventPayload: Record<string, unknown> = {
+    event_name: input.eventName,
+    event_time: Math.floor(Date.now() / 1000),
+    event_id: input.eventId,
+    action_source: "website",
+    event_source_url: input.eventSourceUrl,
+    user_data: userData,
+    custom_data: customData,
+  };
+
+  const body: Record<string, unknown> = { data: [eventPayload], access_token: accessToken };
+  const testEventCode = process.env.META_CAPI_TEST_EVENT_CODE?.trim();
+  if (testEventCode) body.test_event_code = testEventCode;
+
+  try {
+    const res = await fetch(
+      `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${META_PIXEL_ID}/events`,
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }
+    );
+    const rawBody = await res.text().catch(() => "");
+    const responseLog = parseMetaCapiResponse(res.status, rawBody, input.eventId);
+    logMetaCapiResponse(responseLog);
+    if (!res.ok) {
+      logMetaCapiOps("failed", { eventId: input.eventId, eventName: input.eventName, httpStatus: res.status, errorMessage: responseLog.errorMessage ?? rawBody.slice(0, 200) });
+      throw new Error(`Meta CAPI ${input.eventName} failed (${res.status}): ${responseLog.errorMessage ?? rawBody.slice(0, 300)}`);
+    }
+    logMetaCapiOps("success", { eventId: input.eventId, eventName: input.eventName, httpStatus: res.status, eventsReceived: responseLog.eventsReceived ?? null });
+  } catch (err) {
+    if (err instanceof Error && err.message.startsWith(`Meta CAPI ${input.eventName} failed`)) throw err;
+    const message = err instanceof Error ? err.message : String(err);
+    logMetaCapiOps("failed", { eventId: input.eventId, eventName: input.eventName, errorMessage: message });
     throw err;
   }
 }

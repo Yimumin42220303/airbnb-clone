@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { Sparkles, ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 import { REVIEW_SUMMARY_ERROR_CODES } from "@/lib/review-summary-errors";
 
@@ -62,18 +62,24 @@ export default function ReviewSummaryAI({ listingId }: Props) {
     }
   }
 
-  const ctaLabel = `${t("review.aiSummaryTitle")} ${t("review.aiSummaryViewSuffix")}`;
-
   return (
-    <div className="p-4 md:p-6 border-b border-[#ebebeb] bg-[#fafafa]">
+    <div className="p-4 md:p-6 border-b border-[#ebebeb] bg-gradient-to-r from-amber-50 to-orange-50">
       {summary == null && !loading && (
         <button
           type="button"
           onClick={fetchSummary}
-          className="flex items-center gap-2 text-[15px] font-medium text-[#222] hover:text-minbak-primary transition-colors"
+          className="flex items-center gap-3 w-full min-h-[56px] px-4 py-3.5 rounded-xl bg-white border border-amber-300 hover:bg-amber-50 hover:border-amber-400 active:bg-amber-100 transition-all shadow-sm group"
         >
-          <Sparkles className="w-5 h-5 text-amber-500" aria-hidden />
-          {ctaLabel}
+          <Sparkles className="w-5 h-5 text-amber-500 shrink-0" aria-hidden />
+          <div className="flex-1 text-left">
+            <p className="text-[15px] font-semibold text-amber-900 leading-snug">
+              AI 리뷰 요약 보기
+            </p>
+            <p className="text-[12px] text-amber-700 mt-0.5">
+              {t("review.aiSummaryTitle")}
+            </p>
+          </div>
+          <ChevronRight className="w-5 h-5 text-amber-400 shrink-0 group-hover:translate-x-0.5 transition-transform" aria-hidden />
         </button>
       )}
 

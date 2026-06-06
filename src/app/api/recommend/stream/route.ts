@@ -10,9 +10,9 @@ const MAX_REVIEW_BODY_LENGTH = 200;
 const MAX_DESCRIPTION_LENGTH = 400;
 
 function getOpenAI() {
-  const key = process.env.OPENAI_API_KEY;
+  const key = process.env.GROQ_API_KEY;
   if (!key) return null;
-  return new OpenAI({ apiKey: key });
+  return new OpenAI({ apiKey: key, baseURL: "https://api.groq.com/openai/v1" });
 }
 
 /** locale에 따라 reason・highlights 출력 언어 지정 문구 */
@@ -38,6 +38,7 @@ function buildNdjsonSystem(locale?: "ko" | "ja"): string {
 }
 
 export async function POST(req: NextRequest) {
+  try {
   const encoder = new TextEncoder();
   const body = (await req.json()) as RecommendInput;
   const { checkIn, checkOut, adults, children, tripType, priority, priorities: prioritiesInput, preferences, locale } = body;
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
   const openai = getOpenAI();
   if (!openai) {
     return new Response(
-      JSON.stringify({ error: "AI 추천 서비스가 설정되지 않았습니다." }),
+      JSON.stringify({ error: "AI 추천 서비스가 설정되지 않았습니다. GROQ_API_KEY를 확인해 주세요." }),
       { status: 503 }
     );
   }
@@ -191,7 +192,7 @@ ${JSON.stringify(listingSummaries, null, 2)}
 위 숙소 중 게스트 정보·선호에 맞게 1~5위를 정하고, 각각 한 줄씩 JSON으로 출력. 형식: {"id":"...","rank":1,"reason":"...","highlights":["..."]} (5줄)`;
 
   const stream = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: "llama-3.3-70b-versatile",
     messages: [
       { role: "system", content: buildNdjsonSystem(locale) },
       { role: "user", content: userPrompt },
@@ -211,6 +212,46 @@ ${JSON.stringify(listingSummaries, null, 2)}
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
       };
 
+      const parseAndEmit = (obj: { id?: string; rank?: number; reason?: string; highlights?: string[] }) => {
+        if (obj?.id && obj?.rank != null && obj?.reason) {
+          if (emittedListingIds.has(obj.id)) return;
+          const listing = listingMap.get(obj.id);
+          if (listing) {
+            emittedListingIds.add(obj.id);
+            sendEvent({
+              ...listing,
+              rank: obj.rank,
+              reason: obj.reason,
+              highlights: Array.isArray(obj.highlights) ? obj.highlights.slice(0, 5).filter((h): h is string => typeof h === "string") : undefined,
+            });
+          }
+        }
+      };
+
+      const tryParseLine = (raw: string) => {
+        // 1차: 원본 그대로 파싱 (JSON 배열 또는 단일 객체)
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((r: unknown) => parseAndEmit(r as { id?: string; rank?: number; reason?: string; highlights?: string[] }));
+          } else {
+            parseAndEmit(parsed);
+          }
+          return;
+        } catch { /* 다음 시도 */ }
+        // 2차: 배열 기호·쉼표 제거 후 파싱 (NDJSON 스타일 요소)
+        const stripped = raw.replace(/^\[|\]$|^,\s*|,\s*$/g, "").trim();
+        if (!stripped) return;
+        try {
+          const parsed = JSON.parse(stripped);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((r: unknown) => parseAndEmit(r as { id?: string; rank?: number; reason?: string; highlights?: string[] }));
+          } else {
+            parseAndEmit(parsed);
+          }
+        } catch { /* skip */ }
+      };
+
       try {
         for await (const chunk of stream) {
           const text = chunk.choices[0]?.delta?.content ?? "";
@@ -219,54 +260,14 @@ ${JSON.stringify(listingSummaries, null, 2)}
           const lines = buffer.split("\n");
           buffer = lines.pop() ?? "";
           for (const line of lines) {
-            const trimmed = line.trim().replace(/^\[|\]$|^,\s*|,\s*$/g, "").trim();
+            const trimmed = line.trim();
             if (!trimmed) continue;
-            const parseAndEmit = (obj: { id?: string; rank?: number; reason?: string; highlights?: string[] }) => {
-              if (obj?.id && obj?.rank != null && obj?.reason) {
-                if (emittedListingIds.has(obj.id)) return;
-                const listing = listingMap.get(obj.id);
-                if (listing) {
-                  emittedListingIds.add(obj.id);
-                  sendEvent({
-                    ...listing,
-                    rank: obj.rank,
-                    reason: obj.reason,
-                    highlights: Array.isArray(obj.highlights) ? obj.highlights.slice(0, 5).filter((h): h is string => typeof h === "string") : undefined,
-                  });
-                }
-              }
-            };
-            try {
-              const parsed = JSON.parse(trimmed);
-              if (Array.isArray(parsed)) {
-                parsed.forEach((r: unknown) => parseAndEmit(r as { id?: string; rank?: number; reason?: string; highlights?: string[] }));
-              } else {
-                parseAndEmit(parsed);
-              }
-            } catch {
-              // skip invalid JSON line
-            }
+            tryParseLine(trimmed);
           }
         }
+        // 스트림 종료 후 남은 버퍼 처리
         if (buffer.trim()) {
-          try {
-            const parsed = JSON.parse(buffer.trim()) as { id?: string; rank?: number; reason?: string; highlights?: string[] };
-            if (parsed?.id && parsed?.rank != null && parsed?.reason && !emittedListingIds.has(parsed.id)) {
-              const listing = listingMap.get(parsed.id);
-              if (listing) {
-                emittedListingIds.add(parsed.id);
-                const full = {
-                  ...listing,
-                  rank: parsed.rank,
-                  reason: parsed.reason,
-                  highlights: Array.isArray(parsed.highlights) ? parsed.highlights.slice(0, 5).filter((h): h is string => typeof h === "string") : undefined,
-                };
-                sendEvent(full);
-              }
-            }
-          } catch {
-            // skip
-          }
+          tryParseLine(buffer.trim());
         }
         sendEvent({ done: true });
       } catch (err) {
@@ -285,4 +286,12 @@ ${JSON.stringify(listingSummaries, null, 2)}
       Connection: "keep-alive",
     },
   });
+  } catch (err) {
+    console.error("[recommend/stream] POST 핸들러 오류:", err);
+    const message = err instanceof Error ? err.message : "알 수 없는 오류";
+    return new Response(
+      JSON.stringify({ error: message }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
 }

@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Mail } from "lucide-react";
-import { KAKAO_LINK, CONTACT_EMAIL } from "@/lib/constants";
+import { KAKAO_LINK } from "@/lib/constants";
 import KakaoIcon from "@/components/ui/KakaoIcon";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
@@ -75,6 +74,8 @@ export default function Footer() {
               <p>{t("footer.contactKr")}</p>
               <p>{t("footer.partnerAddress")}</p>
               <p>{t("footer.partnerCompany")}</p>
+              <p>{t("footer.partnerLicenseTravel")}</p>
+              <p>{t("footer.partnerLicenseMinpaku")}</p>
             </div>
             {/* KG이니시스 인증마크 */}
             <div className="flex items-center gap-3 pt-4">
@@ -108,24 +109,16 @@ export default function Footer() {
               </button>
             </div>
           </div>
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <a
-              href={CONTACT_EMAIL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center w-10 h-10 rounded-full border border-white/40 text-white hover:bg-white/10 transition-colors"
-              aria-label={t("guest.emailInquiry")}
-            >
-              <Mail className="w-5 h-5" />
-            </a>
+          <div className="flex items-center flex-shrink-0">
             <a
               href={KAKAO_LINK}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center w-9 h-9 rounded-full bg-[#FEE500] text-[#191919] hover:opacity-90 transition-opacity"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#FEE500] text-[#000000] font-semibold hover:opacity-90 transition-opacity"
               aria-label={t("guest.kakaoInquiry")}
             >
               <KakaoIcon size={20} />
+              카카오톡으로 문의하기
             </a>
           </div>
         </div>

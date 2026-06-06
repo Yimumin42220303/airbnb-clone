@@ -5,7 +5,7 @@
  * 오늘 날짜에 해당하는 주제로 OpenAI가 블로그 글을 생성한 뒤,
  * /api/admin/blog/from-api 로 전달하여 자동 등록합니다.
  *
- * 필요 환경변수: CRON_SECRET, OPENAI_API_KEY, BLOG_AUTO_PUBLISH_API_KEY
+ * 필요 환경변수: CRON_SECRET, GROQ_API_KEY, BLOG_AUTO_PUBLISH_API_KEY
  */
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
@@ -16,9 +16,9 @@ import { requireCronAuth } from "@/lib/cron-auth";
 import { getRecentPostTitles, postTitleExists } from "@/lib/blog";
 
 function getOpenAI() {
-  const key = process.env.OPENAI_API_KEY;
+  const key = process.env.GROQ_API_KEY;
   if (!key) return null;
-  return new OpenAI({ apiKey: key });
+  return new OpenAI({ apiKey: key, baseURL: "https://api.groq.com/openai/v1" });
 }
 
 function extractJson(text: string): string {
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
   const openai = getOpenAI();
   if (!openai) {
     return NextResponse.json(
-      { error: "OPENAI_API_KEY가 설정되지 않았습니다." },
+      { error: "GROQ_API_KEY가 설정되지 않았습니다." },
       { status: 500 }
     );
   }
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
   let rawContent: string;
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "llama-3.3-70b-versatile",
       messages: [
         { role: "system", content: BLOG_DAILY_SYSTEM_PROMPT },
         { role: "user", content: userPrompt },

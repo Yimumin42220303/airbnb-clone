@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useLayoutEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCurrency } from "@/components/currency/CurrencyProvider";
@@ -37,7 +37,6 @@ import ListingChannelInquiryButton from "@/components/channel/ListingChannelInqu
 import { buildListingGalleryAlt } from "@/lib/listing-image-alt";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 import { getAmenityLabel } from "@/lib/host-i18n";
-import MetaPixelViewContent from "@/components/analytics/MetaPixelViewContent";
 import Ga4ViewContent from "@/components/analytics/Ga4ViewContent";
 import { buildRecommendHref } from "@/lib/recommend-funnel";
 import { trackRecommendEvent } from "@/lib/recommend-analytics";
@@ -217,6 +216,22 @@ export default function ListingDetailContent({
   const bookingFormAreaRef = useRef<HTMLDivElement>(null);
   const [isBookingFormInView, setIsBookingFormInView] = useState(true);
   const [videoLoadError, setVideoLoadError] = useState(false);
+  // CAPI ViewContent 미러링 (마운트 1회) — 브라우저 Pixel은 layout의 MetaPixelListingViewTracker가 담당
+  const capiSentRef = useRef(false);
+  useEffect(() => {
+    if (capiSentRef.current) return;
+    capiSentRef.current = true;
+    // 브라우저 Pixel(MetaPixelPageView)이 먼저 생성한 eventId를 재사용 → Meta 중복 제거 보장
+    // Pixel이 아직 실행되지 않은 경우(SSR 등) 폴백으로 새 ID 생성
+    const pixelEventId = (window as Window & { __metaVcEventId?: string }).__metaVcEventId;
+    const eventId = pixelEventId || `vc_${listing.id}_${Date.now()}`;
+    void fetch(`/api/listings/${listing.id}/view`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventId }),
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 스크롤 시: 예약 폼이 뷰포트에 안 보일 때만 하단 스티키 바 표시
   useEffect(() => {
@@ -246,14 +261,6 @@ export default function ListingDetailContent({
 
   return (
     <>
-      <MetaPixelViewContent
-        listingId={listing.id}
-        contentName={listing.title}
-        contentCategory={listing.location}
-        pricePerNight={listing.pricePerNight}
-        totalPrice={priceSummary?.totalPrice}
-        waitForTotalPrice={!!(resolvedCheckIn && resolvedCheckOut)}
-      />
       <Ga4ViewContent
         listingId={listing.id}
         itemName={listing.title}

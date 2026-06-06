@@ -26,6 +26,10 @@ export type MetaPurchaseTriggerInput = {
   request?: Request;
   userEmail?: string | null;
   userPhone?: string | null;
+  userFirstName?: string | null;
+  userLastName?: string | null;
+  fbc?: string | null;
+  fbp?: string | null;
   eventSourceUrl?: string;
 };
 
@@ -99,6 +103,10 @@ function sendMetaPurchaseCapi(input: MetaPurchaseTriggerInput, eventId: string) 
     clientUserAgent: input.request?.headers.get("user-agent") ?? undefined,
     userEmail: input.userEmail,
     userPhone: input.userPhone,
+    userFirstName: input.userFirstName,
+    userLastName: input.userLastName,
+    fbc: input.fbc,
+    fbp: input.fbp,
   });
 }
 

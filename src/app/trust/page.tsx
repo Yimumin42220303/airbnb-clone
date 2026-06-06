@@ -75,7 +75,6 @@ const BUSINESS_INFO: { label: string; value: string }[] = [
   },
   { label: "소재지", value: t("ko", "footer.address").replace(/^소재지\s*/, "") },
   { label: "고객문의", value: t("ko", "footer.contactKr").replace(/^고객 문의\(한국\)\s*:\s*/, "") },
-  { label: "이메일", value: "minbaktokyo@gmail.com" },
   { label: "일본 현지 파트너", value: t("ko", "footer.partnerCompany").replace(/^일본현지파트너사\s*/, "") },
   { label: "일본 현지 파트너 주소", value: t("ko", "footer.partnerAddress").replace(/^일본현지 파트너사 주소\s*/, "") },
 ];
@@ -145,8 +144,8 @@ export default function TrustPage() {
             <p className="text-minbak-body md:text-minbak-body-lg text-minbak-gray leading-relaxed max-w-[660px] mx-auto">
               도쿄민박에 등록된 숙소는 예약 전 문의부터 체크인 안내, 숙박 중 문제
               접수, 환불·민원 접수까지 도쿄민박 고객지원 창구에서 한국어로 안내합니다. 문제가
-              발생하면 도쿄민박이 책임 창구가 되어 숙소 운영자 및 현지 파트너와 함께
-              확인하고 조정합니다.
+              발생하면 도쿄민박 고객지원팀이 한국어 1차 창구로 내용을 접수하고,
+              숙소 운영자 또는 일본 현지 파트너와 확인해 안내·조정을 지원합니다.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-8">
               <Link
@@ -354,8 +353,9 @@ export default function TrustPage() {
               ))}
             </dl>
             <p className="text-minbak-caption text-minbak-gray mt-3 leading-relaxed">
-              모든 거래에 대한 책임과 환불, 민원 등의 처리는 한일익스프레스에서
-              진행합니다.
+              도쿄민박 서비스의 예약 중개, 결제, 환불 접수 및 한국어 고객지원은 주식회사 한일익스프레스가 담당합니다.
+              숙박 제공, 시설 관리 및 현장 운영은 각 숙소 운영자 또는 일본 현지 파트너가 담당하며,
+              문제가 발생한 경우 도쿄민박 고객지원팀이 한국어 1차 창구로 접수·안내·조정을 지원합니다.
             </p>
           </section>
 

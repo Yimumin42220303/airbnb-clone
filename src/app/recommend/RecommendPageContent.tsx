@@ -295,6 +295,7 @@ export default function RecommendPageContent() {
     }
   }, [checkIn, checkOut]);
 
+  const leadSentRef = useRef(false);
   useEffect(() => {
     if (displayResults && displayResults.length > 0) {
       trackRecommendEvent("recommend_result_view", {
@@ -305,6 +306,18 @@ export default function RecommendPageContent() {
         has_area: accessibility !== "any",
         has_budget: budgetType !== "undecided",
       });
+      // CAPI Lead 이벤트 — 추천 펀넬 완료 시 1회
+      if (!leadSentRef.current) {
+        leadSentRef.current = true;
+        const leadEventId = typeof crypto !== "undefined"
+          ? crypto.randomUUID()
+          : `lead_recommend_${Date.now()}`;
+        void fetch("/api/capi/lead", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ eventId: leadEventId, source: "recommend" }),
+        }).catch(() => {});
+      }
     }
   }, [displayResults, primaryPriority, guests.adult, guests.child, checkIn, checkOut, accessibility, budgetType]);
 
@@ -389,6 +402,10 @@ export default function RecommendPageContent() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(recommendBody),
           });
+          if (!res.ok) {
+            const errText = await res.text().catch(() => "");
+            console.error(`[recommend/stream] HTTP ${res.status}:`, errText);
+          }
           if (res.ok && res.body) {
             const reader = res.body.getReader();
             const decoder = new TextDecoder();
@@ -427,7 +444,8 @@ export default function RecommendPageContent() {
               }
             }
           }
-        } catch {
+        } catch (streamErr) {
+          console.error("[recommend/stream] 스트림 오류:", streamErr);
           /* 규칙 기반 결과 유지, 게스트에게 기술 메시지 미노출 */
         }
       })
@@ -644,9 +662,11 @@ export default function RecommendPageContent() {
               {resultsContextLine}
             </p>
           )}
+          <p className="text-minbak-caption text-minbak-gray mb-1">
+            추천 결과는 입력 조건을 바탕으로 한 후보 숙소입니다.
+          </p>
           <p className="text-minbak-caption text-minbak-gray mb-4">
-            표시 요금은 선택한 일정·인원 기준 예상 요금이며, 최종 요금은 숙소 상세에서
-            확인해 주세요.
+            최종 요금, 예약 가능 여부, 체크인 조건, 취소·환불 조건은 상담 또는 예약 전 확인이 필요합니다.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -680,7 +700,7 @@ export default function RecommendPageContent() {
                   summary={priceByListingId[item.id]}
                 />
                 <div className="p-3 pt-2 space-y-2 flex-1 flex flex-col">
-                  <p className="text-minbak-caption text-minbak-dark-gray line-clamp-2">
+                  <p className="text-minbak-caption text-minbak-dark-gray line-clamp-4">
                     {item.reason}
                   </p>
                   {(item.maxGuests != null || item.bedrooms != null) && (

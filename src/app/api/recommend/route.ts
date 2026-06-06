@@ -11,9 +11,9 @@ const MAX_REVIEW_BODY_LENGTH = 200;
 const MAX_DESCRIPTION_LENGTH = 400;
 
 function getOpenAI() {
-  const key = process.env.OPENAI_API_KEY;
+  const key = process.env.GROQ_API_KEY;
   if (!key) return null;
-  return new OpenAI({ apiKey: key });
+  return new OpenAI({ apiKey: key, baseURL: "https://api.groq.com/openai/v1" });
 }
 
 export type RecommendInput = {
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     const openai = getOpenAI();
     if (!openai) {
       return NextResponse.json(
-        { error: "AI 추천 서비스가 설정되지 않았습니다. OPENAI_API_KEY를 확인해 주세요." },
+        { error: "AI 추천 서비스가 설정되지 않았습니다. GROQ_API_KEY를 확인해 주세요." },
         { status: 503 }
       );
     }
@@ -255,7 +255,7 @@ ${JSON.stringify(listingSummaries, null, 2)}
 위 숙소 중 게스트 정보·선호와 立地·宿の説明文·設備·注意事項·レビューデータ를 종합해 가장 잘 맞는 순서로 1~5위를 정하고, 각각 reason과 highlights를 포함해 JSON 배열로 반환하세요.`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "llama-3.3-70b-versatile",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
