@@ -247,17 +247,20 @@ export default function BookingForm({
     const spaceBelow = win ? win.innerHeight - rect.bottom - CALENDAR_MARGIN - 16 : CALENDAR_APPROX_HEIGHT;
     const spaceAbove = win ? rect.top - CALENDAR_MARGIN - 16 : CALENDAR_APPROX_HEIGHT;
 
-    const openAbove =
-      win && spaceBelow < CALENDAR_APPROX_HEIGHT && spaceAbove >= CALENDAR_APPROX_HEIGHT;
+    // 아래 공간 부족하고 위가 더 넓으면 위로 열기
+    const openAbove = win != null && spaceBelow < CALENDAR_APPROX_HEIGHT && spaceAbove > spaceBelow;
 
-    const top = openAbove
-      ? rect.top - CALENDAR_APPROX_HEIGHT - CALENDAR_MARGIN
-      : rect.bottom + CALENDAR_MARGIN;
+    let top: number;
+    let maxHeight: number | undefined;
 
-    // 공간이 충분하면 maxHeight 미설정 (캘린더 자연 높이 유지)
-    // 위아래 모두 공간 부족한 극단적 케이스에만 적용
-    const maxHeight =
-      !openAbove && spaceBelow < CALENDAR_APPROX_HEIGHT ? spaceBelow : undefined;
+    if (openAbove) {
+      top = Math.max(16, rect.top - CALENDAR_APPROX_HEIGHT - CALENDAR_MARGIN);
+      const actual = rect.top - top - CALENDAR_MARGIN;
+      maxHeight = actual < CALENDAR_APPROX_HEIGHT ? actual : undefined;
+    } else {
+      top = rect.bottom + CALENDAR_MARGIN;
+      maxHeight = spaceBelow < CALENDAR_APPROX_HEIGHT ? spaceBelow : undefined;
+    }
 
     setCalendarPosition({ top, left, width, maxHeight });
   }, [calendarOpen]);
