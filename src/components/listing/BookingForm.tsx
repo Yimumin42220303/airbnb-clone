@@ -246,11 +246,19 @@ export default function BookingForm({
     const left = Math.max(16, win ? rect.right - width : rect.left);
     const spaceBelow = win ? win.innerHeight - rect.bottom - CALENDAR_MARGIN - 16 : CALENDAR_APPROX_HEIGHT;
     const spaceAbove = win ? rect.top - CALENDAR_MARGIN - 16 : CALENDAR_APPROX_HEIGHT;
-    const top =
-      win && spaceBelow < CALENDAR_APPROX_HEIGHT && spaceAbove >= CALENDAR_APPROX_HEIGHT
-        ? rect.top - CALENDAR_APPROX_HEIGHT - CALENDAR_MARGIN
-        : rect.bottom + CALENDAR_MARGIN;
-    setCalendarPosition({ top, left, width });
+
+    const openAbove =
+      win && spaceBelow < CALENDAR_APPROX_HEIGHT && spaceAbove >= CALENDAR_APPROX_HEIGHT;
+
+    const top = openAbove
+      ? rect.top - CALENDAR_APPROX_HEIGHT - CALENDAR_MARGIN
+      : rect.bottom + CALENDAR_MARGIN;
+
+    const maxHeight = openAbove
+      ? Math.min(CALENDAR_APPROX_HEIGHT, spaceAbove)
+      : Math.min(CALENDAR_APPROX_HEIGHT, spaceBelow);
+
+    setCalendarPosition({ top, left, width, maxHeight });
   }, [calendarOpen]);
 
   useEffect(() => {

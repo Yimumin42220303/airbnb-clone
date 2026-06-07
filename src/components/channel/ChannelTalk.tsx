@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
+import { sendGa4Event } from "@/lib/ga4-events";
 
 const PLUGIN_KEY =
   process.env.NEXT_PUBLIC_CHANNEL_PLUGIN_KEY || "e4545154-919d-4d8d-b05e-e72beb1b78b0";
@@ -72,6 +73,11 @@ export default function ChannelTalk() {
         customLauncherSelector: `#${LAUNCHER_ID}`,
         hideChannelButtonOnBoot: true,
         ...(memberId ? { memberId } : {}),
+      });
+      window.ChannelIO!("onShow", () => {
+        try {
+          sendGa4Event("channel_talk_open", { source: "launcher" });
+        } catch { /* ignore */ }
       });
       bootedRef.current = true;
     }

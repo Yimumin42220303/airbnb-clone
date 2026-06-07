@@ -1,4 +1,4 @@
-import { trackGa4AddToCart } from "@/lib/ga4-events";
+import { trackGa4AddToCart, trackGa4BookingRequestStart } from "@/lib/ga4-events";
 
 type EventName =
   | "price_summary_viewed"
@@ -46,6 +46,12 @@ export function trackEvent(name: EventName, params: EventParams) {
       params.total_price != null &&
       params.total_price > 0
     ) {
+      trackGa4BookingRequestStart({
+        listingId: params.listing_id,
+        bookingType: params.booking_type,
+        value: params.total_price,
+        nights: params.nights,
+      });
       trackGa4AddToCart({
         listingId: params.listing_id,
         value: params.total_price,

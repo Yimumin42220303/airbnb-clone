@@ -10,6 +10,8 @@ type Props = {
   pricePerNight: number;
   totalPrice?: number | null;
   waitForTotalPrice?: boolean;
+  area?: string;
+  maxGuests?: number;
 };
 
 /** 숙소 상세 view_item (listingId당 1회) */
@@ -20,6 +22,8 @@ export default function Ga4ViewContent({
   pricePerNight,
   totalPrice,
   waitForTotalPrice = false,
+  area,
+  maxGuests,
 }: Props) {
   const trackedListingId = useRef<string | null>(null);
 
@@ -32,6 +36,8 @@ export default function Ga4ViewContent({
       itemName,
       itemCategory,
       value: totalPrice ?? pricePerNight,
+      area,
+      maxGuests,
     });
   }, [
     listingId,
@@ -40,6 +46,8 @@ export default function Ga4ViewContent({
     pricePerNight,
     totalPrice,
     waitForTotalPrice,
+    area,
+    maxGuests,
   ]);
 
   return null;

@@ -268,6 +268,8 @@ export default function ListingDetailContent({
         pricePerNight={listing.pricePerNight}
         totalPrice={priceSummary?.totalPrice}
         waitForTotalPrice={!!(resolvedCheckIn && resolvedCheckOut)}
+        area={listing.location}
+        maxGuests={listing.maxGuests}
       />
       <main className="min-h-screen bg-white">
         {/* 상단: 숙소명 · 위치 · 평점 · 찜 (minbak.tokyo 상단 영역) */}

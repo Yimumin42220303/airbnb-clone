@@ -28,7 +28,7 @@ function buildItems(item: Ga4ItemInput) {
   ];
 }
 
-function sendGa4Event(eventName: string, params: Record<string, unknown>) {
+export function sendGa4Event(eventName: string, params: Record<string, unknown>) {
   try {
     if (!isGoogleAnalyticsEnabled() || typeof window === "undefined") return;
     pushDataLayer({ event: eventName, ...params });
@@ -49,11 +49,15 @@ export function trackGa4ViewItem(params: {
   itemName: string;
   itemCategory?: string;
   value: number;
+  area?: string;
+  maxGuests?: number;
 }) {
   if (!Number.isFinite(params.value) || params.value < 0) return;
   sendGa4Event("view_item", {
     currency: "JPY",
     value: params.value,
+    ...(params.area ? { area: params.area } : {}),
+    ...(params.maxGuests != null ? { max_guests: params.maxGuests } : {}),
     items: buildItems({
       item_id: params.listingId,
       item_name: params.itemName,
@@ -120,6 +124,21 @@ export function trackGa4AddPaymentInfo(params: {
       item_id: params.listingId,
       price: params.value,
     }),
+  });
+}
+
+/** 예약 요청 시작 (예약 버튼 클릭) */
+export function trackGa4BookingRequestStart(params: {
+  listingId: string;
+  bookingType?: string;
+  value?: number;
+  nights?: number;
+}) {
+  sendGa4Event("booking_request_start", {
+    listing_id: params.listingId,
+    ...(params.bookingType ? { booking_type: params.bookingType } : {}),
+    ...(params.value != null && Number.isFinite(params.value) ? { value: params.value, currency: "JPY" } : {}),
+    ...(params.nights != null ? { nights: params.nights } : {}),
   });
 }
 
