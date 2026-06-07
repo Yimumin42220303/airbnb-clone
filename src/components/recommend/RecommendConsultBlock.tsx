@@ -248,7 +248,7 @@ export default function RecommendConsultBlock({
               처리 중…
             </>
           ) : (
-            "상담 시작하기"
+            "이 3곳 기준으로 한국인 스태프에게 상담받기"
           )}
         </button>
 

@@ -1,15 +1,15 @@
 /** /recommend 랜딩 전용 카피 (게스트 UX 단순화) */
 
 export const RECOMMEND_HERO = {
-  h1: "도쿄 숙소 3곳 추천받기",
-  sub: "일정과 인원만 넣어도 조건에 맞는 숙소 3곳을 골라드려요.",
+  h1: "내 조건에 맞는 도쿄 숙소 3곳 추천받기",
+  sub: "일정·인원·희망 지역을 입력하면 조건에 맞는 후보 숙소 3곳을 먼저 확인할 수 있습니다.\n최종 요금과 예약 가능 여부는 한국인 스태프가 숙소 운영자 또는 일본 현지 파트너와 확인 후 안내합니다.",
   helper: "",
   cta: "숙소 3곳 추천받기",
   disclaimer:
-    "추천 결과는 참고용이며, 최종 요금과 예약 가능 여부는 숙소 상세 또는 상담을 통해 확인해주세요.",
+    "추천 결과는 입력 조건을 바탕으로 한 후보 숙소입니다. 최종 요금, 예약 가능 여부, 체크인 조건, 취소·환불 조건은 상담 또는 예약 전 확인이 필요합니다.",
 } as const;
 
-export const RECOMMEND_RESULTS_TITLE = "조건에 맞는 숙소 3곳을 골라봤어요";
+export const RECOMMEND_RESULTS_TITLE = "조건에 맞는 후보 숙소 3곳";
 
 export const RECOMMEND_AUDIENCE_ITEMS = [
   "도쿄 숙소 지역을 아직 못 정한 분",

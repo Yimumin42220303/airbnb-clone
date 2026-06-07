@@ -429,7 +429,7 @@ export const hostTranslations = {
     "guest.heroSub":
       "예약 전 문의부터 체크인 안내, 숙박 중 문제 접수까지 한국어로 안내합니다. 합리적인 요금으로 도쿄 현지 숙소를 확인해 보세요.",
     "guest.bullet1": "대형 플랫폼 대비 합리적인 요금",
-    "guest.bullet2": "도쿄민박이 확인한 도쿄 현지 숙소",
+    "guest.bullet2": "예약 전후를 한국어로 안내하는 도쿄 현지 숙소",
     "guest.bullet3": "예약 전후·숙박 중 한국어 고객지원 안내",
     "guest.recommended": "추천 민박",
     "guest.moreListings": "더 많은 숙소 보기",

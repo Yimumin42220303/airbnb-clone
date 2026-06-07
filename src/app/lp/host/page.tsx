@@ -264,7 +264,7 @@ export default function HostLpPage() {
                   <li>東京民泊への掲載</li>
                   <li>予約導線の提供</li>
                   <li>基本的な導入サポート</li>
-                  <li>ゲスト対応はホスト様ご自身で実施</li>
+                  <li>現場対応・施設運営判断はホスト様ご自身で実施</li>
                 </ul>
               </article>
 

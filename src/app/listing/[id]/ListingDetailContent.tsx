@@ -513,6 +513,30 @@ export default function ListingDetailContent({
                   </p>
                 </DetailSection>
 
+                {/* 숙소 운영 정보 — licenseType 또는 licenseNumber 있을 때만 표시 */}
+                {(listing.licenseType || listing.licenseNumber) && (
+                  <DetailSection title="숙소 운영 정보">
+                    <dl className="space-y-2 text-[14px] text-[#222]">
+                      {listing.licenseType && (
+                        <div className="flex flex-col sm:flex-row sm:gap-4">
+                          <dt className="text-[#717171] sm:w-32 flex-shrink-0">운영 유형</dt>
+                          <dd>{listing.licenseType}</dd>
+                        </div>
+                      )}
+                      {listing.licenseNumber && (
+                        <div className="flex flex-col sm:flex-row sm:gap-4">
+                          <dt className="text-[#717171] sm:w-32 flex-shrink-0">허가·신고번호</dt>
+                          <dd>{listing.licenseNumber}</dd>
+                        </div>
+                      )}
+                      <div className="flex flex-col sm:flex-row sm:gap-4">
+                        <dt className="text-[#717171] sm:w-32 flex-shrink-0">한국어 안내</dt>
+                        <dd>도쿄민박 고객지원팀</dd>
+                      </div>
+                    </dl>
+                  </DetailSection>
+                )}
+
                 {/* 호스트 */}
                 <DetailSection title={t("listingDetail.sectionHost")}>
                   <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-5">

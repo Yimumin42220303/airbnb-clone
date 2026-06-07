@@ -11,13 +11,17 @@ export function buildCapacityPoints(
 ): string[] {
   const out: string[] = [];
   const { guestRange } = aeo;
-  if (listing.maxGuests >= 4) {
+  if (listing.maxGuests === 1) {
     out.push(
-      `최대 ${listing.maxGuests}명까지 숙박 가능해 4인 가족·친구 여행에서 한 공간에 머물기 검토할 때 참고할 수 있습니다.`
+      "최대 1명 기준이므로 1인 여행자에게 적합합니다. 2명 이상인 경우 다른 숙소를 함께 검토해 주세요."
     );
-  } else if (listing.maxGuests >= 2) {
+  } else if (listing.maxGuests === 2) {
     out.push(
-      `최대 ${listing.maxGuests}명 기준이므로 2~3인 커플·소규모 여행에 맞는지 먼저 확인하세요.`
+      "최대 2명 기준이므로 1인 여행자 또는 2인 커플 여행에 적합합니다. 3명 이상인 경우 다른 숙소를 함께 검토해 주세요."
+    );
+  } else if (listing.maxGuests >= 3) {
+    out.push(
+      `최대 ${listing.maxGuests}명까지 이용 가능한 숙소입니다. 실제 이용 인원과 침대 구성, 공간 활용이 여행 스타일에 맞는지 예약 전 확인해 주세요.`
     );
   }
   if (listing.baseGuests != null && listing.baseGuests < listing.maxGuests) {
