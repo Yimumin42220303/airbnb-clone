@@ -254,9 +254,10 @@ export default function BookingForm({
       ? rect.top - CALENDAR_APPROX_HEIGHT - CALENDAR_MARGIN
       : rect.bottom + CALENDAR_MARGIN;
 
-    const maxHeight = openAbove
-      ? Math.min(CALENDAR_APPROX_HEIGHT, spaceAbove)
-      : Math.min(CALENDAR_APPROX_HEIGHT, spaceBelow);
+    // 공간이 충분하면 maxHeight 미설정 (캘린더 자연 높이 유지)
+    // 위아래 모두 공간 부족한 극단적 케이스에만 적용
+    const maxHeight =
+      !openAbove && spaceBelow < CALENDAR_APPROX_HEIGHT ? spaceBelow : undefined;
 
     setCalendarPosition({ top, left, width, maxHeight });
   }, [calendarOpen]);
