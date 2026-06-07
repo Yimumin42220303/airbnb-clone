@@ -247,22 +247,14 @@ export default function BookingForm({
     const spaceBelow = win ? win.innerHeight - rect.bottom - CALENDAR_MARGIN - 16 : CALENDAR_APPROX_HEIGHT;
     const spaceAbove = win ? rect.top - CALENDAR_MARGIN - 16 : CALENDAR_APPROX_HEIGHT;
 
-    // 아래 공간 부족하고 위가 더 넓으면 위로 열기
+    // 아래 공간 부족하고 위가 더 넓으면 위로 열기. PC는 높이 제한 없이 전체 표시
     const openAbove = win != null && spaceBelow < CALENDAR_APPROX_HEIGHT && spaceAbove > spaceBelow;
 
-    let top: number;
-    let maxHeight: number | undefined;
+    const top = openAbove
+      ? Math.max(16, rect.top - CALENDAR_APPROX_HEIGHT - CALENDAR_MARGIN)
+      : rect.bottom + CALENDAR_MARGIN;
 
-    if (openAbove) {
-      top = Math.max(16, rect.top - CALENDAR_APPROX_HEIGHT - CALENDAR_MARGIN);
-      const actual = rect.top - top - CALENDAR_MARGIN;
-      maxHeight = actual < CALENDAR_APPROX_HEIGHT ? actual : undefined;
-    } else {
-      top = rect.bottom + CALENDAR_MARGIN;
-      maxHeight = spaceBelow < CALENDAR_APPROX_HEIGHT ? spaceBelow : undefined;
-    }
-
-    setCalendarPosition({ top, left, width, maxHeight });
+    setCalendarPosition({ top, left, width });
   }, [calendarOpen]);
 
   useEffect(() => {
