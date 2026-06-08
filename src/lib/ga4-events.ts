@@ -43,7 +43,6 @@ export function sendGa4Event(eventName: string, params: Record<string, unknown>)
   }
 }
 
-/** 숙소 상세 조회 */
 export function trackGa4ViewItem(params: {
   listingId: string;
   itemName: string;
@@ -56,6 +55,7 @@ export function trackGa4ViewItem(params: {
   sendGa4Event("view_item", {
     currency: "JPY",
     value: params.value,
+    value_type: "nightly",
     ...(params.area ? { area: params.area } : {}),
     ...(params.maxGuests != null ? { max_guests: params.maxGuests } : {}),
     items: buildItems({
@@ -67,7 +67,6 @@ export function trackGa4ViewItem(params: {
   });
 }
 
-/** 예약 CTA 클릭 (날짜·요금 선택 후) */
 export function trackGa4AddToCart(params: {
   listingId: string;
   value: number;
@@ -87,7 +86,6 @@ export function trackGa4AddToCart(params: {
   });
 }
 
-/** 예약 확인 페이지 진입 */
 export function trackGa4BeginCheckout(params: {
   listingId: string;
   itemName?: string;
@@ -109,7 +107,6 @@ export function trackGa4BeginCheckout(params: {
   });
 }
 
-/** 결제 페이지 */
 export function trackGa4AddPaymentInfo(params: {
   listingId: string;
   value: number;
@@ -127,7 +124,6 @@ export function trackGa4AddPaymentInfo(params: {
   });
 }
 
-/** 예약 요청 시작 (예약 버튼 클릭) */
 export function trackGa4BookingRequestStart(params: {
   listingId: string;
   bookingType?: string;
@@ -142,7 +138,59 @@ export function trackGa4BookingRequestStart(params: {
   });
 }
 
-/** 결제 완료 — transaction_id = bookingId (1예약 1건) */
+export function trackGa4BookingFormStart(params: {
+  listingId: string;
+  listingName?: string;
+  bookingType?: string;
+  checkIn?: string;
+  checkOut?: string;
+  guests?: number;
+  pagePath?: string;
+}) {
+  sendGa4Event("booking_form_start", {
+    listing_id: params.listingId,
+    ...(params.listingName ? { listing_name: params.listingName } : {}),
+    ...(params.bookingType ? { booking_type: params.bookingType } : {}),
+    ...(params.checkIn ? { check_in: params.checkIn } : {}),
+    ...(params.checkOut ? { check_out: params.checkOut } : {}),
+    ...(params.guests != null ? { guests: params.guests } : {}),
+    ...(params.pagePath ? { page_path: params.pagePath } : {}),
+  });
+}
+
+export function trackGa4BookingRequestSubmit(params: {
+  listingId: string;
+  listingName?: string;
+  checkIn: string;
+  checkOut: string;
+  guests: number;
+  nights: number;
+  value: number;
+  currency?: string;
+  bookingType?: string;
+  pagePath?: string;
+}) {
+  if (!Number.isFinite(params.value) || params.value < 0) return;
+  sendGa4Event("booking_request_submit", {
+    listing_id: params.listingId,
+    ...(params.listingName ? { listing_name: params.listingName } : {}),
+    check_in: params.checkIn,
+    check_out: params.checkOut,
+    guests: params.guests,
+    nights: params.nights,
+    value: params.value,
+    currency: params.currency ?? "JPY",
+    value_type: "total",
+    ...(params.bookingType ? { booking_type: params.bookingType } : {}),
+    ...(params.pagePath ? { page_path: params.pagePath } : {}),
+    items: buildItems({
+      item_id: params.listingId,
+      ...(params.listingName ? { item_name: params.listingName } : {}),
+      price: params.value,
+    }),
+  });
+}
+
 export function trackGa4Purchase(params: {
   bookingId: string;
   listingId?: string;

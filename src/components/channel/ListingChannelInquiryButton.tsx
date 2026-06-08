@@ -9,6 +9,8 @@ import {
   TOKYOMINBAK_CONTEXT_CLEAR_PROFILE,
 } from "@/lib/channel-context-summary";
 import { parseListingBookingPrefill } from "@/lib/listing-booking-prefill";
+import { sendGa4Event } from "@/lib/ga4-events";
+import { trackMetaLead } from "@/lib/meta-pixel";
 
 type Props = {
   listingId: string;
@@ -17,7 +19,6 @@ type Props = {
   className?: string;
 };
 
-/** addTags용: 소문자·채널톡 제한에 맞춤 */
 function listingInquiryTag(listingId: string): string {
   return `listing_${listingId}`.toLowerCase().slice(0, 64);
 }
@@ -30,13 +31,6 @@ const INQUIRY_PROFILE_CLEAR = {
   ...TOKYOMINBAK_CONTEXT_CLEAR_PROFILE,
 };
 
-/**
- * 숙소 상세에서 채널톡을 열고, 데스크에서 숙소를 식별할 수 있도록 전달합니다.
- * - updateUser.profile: 사용자 카드(데스크에서 프로필 필드 등록 시 표시)
- * - setPage + profile: 새 대화 생성 시 채팅 프로필로 반영(채널톡 문서)
- * - addTags: 사용자 태그 영역에 노출(소문자 태그)
- * - track: 사용자 타임라인 이벤트
- */
 export default function ListingChannelInquiryButton({
   listingId,
   listingTitle,
@@ -80,6 +74,29 @@ export default function ListingChannelInquiryButton({
   const handleClick = useCallback(() => {
     if (typeof window === "undefined" || !window.ChannelIO) return;
     setOpening(true);
+
+    // GA4: channel_talk_click
+    try {
+      sendGa4Event("channel_talk_click", {
+        listing_id: listingId,
+        listing_name: listingTitle,
+        page_path: pathname || undefined,
+        source_page: "listing",
+        button_location: "listing_detail",
+      });
+    } catch {
+      // measurement error must not block ChannelTalk
+    }
+
+    // Meta: Lead event (consultation click = potential customer)
+    try {
+      trackMetaLead({
+        content_name: listingTitle,
+        content_category: "listing_inquiry",
+      });
+    } catch {
+      // measurement error must not block ChannelTalk
+    }
     const origin =
       typeof window !== "undefined" && window.location?.origin
         ? window.location.origin

@@ -12,14 +12,14 @@ import { hasOverlappingPaidBooking } from "@/lib/availability";
 /**
  * POST /api/payments/mock-verify
  *
- * 개발/프리뷰 전용: 실제 PG 호출 없이 결제 완료 처리.
- * ENABLE_MOCK_PAYMENT=1 일 때만 동작. 프로덕션에는 설정하지 마세요.
+ * Dev/preview only: complete payment without real PG call.
+ * Only active when ENABLE_MOCK_PAYMENT=1. Do not set in production.
  * body: { bookingId }
  */
 export async function POST(request: Request) {
   if (process.env.ENABLE_MOCK_PAYMENT !== "1") {
     return NextResponse.json(
-      { ok: false, error: "모의 결제가 허용되지 않은 환경입니다." },
+      { ok: false, error: "mock payment not allowed in this environment" },
       { status: 403 }
     );
   }
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     const userId = (session as { userId?: string } | null)?.userId;
     if (!userId) {
       return NextResponse.json(
-        { ok: false, error: "로그인이 필요합니다." },
+        { ok: false, error: "login required" },
         { status: 401 }
       );
     }
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
       body = await request.json();
     } catch {
       return NextResponse.json(
-        { ok: false, error: "잘못된 요청입니다." },
+        { ok: false, error: "invalid request" },
         { status: 400 }
       );
     }
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     const { bookingId } = body;
     if (!bookingId) {
       return NextResponse.json(
-        { ok: false, error: "bookingId가 필요합니다." },
+        { ok: false, error: "bookingId required" },
         { status: 400 }
       );
     }
@@ -58,13 +58,13 @@ export async function POST(request: Request) {
     });
     if (!booking) {
       return NextResponse.json(
-        { ok: false, error: "예약을 찾을 수 없습니다." },
+        { ok: false, error: "booking not found" },
         { status: 404 }
       );
     }
     if (booking.userId !== userId) {
       return NextResponse.json(
-        { ok: false, error: "권한이 없습니다." },
+        { ok: false, error: "forbidden" },
         { status: 403 }
       );
     }
@@ -83,8 +83,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           ok: false,
-          error:
-            "해당 기간에 이미 결제가 완료된 예약이 있어 확정할 수 없습니다.",
+          error: "a confirmed booking already exists for this period",
         },
         { status: 409 }
       );
@@ -127,20 +126,36 @@ export async function POST(request: Request) {
     try {
       await sendChannelTalkNotification(
         userId,
-        "예약이 확정되었습니다. 메시지창에서 자세한 내용을 확인하세요."
+        "booking confirmed - check the message window for details"
       );
     } catch {
-      // 로그는 channel-api 내부에서 처리
+      // channel-api handles logging internally
     }
 
-    const metaPurchase = await triggerMetaPurchaseConversionAsync({
-      bookingId,
-      listingId: booking.listingId,
-      value: booking.totalPrice,
-      request,
-      userEmail: booking.user?.email ?? null,
-      userPhone: booking.guestPhone ?? booking.user?.phone ?? null,
-    });
+    // CAPI Purchase: only fire when META_CAPI_TEST_EVENT_CODE is set (isolated via Meta test tool)
+    // When not set: skip firing to avoid contaminating real GA4/Meta conversion data
+    const testEventCode = process.env.META_CAPI_TEST_EVENT_CODE?.trim();
+    let metaPurchaseEventId: string | undefined;
+    let purchaseValue: number | undefined;
+    let capiStatus: string | undefined;
+
+    if (testEventCode) {
+      const metaPurchase = await triggerMetaPurchaseConversionAsync({
+        bookingId,
+        listingId: booking.listingId,
+        value: booking.totalPrice,
+        request,
+        userEmail: booking.user?.email ?? null,
+        userPhone: booking.guestPhone ?? booking.user?.phone ?? null,
+      });
+      metaPurchaseEventId = metaPurchase.eventId;
+      purchaseValue = metaPurchase.value;
+      capiStatus = metaPurchase.capiStatus;
+    } else {
+      // No META_CAPI_TEST_EVENT_CODE → skip purchase event
+      // → no metaPurchaseEventId in response → no sessionStorage stash → no GA4/Pixel purchase fired
+      capiStatus = "skipped_mock";
+    }
 
     return NextResponse.json({
       ok: true,
@@ -150,15 +165,13 @@ export async function POST(request: Request) {
       verifiedAt: now.toISOString(),
       listingId: booking.listingId,
       mock: true,
-      metaPurchaseEventId: metaPurchase.eventId,
-      purchaseValue: metaPurchase.value,
-      capiStatus: metaPurchase.capiStatus,
-      ...(metaPurchase.capiError ? { capiError: metaPurchase.capiError } : {}),
+      ...(metaPurchaseEventId ? { metaPurchaseEventId, purchaseValue } : {}),
+      capiStatus,
     });
   } catch (err) {
     console.error("[POST /api/payments/mock-verify] Error:", err);
     return NextResponse.json(
-      { ok: false, error: "모의 결제 처리 중 오류가 발생했습니다." },
+      { ok: false, error: "error processing mock payment" },
       { status: 500 }
     );
   }

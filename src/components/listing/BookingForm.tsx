@@ -12,13 +12,17 @@ import { Button } from "@/components/ui";
 import ListingBookingCalendar from "@/components/listing/ListingBookingCalendar";
 import { useCurrency } from "@/components/currency/CurrencyProvider";
 import { trackEvent } from "@/lib/booking-analytics";
+import {
+  trackGa4BookingFormStart,
+  trackGa4BookingRequestSubmit,
+} from "@/lib/ga4-events";
 import { cn } from "@/lib/utils";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 
-/** PC에서 두 달(7요일)이 잘리지 않도록 최소 필요 너비: 264*2 + gap24 + px4*2 + pr6 ≈ 608 */
+/** PC minimum width so two months (7 weekdays) are not clipped: 264*2 + gap24 + px4*2 + pr6 approx 608 */
 const CALENDAR_WIDTH = 620;
 const CALENDAR_MARGIN = 8;
-/** 캘린더 박스 대략 높이 (스크롤 없이 전체 표시용) */
+/** Approximate calendar box height (for showing fully without scroll) */
 const CALENDAR_APPROX_HEIGHT = 440;
 
 type BookingFormProps = {
@@ -28,19 +32,12 @@ type BookingFormProps = {
   maxGuests: number;
   listingTitle: string;
   bookingType?: "instant" | "approval";
-  /** 최소 숙박 일수. 없으면 1박 */
   minStayNights?: number | null;
-  /** 가격 미리보기 계산 시 (박수/총액) 정보를 상위 컴포넌트로 전달 */
   onPriceChange?: (summary: { nights: number; totalPrice: number; cleaningFee: number } | null) => void;
-  /** 인원 수 변경 시 상위에서 1인당 요금 표시용으로 사용 */
   onGuestsChange?: (guests: number) => void;
-  /** 검색에서 전달된 초기 체크인 날짜 (YYYY-MM-DD) */
   initialCheckIn?: string;
-  /** 검색에서 전달된 초기 체크아웃 날짜 (YYYY-MM-DD) */
   initialCheckOut?: string;
-  /** 검색에서 전달된 초기 게스트 수 (adults+children, 유아 제외) */
   initialGuests?: number;
-  /** query adults — 있으면 initialGuests보다 우선 */
   initialAdults?: number;
   initialChildren?: number;
   initialInfants?: number;
@@ -159,11 +156,9 @@ export default function BookingForm({
     maxHeight?: number;
   } | null>(null);
 
-  /** listing/query prefill — useState는 최초 마운트만 반영되므로 props 도착·URL 변경 시 1회 동기화 */
   const prefillKey = `${listingId}|${effCheckIn ?? ""}|${effCheckOut ?? ""}|${effAdults ?? ""}|${effChildren ?? ""}|${effInfants ?? ""}`;
   const appliedPrefillKeyRef = useRef<string | null>(null);
 
-  /** useSearchParams만으로는 비어 있을 수 있어, 브라우저 URL에서 직접 동기화 */
   useLayoutEffect(() => {
     if (typeof window === "undefined") return;
     const fromWindow = parseListingBookingPrefill(
@@ -230,7 +225,6 @@ export default function BookingForm({
     );
 
     if (isMobile && win) {
-      // 모바일: 사이트 헤더(검색바 포함) 아래 ~ 하단 safe-area까지. 푸터 버튼은 캘린더 내부에 고정
       const headerEl = document.querySelector("header");
       const top = headerEl
         ? Math.ceil(headerEl.getBoundingClientRect().bottom) + 8
@@ -247,7 +241,6 @@ export default function BookingForm({
     const spaceBelow = win ? win.innerHeight - rect.bottom - CALENDAR_MARGIN - 16 : CALENDAR_APPROX_HEIGHT;
     const spaceAbove = win ? rect.top - CALENDAR_MARGIN - 16 : CALENDAR_APPROX_HEIGHT;
 
-    // 아래 공간 부족하고 위가 더 넓으면 위로 열기. PC는 높이 제한 없이 전체 표시
     const openAbove = win != null && spaceBelow < CALENDAR_APPROX_HEIGHT && spaceAbove > spaceBelow;
 
     const top = openAbove
@@ -274,7 +267,7 @@ export default function BookingForm({
     from.setHours(0, 0, 0, 0);
     const to = new Date(from);
     to.setMonth(to.getMonth() + 13);
-    to.setDate(to.getDate() + 1); // UTC 변환 시 하루 잘림 방지
+    to.setDate(to.getDate() + 1);
     const fromStr = from.toISOString().slice(0, 10);
     const toStr = to.toISOString().slice(0, 10);
     setBlockedDatesError(false);
@@ -306,7 +299,6 @@ export default function BookingForm({
     }
   }, [calendarOpen, fetchBlockedDates]);
 
-  // 인원 선택 패널 바깥 클릭 시 닫힘
   useEffect(() => {
     if (!guestSelectorOpen) return;
     function handleClickOutside(e: MouseEvent) {
@@ -320,7 +312,6 @@ export default function BookingForm({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [guestSelectorOpen]);
 
-  // 인원 패널의 성인/어린이/유아 합계를 guests 상태와 동기화
   useEffect(() => {
     const total = adults + children + infants;
     const next = total > 0 ? total : 1;
@@ -398,6 +389,22 @@ export default function BookingForm({
   const totalPrice = priceResult?.totalPrice ?? 0;
   const allAvailable = priceResult?.allAvailable ?? true;
 
+  // booking_form_start: fire at most once per component mount
+  const formStartFiredRef = useRef(false);
+  const fireBookingFormStart = useCallback(() => {
+    if (formStartFiredRef.current) return;
+    formStartFiredRef.current = true;
+    trackGa4BookingFormStart({
+      listingId,
+      listingName: listingTitle,
+      bookingType,
+      checkIn: activeCheckIn || undefined,
+      checkOut: activeCheckOut || undefined,
+      guests,
+      pagePath: typeof window !== "undefined" ? window.location.pathname : undefined,
+    });
+  }, [listingId, listingTitle, bookingType, activeCheckIn, activeCheckOut, guests]);
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -421,6 +428,19 @@ export default function BookingForm({
       setError(t("bookingForm.dateUnavailable"));
       return;
     }
+    // booking_request_submit: fire after validation passes, before navigating to confirm
+    trackGa4BookingRequestSubmit({
+      listingId,
+      listingName: listingTitle,
+      checkIn: activeCheckIn,
+      checkOut: activeCheckOut,
+      guests,
+      nights,
+      value: totalPrice,
+      bookingType,
+      pagePath: typeof window !== "undefined" ? window.location.pathname : undefined,
+    });
+
     const params = new URLSearchParams({
       listingId,
       checkIn: activeCheckIn,
@@ -449,7 +469,7 @@ export default function BookingForm({
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
-            onClick={() => setCalendarOpen(true)}
+            onClick={() => { fireBookingFormStart(); setCalendarOpen(true); }}
             className="flex flex-col gap-1 text-left px-3 py-2 border border-[#ebebeb] rounded-minbak hover:border-[#b0b0b0] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E31C23] focus-visible:border-[#E31C23]"
           >
             <span className="text-[12px] text-[#717171]">{t("guest.checkIn")}</span>
@@ -459,7 +479,7 @@ export default function BookingForm({
           </button>
           <button
             type="button"
-            onClick={() => setCalendarOpen(true)}
+            onClick={() => { fireBookingFormStart(); setCalendarOpen(true); }}
             className="flex flex-col gap-1 text-left px-3 py-2 border border-[#ebebeb] rounded-minbak hover:border-[#b0b0b0] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E31C23] focus-visible:border-[#E31C23]"
           >
             <span className="text-[12px] text-[#717171]">{t("guest.checkOut")}</span>
@@ -517,11 +537,10 @@ export default function BookingForm({
           )}
       </div>
 
-      {/* 인원 선택: 에어비앤비 스타일 패널 */}
       <div className="mb-4 relative" ref={guestSelectorRef}>
         <button
           type="button"
-          onClick={() => setGuestSelectorOpen((open) => !open)}
+          onClick={() => { fireBookingFormStart(); setGuestSelectorOpen((open) => !open); }}
           className="w-full flex items-center justify-between px-3 py-2 border border-minbak-light-gray rounded-minbak text-minbak-body text-minbak-black focus:outline-none focus-visible:ring-2 focus-visible:ring-minbak-primary focus-visible:border-minbak-primary"
         >
           <div className="flex flex-col text-left">
@@ -564,7 +583,7 @@ export default function BookingForm({
               },
             ].map((row) => {
               const totalWithoutThis =
-                guests - row.value; // 현재 값 제외한 합
+                guests - row.value;
               const canIncrement =
                 totalWithoutThis + row.value + 1 <= maxGuests;
               const isAdult = row.labelKey === "guest.adult";
@@ -599,7 +618,7 @@ export default function BookingForm({
                       }`}
                       aria-label={t(row.decreaseKey)}
                     >
-                      −
+                      {"−"}
                     </button>
                     <span className="min-w-[20px] text-center text-minbak-body">
                       {row.value}
