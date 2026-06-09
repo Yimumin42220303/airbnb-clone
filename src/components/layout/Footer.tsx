@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { KAKAO_LINK } from "@/lib/constants";
@@ -13,6 +14,7 @@ import { INICIS_MARK_URLS, openInicisPopup } from "@/lib/inicis-marks";
 export default function Footer() {
   const pathname = usePathname();
   const t = useHostTranslations().t;
+  const [bizInfoOpen, setBizInfoOpen] = useState(false);
 
   // 호스트 LP는 전용 푸터를 사용하므로 게스트용 공통 푸터를 숨김
   if (pathname?.startsWith("/lp/host")) {
@@ -54,7 +56,16 @@ export default function Footer() {
             <p className="pt-2">
               {t("guest.contactNote")}
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 pt-4">
+            <button
+              type="button"
+              onClick={() => setBizInfoOpen((v) => !v)}
+              className="flex sm:hidden items-center justify-between w-full py-2 text-minbak-caption text-white/60 font-medium"
+              aria-expanded={bizInfoOpen}
+            >
+              사업자 정보 보기
+              <span className={`transition-transform ${bizInfoOpen ? "rotate-180" : ""}`} aria-hidden>▾</span>
+            </button>
+            <div className={`grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 pt-4 ${bizInfoOpen ? "grid" : "hidden sm:grid"}`}>
               <p>{t("footer.companyName")}</p>
               <p>{t("footer.address")}</p>
               <p>{t("footer.ceo")}</p>

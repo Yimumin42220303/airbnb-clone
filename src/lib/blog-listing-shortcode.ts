@@ -98,7 +98,7 @@ export function buildListingCardDisplay(
   return {
     listingId: listing.id,
     displayName,
-    anchorLabel: `${displayName} 자세히 보기`,
+    anchorLabel: `이 숙소 상세·요금 확인하기`,
     recommendedFor: overrides.recommendedFor ?? `최대 ${listing.maxGuests}명`,
     recommendReason: overrides.recommendReason ?? defaultReason,
     caution: overrides.caution ?? "예약 전 상세페이지에서 시설·주의사항을 확인하세요.",

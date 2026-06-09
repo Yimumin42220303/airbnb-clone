@@ -43,6 +43,14 @@ export interface ListingCardProps {
   maxGuests?: number;
   beds?: number;
   bedrooms?: number;
+  /** 욕실 수 */
+  baths?: number;
+  /** 면적 (㎡) */
+  areaSqm?: number;
+  /** 자동확정(즉시예약) 여부 */
+  instantBooking?: boolean;
+  /** 취소정책 */
+  cancellationPolicy?: string;
 }
 
 export default function ListingCard({
@@ -66,10 +74,14 @@ export default function ListingCard({
   perPerson,
   isVerified,
   listingCreatedAt,
-  showSpecs = false,
+  showSpecs = true,
   maxGuests,
   beds,
   bedrooms,
+  baths,
+  areaSqm,
+  instantBooking,
+  cancellationPolicy,
 }: ListingCardProps) {
   const { formatForGuest } = useCurrency();
   const listingHref = searchQuery ? `/listing/${id}?${searchQuery}` : `/listing/${id}`;
@@ -132,16 +144,32 @@ export default function ListingCard({
             </span>
             <span className="truncate">{location}</span>
           </div>
-          {showSpecs && (maxGuests != null || beds != null || bedrooms != null) && (
+          {showSpecs && (maxGuests != null || beds != null || bedrooms != null || baths != null || areaSqm != null) && (
             <p className="text-minbak-caption text-minbak-gray line-clamp-1">
               {[
                 maxGuests != null && maxGuests > 0 ? `최대 ${maxGuests}인` : null,
                 bedrooms != null && bedrooms > 0 ? `침실 ${bedrooms}` : null,
                 beds != null && beds > 0 ? `침대 ${beds}` : null,
+                baths != null && baths > 0 ? `욕실 ${baths}` : null,
+                areaSqm != null && areaSqm > 0 ? `${areaSqm}㎡` : null,
               ]
                 .filter(Boolean)
                 .join(" · ")}
             </p>
+          )}
+          {(instantBooking || (cancellationPolicy && cancellationPolicy !== "")) && (
+            <div className="flex flex-wrap gap-1 mt-0.5">
+              {instantBooking && (
+                <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                  ⚡ 자동확정
+                </span>
+              )}
+              {cancellationPolicy && cancellationPolicy !== "" && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                  취소정책 확인 가능
+                </span>
+              )}
+            </div>
           )}
         </div>
         {amenities.length > 0 && (
@@ -176,7 +204,7 @@ export default function ListingCard({
                 </p>
               )
             ) : showPricePlaceholder ? (
-              <p className="text-minbak-body text-minbak-gray">체크인·체크아웃·인원 선택 후 가격 확인</p>
+              <p className="text-minbak-caption text-minbak-gray">날짜를 선택하면 결제 전 확인 가능한 총액을 확인할 수 있어요.</p>
             ) : null}
             {rating !== undefined && (
               <span className="text-minbak-caption text-minbak-gray">

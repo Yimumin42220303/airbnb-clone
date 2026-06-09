@@ -170,6 +170,16 @@ export default async function Home({
               />
             ))}
           </div>
+          {listings.length > 6 && (
+            <div className="sm:hidden mt-4 text-center">
+              <Link
+                href="/search"
+                className="inline-flex items-center justify-center min-h-[48px] px-6 py-3 rounded-minbak border border-minbak-light-gray text-minbak-body font-semibold text-minbak-black hover:bg-minbak-bg transition-colors"
+              >
+                모든 숙소 보기 ({listings.length}개)
+              </Link>
+            </div>
+          )}
         </HomeRecommendedSection>
 
         <FaqSection />

@@ -68,9 +68,9 @@ export default function ReviewSummaryAI({ listingId }: Props) {
         <button
           type="button"
           onClick={fetchSummary}
-          className="flex items-center gap-3 w-full min-h-[56px] px-4 py-3.5 rounded-xl bg-white border border-amber-300 hover:bg-amber-50 hover:border-amber-400 active:bg-amber-100 transition-all shadow-sm group"
+          className="flex items-center gap-3 w-full min-h-[56px] px-4 py-3.5 rounded-xl bg-amber-100 border border-amber-400 hover:bg-amber-200 hover:border-amber-500 active:bg-amber-300 transition-all shadow-sm group"
         >
-          <Sparkles className="w-5 h-5 text-amber-500 shrink-0" aria-hidden />
+          <Sparkles className="w-5 h-5 text-amber-600 shrink-0" aria-hidden />
           <div className="flex-1 text-left">
             <p className="text-[15px] font-semibold text-amber-900 leading-snug">
               AI 리뷰 요약 보기
@@ -79,7 +79,7 @@ export default function ReviewSummaryAI({ listingId }: Props) {
               {t("review.aiSummaryTitle")}
             </p>
           </div>
-          <ChevronRight className="w-5 h-5 text-amber-400 shrink-0 group-hover:translate-x-0.5 transition-transform" aria-hidden />
+          <ChevronRight className="w-5 h-5 text-amber-500 shrink-0 group-hover:translate-x-0.5 transition-transform" aria-hidden />
         </button>
       )}
 
@@ -122,46 +122,52 @@ export default function ReviewSummaryAI({ listingId }: Props) {
           {expanded && (
             <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <h3 className="text-[13px] font-semibold text-green-700 mb-1.5">
+                <h3 className="text-[13px] font-semibold text-green-700 mb-2">
                   {t("review.aiSummaryPros")}
                 </h3>
-                <ul className="list-disc list-inside text-[14px] text-[#222] space-y-1">
-                  {summary.pros.length > 0 ? (
-                    summary.pros.map((item, i) => (
-                      <li key={i}>{item}</li>
-                    ))
-                  ) : (
-                    <li className="text-[#717171]">{t("review.aiSummaryEmpty")}</li>
-                  )}
-                </ul>
+                {summary.pros.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {summary.pros.map((item, i) => (
+                      <span key={i} className="inline-flex items-center px-2.5 py-1 rounded-full text-[12px] font-medium bg-green-50 text-green-800 border border-green-200">
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[13px] text-[#717171]">{t("review.aiSummaryEmpty")}</p>
+                )}
               </div>
               <div>
-                <h3 className="text-[13px] font-semibold text-amber-700 mb-1.5">
+                <h3 className="text-[13px] font-semibold text-amber-700 mb-2">
                   {t("review.aiSummaryCons")}
                 </h3>
-                <ul className="list-disc list-inside text-[14px] text-[#222] space-y-1">
-                  {summary.cons.length > 0 ? (
-                    summary.cons.map((item, i) => (
-                      <li key={i}>{item}</li>
-                    ))
-                  ) : (
-                    <li className="text-[#717171]">{t("review.aiSummaryEmpty")}</li>
-                  )}
-                </ul>
+                {summary.cons.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {summary.cons.map((item, i) => (
+                      <span key={i} className="inline-flex items-center px-2.5 py-1 rounded-full text-[12px] font-medium bg-amber-50 text-amber-800 border border-amber-200">
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[13px] text-[#717171]">{t("review.aiSummaryEmpty")}</p>
+                )}
               </div>
               <div>
-                <h3 className="text-[13px] font-semibold text-minbak-primary mb-1.5">
+                <h3 className="text-[13px] font-semibold text-minbak-primary mb-2">
                   {t("review.aiSummaryRecommendedFor")}
                 </h3>
-                <ul className="list-disc list-inside text-[14px] text-[#222] space-y-1">
-                  {summary.recommendedFor.length > 0 ? (
-                    summary.recommendedFor.map((item, i) => (
-                      <li key={i}>{item}</li>
-                    ))
-                  ) : (
-                    <li className="text-[#717171]">{t("review.aiSummaryEmpty")}</li>
-                  )}
-                </ul>
+                {summary.recommendedFor.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {summary.recommendedFor.map((item, i) => (
+                      <span key={i} className="inline-flex items-center px-2.5 py-1 rounded-full text-[12px] font-medium bg-rose-50 text-rose-800 border border-rose-200">
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[13px] text-[#717171]">{t("review.aiSummaryEmpty")}</p>
+                )}
               </div>
             </div>
           )}

@@ -8,12 +8,6 @@ export type Ga4ItemInput = {
   quantity?: number;
 };
 
-function pushDataLayer(payload: Record<string, unknown>) {
-  if (typeof window !== "undefined" && Array.isArray(window.dataLayer)) {
-    window.dataLayer.push(payload);
-  }
-}
-
 function buildItems(item: Ga4ItemInput) {
   return [
     {
@@ -31,7 +25,6 @@ function buildItems(item: Ga4ItemInput) {
 export function sendGa4Event(eventName: string, params: Record<string, unknown>) {
   try {
     if (!isGoogleAnalyticsEnabled() || typeof window === "undefined") return;
-    pushDataLayer({ event: eventName, ...params });
     if (typeof window.gtag === "function") {
       window.gtag("event", eventName, params);
     }

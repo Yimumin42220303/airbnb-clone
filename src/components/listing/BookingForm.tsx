@@ -18,6 +18,7 @@ import {
 } from "@/lib/ga4-events";
 import { cn } from "@/lib/utils";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
+import SafePaymentMarks from "@/components/booking/SafePaymentMarks";
 
 /** PC minimum width so two months (7 weekdays) are not clipped: 264*2 + gap24 + px4*2 + pr6 approx 608 */
 const CALENDAR_WIDTH = 620;
@@ -733,6 +734,12 @@ export default function BookingForm({
         );
       })()}
 
+      {nights > 0 && priceResult && (
+        <p className="text-[12px] text-[#717171] text-center mb-2">
+          최종 결제 전 금액을 다시 확인한 뒤 예약을 진행합니다.
+        </p>
+      )}
+
       {error && (
         <p className="text-minbak-body text-minbak-primary mb-3" role="alert">
           {error}
@@ -769,6 +776,10 @@ export default function BookingForm({
       >
         {priceLoading ? t("bookingForm.calculating") : t("listingDetail.bookButton")}
       </Button>
+
+      <div className="mt-4 pt-4 border-t border-[#ebebeb]">
+        <SafePaymentMarks size="sm" showCaption />
+      </div>
     </form>
   );
 }

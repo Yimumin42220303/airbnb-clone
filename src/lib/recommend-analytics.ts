@@ -64,12 +64,6 @@ export function trackRecommendEvent(
   try {
     const clean = cleanParams(params);
 
-    // GTM 사용 환경 호환 — dataLayer 유지
-    if (typeof window !== "undefined" && Array.isArray(window.dataLayer)) {
-      window.dataLayer.push({ event: name, ...clean });
-    }
-
-    // GTM 미사용 환경에서도 GA4에 직접 도달
     if (typeof window !== "undefined" && typeof window.gtag === "function") {
       window.gtag("event", name, clean);
     }

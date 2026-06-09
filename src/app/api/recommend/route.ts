@@ -4,11 +4,11 @@ import { getListings } from "@/lib/listings";
 import { prisma } from "@/lib/prisma";
 import { getNights } from "@/lib/bookings";
 
-/** 숙소당 최근 리뷰 개수, 리뷰 본문 최대 글자 수 (토큰 절약) */
-const MAX_REVIEWS_PER_LISTING = 5;
-const MAX_REVIEW_BODY_LENGTH = 200;
-/** 숙소 설명문 최대 글자 수 (AI 프롬프트 토큰 절약) */
-const MAX_DESCRIPTION_LENGTH = 400;
+const MAX_REVIEWS_PER_LISTING = 2;
+const MAX_REVIEW_BODY_LENGTH = 80;
+const MAX_DESCRIPTION_LENGTH = 150;
+const MAX_AMENITIES = 6;
+const MAX_HOUSE_RULES_LENGTH = 80;
 
 function getOpenAI() {
   const key = process.env.GROQ_API_KEY;
@@ -191,8 +191,8 @@ export async function POST(req: NextRequest) {
         reviewCount: l.reviewCount,
         category: row.category?.name,
         propertyType: extra?.propertyType ?? "apartment",
-        amenities: l.amenities ?? [],
-        houseRules: (l.houseRules ?? "").slice(0, 300),
+        amenities: (l.amenities ?? []).slice(0, MAX_AMENITIES),
+        houseRules: (l.houseRules ?? "").slice(0, MAX_HOUSE_RULES_LENGTH),
         reviews: reviewList.map((r) => `[${r.rating}점] ${r.body}`),
         bedrooms: row.bedrooms,
         maxGuests: row.maxGuests,
@@ -255,7 +255,7 @@ ${JSON.stringify(listingSummaries, null, 2)}
 위 숙소 중 게스트 정보·선호와 立地·宿の説明文·設備·注意事項·レビューデータ를 종합해 가장 잘 맞는 순서로 1~5위를 정하고, 각각 reason과 highlights를 포함해 JSON 배열로 반환하세요.`;
 
     const completion = await openai.chat.completions.create({
-      model: "llama-3.1-8b-instant",
+      model: "llama-3.3-70b-versatile",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },

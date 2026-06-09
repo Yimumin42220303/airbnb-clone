@@ -5,7 +5,8 @@ import {
 } from "@/lib/meta-payload-validator";
 
 export const META_PIXEL_ID =
-  process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "1382135537313085";
+  process.env.NEXT_PUBLIC_META_PIXEL_ID ??
+  (process.env.NODE_ENV === "production" ? "1382135537313085" : "");
 
 export type MetaCatalogEventPayload = {
   content_ids: string[];

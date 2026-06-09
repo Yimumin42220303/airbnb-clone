@@ -646,6 +646,10 @@ export default function RecommendPageContent() {
             </>
           )}
         </button>
+        <p className="text-[11px] text-minbak-gray text-center leading-relaxed">
+          입력하신 조건은 숙소 추천 목적으로만 사용되며, 서버에 저장되지 않습니다.{" "}
+          <Link href="/policy" className="underline hover:text-minbak-primary">개인정보처리방침</Link>
+        </p>
       </form>
 
       {results !== null && results.length === 0 && message && (
@@ -700,9 +704,14 @@ export default function RecommendPageContent() {
                   summary={priceByListingId[item.id]}
                 />
                 <div className="p-3 pt-2 space-y-2 flex-1 flex flex-col">
-                  <p className="text-minbak-caption text-minbak-dark-gray line-clamp-4">
-                    {item.reason}
-                  </p>
+                  {item.reason && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                      <p className="text-[11px] font-semibold text-amber-700 mb-0.5">추천 이유</p>
+                      <p className="text-[13px] text-minbak-dark-gray line-clamp-4">
+                        {item.reason}
+                      </p>
+                    </div>
+                  )}
                   {(item.maxGuests != null || item.bedrooms != null) && (
                     <p className="text-minbak-caption text-minbak-gray">
                       {item.maxGuests != null && `최대 ${item.maxGuests}명`}

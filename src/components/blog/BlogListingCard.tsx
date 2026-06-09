@@ -16,7 +16,7 @@ export default function BlogListingCard({ listing, display }: Props) {
   const amenities =
     listing.amenities.length > 0
       ? listing.amenities.slice(0, 6).join(" · ")
-      : "상세페이지에서 편의시설 확인";
+      : "";
 
   return (
     <article className="my-8 rounded-minbak border border-minbak-light-gray bg-white overflow-hidden shadow-sm">
@@ -66,7 +66,7 @@ export default function BlogListingCard({ listing, display }: Props) {
             </div>
             <div>
               <dt className="inline font-medium text-minbak-black">주요 편의 · </dt>
-              <dd className="inline">{amenities}</dd>
+              <dd className="inline">{amenities || "상세페이지에서 편의시설 확인"}</dd>
             </div>
           </dl>
           <p className="mt-3 text-minbak-body text-minbak-black leading-relaxed">
@@ -77,9 +77,10 @@ export default function BlogListingCard({ listing, display }: Props) {
             <span className="font-medium text-minbak-black">주의 · </span>
             {display.caution}
           </p>
+          <p className="mt-3 text-minbak-caption text-minbak-gray">날짜·인원 선택 후 청소비 포함 총액을 확인할 수 있어요.</p>
           <Link
             href={href}
-            className="mt-4 inline-flex items-center justify-center min-h-[44px] px-5 py-2.5 rounded-minbak bg-minbak-primary text-white font-medium hover:bg-minbak-primary-hover transition-colors w-fit"
+            className="mt-2 inline-flex items-center justify-center min-h-[44px] px-5 py-2.5 rounded-minbak bg-minbak-primary text-white font-medium hover:bg-minbak-primary-hover transition-colors w-fit"
             data-blog-link-type="listing_card"
             data-listing-id={listing.id}
           >

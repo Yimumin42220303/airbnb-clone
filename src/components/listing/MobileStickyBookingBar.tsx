@@ -68,6 +68,7 @@ export default function MobileStickyBookingBar({
                   nights: priceSummary!.nights,
                 })}
               </p>
+              <p className="text-[11px] text-[#999] mt-0.5">결제 전 총액 확인</p>
             </div>
             <button
               type="button"
