@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { trackGa4Purchase } from "@/lib/ga4-events";
+import { trackGa4Purchase, sendGa4Event } from "@/lib/ga4-events";
 import { readMetaPurchasePending } from "@/lib/meta-purchase";
 
 type Props = {
@@ -26,6 +26,13 @@ export default function Ga4Purchase({ bookingId }: Props) {
       bookingId: pending.bookingId,
       listingId: pending.listingId,
       value: pending.value,
+    });
+    // booking_complete: GA4 목표/탐색 설정용 커스텀 이벤트
+    sendGa4Event("booking_complete", {
+      transaction_id: pending.bookingId,
+      currency: "JPY",
+      value: pending.value,
+      ...(pending.listingId ? { listing_id: pending.listingId } : {}),
     });
     firedRef.current = true;
   }, [bookingId]);

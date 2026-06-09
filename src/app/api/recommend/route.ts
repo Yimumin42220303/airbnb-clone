@@ -255,7 +255,7 @@ ${JSON.stringify(listingSummaries, null, 2)}
 위 숙소 중 게스트 정보·선호와 立地·宿の説明文·設備·注意事項·レビューデータ를 종합해 가장 잘 맞는 순서로 1~5위를 정하고, 각각 reason과 highlights를 포함해 JSON 배열로 반환하세요.`;
 
     const completion = await openai.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "llama-3.1-8b-instant",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },

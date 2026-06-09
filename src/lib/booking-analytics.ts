@@ -41,23 +41,24 @@ export function trackEvent(name: EventName, params: EventParams) {
     }
 
     if (
-      (name === "booking_cta_clicked" ||
-        name === "mobile_sticky_cta_clicked") &&
-      params.total_price != null &&
-      params.total_price > 0
+      name === "booking_cta_clicked" ||
+      name === "mobile_sticky_cta_clicked"
     ) {
+      const hasPrice = params.total_price != null && params.total_price > 0;
       trackGa4BookingRequestStart({
         listingId: params.listing_id,
         bookingType: params.booking_type,
-        value: params.total_price,
-        nights: params.nights,
+        value: hasPrice ? params.total_price : undefined,
+        nights: hasPrice ? params.nights : undefined,
       });
-      trackGa4AddToCart({
-        listingId: params.listing_id,
-        value: params.total_price,
-        bookingType: params.booking_type,
-        nights: params.nights,
-      });
+      if (hasPrice && params.total_price != null) {
+        trackGa4AddToCart({
+          listingId: params.listing_id,
+          value: params.total_price,
+          bookingType: params.booking_type,
+          nights: params.nights,
+        });
+      }
     }
 
     if (process.env.NODE_ENV === "development") {

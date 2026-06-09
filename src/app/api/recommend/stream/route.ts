@@ -192,7 +192,7 @@ ${JSON.stringify(listingSummaries, null, 2)}
 위 숙소 중 게스트 정보·선호에 맞게 1~5위를 정하고, 각각 한 줄씩 JSON으로 출력. 형식: {"id":"...","rank":1,"reason":"...","highlights":["..."]} (5줄)`;
 
   const stream = await openai.chat.completions.create({
-    model: "llama-3.3-70b-versatile",
+    model: "llama-3.1-8b-instant",
     messages: [
       { role: "system", content: buildNdjsonSystem(locale) },
       { role: "user", content: userPrompt },
