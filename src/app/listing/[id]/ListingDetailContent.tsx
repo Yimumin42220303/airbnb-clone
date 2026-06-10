@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCurrency } from "@/components/currency/CurrencyProvider";
@@ -216,6 +216,23 @@ export default function ListingDetailContent({
   const bookingFormAreaRef = useRef<HTMLDivElement>(null);
   const [isBookingFormInView, setIsBookingFormInView] = useState(true);
   const [videoLoadError, setVideoLoadError] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.play().catch(() => {});
+        } else {
+          el.pause();
+        }
+      },
+      { threshold: 0.4 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [listing.videoUrl, videoLoadError]);
   // CAPI ViewContent 미러링 (마운트 1회) — 브라우저 Pixel은 layout의 MetaPixelListingViewTracker가 담당
   const capiSentRef = useRef(false);
   useEffect(() => {
@@ -376,13 +393,14 @@ export default function ListingDetailContent({
                   <div className="py-8 border-b border-[#ebebeb]">
                     <div className={`${LISTING_VIDEO_SHELL_CLASS} bg-black`}>
                       <video
+                        ref={videoRef}
                         src={listing.videoUrl}
                         controls
                         playsInline
                         muted
                         loop
                         className="w-full h-full object-contain"
-                        preload="none"
+                        preload="metadata"
                         onError={() => setVideoLoadError(true)}
                       >
                         {t("listingDetail.videoNotSupported")}
