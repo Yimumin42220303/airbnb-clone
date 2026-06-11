@@ -11,6 +11,7 @@ const PLUGIN_KEY =
   process.env.NEXT_PUBLIC_CHANNEL_PLUGIN_KEY || "e4545154-919d-4d8d-b05e-e72beb1b78b0";
 
 const LAUNCHER_ID = "ch-custom-launcher";
+const LABEL_SEEN_KEY = "tm_ch_launcher_label_seen";
 
 const ChannelTalkIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -35,6 +36,39 @@ export default function ChannelTalk() {
   const bootedRef = useRef(false);
   const isListingPage = pathname.startsWith("/listing/");
   const [badgeCount, setBadgeCount] = useState(0);
+  // 첫 방문 시 런처 옆에 "한국어 상담" 라벨을 잠시 확장 노출 (1회)
+  const [labelExpanded, setLabelExpanded] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(LABEL_SEEN_KEY)) return;
+    } catch {
+      /* localStorage 차단 환경이면 라벨 생략 */
+      return;
+    }
+    const show = window.setTimeout(() => setLabelExpanded(true), 4500);
+    const hide = window.setTimeout(() => {
+      setLabelExpanded(false);
+      try {
+        window.localStorage.setItem(LABEL_SEEN_KEY, "1");
+      } catch {
+        /* ignore */
+      }
+    }, 13000);
+    return () => {
+      window.clearTimeout(show);
+      window.clearTimeout(hide);
+    };
+  }, []);
+
+  const dismissLabel = () => {
+    setLabelExpanded(false);
+    try {
+      window.localStorage.setItem(LABEL_SEEN_KEY, "1");
+    } catch {
+      /* ignore */
+    }
+  };
 
   // SDK 로드 + boot
   useEffect(() => {
@@ -131,14 +165,15 @@ export default function ChannelTalk() {
       id={LAUNCHER_ID}
       aria-label="고객 문의 채팅 열기"
       title="문의하기"
-      className="fixed right-4 z-[10000001] pointer-events-auto flex shrink-0 items-center justify-center overflow-visible rounded-full
+      onClick={dismissLabel}
+      className={`fixed right-4 z-[10000001] pointer-events-auto flex shrink-0 items-center justify-center overflow-visible rounded-full
         border-2 border-white/90 bg-[#FF6B00]
         shadow-[0_4px_14px_rgba(255,107,0,0.4)]
         transition-[transform,box-shadow] duration-200
         hover:scale-105 hover:shadow-[0_6px_20px_rgba(255,107,0,0.5)]
         active:scale-95 active:shadow-[0_2px_10px_rgba(255,107,0,0.35)]
         focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6B00]
-        h-14 w-14 md:right-6 md:bottom-6 md:h-16 md:w-16"
+        h-14 md:right-6 md:bottom-6 md:h-16 ${labelExpanded ? "px-4 md:px-5" : "w-14 md:w-16"}`}
         style={{
           bottom: isListingPage
             ? "calc(88px + env(safe-area-inset-bottom, 0px))"
@@ -147,6 +182,11 @@ export default function ChannelTalk() {
         }}
     >
       <ChannelTalkIcon className="h-7 w-7 shrink-0 md:h-8 md:w-8" />
+      {labelExpanded && (
+        <span className="ml-2 whitespace-nowrap text-[14px] font-semibold text-white md:text-[15px]">
+          {locale === "ja" ? "お問い合わせ" : "한국어 상담"}
+        </span>
+      )}
       {badgeCount > 0 && (
         <span
           className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#E53935] px-1 text-[11px] font-bold leading-none text-white shadow"

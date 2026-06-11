@@ -15,6 +15,7 @@ import { CONTACT_EMAIL } from "@/lib/constants";
 import MetaPixelInitiateCheckout from "@/components/analytics/MetaPixelInitiateCheckout";
 import { useRef } from "react";
 import Ga4AddPaymentInfo from "@/components/analytics/Ga4AddPaymentInfo";
+import PayInquiryButton from "@/components/channel/PayInquiryButton";
 import {
   getUnpaidDeadlineAt,
   getUnpaidDeadlineLabel,
@@ -374,6 +375,13 @@ export default function BookingPayContent() {
             userEmail={me?.email ?? undefined}
             userPhoneNumber={booking.guestPhone ?? me?.phone ?? undefined}
             checkIn={booking.checkIn}
+          />
+          <PayInquiryButton
+            bookingId={id}
+            listingId={booking.listing.id}
+            listingTitle={booking.listing.title}
+            totalPrice={booking.totalPrice}
+            className="mt-4"
           />
           <SafePaymentMarks className="mt-6 pt-5 border-t border-minbak-bg" />
         </div>

@@ -754,6 +754,15 @@ export default function ListingDetailContent({
                     checkInMethod={listing.checkInMethod}
                   />
                 </div>
+                {/* 예약 전 문의 진입점: 상세 이탈 구간에서 상담으로 연결 */}
+                <div className="mt-3">
+                  <ListingChannelInquiryButton
+                    listingId={listing.id}
+                    listingTitle={listing.title}
+                    label={t("listingDetail.preBookingInquiry")}
+                    className="w-full"
+                  />
+                </div>
                 <p className="mt-3 text-center">
                   <Link
                     href={buildRecommendHref({

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { sendEmailAsync, BASE_URL } from "@/lib/email";
 import { getOfficialUserId } from "@/lib/official-account";
 import { createNotification } from "@/lib/notifications";
+import { sendChannelTalkNotification } from "@/lib/channel-api";
 import {
   unpaidAutoCancelGuest,
   unpaidAutoCancelHost,
@@ -95,6 +96,13 @@ export async function notifyUnpaidAutoCancel(opts: {
     bookingId: booking.id,
   }).catch(() => {});
 
+  // 채널톡 봇 메시지 (키 미설정·실패 시 내부에서 무시)
+  void sendChannelTalkNotification(
+    booking.userId,
+    `${guestCancelTitle}\n· ${booking.listing.title}\n다른 날짜로 다시 예약하시려면: ${BASE_URL}/my-bookings`,
+    { botName: "도쿄민박" }
+  );
+
   const hostEmail = booking.listing.user?.email;
   const isSameEmail =
     hostEmail && booking.user?.email && hostEmail === booking.user.email;
@@ -183,4 +191,11 @@ export async function notifyPaymentReminder(
     linkLabel: "결제하기",
     bookingId: booking.id,
   }).catch(() => {});
+
+  // 채널톡 봇 메시지 — 결제 링크 포함 (키 미설정·실패 시 내부에서 무시)
+  void sendChannelTalkNotification(
+    booking.userId,
+    `${title}\n· ${booking.listing.title} (${deadlineText}까지)\n지금 결제하기: ${BASE_URL}/booking/${booking.id}/pay`,
+    { botName: "도쿄민박" }
+  );
 }
