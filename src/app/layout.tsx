@@ -110,6 +110,13 @@ export default async function RootLayout({
     <html lang={initialLocale === "ja" ? "ja" : "ko"} className={`h-full ${notoSansKr.variable}`}>
       <head>
         <link
+          rel="preload"
+          as="image"
+          href={process.env.NEXT_PUBLIC_HERO_IMAGE_URL || "/hero-bg.webp"}
+          // @ts-expect-error fetchpriority는 표준 HTML 속성
+          fetchpriority="high"
+        />
+        <link
           rel="alternate"
           type="application/rss+xml"
           title="도쿄민박 블로그 RSS"
