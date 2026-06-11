@@ -143,6 +143,7 @@ export default function ChannelTalk() {
           bottom: isListingPage
             ? "calc(88px + env(safe-area-inset-bottom, 0px))"
             : "calc(4rem + 8px + env(safe-area-inset-bottom, 0px))",
+
         }}
     >
       <ChannelTalkIcon className="h-7 w-7 shrink-0 md:h-8 md:w-8" />

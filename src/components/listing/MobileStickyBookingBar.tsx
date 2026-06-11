@@ -53,8 +53,8 @@ export default function MobileStickyBookingBar({
 
   return (
     <div
-      className="fixed left-0 right-0 z-40 lg:hidden bg-white border-t border-[#ebebeb] shadow-[0_-2px_10px_rgba(0,0,0,0.08)] pb-3"
-      style={{ bottom: "env(safe-area-inset-bottom, 0px)" }}
+      className="fixed left-0 right-0 z-40 lg:hidden bg-white border-t border-[#ebebeb] shadow-[0_-2px_10px_rgba(0,0,0,0.08)]"
+      style={{ bottom: 0, paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))" }}
     >
       <div className="flex items-center justify-between gap-3 px-4 py-3 max-w-[600px] mx-auto">
         {hasValidPrice ? (
