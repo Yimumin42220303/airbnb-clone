@@ -67,3 +67,4 @@ qa-aeo-output.txt
 build-output.log
 build-output-main-head.log
 *.build.log
+.claude/settings.local-HP-ENVY.json

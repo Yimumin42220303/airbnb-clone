@@ -74,4 +74,27 @@ export async function POST(request: Request) {
 
     createNotification({
       userId: booking.user.id,
-      type: "review_requ
+      type: "review_request",
+      title: `${booking.listing.title} 숙박은 어떠셨나요? 리뷰를 남겨 주세요.`,
+      linkPath: `/listing/${booking.listing.id}#review`,
+      listingId: booking.listing.id,
+    }).catch(() => {});
+
+    // 발송 기록 — 이후 크론이 재실행되어도 중복 발송하지 않음
+    await prisma.booking.update({
+      where: { id: booking.id },
+      data: { reviewRequestSentAt: new Date() },
+    });
+
+    sent++;
+  }
+
+  return NextResponse.json({
+    ok: true,
+    checkedOutToday: bookings.length,
+    reviewRequestSent: sent,
+    skipped,
+  });
+}
+
+export { POST as GET };

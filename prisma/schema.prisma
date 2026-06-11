@@ -614,4 +614,10 @@ model RecommendationLead {
   operatorMemo String?
   lostReason   String?
 
-  
+  privacyConsentAt DateTime
+
+  @@index([status, createdAt])
+  @@index([userId])
+  @@index([sourceListingId])
+  @@index([leadCode])
+}
