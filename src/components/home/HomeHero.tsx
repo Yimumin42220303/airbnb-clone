@@ -39,7 +39,8 @@ export default function HomeHero() {
       <img
         src={bgSrc}
         alt=""
-        // fetchPriority: LCP 요소를 브라우저 최우선으로 로드
+        width={1920}
+        height={1246}
         fetchPriority="high"
         className={`absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-500 ${videoPlaying ? "opacity-0 pointer-events-none" : "opacity-100"}`}
         aria-hidden
