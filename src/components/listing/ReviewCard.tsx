@@ -83,4 +83,27 @@ export default function ReviewCard({ review }: Props) {
             )}
             {review.reviewSource && REVIEW_SOURCE_LABELS[review.reviewSource] && (
               <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#f5f5f5] text-[#717171] text-[11px] border border-[#ebebeb]">
-                후기 출처
+                후기 출처: {REVIEW_SOURCE_LABELS[review.reviewSource]}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+      {body && (
+        <div className="text-[15px] text-[#222] leading-relaxed">
+          <span className="whitespace-pre-wrap">{displayBody}</span>
+          {showMore && !expanded && (
+            <button
+              type="button"
+              onClick={() => setExpanded(true)}
+              className="ml-1 underline text-[#222] hover:no-underline"
+            >
+              {t("review.showMoreText")}
+            </button>
+          )}
+        </div>
+      )}
+      {hasImages && <ReviewPhotoGallery images={review.images!} />}
+    </div>
+  );
+}

@@ -1830,4 +1830,9 @@ export const hostTranslations = {
     "share.copyFailed": "コピーに失敗しました。アドレスバーからURLをコピーしてください。",
     "share.shareFailed": "共有に失敗しました。リンクのコピーをご利用ください。",
     "share.shareListing": "宿泊施設を共有",
-    "share.copyLink": "リ�
+    "share.copyLink": "リンクをコピー",
+    "share.share": "共有",
+  },
+} as const;
+
+export type HostTranslationKey = keyof (typeof hostTranslations)["ko"];

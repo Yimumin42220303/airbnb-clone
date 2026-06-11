@@ -736,4 +736,59 @@ export default function ListingDetailContent({
                       initialGuests={resolvedGuests}
                       initialAdults={resolvedAdults}
                       initialChildren={resolvedChildren}
-                      initialInfants={resolve
+                      initialInfants={resolvedInfants}
+                    />
+                    <CancellationPolicyBadge
+                      policy={listing.cancellationPolicy ?? "flexible"}
+                    />
+                  </div>
+                </div>
+                {/* 예약 CTA 근처 신뢰 카드: 예약 전 불안 해소 */}
+                <div className="mt-4">
+                  <ListingTrustCard
+                    maxGuests={listing.maxGuests}
+                    checkInTime={listing.checkInTime}
+                    checkOutTime={listing.checkOutTime}
+                    cancellationPolicy={listing.cancellationPolicy}
+                    checkIn={resolvedCheckIn}
+                    checkInMethod={listing.checkInMethod}
+                  />
+                </div>
+                <p className="mt-3 text-center">
+                  <Link
+                    href={buildRecommendHref({
+                      sourcePage: "listing",
+                      sourceListingId: listing.id,
+                    })}
+                    onClick={() =>
+                      trackRecommendEvent("listing_recommend_click", {
+                        listing_id: listing.id,
+                        source_page: "listing",
+                      })
+                    }
+                    className="text-[13px] text-[#717171] hover:text-minbak-primary underline underline-offset-2"
+                  >
+                    비슷한 숙소 추천받기
+                  </Link>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* AEO 통합 섹션 (요약·FAQ·적합성 안내·태그·내부링크) — SSR 텍스트 */}
+        {aeoSection}
+        {/* 모바일: 스티키 바 노출 시 하단 여백(스크롤 끝에서 콘텐츠 가림 방지) */}
+        <div className="h-36 lg:hidden" aria-hidden />
+      </main>
+      {/* 모바일: 예약 폼이 화면에 안 보일 때만 스티키 바 표시. 금액 있으면 예약하기, 없으면 날짜 선택 유도 */}
+      {!isBookingFormInView && (
+        <MobileStickyBookingBar
+          listingId={listing.id}
+          priceSummary={priceSummary}
+          bookingType={listing.instantBooking ? "instant" : "approval"}
+          lowestNearbyPrice={listing.lowestNearbyPrice}
+        />
+      )}
+    </>
+  );
+}

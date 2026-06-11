@@ -224,3 +224,7 @@ export default function ReviewSection({
           isLoggedIn={isLoggedIn}
           canReview={canReview}
         />
+      </div>
+    </div>
+  );
+}

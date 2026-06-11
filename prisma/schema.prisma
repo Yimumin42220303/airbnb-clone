@@ -612,4 +612,13 @@ model RecommendationLead {
   selectedListingId     String?
   bookingId             String?
 
-  opera
+  operatorMemo String?
+  lostReason   String?
+
+  privacyConsentAt DateTime
+
+  @@index([status, createdAt])
+  @@index([userId])
+  @@index([sourceListingId])
+  @@index([leadCode])
+}
