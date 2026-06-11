@@ -14,10 +14,6 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: '/:path*\\.(:ext(webp|png|jpg|jpeg|svg|gif|ico|woff2|woff))',
-        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
-      },
-      {
         source: '/_next/static/:path*',
         headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
