@@ -6,7 +6,7 @@
     {"path": "/api/cron/beds24-price-sync", "schedule": "0 6 * * *"},
     {"path": "/api/cron/meta-catalog-build", "schedule": "0 7 * * *"},
     {"path": "/api/cron/blog-daily", "schedule": "0 1 * * *"},
-    {"path": "/api/cron/review-request", "schedule": "0 0 * * *"},
+    {"path": "/api/cron/review-request", "schedule": "0 6 * * *"},
     {"path": "/api/cron/send-scheduled-messages", "schedule": "*/10 * * * *"}
   ]
 }

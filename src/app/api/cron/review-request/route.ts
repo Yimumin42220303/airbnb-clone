@@ -8,25 +8,29 @@ import { requireCronAuth } from "@/lib/cron-auth";
 /**
  * POST /api/cron/review-request
  *
- * Vercel Cron: 매일 1회 실행 권장 (예: 0 0 * * * = 0시 UTC = 9시 KST)
+ * Vercel Cron: 매일 6시 UTC (= 15시 KST) 실행 — 체크아웃(10시) 이후 여유를 두고 발송
  *
- * 체크아웃 D+1: 어제 체크아웃한 확정 예약의 게스트 중, 해당 숙소에 아직 리뷰를 쓰지 않은 사람에게
- * 리뷰 요청 이메일 + 인앱 알림 발송.
+ * 오늘 체크아웃한 확정 예약 게스트 중:
+ *  1) 아직 리뷰를 작성하지 않은 사람
+ *  2) 아직 리뷰 요청 이메일을 받지 않은 사람 (reviewRequestSentAt === null)
+ * 에게 리뷰 요청 이메일 + 인앱 알림 발송.
  */
 export async function POST(request: Request) {
   const authError = requireCronAuth(request);
   if (authError) return authError;
 
   const now = new Date();
+  // 오늘 UTC 00:00 ~ 내일 UTC 00:00 범위로 오늘 체크아웃 예약 조회
   const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  const startOfYesterday = new Date(startOfToday);
-  startOfYesterday.setUTCDate(startOfYesterday.getUTCDate() - 1);
+  const startOfTomorrow = new Date(startOfToday);
+  startOfTomorrow.setUTCDate(startOfTomorrow.getUTCDate() + 1);
 
   const bookings = await prisma.booking.findMany({
     where: {
       status: "confirmed",
       paymentStatus: "paid",
-      checkOut: { gte: startOfYesterday, lt: startOfToday },
+      checkOut: { gte: startOfToday, lt: startOfTomorrow },
+      reviewRequestSentAt: null, // 아직 발송하지 않은 건만
     },
     include: {
       listing: { select: { id: true, title: true } },
@@ -35,9 +39,15 @@ export async function POST(request: Request) {
   });
 
   let sent = 0;
-  for (const booking of bookings) {
-    if (!booking.user?.email) continue;
+  let skipped = 0;
 
+  for (const booking of bookings) {
+    if (!booking.user?.email) {
+      skipped++;
+      continue;
+    }
+
+    // 이미 리뷰를 작성한 경우 발송 생략
     const existing = await prisma.review.findFirst({
       where: {
         listingId: booking.listing.id,
@@ -45,7 +55,10 @@ export async function POST(request: Request) {
       },
       select: { id: true },
     });
-    if (existing) continue;
+    if (existing) {
+      skipped++;
+      continue;
+    }
 
     const info = {
       guestName: booking.user.name || "게스트",
@@ -53,6 +66,7 @@ export async function POST(request: Request) {
       baseUrl: BASE_URL,
       listingId: booking.listing.id,
     };
+
     sendEmailAsync({
       to: booking.user.email,
       ...reviewRequestGuest(info),
@@ -60,20 +74,4 @@ export async function POST(request: Request) {
 
     createNotification({
       userId: booking.user.id,
-      type: "review_request",
-      title: `${booking.listing.title} 숙박은 어떠셨나요? 리뷰를 남겨 주세요.`,
-      linkPath: `/listing/${booking.listing.id}#review`,
-      listingId: booking.listing.id,
-    }).catch(() => {});
-
-    sent++;
-  }
-
-  return NextResponse.json({
-    ok: true,
-    checkedOutYesterday: bookings.length,
-    reviewRequestSent: sent,
-  });
-}
-
-export { POST as GET };
+      type: "review_requ
