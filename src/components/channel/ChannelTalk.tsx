@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 import { sendGa4Event } from "@/lib/ga4-events";
@@ -30,7 +31,9 @@ const ChannelTalkIcon = ({ className }: { className?: string }) => (
 export default function ChannelTalk() {
   const { locale } = useHostTranslations();
   const { data: session, status } = useSession();
+  const pathname = usePathname();
   const bootedRef = useRef(false);
+  const isListingPage = pathname.startsWith("/listing/");
   const [badgeCount, setBadgeCount] = useState(0);
 
   // SDK 로드 + boot
@@ -135,7 +138,12 @@ export default function ChannelTalk() {
         hover:scale-105 hover:shadow-[0_6px_20px_rgba(255,107,0,0.5)]
         active:scale-95 active:shadow-[0_2px_10px_rgba(255,107,0,0.35)]
         focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6B00]
-        h-14 w-14 bottom-[calc(4rem+80px+env(safe-area-inset-bottom,0px))] md:right-6 md:bottom-6 md:h-16 md:w-16"
+        h-14 w-14 md:right-6 md:bottom-6 md:h-16 md:w-16"
+        style={{
+          bottom: isListingPage
+            ? "calc(88px + env(safe-area-inset-bottom, 0px))"
+            : "calc(4rem + 8px + env(safe-area-inset-bottom, 0px))",
+        }}
     >
       <ChannelTalkIcon className="h-7 w-7 shrink-0 md:h-8 md:w-8" />
       {badgeCount > 0 && (
