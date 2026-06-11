@@ -106,7 +106,7 @@ export async function PATCH(
     createNotification({
       userId: booking.userId,
       type: "booking_approved",
-      title: "호스트가 예약을 승인했어요. 48시간(2일) 이내에 결제해 주세요.",
+      title: "호스트가 예약을 승인했어요. 24시간 이내에 결제해 주세요.",
       linkPath: `/booking/${id}/pay`,
       linkLabel: "결제하기",
       bookingId: id,

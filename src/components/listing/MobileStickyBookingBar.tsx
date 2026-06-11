@@ -10,17 +10,21 @@ type Props = {
   listingId: string;
   priceSummary: { nights: number; totalPrice: number } | null;
   bookingType: "instant" | "approval";
+  /** 날짜 미선택 시 보여줄 최저가. null이면 금액 미표시 */
+  lowestNearbyPrice?: number | null;
 };
 
 export default function MobileStickyBookingBar({
   listingId,
   priceSummary,
   bookingType,
+  lowestNearbyPrice,
 }: Props) {
   const { formatForGuest } = useCurrency();
   const { t } = useHostTranslations();
 
   const hasValidPrice = priceSummary && priceSummary.nights >= 1;
+  const promptSizeClass = lowestNearbyPrice != null ? "text-[11px]" : "text-[14px]";
 
   function handleBookClick() {
     if (!hasValidPrice) {
@@ -39,7 +43,6 @@ export default function MobileStickyBookingBar({
       form.requestSubmit();
       return;
     }
-    // 제출 버튼이 비활성·폼 밖이면 예약 영역으로 스크롤 후 사용자가 다시 시도
     handleScrollToForm();
     submitBtn?.focus({ preventScroll: true });
   }
@@ -48,7 +51,6 @@ export default function MobileStickyBookingBar({
     document.getElementById(BOOKING_FORM_AREA_ID)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  // 하단 네비(4rem + safe-area)와 겹치지 않도록 그 위에 배치
   return (
     <div
       className="fixed left-0 right-0 z-40 lg:hidden bg-white border-t border-[#ebebeb] shadow-[0_-2px_10px_rgba(0,0,0,0.08)] pb-3"
@@ -80,9 +82,17 @@ export default function MobileStickyBookingBar({
           </>
         ) : (
           <>
-            <p className="text-[14px] text-[#222] leading-tight flex-1 min-w-0">
-              {t("listingDetail.stickyBarSelectPrompt")}
-            </p>
+            <div className="min-w-0 flex-1">
+              {lowestNearbyPrice != null && (
+                <p className="text-[16px] font-semibold text-[#222] leading-tight">
+                  {formatForGuest(lowestNearbyPrice)}~
+                  <span className="text-[13px] font-normal text-[#717171]">{t("listingDetail.perNight")}</span>
+                </p>
+              )}
+              <p className={promptSizeClass + " text-gray-500 leading-tight"}>
+                {t("listingDetail.stickyBarSelectPrompt")}
+              </p>
+            </div>
             <button
               type="button"
               onClick={handleScrollToForm}

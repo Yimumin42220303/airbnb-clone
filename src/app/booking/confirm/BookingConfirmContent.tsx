@@ -558,7 +558,7 @@ export default function BookingConfirmContent({
                         <div>
                           <p className="text-[14px] font-medium text-[#222]">결제 완료</p>
                           <p className="text-[13px] text-[#717171]">
-                            승인 후 48시간(2일) 이내 결제 시 예약 확정. 기한 내 미결제 시 자동 취소됩니다.
+                            승인 후 24시간 이내 결제 시 예약 확정. 기한 내 미결제 시 자동 취소됩니다.
                           </p>
                         </div>
                       </div>

@@ -15,8 +15,13 @@ import { CONTACT_EMAIL } from "@/lib/constants";
 import MetaPixelInitiateCheckout from "@/components/analytics/MetaPixelInitiateCheckout";
 import { useRef } from "react";
 import Ga4AddPaymentInfo from "@/components/analytics/Ga4AddPaymentInfo";
-
-const PAY_DEADLINE_MS = 48 * 60 * 60 * 1000;
+import {
+  getUnpaidDeadlineAt,
+  getUnpaidDeadlineLabel,
+  getUnpaidAutoCancelTitle,
+  UNPAID_DEADLINE_LABEL,
+  UNPAID_REMINDER_STAGE2_REMAINING_MS,
+} from "@/lib/unpaid-deadline";
 
 function formatDeadline(deadline: Date): string {
   return deadline.toLocaleString("ko-KR", {
@@ -27,6 +32,63 @@ function formatDeadline(deadline: Date): string {
     minute: "2-digit",
     hour12: true,
   });
+}
+
+function pad2(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+/** 결제 마감 실시간 카운트다운 (만료 3시간 전부터 강조) */
+function PaymentCountdown({
+  deadline,
+  deadlineLabel,
+}: {
+  deadline: Date;
+  deadlineLabel: string;
+}) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const remaining = deadline.getTime() - now;
+
+  if (remaining <= 0) {
+    return (
+      <div className="rounded-lg px-4 py-3 mb-4 bg-red-50">
+        <p className="text-sm font-semibold text-red-700">
+          결제 기한({deadlineLabel})이 만료되었습니다. 예약이 자동 취소됩니다.
+        </p>
+      </div>
+    );
+  }
+
+  const urgent = remaining < UNPAID_REMINDER_STAGE2_REMAINING_MS;
+  const hours = Math.floor(remaining / (60 * 60 * 1000));
+  const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+  const seconds = Math.floor((remaining % (60 * 1000)) / 1000);
+
+  return (
+    <div
+      className={`rounded-lg px-4 py-3 mb-4 ${urgent ? "bg-red-50" : "bg-amber-50"}`}
+    >
+      <p
+        className={`text-sm font-semibold ${urgent ? "text-red-700" : "text-amber-800"}`}
+      >
+        남은 결제 시간:{" "}
+        <span className="tabular-nums">
+          {hours}시간 {pad2(minutes)}분 {pad2(seconds)}초
+        </span>
+      </p>
+      <p
+        className={`text-xs mt-0.5 ${urgent ? "text-red-600" : "text-amber-700"}`}
+      >
+        {formatDeadline(deadline)}까지 결제하지 않으면 예약이 자동 취소됩니다.
+      </p>
+    </div>
+  );
 }
 
 type BookingItem = {
@@ -226,7 +288,11 @@ export default function BookingPayContent() {
           </h1>
           <p className="text-minbak-body text-minbak-gray mb-4">
             {booking.status === "cancelled"
-              ? "결제 기한(48시간)이 만료되어 예약이 자동 취소되었습니다."
+              ? getUnpaidAutoCancelTitle(
+                  booking.confirmedAt
+                    ? getUnpaidDeadlineLabel(booking.confirmedAt)
+                    : UNPAID_DEADLINE_LABEL
+                )
               : "이 예약은 결제할 수 없는 상태입니다."}
           </p>
           <Link
@@ -272,28 +338,12 @@ export default function BookingPayContent() {
               ? "결제를 완료하면 예약이 즉시 확정됩니다."
               : "호스트가 승인한 예약입니다. 결제를 완료하면 예약이 확정됩니다."}
           </p>
-          {booking.confirmedAt && (() => {
-            const deadline = new Date(
-              new Date(booking.confirmedAt).getTime() + PAY_DEADLINE_MS
-            );
-            const isExpired = Date.now() > deadline.getTime();
-            return isExpired ? (
-              <div className="rounded-lg px-4 py-3 mb-4 bg-red-50">
-                <p className="text-sm font-semibold text-red-700">
-                  결제 기한(48시간)이 만료되었습니다. 예약이 자동 취소됩니다.
-                </p>
-              </div>
-            ) : (
-              <div className="rounded-lg px-4 py-3 mb-4 bg-amber-50">
-                <p className="text-sm font-semibold text-amber-800">
-                  결제 기한(48시간·2일): {formatDeadline(deadline)}까지
-                </p>
-                <p className="text-xs mt-0.5 text-amber-700">
-                  기한 내 결제하지 않으면 예약이 자동 취소됩니다.
-                </p>
-              </div>
-            );
-          })()}
+          {booking.confirmedAt && (
+            <PaymentCountdown
+              deadline={getUnpaidDeadlineAt(booking.confirmedAt)}
+              deadlineLabel={getUnpaidDeadlineLabel(booking.confirmedAt)}
+            />
+          )}
           <div className="border border-minbak-light-gray rounded-minbak p-6 space-y-3 mb-6">
             <p className="font-semibold text-minbak-black text-minbak-body">
               {booking.listing.title}

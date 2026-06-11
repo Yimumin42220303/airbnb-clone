@@ -178,12 +178,12 @@ export function bookingAcceptedGuest(info: BookingEmailInfo) {
 export function paymentRequestGuest(info: BookingEmailInfo) {
   const body = `
     <p>${info.guestName}님, 호스트가 예약을 승인했습니다! \uD83C\uDF89</p>
-    <p><strong>내 예약</strong> 페이지에서 <strong>48시간(2일) 이내에 결제하기</strong> 버튼을 눌러 결제를 완료해 주세요.</p>
+    <p><strong>내 예약</strong> 페이지에서 <strong>24시간 이내에 결제하기</strong> 버튼을 눌러 결제를 완료해 주세요.</p>
     <p>결제가 완료되면 예약이 최종 확정됩니다.</p>
     ${bookingTable(info)}
     <div style="background:#eff6ff;border-radius:8px;padding:12px 16px;margin:16px 0;">
       <p style="margin:0;font-size:14px;color:#1d4ed8;font-weight:600;">
-        48시간(2일) 이내에 결제하지 않으면 예약이 자동 취소됩니다.
+        24시간 이내에 결제하지 않으면 예약이 자동 취소됩니다.
       </p>
     </div>
     ${actionButton(info.baseUrl + "/my-bookings", "내 예약 보기")}
@@ -197,7 +197,7 @@ export function paymentRequestGuest(info: BookingEmailInfo) {
 export function paymentRequestHost(info: BookingEmailInfo & { hostName: string }) {
   const body = `
     <p>${info.hostName}\u69D8\u3001\u4E88\u7D04\u3092\u627F\u8A8D\u3057\u307E\u3057\u305F\u3002</p>
-    <p>\u30B2\u30B9\u30C8\u306B\u6C7A\u6E08\u30EA\u30AF\u30A8\u30B9\u30C8\u3092\u9001\u4FE1\u3057\u307E\u3057\u305F\u3002\u30B2\u30B9\u30C8\u304C48\u6642\u9593\uFF082\u65E5\u9593\uFF09\u4EE5\u5185\u306B\u6C7A\u6E08\u3092\u5B8C\u4E86\u3059\u308B\u3068\u3001\u4E88\u7D04\u304C\u78BA\u5B9A\u3057\u307E\u3059\u3002</p>
+    <p>\u30B2\u30B9\u30C8\u306B\u6C7A\u6E08\u30EA\u30AF\u30A8\u30B9\u30C8\u3092\u9001\u4FE1\u3057\u307E\u3057\u305F\u3002\u30B2\u30B9\u30C8\u304C24\u6642\u9593\u4EE5\u5185\u306B\u6C7A\u6E08\u3092\u5B8C\u4E86\u3059\u308B\u3068\u3001\u4E88\u7D04\u304C\u78BA\u5B9A\u3057\u307E\u3059\u3002</p>
     ${bookingTableJa(info)}
     <p><strong>\u4E88\u7D04\u8005:</strong> ${info.guestName} (${info.guestEmail})</p>
     ${actionButton(info.baseUrl + "/host/bookings", "\u4E88\u7D04\u7BA1\u7406")}`;

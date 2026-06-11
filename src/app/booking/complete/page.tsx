@@ -155,7 +155,7 @@ export default async function BookingCompletePage({ searchParams }: Props) {
                 : isPending
                   ? "호스트가 24시간 이내에 예약을 승인하면 결제 안내 이메일이 발송됩니다."
                   : isConfirmed
-                    ? "48시간(2일) 이내에 결제를 완료하면 예약이 최종 확정됩니다."
+                    ? "24시간 이내에 결제를 완료하면 예약이 최종 확정됩니다."
                     : "예약 내역을 확인해 주세요."}
             </p>
           </div>
@@ -230,11 +230,11 @@ export default async function BookingCompletePage({ searchParams }: Props) {
             </div>
           )}
 
-          {/* 호스트 승인 후 결제 대기: 48시간 안내 */}
+          {/* 호스트 승인 후 결제 대기: 24시간 안내 */}
           {isConfirmed && !isPaid && (
             <div className="bg-blue-50 border border-blue-200 rounded-minbak p-5 mb-6">
               <p className="text-[14px] font-medium text-blue-900 mb-1">
-                48시간(2일) 이내에 결제를 완료해 주세요.
+                24시간 이내에 결제를 완료해 주세요.
               </p>
               <p className="text-[13px] text-blue-800">
                 결제하지 않으면 예약이 자동 취소됩니다.

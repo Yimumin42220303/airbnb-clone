@@ -25,6 +25,15 @@ export function notificationTitleToJa(koTitle: string): string {
   if (s === "결제 기한(1시간)이 만료되어 예약이 자동 취소되었습니다.")
     return "支払い期限（1時間）が過ぎたため、予約は自動的にキャンセルされました。";
 
+  // 결제 기한이 약 N시간/N분 남았습니다. (동적 리마인더 — getPaymentReminderTitle 형식)
+  const reminderMatch = s.match(
+    /^결제 기한이 약 (\d+)(시간|분) 남았습니다\. 기한 내 결제하지 않으면 예약이 자동 취소됩니다\.$/
+  );
+  if (reminderMatch) {
+    const unit = reminderMatch[2] === "시간" ? "時間" : "分";
+    return `支払い期限まであと約${reminderMatch[1]}${unit}です。期限内に支払いがないと予約は自動キャンセルされます。`;
+  }
+
   // ~님의 예약이 취소되었어요.
   const cancelMatch = s.match(/^(.+?)님의 예약이 취소되었어요\.$/);
   if (cancelMatch) return `${cancelMatch[1]}さんの予約がキャンセルされました。`;

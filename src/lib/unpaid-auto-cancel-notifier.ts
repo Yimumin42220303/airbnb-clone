@@ -6,14 +6,16 @@ import {
   unpaidAutoCancelGuest,
   unpaidAutoCancelHost,
   paymentReminderGuest,
+  instantPaymentReminderGuest,
   type BookingEmailInfo,
 } from "@/lib/email-templates";
 import {
-  UNPAID_DEADLINE_LABEL,
-  UNPAID_DEADLINE_MS,
-  GUEST_UNPAID_AUTO_CANCEL_TITLE,
-  GUEST_PAYMENT_REMINDER_TITLE,
   HOST_UNPAID_AUTO_CANCEL_TITLE,
+  FINAL_REMINDER_NOTIFICATION_TYPE,
+  getUnpaidDeadlineAt,
+  getUnpaidDeadlineLabel,
+  getUnpaidAutoCancelTitle,
+  getPaymentReminderTitle,
 } from "@/lib/unpaid-deadline";
 
 const bookingInclude = {
@@ -63,13 +65,20 @@ export async function notifyUnpaidAutoCancel(opts: {
   bookingId: string;
   deadlineLabel?: string;
 }): Promise<void> {
-  const deadlineLabel = opts.deadlineLabel ?? UNPAID_DEADLINE_LABEL;
-
   const booking = await prisma.booking.findUnique({
     where: { id: opts.bookingId },
     include: bookingInclude,
   });
   if (!booking) return;
+
+  // 예약별 적용 기한 라벨 (컷오버 이전 확정 예약은 "48시간")
+  const deadlineLabel =
+    opts.deadlineLabel ??
+    (booking.confirmedAt
+      ? getUnpaidDeadlineLabel(booking.confirmedAt)
+      : undefined) ??
+    "24시간";
+  const guestCancelTitle = getUnpaidAutoCancelTitle(deadlineLabel);
 
   const emailInfo = buildEmailInfo(booking);
 
@@ -81,7 +90,7 @@ export async function notifyUnpaidAutoCancel(opts: {
   createNotification({
     userId: booking.userId,
     type: "unpaid_auto_cancel",
-    title: GUEST_UNPAID_AUTO_CANCEL_TITLE,
+    title: guestCancelTitle,
     linkPath: "/my-bookings",
     bookingId: booking.id,
   }).catch(() => {});
@@ -118,7 +127,7 @@ export async function notifyUnpaidAutoCancel(opts: {
         data: {
           conversationId: conversation.id,
           senderId: officialUserId,
-          body: GUEST_UNPAID_AUTO_CANCEL_TITLE,
+          body: guestCancelTitle,
         },
       });
     }
@@ -128,39 +137,48 @@ export async function notifyUnpaidAutoCancel(opts: {
 }
 
 /**
- * 결제 기한 임박(남은 24h 이내) 리마인더 — 게스트 이메일 + 인앱 알림.
- * 호출 전 paymentReminderSent 가 true 로 갱신된 뒤 호출할 것.
+ * 결제 리마인더 — 게스트 이메일 + 인앱 알림.
+ * - 1차(final: false): 확정 후 6시간 경과. 호출 전 paymentReminderSent 가 true 로 갱신된 뒤 호출할 것.
+ * - 2차(final: true): 만료 3시간 전. payment_reminder_final 알림 레코드가 중복 발송을 방지.
  */
-export async function notifyPaymentReminder(bookingId: string): Promise<void> {
+export async function notifyPaymentReminder(
+  bookingId: string,
+  opts: { final: boolean } = { final: false }
+): Promise<void> {
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     include: {
-      listing: { select: { title: true, location: true } },
+      listing: { select: { title: true, location: true, instantBooking: true } },
       user: { select: { name: true, email: true } },
     },
   });
   if (!booking?.confirmedAt) return;
 
-  const deadline = new Date(booking.confirmedAt.getTime() + UNPAID_DEADLINE_MS);
+  // 예약별 적용 기한 (컷오버 이전 확정 예약은 48h)
+  const deadline = getUnpaidDeadlineAt(booking.confirmedAt);
   const deadlineText = deadline.toLocaleString("ko-KR", {
+    timeZone: "Asia/Seoul",
     month: "long",
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
   });
+  const title = getPaymentReminderTitle(deadline.getTime() - Date.now());
 
   const emailInfo = buildEmailInfo(booking);
 
   if (booking.user?.email) {
-    const mail = paymentReminderGuest({ ...emailInfo, deadlineText });
+    const mail = booking.listing.instantBooking
+      ? instantPaymentReminderGuest({ ...emailInfo, deadlineText })
+      : paymentReminderGuest({ ...emailInfo, deadlineText });
     sendEmailAsync({ to: booking.user.email, ...mail });
   }
 
   createNotification({
     userId: booking.userId,
-    type: "payment_reminder",
-    title: GUEST_PAYMENT_REMINDER_TITLE,
+    type: opts.final ? FINAL_REMINDER_NOTIFICATION_TYPE : "payment_reminder",
+    title,
     linkPath: `/booking/${booking.id}/pay`,
     linkLabel: "결제하기",
     bookingId: booking.id,

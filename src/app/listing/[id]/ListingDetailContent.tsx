@@ -102,6 +102,8 @@ type ListingData = {
   recentBookingCount?: number;
   /** 숙소 등록일 */
   listingCreatedAt?: string;
+  /** 날짜 미선택 시 표시할 가까운 30일 최저가 (ListingAvailability 기준). null이면 pricePerNight를 fallback으로 사용 */
+  lowestNearbyPrice?: number | null;
 };
 
 type Props = {
@@ -644,8 +646,20 @@ export default function ListingDetailContent({
                                   </>
                                 );
                               }
+                              // 날짜 미선택 시: ListingAvailability 최저가 또는 기준가를 "부터" 형태로 표시
+                              const fallbackPrice = listing.lowestNearbyPrice ?? listing.pricePerNight;
                               return (
-                                null
+                                <>
+                                  <span className="text-[22px] font-semibold text-[#222]">
+                                    {formatForGuest(fallbackPrice)}~
+                                  </span>
+                                  <span className="text-[15px] text-[#717171]">
+                                    {t("listingDetail.perNight")}
+                                  </span>
+                                  <span className="text-[12px] text-[#aaa] w-full">
+                                    이번 달 최저가 기준
+                                  </span>
+                                </>
                               );
                             })()}
                     </div>
@@ -722,6 +736,7 @@ export default function ListingDetailContent({
           listingId={listing.id}
           priceSummary={priceSummary}
           bookingType={listing.instantBooking ? "instant" : "approval"}
+          lowestNearbyPrice={listing.lowestNearbyPrice}
         />
       )}
     </>

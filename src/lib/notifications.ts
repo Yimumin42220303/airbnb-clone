@@ -15,6 +15,7 @@ export type NotificationType =
   | "listing_approved"
   | "listing_rejected"
   | "payment_reminder"
+  | "payment_reminder_final"
   | "unpaid_auto_cancel"
   | "review_request";
 

@@ -328,7 +328,7 @@ model Booking {
   scheduledPaymentDate  DateTime? // 자동 결제 예정일 (체크인 7일 전)
   /// 호스트 승인 시각 (승인제 숙소에서 accept 시 기록, 24시간 미결제 자동 취소 기준)
   confirmedAt       DateTime?
-  /// 결제 리마인더 발송 여부 (24시간 기한 중 20시간 경과 시 1회 발송)
+  /// 1차 결제 리마인더 발송 여부 (확정 후 6시간 경과 시 발송. 2차(만료 3시간 전)는 Notification 레코드로 중복 방지)
   paymentReminderSent Boolean @default(false)
   /// 정산 상태: null(미정산) | "completed"(정산완료)
   settlementStatus  String?

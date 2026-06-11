@@ -121,6 +121,22 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
 
   if (!listing) notFound();
 
+  // 날짜 미선택 시 보여줄 "최저가" — ListingAvailability(Beds24 동기화 데이터) 기준
+  const today = new Date();
+  const thirtyDaysLater = new Date();
+  thirtyDaysLater.setDate(today.getDate() + 30);
+  const lowestAvailRow = await prisma.listingAvailability.findFirst({
+    where: {
+      listingId: id,
+      date: { gte: today, lte: thirtyDaysLater },
+      available: true,
+      pricePerNight: { gt: 0 },
+    },
+    orderBy: { pricePerNight: "asc" },
+    select: { pricePerNight: true },
+  });
+  const lowestNearbyPrice: number | null = lowestAvailRow?.pricePerNight ?? null;
+
   const userId = (session as { userId?: string } | null)?.userId ?? null;
   const [wishlistIds, reviewPermission] = await Promise.all([
     getWishlistListingIds(userId),
@@ -189,7 +205,7 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
         }
       >
         <ListingDetailContent
-          listing={listing}
+          listing={{ ...listing, lowestNearbyPrice }}
           isSaved={wishlistIds.includes(id)}
           isLoggedIn={!!userId}
           initialCheckIn={bookingPrefill.initialCheckIn}

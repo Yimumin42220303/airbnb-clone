@@ -6,7 +6,7 @@ import Link from "next/link";
 import { translateMessageBody } from "@/lib/translate";
 import { formatBookingTotalForGuestDisplay } from "@/lib/currency";
 import { ensureInstantBookingWelcomeMessage } from "@/lib/payment-complete";
-import { UNPAID_DEADLINE_HOURS } from "@/lib/unpaid-deadline";
+import { UNPAID_DEADLINE_LABEL, getUnpaidDeadlineAt } from "@/lib/unpaid-deadline";
 import { markConversationAsRead } from "@/lib/conversation-read";
 import MessageThread from "./MessageThread";
 import MessageAutoTranslateToggle from "./MessageAutoTranslateToggle";
@@ -154,11 +154,10 @@ export default async function ConversationPage({ params }: Props) {
     booking?.confirmedAt ??
     (approvalMessage ? approvalMessage.createdAt : null);
   if (paymentBaseAt) {
-    const deadline = new Date(
-      paymentBaseAt.getTime() + UNPAID_DEADLINE_HOURS * 60 * 60 * 1000
-    );
+    const deadline = getUnpaidDeadlineAt(paymentBaseAt);
     if (deadline > now) {
       paymentDeadlineText = deadline.toLocaleString("ko-KR", {
+        timeZone: "Asia/Seoul",
         month: "long",
         day: "numeric",
         hour: "2-digit",
@@ -255,7 +254,7 @@ export default async function ConversationPage({ params }: Props) {
                 <div className="px-4 py-3 bg-amber-50 border-b border-amber-200 flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="text-minbak-body text-amber-800">
-                      호스트가 승인했습니다. 48시간(2일) 이내에 결제해 주세요.
+                      호스트가 승인했습니다. {UNPAID_DEADLINE_LABEL} 이내에 결제해 주세요.
                     </p>
                     {paymentDeadlineText && (
                       <p className="text-minbak-caption text-amber-700 mt-1">
