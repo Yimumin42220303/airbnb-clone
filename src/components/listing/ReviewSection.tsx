@@ -14,6 +14,7 @@ type ReviewItem = {
   createdAt: string;
   membershipYears?: number | null;
   images?: string[];
+  reviewSource?: string | null;
 };
 
 type SortMode = "newest" | "highest" | "lowest";
@@ -223,7 +224,3 @@ export default function ReviewSection({
           isLoggedIn={isLoggedIn}
           canReview={canReview}
         />
-      </div>
-    </div>
-  );
-}

@@ -13,6 +13,15 @@ export type ReviewItem = {
   createdAt: string;
   membershipYears?: number | null;
   images?: string[];
+  /** 리뷰 출처. null이면 표시 안 함 */
+  reviewSource?: string | null;
+};
+
+const REVIEW_SOURCE_LABELS: Record<string, string> = {
+  TOKYOMINBAK_REVIEW: "도쿄민박 예약 후기",
+  EXTERNAL_PLATFORM_REVIEW: "외부 플랫폼 후기 기준",
+  INFLUENCER_REVIEW: "체험단 후기",
+  HOST_PROVIDED_REVIEW: "호스트 제공 후기",
 };
 
 type Props = { review: ReviewItem };
@@ -72,24 +81,6 @@ export default function ReviewCard({ review }: Props) {
                 ✓ {t("review.verifiedStay")}
               </span>
             )}
-          </div>
-        </div>
-      </div>
-      {body && (
-        <div className="text-[15px] text-[#222] leading-relaxed">
-          <span className="whitespace-pre-wrap">{displayBody}</span>
-          {showMore && !expanded && (
-            <button
-              type="button"
-              onClick={() => setExpanded(true)}
-              className="ml-1 underline text-[#222] hover:no-underline"
-            >
-              {t("review.showMoreText")}
-            </button>
-          )}
-        </div>
-      )}
-      {hasImages && <ReviewPhotoGallery images={review.images!} />}
-    </div>
-  );
-}
+            {review.reviewSource && REVIEW_SOURCE_LABELS[review.reviewSource] && (
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#f5f5f5] text-[#717171] text-[11px] border border-[#ebebeb]">
+                후기 출처

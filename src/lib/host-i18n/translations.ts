@@ -761,8 +761,8 @@ export const hostTranslations = {
     "time.daysAgo": "{n}일 전",
     "listingDetail.noDescription": "상세 설명이 없습니다.",
     "listingDetail.reviewsCount": "리뷰 {count}개",
-    "listingDetail.propertyTypeApartment": "아파트의 1실독채대실",
-    "listingDetail.propertyTypeHouse": "단독주택 독채대실",
+    "listingDetail.propertyTypeApartment": "아파트 전용 객실",
+    "listingDetail.propertyTypeHouse": "단독주택 독채",
     "listingDetail.maxGuests": "최대 인원 {count}명",
     "listingDetail.bedrooms": "침실 {count}",
     "listingDetail.beds": "침대 {count}",
@@ -827,8 +827,8 @@ export const hostTranslations = {
     "cancellationPolicy.strictRule3": "체크인 7일 전부터 취소해도 환불되지 않습니다.",
     "bookingType.instant": "자동확정 숙소",
     "bookingType.instantDesc": "결제 완료 시 원칙적으로 예약이 즉시 확정됩니다. 단, 시스템 오류나 중복 예약 등 예외 상황이 확인되는 경우 전액 환불 후 안내드릴 수 있습니다.",
-    "bookingType.approval": "호스트 승인 필요",
-    "bookingType.approvalDesc": "예약 요청 후 호스트 승인 시 예약이 확정됩니다.",
+    "bookingType.approval": "승인 후 예약 확정",
+    "bookingType.approvalDesc": "예약 요청 후 숙소 운영자의 가능 여부 확인을 거칩니다. 승인되면 결제 링크가 발송되며, 결제 완료 시 예약이 확정됩니다. 승인되지 않은 요청에는 결제가 발생하지 않습니다.",
     "bookingForm.checkInOutRequired": "체크인·체크아웃 날짜를 선택해 주세요.",
     "bookingForm.checkOutAfterCheckIn": "체크아웃은 체크인 다음 날 이후로 선택해 주세요.",
     "bookingForm.guestsRange": "인원은 1~{max}명으로 선택해 주세요.",
@@ -1830,9 +1830,4 @@ export const hostTranslations = {
     "share.copyFailed": "コピーに失敗しました。アドレスバーからURLをコピーしてください。",
     "share.shareFailed": "共有に失敗しました。リンクのコピーをご利用ください。",
     "share.shareListing": "宿泊施設を共有",
-    "share.copyLink": "リンクをコピー",
-    "share.share": "共有",
-  },
-} as const;
-
-export type HostTranslationKey = keyof (typeof hostTranslations)["ko"];
+    "share.copyLink": "リ�

@@ -227,7 +227,7 @@ export const SHINJUKU_FAMILY_ACCOMMODATION: OrganicLandingConfig = {
     },
     {
       q: "4인 가족 기준으로 찾으려면?",
-      a: "최대 4인 이상 필터와 신주쿠 지역 검색을 함께 사용하거나, AI 숙소 추천을 이용해 보세요.",
+      a: "최대 4인 이상 필터와 신주쿠 지역 검색을 함께 사용하거나, 30초 숙소추천을 이용해 보세요.",
     },
   ],
   filters: { location: "신주쿠", guests: 4 },

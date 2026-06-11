@@ -526,6 +526,9 @@ model Review {
   createdAt DateTime @default(now())
   /// 어드민이 편집한 게스트 표시 이름 (없으면 user.name 사용)
   authorDisplayName String?
+  /// 리뷰 출처 타입. null이면 표시 안 함.
+  /// TOKYOMINBAK_REVIEW | EXTERNAL_PLATFORM_REVIEW | INFLUENCER_REVIEW | HOST_PROVIDED_REVIEW
+  reviewSource String?
 
   listingId String
   listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
@@ -609,13 +612,4 @@ model RecommendationLead {
   selectedListingId     String?
   bookingId             String?
 
-  operatorMemo String?
-  lostReason   String?
-
-  privacyConsentAt DateTime
-
-  @@index([status, createdAt])
-  @@index([userId])
-  @@index([sourceListingId])
-  @@index([leadCode])
-}
+  opera

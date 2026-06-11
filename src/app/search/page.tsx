@@ -45,7 +45,7 @@ export default function SearchPage({
             경우에도 활용할 수 있습니다.
           </p>
           <p>
-            아래에서 등록 숙소를 바로 비교하거나, AI 숙소 추천·가족 숙소 가이드 글과 함께
+            아래에서 등록 숙소를 바로 비교하거나, 30초 숙소추천·가족 숙소 가이드 글과 함께
             보세요. 예약 전에는 침구 구성·역 거리·체크인 방식을 함께 확인하는 것이 좋습니다.
           </p>
         </div>
@@ -84,4 +84,3 @@ export default function SearchPage({
       </div>
     </main>
   );
-}

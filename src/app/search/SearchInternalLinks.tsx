@@ -9,7 +9,7 @@ const SEARCH_GUIDE_LINKS = [
   { label: "도쿄 가족 숙소 랜딩", href: "/tokyo-family-accommodation" },
   { label: "도쿄 4인 숙소", href: "/tokyo-4-person-accommodation" },
   { label: "도쿄 한인민박 안내", href: "/tokyo-korean-minbak" },
-  { label: "AI 숙소 추천", href: "/recommend" },
+  { label: "30초 숙소추천", href: "/recommend" },
   { label: "안심예약센터", href: "/trust" },
 ] as const;
 

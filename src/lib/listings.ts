@@ -398,6 +398,7 @@ export const getListingById = cache(async function getListingById(id: string) {
         createdAt: r.createdAt.toISOString(),
         membershipYears,
         images: r.images?.map((img: { url: string }) => img.url) ?? [],
+        reviewSource: (r as { reviewSource?: string | null }).reviewSource ?? null,
       };
     }),
   };

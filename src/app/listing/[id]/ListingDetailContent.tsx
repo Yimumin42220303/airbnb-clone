@@ -44,6 +44,43 @@ import {
   mergeListingBookingPrefill,
   parseListingBookingPrefill,
 } from "@/lib/listing-booking-prefill";
+import { parseListingLocation } from "@/lib/aeo/listing-aeo";
+
+/** 프로모션대상 배지 + 툴팁 */
+function PromotedBadge() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+  return (
+    <div ref={ref} className="relative inline-flex items-center">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#D74132]/10 text-[#D74132] text-[12px] font-semibold border border-[#D74132]/20 hover:bg-[#D74132]/15 transition-colors"
+        aria-label="프로모션대상 숙소 안내"
+      >
+        ✦ 프로모션대상
+        <span className="text-[10px] opacity-60">?</span>
+      </button>
+      {open && (
+        <div
+          role="tooltip"
+          className="absolute left-0 top-full mt-2 w-72 rounded-xl bg-[#222] text-white text-[13px] leading-relaxed px-4 py-3 shadow-xl z-50"
+        >
+          프로모션대상 숙소는 도쿄민박 또는 관계사가 직접 운영·관리하거나, 별도 프로모션 조건으로 안내 가능한 숙소입니다. 숙소별 운영 방식은 다를 수 있으며, 예약 전 최종 금액과 조건을 확인해드립니다.
+          <span className="absolute left-4 bottom-full border-[6px] border-transparent border-b-[#222]" />
+        </div>
+      )}
+    </div>
+  );
+}
 
 type ReviewItem = {
   rating: number;
@@ -52,6 +89,8 @@ type ReviewItem = {
   createdAt: string;
   membershipYears?: number | null;
   images?: string[];
+  /** 리뷰 출처. null이면 표시 안 함 */
+  reviewSource?: string | null;
 };
 
 type ListingData = {
@@ -98,6 +137,8 @@ type ListingData = {
   infoVerifiedAt?: string | null;
   /** 관리자 인증 여부 */
   isVerified?: boolean;
+  /** 프로모션대상 숙소 여부 */
+  isPromoted?: boolean;
   /** 최근 30일 예약 수 */
   recentBookingCount?: number;
   /** 숙소 등록일 */
@@ -274,6 +315,14 @@ export default function ListingDetailContent({
     recentBookingCount: listing.recentBookingCount,
     createdAt: listing.listingCreatedAt,
   });
+  // walkMinutes > 5인 숙소에서 "역세권 (도보 5분 이내)" amenity 숨김 (정보 불일치 방지)
+  const parsedLoc = parseListingLocation(listing.location);
+  const displayAmenities = listing.amenities.filter((a) => {
+    if (a.trim() === "역세권 (도보 5분 이내)") {
+      return parsedLoc.walkMinutes != null && parsedLoc.walkMinutes <= 5;
+    }
+    return true;
+  });
   const isEmbeddableMap =
     listing.mapUrl != null &&
     listing.mapUrl.includes("/maps/embed");
@@ -326,6 +375,7 @@ export default function ListingDetailContent({
                       ))}
                     </div>
                   )}
+                  {listing.isPromoted && <PromotedBadge />}
               </div>
             </div>
           </div>
@@ -446,10 +496,10 @@ export default function ListingDetailContent({
                 </DetailSection>
 
                 {/* 2. 부가시설 및 서비스 */}
-                {listing.amenities.length > 0 && (
+                {displayAmenities.length > 0 && (
                   <DetailSection title={t("listingDetail.sectionAmenities")}>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-                      {listing.amenities.map((a) => (
+                      {displayAmenities.map((a) => (
                         <div
                           key={a}
                           className="flex items-center gap-2.5 text-[15px] text-[#222] py-1"
@@ -686,59 +736,4 @@ export default function ListingDetailContent({
                       initialGuests={resolvedGuests}
                       initialAdults={resolvedAdults}
                       initialChildren={resolvedChildren}
-                      initialInfants={resolvedInfants}
-                    />
-                    <CancellationPolicyBadge
-                      policy={listing.cancellationPolicy ?? "flexible"}
-                    />
-                  </div>
-                </div>
-                {/* 예약 CTA 근처 신뢰 카드: 예약 전 불안 해소 */}
-                <div className="mt-4">
-                  <ListingTrustCard
-                    maxGuests={listing.maxGuests}
-                    checkInTime={listing.checkInTime}
-                    checkOutTime={listing.checkOutTime}
-                    cancellationPolicy={listing.cancellationPolicy}
-                    checkIn={resolvedCheckIn}
-                    checkInMethod={listing.checkInMethod}
-                  />
-                </div>
-                <p className="mt-3 text-center">
-                  <Link
-                    href={buildRecommendHref({
-                      sourcePage: "listing",
-                      sourceListingId: listing.id,
-                    })}
-                    onClick={() =>
-                      trackRecommendEvent("listing_recommend_click", {
-                        listing_id: listing.id,
-                        source_page: "listing",
-                      })
-                    }
-                    className="text-[13px] text-[#717171] hover:text-minbak-primary underline underline-offset-2"
-                  >
-                    비슷한 숙소 추천받기
-                  </Link>
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-        {/* AEO 통합 섹션 (요약·FAQ·적합성 안내·태그·내부링크) — SSR 텍스트 */}
-        {aeoSection}
-        {/* 모바일: 스티키 바 노출 시 하단 여백(스크롤 끝에서 콘텐츠 가림 방지) */}
-        <div className="h-36 lg:hidden" aria-hidden />
-      </main>
-      {/* 모바일: 예약 폼이 화면에 안 보일 때만 스티키 바 표시. 금액 있으면 예약하기, 없으면 날짜 선택 유도 */}
-      {!isBookingFormInView && (
-        <MobileStickyBookingBar
-          listingId={listing.id}
-          priceSummary={priceSummary}
-          bookingType={listing.instantBooking ? "instant" : "approval"}
-          lowestNearbyPrice={listing.lowestNearbyPrice}
-        />
-      )}
-    </>
-  );
-}
+                      initialInfants={resolve

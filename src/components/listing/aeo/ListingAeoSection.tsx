@@ -220,7 +220,7 @@ export default function ListingAeoSection({ listing }: Props) {
               href={`/recommend?sourcePage=listing&sourceListingId=${encodeURIComponent(listing.id)}`}
               className="text-minbak-primary hover:underline font-medium"
             >
-              AI 숙소 추천
+              30초 숙소추천
             </Link>
             을 이용해 보세요.
           </p>
