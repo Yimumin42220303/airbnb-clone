@@ -13,7 +13,7 @@ const HERO_IMAGE_FALLBACK =
 export default function HomeHero() {
   const t = useHostTranslations().t;
   const heroImageUrl =
-    process.env.NEXT_PUBLIC_HERO_IMAGE_URL || "/hero-bg.jpg";
+    process.env.NEXT_PUBLIC_HERO_IMAGE_URL || "/hero-bg.webp";
   const [bgSrc, setBgSrc] = useState(heroImageUrl);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
