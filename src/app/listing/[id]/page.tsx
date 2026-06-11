@@ -125,10 +125,11 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
   const today = new Date();
   const thirtyDaysLater = new Date();
   thirtyDaysLater.setDate(today.getDate() + 30);
+  const toDateStr = (d: Date) => d.toISOString().slice(0, 10);
   const lowestAvailRow = await prisma.listingAvailability.findFirst({
     where: {
       listingId: id,
-      date: { gte: today, lte: thirtyDaysLater },
+      date: { gte: toDateStr(today), lte: toDateStr(thirtyDaysLater) },
       available: true,
       pricePerNight: { gt: 0 },
     },

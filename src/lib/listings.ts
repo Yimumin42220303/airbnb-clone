@@ -761,10 +761,12 @@ export async function updateListing(
     data.imageUrl = input.imageUrl.trim();
   }
 
-  await prisma.listing.update({
-    where: { id: listingId },
-    data,
-  });
+  if (Object.keys(data).length > 0) {
+    await prisma.listing.update({
+      where: { id: listingId },
+      data,
+    });
+  }
 
   if (input.amenityIds) {
     await prisma.listingAmenity.deleteMany({ where: { listingId } });
