@@ -12,6 +12,7 @@ export type RecommendEventName =
   | "recommend_travel_type_select"
   | "recommend_priority_select"
   | "recommend_date_select"
+  | "recommend_companion_select"
   | "recommend_guest_count_select"
   | "recommend_submit"
   | "recommend_result_view"
@@ -39,6 +40,10 @@ export type RecommendEventParams = {
   contact_method?: string;
   has_area?: boolean;
   has_budget?: boolean;
+  /** 동행 유형 (solo|friends|couple|family) */
+  companion?: string;
+  /** 클릭 발생 영역 (card|button) */
+  click_area?: string;
 };
 
 declare global {

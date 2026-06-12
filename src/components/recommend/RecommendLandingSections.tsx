@@ -5,9 +5,9 @@ import { Sparkles } from "lucide-react";
 import { RECOMMEND_HERO } from "@/lib/recommend-landing";
 
 const RECOMMEND_STEPS = [
-  { step: "1", label: "날짜·인원 입력", icon: "📅" },
+  { step: "1", label: "날짜·동행 입력", icon: "📅" },
   { step: "2", label: "조건 선택", icon: "✅" },
-  { step: "3", label: "AI 추천 생성", icon: "✨" },
+  { step: "3", label: "맞춤 후보 확인", icon: "✨" },
   { step: "4", label: "숙소 예약", icon: "🏠" },
 ];
 

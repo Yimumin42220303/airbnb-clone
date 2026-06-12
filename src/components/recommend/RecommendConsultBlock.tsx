@@ -8,8 +8,10 @@ import {
   getKakaoChannelChatUrl,
   getPrimaryPriorityLabel,
   getBudgetLabel,
+  getCompanionLabel,
   type AccessibilityType,
   type BudgetType,
+  type CompanionType,
   type PrimaryPriorityType,
 } from "@/lib/recommend-funnel";
 import {
@@ -43,6 +45,7 @@ type Props = {
   };
   budgetType?: BudgetType;
   priorities?: string[];
+  companion?: CompanionType | null;
 };
 
 export default function RecommendConsultBlock({
@@ -57,6 +60,7 @@ export default function RecommendConsultBlock({
   attribution,
   budgetType,
   priorities,
+  companion,
 }: Props) {
   const [saveError, setSaveError] = useState("");
   const [channelError, setChannelError] = useState("");
@@ -79,6 +83,7 @@ export default function RecommendConsultBlock({
       infantCount,
       preferredAreaLabel: getGuestAccessibilityLabel(accessibility),
       priorityLabel: getPrimaryPriorityLabel(primaryPriority),
+      companionLabel: companion ? getCompanionLabel(companion) : undefined,
       budgetLabel:
         budgetType && budgetType !== "undecided"
           ? getBudgetLabel(budgetType)
@@ -97,6 +102,7 @@ export default function RecommendConsultBlock({
       accessibility,
       primaryPriority,
       budgetType,
+      companion,
       listings,
       attribution.sourcePage,
       attribution.sourceListingId,
@@ -156,6 +162,7 @@ export default function RecommendConsultBlock({
           accessibility,
           budgetType: budgetType ?? "undecided",
           priorities,
+          tripType: companion ?? undefined,
           recommendedListingIds: listings.map((l) => l.id),
           sourcePage: attribution.sourcePage,
           sourceListingId: attribution.sourceListingId,

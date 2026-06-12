@@ -16,18 +16,18 @@ import FramerGuestPicker, {
   defaultGuestCounts,
   type GuestCounts,
 } from "@/components/search/FramerGuestPicker";
-import { Sparkles, Loader2, Calendar, MapPin, Wallet, ChevronDown } from "lucide-react";
+import { Sparkles, Loader2, Calendar, Users, Wallet, ChevronDown } from "lucide-react";
 import { useHostTranslations } from "@/components/host/HostLocaleProvider";
 import {
-  ACCESSIBILITY_OPTIONS_GUEST,
   BUDGET_OPTIONS,
+  COMPANION_OPTIONS,
   PRIMARY_PRIORITY_OPTIONS,
   RECOMMEND_DISPLAY_MAX,
   RECOMMEND_INTERNAL_MAX,
   applyRecommendRanking,
   parseRecommendSearchParams,
-  type AccessibilityType,
   type BudgetType,
+  type CompanionType,
   type PrimaryPriorityType,
   type RecommendAttribution,
 } from "@/lib/recommend-funnel";
@@ -130,7 +130,7 @@ export default function RecommendPageContent() {
   const [guests, setGuests] = useState<GuestCounts>(defaultGuestCounts);
   const [primaryPriority, setPrimaryPriority] = useState<PrimaryPriorityType>("none");
   const [preferences, setPreferences] = useState("");
-  const [accessibility, setAccessibility] = useState<AccessibilityType>("any");
+  const [companion, setCompanion] = useState<CompanionType | null>(null);
   const [budgetType, setBudgetType] = useState<BudgetType>("undecided");
   const [showOptionalBudget, setShowOptionalBudget] = useState(false);
   const [showOptionalNotes, setShowOptionalNotes] = useState(false);
@@ -145,6 +145,10 @@ export default function RecommendPageContent() {
     Record<string, ListingPriceSummary>
   >({});
   const [priceLoading, setPriceLoading] = useState(false);
+  /** AI 스트림으로 결과를 정밀화하는 중 (룰베이스 1차 결과 표시 이후) */
+  const [aiRefining, setAiRefining] = useState(false);
+  const resultViewTrackedRef = useRef(false);
+  const resultsTopRef = useRef<HTMLDivElement | null>(null);
   const formStartedRef = useRef(false);
   const dateTrackedRef = useRef(false);
   const guestTrackedRef = useRef(false);
@@ -297,15 +301,19 @@ export default function RecommendPageContent() {
 
   const leadSentRef = useRef(false);
   useEffect(() => {
-    if (displayResults && displayResults.length > 0) {
+    // 제출당 1회만 발화 (스트리밍 청크마다 displayResults가 갱신되므로 dedup 필수)
+    if (displayResults && displayResults.length > 0 && !resultViewTrackedRef.current) {
+      resultViewTrackedRef.current = true;
       trackRecommendEvent("recommend_result_view", {
         result_count: displayResults.length,
         priorities: primaryPriority !== "none" ? primaryPriority : undefined,
         guest_count: guests.adult + guests.child,
         date_selected: !!(checkIn && checkOut),
-        has_area: accessibility !== "any",
+        companion: companion ?? undefined,
         has_budget: budgetType !== "undecided",
       });
+      // 첫 결과 도달 시 결과 영역으로 부드럽게 스크롤
+      resultsTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       // CAPI Lead 이벤트 — 추천 펀넬 완료 시 1회
       if (!leadSentRef.current) {
         leadSentRef.current = true;
@@ -319,7 +327,7 @@ export default function RecommendPageContent() {
         }).catch(() => {});
       }
     }
-  }, [displayResults, primaryPriority, guests.adult, guests.child, checkIn, checkOut, accessibility, budgetType]);
+  }, [displayResults, primaryPriority, guests.adult, guests.child, checkIn, checkOut, companion, budgetType]);
 
   const priorityListForRanking = useMemo((): Priority[] => {
     if (primaryPriority === "none") return [];
@@ -333,6 +341,8 @@ export default function RecommendPageContent() {
     setMessage(null);
     setPriceByListingId({});
     setPriceLoading(false);
+    setAiRefining(false);
+    resultViewTrackedRef.current = false;
     if (!checkIn || !checkOut) {
       setDateOpen(true);
       setError(t("guest.dateRequiredError"));
@@ -351,7 +361,7 @@ export default function RecommendPageContent() {
       priorities: primaryPriority !== "none" ? primaryPriority : undefined,
       guest_count: guests.adult + guests.child,
       date_selected: true,
-      has_area: accessibility !== "any",
+      companion: companion ?? undefined,
       has_budget: budgetType !== "undecided",
     });
 
@@ -361,6 +371,7 @@ export default function RecommendPageContent() {
       adults: guests.adult,
       children: guests.child,
       infants: guests.infant,
+      tripType: companion ?? undefined,
       priorities: priorityListForRanking,
       preferences: preferences.trim(),
       locale,
@@ -383,7 +394,9 @@ export default function RecommendPageContent() {
         }
 
         const ranked = applyRecommendRanking(listings, {
-          accessibility,
+          accessibility: "any",
+          companion,
+          totalGuests: guestTotal < 1 ? 1 : guestTotal,
           budgetType,
           priorities: priorityListForRanking,
           ruleBasedSort: (items) => ruleBasedSort(items, priorityListForRanking),
@@ -395,6 +408,7 @@ export default function RecommendPageContent() {
         setResults(ruleBasedTop);
         setMessage(null);
         setLoading(false);
+        setAiRefining(true);
 
         try {
           const res = await fetch("/api/recommend/stream", {
@@ -447,6 +461,8 @@ export default function RecommendPageContent() {
         } catch (streamErr) {
           console.error("[recommend/stream] 스트림 오류:", streamErr);
           /* 규칙 기반 결과 유지, 게스트에게 기술 메시지 미노출 */
+        } finally {
+          setAiRefining(false);
         }
       })
       .catch((err) => {
@@ -483,6 +499,38 @@ export default function RecommendPageContent() {
           </div>
 
           <div>
+            <h2 className="text-minbak-body font-semibold text-minbak-black mb-2 flex items-center gap-2">
+              <Users className="w-5 h-5 text-minbak-primary" />
+              누구와 가세요?
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {COMPANION_OPTIONS.map(({ value, label, emoji }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => {
+                    markFormStart();
+                    setCompanion(value);
+                    if (value === "solo") {
+                      setGuests({ adult: 1, child: 0, infant: 0 });
+                    }
+                    trackRecommendEvent("recommend_companion_select", {
+                      companion: value,
+                    });
+                  }}
+                  className={`px-3 py-2 rounded-minbak text-minbak-body font-medium border transition-colors ${
+                    companion === value
+                      ? "bg-minbak-primary text-white border-minbak-primary"
+                      : "bg-white text-minbak-black border-minbak-light-gray hover:border-minbak-primary/50"
+                  }`}
+                >
+                  {emoji} {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
             <h2 className="text-minbak-body font-semibold text-minbak-black mb-2">
               몇 명이 가세요?
             </h2>
@@ -505,32 +553,6 @@ export default function RecommendPageContent() {
                   : t("guest.addGuests")}
               </span>
             </button>
-          </div>
-
-          <div>
-            <h2 className="text-minbak-body font-semibold text-minbak-black mb-2 flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-minbak-primary" />
-              어디가 편하세요?
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {ACCESSIBILITY_OPTIONS_GUEST.map(({ value, label }) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => {
-                    markFormStart();
-                    setAccessibility(value);
-                  }}
-                  className={`px-3 py-2 rounded-minbak text-minbak-body font-medium border transition-colors ${
-                    accessibility === value
-                      ? "bg-minbak-primary text-white border-minbak-primary"
-                      : "bg-white text-minbak-black border-minbak-light-gray hover:border-minbak-primary/50"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
           </div>
 
           <div>
@@ -653,25 +675,48 @@ export default function RecommendPageContent() {
       </form>
 
       {results !== null && results.length === 0 && message && (
-        <p className="mt-10 text-minbak-body text-minbak-dark-gray">{message}</p>
+        <div className="mt-10">
+          <p className="text-minbak-body text-minbak-dark-gray">{message}</p>
+          <p className="mt-2 text-minbak-body font-medium text-minbak-black">
+            조건을 알려주시면 한국어 스태프가 직접 찾아드릴게요.
+          </p>
+          <div id="recommend-consult-block-empty">
+            <RecommendConsultBlock
+              checkIn={checkIn}
+              checkOut={checkOut}
+              adultCount={guests.adult}
+              childCount={guests.child}
+              infantCount={guests.infant}
+              accessibility="any"
+              primaryPriority={primaryPriority}
+              budgetType={budgetType}
+              priorities={priorityListForRanking}
+              companion={companion}
+              listings={[]}
+              attribution={attribution}
+            />
+          </div>
+        </div>
       )}
 
       {displayResults && displayResults.length > 0 && (
-        <div className="mt-10">
-          <h2 className="text-minbak-h3 font-bold text-minbak-black mb-2">
-            {RECOMMEND_RESULTS_TITLE}
-          </h2>
+        <div className="mt-10 scroll-mt-24" ref={resultsTopRef}>
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <h2 className="text-minbak-h3 font-bold text-minbak-black">
+              {RECOMMEND_RESULTS_TITLE}
+            </h2>
+            {aiRefining && (
+              <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-minbak-primary bg-minbak-primary/10 rounded-full px-2.5 py-1">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden />
+                AI가 조건을 정밀 분석 중…
+              </span>
+            )}
+          </div>
           {resultsContextLine && (
-            <p className="text-minbak-body text-minbak-dark-gray mb-1">
+            <p className="text-minbak-body text-minbak-dark-gray mb-4">
               {resultsContextLine}
             </p>
           )}
-          <p className="text-minbak-caption text-minbak-gray mb-1">
-            추천 결과는 입력 조건을 바탕으로 한 후보 숙소입니다.
-          </p>
-          <p className="text-minbak-caption text-minbak-gray mb-4">
-            최종 요금, 예약 가능 여부, 체크인 조건, 취소·환불 조건은 상담 또는 예약 전 확인이 필요합니다.
-          </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {displayResults.map((item) => (
@@ -684,24 +729,37 @@ export default function RecommendPageContent() {
                     {item.rank}
                   </span>
                 </div>
-                <ListingCard
-                  id={item.id}
-                  title={item.title}
-                  location={item.location}
-                  imageUrl={item.imageUrl}
-                  price={item.price}
-                  rating={item.rating}
-                  reviewCount={item.reviewCount}
-                  isPromoted={item.isPromoted}
-                  showPrice={false}
-                  showPricePlaceholder={false}
-                  searchQuery={listingDetailSearchQuery || undefined}
-                  className="rounded-none shadow-none hover:shadow-none"
-                />
+                {/* 카드 본문 클릭도 측정 (ListingCard 자체가 Link) */}
+                <div
+                  onClickCapture={() =>
+                    trackRecommendEvent("recommend_listing_click", {
+                      listing_id: item.id,
+                      result_count: displayResults.length,
+                      source_page: "recommend",
+                      click_area: "card",
+                    })
+                  }
+                >
+                  <ListingCard
+                    id={item.id}
+                    title={item.title}
+                    location={item.location}
+                    imageUrl={item.imageUrl}
+                    price={item.price}
+                    rating={item.rating}
+                    reviewCount={item.reviewCount}
+                    isPromoted={item.isPromoted}
+                    showPrice={false}
+                    showPricePlaceholder={false}
+                    searchQuery={listingDetailSearchQuery || undefined}
+                    className="rounded-none shadow-none hover:shadow-none"
+                  />
+                </div>
                 <RecommendResultPrice
                   className="px-3 pt-3 pb-1 border-t border-minbak-light-gray min-h-[72px]"
                   loading={priceLoading && !priceByListingId[item.id]}
                   summary={priceByListingId[item.id]}
+                  fallbackPricePerNight={item.price}
                 />
                 <div className="p-3 pt-2 space-y-2 flex-1 flex flex-col">
                   {item.reason && (
@@ -730,6 +788,7 @@ export default function RecommendPageContent() {
                         listing_id: item.id,
                         result_count: displayResults.length,
                         source_page: "recommend",
+                        click_area: "button",
                       })
                     }
                     className="mt-auto inline-flex items-center justify-center min-h-[40px] px-4 py-2 rounded-minbak bg-minbak-primary text-white text-minbak-caption font-semibold hover:bg-minbak-primary-hover transition-colors"
@@ -754,13 +813,24 @@ export default function RecommendPageContent() {
               adultCount={guests.adult}
               childCount={guests.child}
               infantCount={guests.infant}
-              accessibility={accessibility}
+              accessibility="any"
               primaryPriority={primaryPriority}
               budgetType={budgetType}
               priorities={priorityListForRanking}
+              companion={companion}
               listings={displayResults.map((r) => ({ rank: r.rank, id: r.id, title: r.title }))}
               attribution={attribution}
             />
+          </div>
+
+          {/* 안내·고지: 결과를 가리지 않도록 하단 배치 + 안심형 카피 */}
+          <div className="mt-6 rounded-minbak bg-minbak-bg px-4 py-3 text-center">
+            <p className="text-minbak-caption text-minbak-dark-gray font-medium">
+              예약 전 한국어 스태프가 최종 요금과 예약 가능 여부를 한 번 더 확인해드려요.
+            </p>
+            <p className="text-[11px] text-minbak-gray mt-1">
+              추천 결과는 입력 조건 기반의 후보 숙소이며, 체크인·취소·환불 조건은 숙소 상세 또는 상담에서 확인할 수 있습니다.
+            </p>
           </div>
         </div>
       )}

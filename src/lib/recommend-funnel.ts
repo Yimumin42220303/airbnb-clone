@@ -44,6 +44,20 @@ export const PRIMARY_PRIORITY_OPTIONS = [
 
 export type PrimaryPriorityType = (typeof PRIMARY_PRIORITY_OPTIONS)[number]["value"];
 
+/** 게스트 폼: 동행 유형 — 서버 tripType(solo|friends|couple|family)과 동일 값 */
+export const COMPANION_OPTIONS = [
+  { value: "solo", label: "혼자", emoji: "👤" },
+  { value: "friends", label: "친구와", emoji: "👥" },
+  { value: "couple", label: "커플", emoji: "💑" },
+  { value: "family", label: "가족", emoji: "👨‍👩‍👧" },
+] as const;
+
+export type CompanionType = (typeof COMPANION_OPTIONS)[number]["value"];
+
+export function getCompanionLabel(companion: CompanionType): string {
+  return COMPANION_OPTIONS.find((o) => o.value === companion)?.label ?? companion;
+}
+
 export function getPrimaryPriorityLabel(priority: PrimaryPriorityType): string {
   return PRIMARY_PRIORITY_OPTIONS.find((o) => o.value === priority)?.label ?? "상관없음";
 }
@@ -170,6 +184,55 @@ export function sortByBudgetSoft<T extends RecommendListingCandidate>(
   });
 }
 
+function asNumber(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function companionScore(
+  listing: RecommendListingCandidate,
+  companion: CompanionType,
+  totalGuests: number
+): number {
+  const maxGuests = asNumber(listing.maxGuests);
+  const bedrooms = asNumber(listing.bedrooms);
+  const beds = asNumber(listing.beds);
+  if (companion === "solo") {
+    return (maxGuests > 0 && maxGuests <= 2 ? 5 : 0) + (bedrooms <= 1 ? 1 : 0);
+  }
+  if (companion === "couple") {
+    // 커플: 침실 1·정원 2 이상·침대 적은 곳 우선 (침대 유형 데이터 부재로 근사)
+    return (
+      (bedrooms === 1 ? 3 : 0) +
+      (maxGuests >= 2 ? 2 : 0) +
+      (beds > 0 && beds <= 2 ? 2 : 0)
+    );
+  }
+  if (companion === "friends") {
+    // 친구: 침대 수 ≥ 인원 (한 침대 공유 회피)
+    return (beds >= totalGuests ? 5 : 0) + (maxGuests >= totalGuests ? 2 : 0);
+  }
+  // family: 침실·침대·정원 여유 우선
+  return (
+    (bedrooms >= 2 ? 3 : 0) +
+    (beds >= totalGuests ? 3 : 0) +
+    (maxGuests >= totalGuests ? 2 : 0)
+  );
+}
+
+/** 동행 유형: hard filter 없이 점수 기반 안정 정렬 */
+export function sortByCompanionSoft<T extends RecommendListingCandidate>(
+  listings: T[],
+  companion: CompanionType | null | undefined,
+  totalGuests: number
+): T[] {
+  if (!companion || listings.length <= 1) return [...listings];
+  const safeGuests = Math.max(1, totalGuests);
+  return listings
+    .map((l, idx) => ({ l, idx, score: companionScore(l, companion, safeGuests) }))
+    .sort((a, b) => b.score - a.score || a.idx - b.idx)
+    .map((s) => s.l);
+}
+
 export function applyRecommendRanking<T extends RecommendListingCandidate>(
   listings: T[],
   options: {
@@ -178,9 +241,12 @@ export function applyRecommendRanking<T extends RecommendListingCandidate>(
     budgetType: BudgetType;
     ruleBasedSort: (items: T[]) => T[];
     priorities: string[];
+    companion?: CompanionType | null;
+    totalGuests?: number;
   }
 ): T[] {
   let result = options.ruleBasedSort([...listings]);
+  result = sortByCompanionSoft(result, options.companion, options.totalGuests ?? 1);
   result = sortByAccessibility(result, options.accessibility, options.accessibilityOther);
   result = sortByBudgetSoft(result, options.budgetType);
   return result;

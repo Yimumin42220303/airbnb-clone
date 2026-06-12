@@ -19,6 +19,8 @@ export type RecommendChannelContext = {
   preferredAreaLabel: string;
   priorityLabel: string;
   budgetLabel?: string;
+  /** 동행 유형 라벨 (혼자/친구와/커플/가족) */
+  companionLabel?: string;
   recommendedListingTitles: string[];
   recommendedListingIds: string[];
   sourcePage?: string;
@@ -95,6 +97,7 @@ function buildChatProfile(ctx: RecommendChannelContext, pageUrl: string) {
     recommendGuestCount: guestLine,
     recommendPreferredArea: ctx.preferredAreaLabel,
     recommendPriority: ctx.priorityLabel,
+    ...(ctx.companionLabel ? { recommendCompanion: ctx.companionLabel } : {}),
     ...(ctx.budgetLabel ? { recommendBudget: ctx.budgetLabel } : {}),
     recommendListingSummary: titles.slice(0, 500),
     recommendListingIds: ids.slice(0, 500),
@@ -122,6 +125,7 @@ function buildTrackPayload(
     infantCount: ctx.infantCount,
     preferredAreaLabel: ctx.preferredAreaLabel,
     priorityLabel: ctx.priorityLabel,
+    ...(ctx.companionLabel ? { companionLabel: ctx.companionLabel } : {}),
     ...(ctx.budgetLabel ? { budgetLabel: ctx.budgetLabel } : {}),
     recommendedListingIds: ctx.recommendedListingIds.slice(0, 3),
     recommendedListingTitles: titles,

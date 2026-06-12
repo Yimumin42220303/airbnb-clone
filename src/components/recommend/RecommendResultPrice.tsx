@@ -6,6 +6,8 @@ import type { ListingPriceSummary } from "@/lib/stay-price";
 type Props = {
   loading: boolean;
   summary: ListingPriceSummary | null | undefined;
+  /** 일정 요금 계산 실패 시 표시할 1박 기준가 (JPY) */
+  fallbackPricePerNight?: number;
   className?: string;
 };
 
@@ -19,7 +21,12 @@ function canShowPrice(summary: ListingPriceSummary | null | undefined): summary 
   );
 }
 
-export default function RecommendResultPrice({ loading, summary, className }: Props) {
+export default function RecommendResultPrice({
+  loading,
+  summary,
+  fallbackPricePerNight,
+  className,
+}: Props) {
   const { formatForGuest } = useCurrency();
 
   if (loading) {
@@ -35,6 +42,19 @@ export default function RecommendResultPrice({ loading, summary, className }: Pr
   }
 
   if (!canShowPrice(summary)) {
+    // 기준가 폴백: 가격 없는 추천 카드는 클릭 동기를 잃으므로 1박 기준가라도 표시
+    if (fallbackPricePerNight != null && fallbackPricePerNight > 0) {
+      return (
+        <div className={className}>
+          <p className="text-minbak-body font-semibold text-minbak-black">
+            1박 {formatForGuest(fallbackPricePerNight)}~
+          </p>
+          <p className="text-minbak-caption text-minbak-gray mt-0.5">
+            정확한 총액은 숙소 상세에서 확인돼요
+          </p>
+        </div>
+      );
+    }
     return (
       <div className={className}>
         <p className="text-minbak-body font-medium text-minbak-dark-gray">
